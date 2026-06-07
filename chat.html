@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — AI 金融分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;display:flex;flex-direction:column}
+
+/* NAV */
+nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);background:var(--bg-primary);flex-shrink:0;z-index:10}
+.nav-center{display:flex;align-items:center;gap:0.5rem}
+.mode-btn{padding:6px 12px;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.12s;border:1px solid var(--border-color);color:var(--text-secondary);background:transparent}
+.mode-btn.active{background:var(--bg-secondary);border-color:var(--border-color);color:var(--accent-blue)}
+.nav-right{display:flex;align-items:center;gap:0.8rem}
+
+.new-chat-btn{background:transparent;border:1px solid var(--border-color);color:var(--accent-blue);padding:6px 12px;border-radius:8px;font-size:0.9rem;cursor:pointer;transition:all 0.12s}
+.new-chat-btn:hover{background:var(--bg-secondary)}
+
+/* MAIN */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-color);display:flex;flex-direction:column;flex-shrink:0}
+.sb-top{padding:12px}
+.sb-label{font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem}
+.quick-prompt{display:flex;align-items:flex-start;gap:0.6rem;padding:8px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:all 0.12s;margin-bottom:6px;background:transparent}
+.quick-prompt:hover{background:var(--bg-secondary)}
+.qp-icon{font-size:1rem;flex-shrink:0;margin-top:0.1rem}
+.qp-text{font-size:0.9rem;color:var(--text-secondary);line-height:1.4}
+.qp-text strong{color:var(--text-primary);font-weight:600;display:block;margin-bottom:2px;font-size:0.92rem}
+.divider{border:none;border-top:1px solid var(--border-color);margin:0.5rem 0}
+.history-list{flex:1;overflow-y:auto;padding:0 12px 12px}
+.history-item{padding:8px;border-radius:8px;cursor:pointer;transition:all 0.12s;font-size:0.9rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
+.history-item:hover{background:var(--bg-secondary);color:var(--text-primary)}
+.sb-bottom{padding:12px;border-top:1px solid var(--border-color)}
+.sb-tip{font-size:0.82rem;color:var(--text-muted);line-height:1.5;padding:8px;background:rgba(245,158,11,0.06);border-radius:6px;border-left:3px solid var(--accent-orange)}
+
+/* CHAT AREA */
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* WELCOME */
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
+.welcome-logo{font-family:'DM Serif Display',serif;font-size:2.5rem;color:var(--text-primary);margin-bottom:0.5rem}
+.welcome-logo em{color:var(--accent-orange);font-style:normal}
+.welcome-sub{font-size:0.98rem;color:var(--text-secondary);margin-bottom:2rem;max-width:420px;line-height:1.8}
+.welcome-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.8rem;max-width:580px;width:100%}
+.wcard{padding:12px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:all 0.12s;text-align:left;background:var(--bg-card)}
+.wcard:hover{border-color:var(--border-color);background:var(--bg-secondary)}
+.wcard-icon{font-size:1.3rem;margin-bottom:0.5rem}
+.wcard-title{font-size:0.95rem;font-weight:600;color:var(--text-primary);margin-bottom:0.2rem}
+.wcard-desc{font-size:0.88rem;color:var(--text-secondary);line-height:1.5}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem}
+.messages::-webkit-scrollbar{width:6px}
+.messages::-webkit-scrollbar-track{background:transparent}
+.messages::-webkit-scrollbar-thumb{background:var(--bg-secondary);border-radius:4px}
+.msg{display:flex;gap:0.8rem;max-width:85%}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg.bot{align-self:flex-start}
+.msg-avatar{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;font-family:'DM Serif Display',serif}
+.msg.bot .msg-avatar{background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--accent-blue);font-size:0.7rem;font-weight:600}
+.msg.user .msg-avatar{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.12);color:var(--accent-orange)}
+.msg-bubble{padding:0.8rem 1rem;border-radius:8px;font-size:0.94rem;line-height:1.7}
+.msg.bot .msg-bubble{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary)}
+.msg.user .msg-bubble{background:var(--accent-blue);color:#fff;border:none}
+.msg-bubble h3{font-size:0.96rem;font-weight:600;color:var(--accent-blue);margin:0.8rem 0 0.3rem}
+.msg-bubble h3:first-child{margin-top:0}
+.msg-bubble ul{padding-left:1.2rem;margin:0.4rem 0}
+.msg-bubble li{margin-bottom:0.2rem}
+.msg-bubble strong{color:var(--accent-orange);font-weight:600}
+.msg-bubble table{border-collapse:collapse;width:100%;margin:0.5rem 0;font-size:0.88rem}
+.msg-bubble th{background:var(--bg-secondary);color:var(--accent-blue);padding:0.4rem 0.6rem;text-align:left;border:1px solid var(--border-color)}
+.msg-bubble td{padding:0.35rem 0.6rem;border:1px solid var(--border-color);color:var(--text-secondary)}
+.msg-bubble tr:hover td{background:var(--bg-secondary)}
+.msg-bubble .disclaimer{font-size:0.82rem;color:var(--text-muted);border-top:1px solid var(--border-color);margin-top:0.8rem;padding-top:0.6rem}
+.msg-time{font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;padding:0 0.2rem}
+.msg.user .msg-time{text-align:right}
+
+/* TYPING */
+.typing{display:flex;gap:0.3rem;align-items:center;padding:0.8rem 1rem}
+.typing span{width:6px;height:6px;background:var(--accent-blue);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:0.2s}
+.typing span:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* IMAGE PREVIEW */
+.img-preview{display:flex;gap:0.5rem;padding:0.5rem 1.5rem;background:var(--bg-card);border-top:1px solid var(--border-color);flex-wrap:wrap}
+.img-thumb{position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1px solid var(--border-color)}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-remove{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* INPUT */
+.input-area{padding:12px;border-top:1px solid var(--border-color);background:var(--bg-card);flex-shrink:0}
+.input-tools{display:flex;gap:0.4rem;margin-bottom:0.5rem}
+.tool-btn{background:transparent;border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);padding:6px 10px;font-size:0.88rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:0.3rem}
+.tool-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:var(--bg-secondary)}
+.input-box{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.95rem;outline:none;resize:none;min-height:44px;max-height:120px;transition:border-color 0.12s;line-height:1.6}
+.input-box:focus{border-color:var(--accent-blue)}
+.input-box::placeholder{color:var(--text-muted)}
+.send-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;width:44px;height:44px;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.send-btn:hover{background:#1D4ED8}
+.send-btn:disabled{background:#F3F4F6;color:var(--text-muted);cursor:not-allowed}
+.input-hint{font-size:0.82rem;color:var(--text-muted);margin-top:0.4rem;text-align:center}
+
+/* FILE INPUT */
+#fileInput{display:none}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .welcome-grid{grid-template-columns:1fr}
+  .msg{max-width:95%}
+}
+</style>
+  <div class="nav-right">
+    <a href="index.html" class="nav-link">首頁</a>
+    <select onchange="changeLang(this.value)" aria-label="語言選擇" style="padding:6px;border-radius:6px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);">
+      <option value="zh-HK" selected>中文 (繁)</option>
+      <option value="zh-CN">中文 (简)</option>
+      <option value="en">English</option>
+    </select>
+    <button class="new-chat-btn" onclick="newChat()">＋ 新對話</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sb-top">
+      <div class="sb-label">快速分析</div>
+      <div class="quick-prompt" onclick="sendQuick('分析騰訊700.HK現時技術走勢，包括支撐阻力位及短中期展望')">
+        <div class="qp-icon">📈</div>
+        <div class="qp-text"><strong>港股技術分析</strong>輸入代號即時分析走勢</div>
+      </div>
+      <div class="quick-prompt" onclick="sendQuick('比較蘋果AAPL和微軟MSFT的毛利率、增長率、現金流及潛在風險，用表格列出並給出投資邏輯')">
+        <div class="qp-icon">⚖️</div>
+        <div class="qp-text"><strong>AB公司對比</strong>毛利率、增長率、風險分析</div>
+      </div>
+      <div class="quick-prompt" onclick="sendQuick('分析標普500 SPX現時技術走勢及市場情緒，VIX指數現況如何？')">
+        <div class="qp-icon">🌍</div>
+        <div class="qp-text"><strong>大市情緒分析</strong>VIX、標普500走勢</div>
+      </div>
+      <div class="quick-prompt" onclick="sendQuick('根據過去4季現金流分析騰訊的財務健康狀況，評估其續航能力及增長機率')">
+        <div class="qp-icon">💰</div>
+        <div class="qp-text"><strong>現金流評估</strong>4季財務健康分析</div>
+      </div>
+      <div class="quick-prompt" onclick="sendQuick('分析Bitcoin BTC/USD現時技術走勢，關鍵支撐阻力位及0.618黃金比例回調位')">
+        <div class="qp-icon">🪙</div>
+        <div class="qp-text"><strong>加密貨幣分析</strong>BTC技術走勢</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sb-label" style="padding:0 1rem;">最近對話</div>
+    <div class="history-list" id="historyList"></div>
+    <div class="sb-bottom">
+      <div class="sb-tip">💡 上傳K線截圖，AI即時識別支撐阻力、圖形形態及技術指標</div>
+    </div>
+  </div>
+
+  <div class="chat-area" id="chatArea">
+    <div class="welcome" id="welcome">
+      <div class="welcome-logo">X<em>FIN</em>LAB</div>
+      <p class="welcome-sub">機構級AI金融分析，輸入股票代號或上傳K線圖，即時獲取深度分析報告</p>
+      <div class="welcome-grid">
+        <div class="wcard" onclick="sendQuick('上傳K線圖後，請分析支撐阻力位、圖形形態及技術指標，給出短中期展望')">
+          <div class="wcard-icon">📊</div>
+          <div class="wcard-title">上傳圖表分析</div>
+          <div class="wcard-desc">截圖上傳K線圖，AI識別形態、支撐阻力、技術指標</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('比較兩間公司的基本面，請告訴我你想比較哪兩間公司？')">
+          <div class="wcard-icon">⚖️</div>
+          <div class="wcard-title">AB公司比較</div>
+          <div class="wcard-desc">毛利率、增長率、現金流對比，附邏輯推理及風險評估</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('分析現時全球市場情緒：VIX恐慌指數、標普500技術走勢、主要風險因素')">
+          <div class="wcard-icon">🌐</div>
+          <div class="wcard-title">市場情緒分析</div>
+          <div class="wcard-desc">VIX指數、大市走勢、地緣政治風險評估</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('請輸入一間公司名稱，我為你分析過去4季現金流健康狀況及續航能力評分')">
+          <div class="wcard-icon">💰</div>
+          <div class="wcard-title">現金流評估</div>
+          <div class="wcard-desc">過去4季現金流分析，財務健康評分及增長機率</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages" style="display:none;"></div>
+    <div class="img-preview" id="imgPreview" style="display:none;"></div>
+
+    <div class="input-area">
+      <div class="input-tools">
+        <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📎 上傳圖表</button>
+        <button class="tool-btn" onclick="sendQuick('分析港股市場今日走勢及主要板塊表現')">🇭🇰 港股</button>
+        <button class="tool-btn" onclick="sendQuick('分析美股市場今日走勢，標普500、納指、道指表現')">🇺🇸 美股</button>
+        <button class="tool-btn" onclick="sendQuick('分析加密貨幣市場今日走勢，BTC及ETH技術面')">🪙 加密</button>
+      </div>
+      <div class="input-row">
+        <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱，或上傳K線圖截圖…" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">⚠️ 分析僅供參考，不構成投資建議</div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+
+<script src="js/mvp-api.js"></script>
+<script>
+let conversationId = '';
+let pendingImages = [];
+let isLoading = false;
+let chatHistory = [];
+
+function setMode(m, btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function showChat() {
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('messages').style.display = 'flex';
+}
+
+function addMessage(role, content, imageUrl) {
+  showChat();
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const time = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit',minute:'2-digit'});
+  const avatarText = role === 'bot' ? 'XFL' : '我';
+  let imgHtml = imageUrl ? `<img src="${imageUrl}" style="max-width:200px;border-radius:4px;margin-bottom:0.5rem;display:block;">` : '';
+  div.innerHTML = `
+    <div class="msg-avatar">${avatarText}</div>
+    <div>
+      <div class="msg-bubble">${imgHtml}${formatMsg(content)}</div>
+      <div class="msg-time">${time}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function formatMsg(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    .replace(/⚠️(.+)/g, '<div class="disclaimer">⚠️$1</div>')
+    .replace(/\n/g, '<br>');
+}
+
+function addTyping() {
+  showChat();
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing-indicator';
+  div.innerHTML = `<div class="msg-avatar">XFL</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingImages.push({file, dataUrl: ev.target.result});
+    showImgPreview();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function showImgPreview() {
+  const wrap = document.getElementById('imgPreview');
+  wrap.style.display = pendingImages.length ? 'flex' : 'none';
+  wrap.innerHTML = pendingImages.map((img,i) => `
+    <div class="img-thumb">
+      <img src="${img.dataUrl}">
+      <button class="img-remove" onclick="removeImg(${i})">×</button>
+    </div>`).join('');
+}
+
+function removeImg(i) {
+  pendingImages.splice(i,1);
+  showImgPreview();
+}
+
+async function sendQuick(text) {
+  document.getElementById('inputBox').value = text;
+  await sendMessage();
+}
+
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('inputBox');
+  const text = input.value.trim();
+  if (!text && pendingImages.length === 0) return;
+
+  const imageUrl = pendingImages.length > 0 ? pendingImages[0].dataUrl : null;
+  const imageFile = pendingImages.length > 0 ? pendingImages[0].file : null;
+
+  addMessage('user', text || '（圖表分析）', imageUrl);
+  input.value = '';
+  input.style.height = 'auto';
+  pendingImages = [];
+  showImgPreview();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  addTyping();
+
+  try {
+    // prepare payload: text + optional base64 image
+    const imageBase64 = imageUrl || null;
+    const payload = {
+      query: text || '請分析這張圖表，識別支撐阻力位、圖形形態及技術指標，給出短中期展望',
+      conversation_id: conversationId,
+      user: 'xfinlab-user',
+      image: imageBase64
+    };
+
+    const res = await postApi('/api/ai-analysis', payload);
+    removeTyping();
+    if (res && res.answer) {
+      conversationId = res.conversation_id || conversationId;
+      addMessage('bot', res.answer);
+      addToHistory(text || '圖表分析');
+    } else if (res && res.data && res.data.answer) {
+      conversationId = res.data.conversation_id || conversationId;
+      addMessage('bot', res.data.answer);
+      addToHistory(text || '圖表分析');
+    } else {
+      addMessage('bot', '⚠️ 分析時出現問題，請稍後重試。');
+    }
+  } catch (err) {
+    removeTyping();
+    addMessage('bot', '⚠️ 連接出現問題，請檢查網絡後重試。');
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function addToHistory(text) {
+  chatHistory.unshift(text.substring(0,30)+(text.length>30?'…':''));
+  if (chatHistory.length > 8) chatHistory.pop();
+  const list = document.getElementById('historyList');
+  list.innerHTML = chatHistory.map(h => `<div class="history-item">💬 ${h}</div>`).join('');
+}
+
+function newChat() {
+  conversationId = '';
+  pendingImages = [];
+  chatHistory = [];
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('messages').style.display = 'none';
+  document.getElementById('welcome').style.display = 'flex';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('historyList').innerHTML = '';
+  document.getElementById('inputBox').value = '';
+}
+
+function changeLang(value){
+  document.documentElement.lang = value;
+}
+</script>
+</body>
+</html>

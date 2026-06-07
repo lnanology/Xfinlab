@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — 多公司對標分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary);}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+
+.input-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
+.input-label{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);display:block;margin-bottom:0.75rem;font-weight:600}
+.companies-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.8rem;margin-bottom:1rem}
+.input-group{display:flex;flex-direction:column}
+.input-group label{font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem}
+.company-count{font-size:0.72rem;color:var(--text-muted);margin-bottom:1rem}
+.btn-group{display:flex;gap:0.6rem;flex-wrap:wrap}
+.compare-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0 18px;height:44px;font-size:0.95rem;font-weight:600;cursor:pointer}
+.compare-btn:hover{background:#1D4ED8}
+.compare-btn:disabled{background:#F3F4F6;color:var(--text-muted);cursor:not-allowed}
+.clear-btn{background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0 12px;height:44px;font-size:0.95rem;cursor:pointer}
+.clear-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue)}
+
+.loading-state{text-align:center;padding:2rem 1.5rem;color:var(--text-secondary)}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block}
+.dot-ani span:nth-child(2){animation-delay:0.2s}
+.dot-ani span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+</style>
+/* COMPARISON TABLE */
+.table-section{display:none;}
+.table-section.show{display:block;}
+.result-title{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;font-weight:500;}
+.table-wrapper{overflow-x:auto;margin-bottom:2rem;}
+.compare-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.compare-table th{background:var(--navy3);color:var(--blue);padding:0.8rem;text-align:left;border:1px solid var(--border);font-weight:500;white-space:nowrap;}
+.compare-table td{padding:0.7rem 0.8rem;border:1px solid var(--border);color:var(--text2);}
+.compare-table tr:hover td{background:rgba(56,139,253,0.06);}
+.metric-name{color:var(--text);font-weight:500;white-space:nowrap;}
+.value-cell{text-align:right;color:var(--text);}
+.best-value{color:var(--green);font-weight:600;}
+.worst-value{color:var(--red);}
+.neutral-value{color:var(--text2);}
+
+/* AI ANALYSIS SECTION */
+.analysis-section{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:2rem;display:none;}
+.analysis-section.show{display:block;}
+.analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-top:1.5rem;}
+.analysis-card{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:1.2rem;}
+.analysis-card-title{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.6rem;font-weight:500;}
+.analysis-card-value{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--blue);margin-bottom:0.3rem;}
+.analysis-card-desc{font-size:0.78rem;color:var(--text2);line-height:1.6;}
+.analysis-content{font-size:0.85rem;color:var(--text2);line-height:1.8;margin-top:1rem;}
+.analysis-content h3{color:var(--blue);font-size:0.88rem;font-weight:500;margin:0.8rem 0 0.3rem;}
+.analysis-content strong{color:var(--gold);}
+
+/* SCORE SECTION */
+.score-section{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:2rem;display:none;}
+.score-section.show{display:block;}
+.score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-top:1.5rem;}
+.score-bar{width:100%;height:8px;background:var(--navy4);border-radius:4px;overflow:hidden;margin-bottom:0.8rem;}
+.score-fill{height:100%;background:linear-gradient(90deg,var(--blue2),var(--gold));transition:width 0.6s ease;}
+.score-number{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--blue);margin-bottom:0.4rem;}
+.score-description{font-size:0.75rem;color:var(--text3);}
+
+/* DISCLAIMER */
+.disclaimer{font-size:0.75rem;color:var(--text3);border-top:1px solid var(--border);padding-top:1rem;margin-top:1.5rem;line-height:1.6;}
+
+/* FOOTER */
+footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--navy2);text-align:center;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:0.7rem 1rem;}
+  .container{padding:1.5rem 1rem;}
+  .input-section{padding:1.5rem;}
+  .companies-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+  .table-wrapper{font-size:0.75rem;}
+  .compare-table th,.compare-table td{padding:0.5rem 0.4rem;}
+  .analysis-grid,.score-grid{grid-template-columns:1fr;}
+  .btn-group{flex-direction:column;}
+  .compare-btn,.clear-btn{width:100%;}
+}
+
+@media(max-width:600px){
+  .nav-cta{padding:0.3rem 0.8rem;font-size:0.7rem;}
+  .companies-grid{grid-template-columns:repeat(2,1fr);}
+  .table-wrapper{font-size:0.7rem;}
+  .compare-table th,.compare-table td{padding:0.4rem 0.3rem;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link">首頁</a>
+    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link">K線分析</a>
+  </div>
+  <div class="nav-right">
+    <select id="langSelectComp" onchange="changeLang(this.value)" style="border:1px solid var(--border-color);padding:6px 8px;border-radius:8px;background:transparent;color:var(--text-primary);">
+      <option value="zh-HK">繁體中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+    </select>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">進階分析</div>
+  <h1 class="page-title">多公司對標分析</h1>
+  <p class="page-sub">同時比較最多5家公司，AI深度分析市值、成長率、盈利能力及財務健康，幫你找出最值得投資的標的</p>
+
+  <!-- INPUT SECTION -->
+  <div class="input-section">
+    <label class="input-label">📈 公司代號輸入</label>
+    <div class="companies-grid" id="companiesGrid">
+      <div class="input-group">
+        <label>公司 1</label>
+        <input type="text" class="input-field company-input" placeholder="例：AAPL" maxlength="10">
+      </div>
+      <div class="input-group">
+        <label>公司 2</label>
+        <input type="text" class="input-field company-input" placeholder="例：MSFT" maxlength="10">
+      </div>
+      <div class="input-group">
+        <label>公司 3</label>
+        <input type="text" class="input-field company-input" placeholder="例：700.HK" maxlength="10">
+      </div>
+      <div class="input-group">
+        <label>公司 4</label>
+        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10">
+      </div>
+      <div class="input-group">
+        <label>公司 5</label>
+        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10">
+      </div>
+    </div>
+    <div class="company-count" id="companyCount">已輸入：0 家</div>
+    <div class="btn-group">
+      <button class="compare-btn" id="analyzeBtn" onclick="doCompare()">⚖️ 開始對標分析</button>
+      <button class="clear-btn" onclick="clearInputs()">清除</button>
+    </div>
+  </div>
+
+  <!-- COMPARISON TABLE -->
+  <div class="table-section" id="tableSection">
+    <div class="result-title">📊 財務指標對比表</div>
+    <div class="table-wrapper">
+      <table class="compare-table" id="comparisonTable">
+        <thead>
+          <tr>
+            <th>財務指標</th>
+            <th colspan="5">公司比較</th>
+          </tr>
+          <tr id="headerRow">
+            <th style="background:var(--navy4);">指標</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td class="metric-name">市值 (USD)</td></tr>
+          <tr><td class="metric-name">營收成長率 (%)</td></tr>
+          <tr><td class="metric-name">毛利率 (%)</td></tr>
+          <tr><td class="metric-name">ROE (%)</td></tr>
+          <tr><td class="metric-name">自由現金流 (M)</td></tr>
+          <tr><td class="metric-name">負債比率 (%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AI ANALYSIS SECTION -->
+  <div class="analysis-section" id="analysisSection">
+    <div class="result-title">🤖 AI 對標分析結果</div>
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <div class="analysis-card-title">🚀 最佳成長</div>
+        <div class="analysis-card-value" id="bestGrowth">-</div>
+        <div class="analysis-card-desc" id="bestGrowthDesc">營收與利潤增長最快</div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-title">💎 最佳價值</div>
+        <div class="analysis-card-value" id="bestValue">-</div>
+        <div class="analysis-card-desc" id="bestValueDesc">估值最合理，護城河最強</div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-title">⭐ 最佳品質</div>
+        <div class="analysis-card-value" id="bestQuality">-</div>
+        <div class="analysis-card-desc" id="bestQualityDesc">盈利能力與財務健康最優</div>
+      </div>
+      <div class="analysis-card">
+        <div class="analysis-card-title">⚠️ 最大風險</div>
+        <div class="analysis-card-value" id="maxRisk">-</div>
+        <div class="analysis-card-desc" id="maxRiskDesc">需關注的財務隱患</div>
+      </div>
+    </div>
+    <div class="analysis-content" id="analysisContent"></div>
+    <div class="disclaimer">⚠️ 以上分析由AI生成，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
+  </div>
+
+  <!-- SCORE SECTION -->
+  <div class="score-section" id="scoreSection">
+    <div class="result-title">📈 綜合機率評分</div>
+    <div class="score-grid" id="scoreGrid">
+      <div class="reusable-score-card" data-title="示例：公司評分" data-fund="82" data-tech="70" data-news="68" data-risk="22" data-overall="74"></div>
+    </div>
+    <div class="disclaimer">💡 評分基於多維度財務指標：基本面反映盈利能力、成長力反映收入增速、財務健康度反映槓桿與流動性。</div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · 智能金融分析平台 · <a href="privacy.html" style="color:var(--blue);text-decoration:none;">私隱政策</a></div>
+</footer>
+
+<script src="js/mvp-api.js"></script>
+<script>
+function updateCompanyCount(){
+  const inputs=document.querySelectorAll('.company-input');
+  let count=0;
+  inputs.forEach(i=>{if(i.value.trim())count++;});
+  document.getElementById('companyCount').textContent=`已輸入：${count} 家`;
+}
+
+document.querySelectorAll('.company-input').forEach(input=>{
+  input.addEventListener('input',updateCompanyCount);
+});
+
+function clearInputs(){
+  document.querySelectorAll('.company-input').forEach(i=>i.value='');
+  document.getElementById('tableSection').classList.remove('show');
+  document.getElementById('analysisSection').classList.remove('show');
+  document.getElementById('scoreSection').classList.remove('show');
+  updateCompanyCount();
+}
+
+async function doCompare(){
+  const inputs=document.querySelectorAll('.company-input');
+  const companies=[];
+  inputs.forEach(i=>{
+    const v=i.value.trim().toUpperCase();
+    if(v)companies.push(v);
+  });
+
+  if(companies.length<2){
+    alert('請至少輸入2家公司');
+    return;
+  }
+
+  if(companies.length>5){
+    alert('最多只能輸入5家公司');
+    return;
+  }
+
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('tableSection').classList.add('show');
+  document.getElementById('analysisSection').classList.add('show');
+  document.getElementById('scoreSection').classList.add('show');
+
+  // Show loading state
+  document.getElementById('tableBody').innerHTML='<tr><td colspan="99" style="text-align:center;padding:2rem;"><div class="loading-state"><div class="dot-ani">API 分析中<span>.</span><span>.</span><span>.</span></div></div></td></tr>';
+  document.getElementById('analysisContent').innerHTML='<div class="loading-state"><div class="dot-ani">生成對標分析<span>.</span><span>.</span><span>.</span></div></div>';
+  document.getElementById('scoreGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:2rem;"><div class="dot-ani">計算評分<span>.</span><span>.</span><span>.</span></div></div>';
+
+  try {
+    const response = await postApi('/api/company-compare', { symbols: companies });
+    displayResults(response.data);
+  } catch (error) {
+    console.error(error);
+    alert('分析失敗，請稍後重試');
+  }
+
+  document.getElementById('analyzeBtn').disabled=false;
+}
+
+function displayResults(data){
+  const companies=data.companies;
+  const columns = companies.map(c=>c.symbol);
+  let headerHtml='<tr id="headerRow"><th style="background:var(--navy4);">指標</th>';
+  columns.forEach(c=>{ headerHtml+=`<th>${c}</th>`; });
+  headerHtml+='</tr>';
+  document.getElementById('headerRow').innerHTML=headerHtml;
+
+  const metrics=[
+    {label:'毛利率 (%)', key:'grossMargin', unit:'%'},
+    {label:'成長率 (%)', key:'growthRate', unit:'%'},
+    {label:'ROE (%)', key:'roe', unit:'%'},
+    {label:'現金流 (M)', key:'cashFlow', unit:'M'},
+    {label:'風險評分', key:'riskScore', unit:''}
+  ];
+
+  let tableHtml='';
+  metrics.forEach(metric=>{
+    tableHtml+=`<tr><td class="metric-name">${metric.label}</td>`;
+    companies.forEach(company=>{
+      const value = company[metric.key];
+      const isRisk = metric.key === 'riskScore';
+      const className = isRisk ? (value <= 40 ? 'best-value' : value >= 70 ? 'worst-value' : 'neutral-value') : 'neutral-value';
+      tableHtml+=`<td class="value-cell ${className}">${value}${metric.unit}</td>`;
+    });
+    tableHtml+='</tr>';
+  });
+  document.getElementById('tableBody').innerHTML=tableHtml;
+
+  document.getElementById('analysisContent').innerHTML=`<p>${data.analysis}</p>`;
+
+  const sortedByGrowth = [...companies].sort((a,b)=>b.growthRate-a.growthRate);
+  const sortedByValue = [...companies].sort((a,b)=>b.grossMargin-a.grossMargin);
+  const sortedByQuality = [...companies].sort((a,b)=>b.roe-a.roe);
+  const sortedByRisk = [...companies].sort((a,b)=>b.riskScore-a.riskScore);
+
+  document.getElementById('bestGrowth').textContent = sortedByGrowth[0].symbol;
+  document.getElementById('bestValue').textContent = sortedByValue[0].symbol;
+  document.getElementById('bestQuality').textContent = sortedByQuality[0].symbol;
+  document.getElementById('maxRisk').textContent = sortedByRisk[sortedByRisk.length-1].symbol;
+
+  let scoreHtml='';
+  companies.forEach(company=>{
+    scoreHtml+=`
+    <div class="score-card">
+      <div class="score-label">${company.symbol}</div>
+      <div style="margin-bottom:0.8rem;">
+        <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.3rem;">毛利率</div>
+        <div class="score-bar"><div class="score-fill" style="width:${company.grossMargin}%"></div></div>
+      </div>
+      <div style="margin-bottom:0.8rem;">
+        <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.3rem;">成長率</div>
+        <div class="score-bar"><div class="score-fill" style="width:${company.growthRate}%"></div></div>
+      </div>
+      <div style="margin-bottom:0.8rem;">
+        <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.3rem;">ROE</div>
+        <div class="score-bar"><div class="score-fill" style="width:${company.roe}%"></div></div>
+      </div>
+      <div style="margin-top:0.8rem;border-top:1px solid var(--border);padding-top:0.9rem;">
+        <div class="score-label" style="margin-bottom:0.3rem;">風險評分</div>
+        <div class="score-number">${company.riskScore}/100</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('scoreGrid').innerHTML=scoreHtml;
+}
+
+function formatAnalysis(text){
+  return text
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
+    .replace(/\n/g,'<br>');
+}
+
+function getScoreDescription(score){
+  if(score>=80)return '⭐⭐⭐⭐⭐ 卓越';
+  if(score>=70)return '⭐⭐⭐⭐ 優秀';
+  if(score>=60)return '⭐⭐⭐ 良好';
+  if(score>=50)return '⭐⭐ 中等';
+  return '⭐ 需觀察';
+}
+</script>
+<script src="js/reusable-score-card.js"></script>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>

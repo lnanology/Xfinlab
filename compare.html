@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — AB公司比較</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/mvp-api.js"></script>
+
+<style>nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
+
+.container{max-width:900px;margin:0 auto;padding:2.5rem 1.5rem;}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.input-group label{font-size:0.75rem;color:var(--text2);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:0.4rem;}
+.analyze-btn{width:100%;background:var(--blue2);color:#fff;border:none;border-radius:4px;padding:0.85rem;font-size:0.88rem;font-weight:500;cursor:pointer;transition:background 0.2s;margin-bottom:2rem;}
+.analyze-btn:hover{background:var(--blue);}
+.analyze-btn:disabled{background:var(--navy4);color:var(--text3);cursor:not-allowed;}
+.result-area{display:none;}
+.result-area.show{display:block;}
+.result-card{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:1rem;}
+.result-title{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;}
+.compare-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.compare-table th{background:var(--navy3);color:var(--blue);padding:0.6rem 0.8rem;text-align:left;border:1px solid var(--border);font-weight:500;}
+.compare-table td{padding:0.5rem 0.8rem;border:1px solid var(--border);color:var(--text2);}
+.compare-table tr:hover td{background:var(--blue-dim);}
+.better{color:var(--green);font-weight:500;}
+.worse{color:var(--red);}
+.neutral{color:var(--text);}
+.analysis-text{font-size:0.85rem;color:var(--text2);line-height:1.8;}
+.analysis-text h3{color:var(--blue);font-size:0.88rem;font-weight:500;margin:0.8rem 0 0.3rem;}
+.analysis-text strong{color:var(--gold);}
+.disclaimer{font-size:0.75rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;}
+.loading{text-align:center;padding:2rem;color:var(--text2);}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block;}
+.dot-ani span:nth-child(2){animation-delay:0.2s;}
+.dot-ani span:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+.quick-compare{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.5rem;}
+.qc-btn{padding:0.3rem 0.8rem;border:1px solid var(--border);border-radius:12px;font-size:0.75rem;color:var(--text2);cursor:pointer;transition:all 0.2s;background:transparent;}
+.qc-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
+  <div class="nav-links">
+    <a href="chart.html" class="nav-link">圖表</a>
+    <a href="news.html" class="nav-link">新聞</a>
+    <a href="screener.html" class="nav-link">篩選</a>
+    <a href="chat.html" class="nav-cta">AI 分析</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="page-tag">基本面分析</div>
+  <h1 class="page-title">AB 公司對比</h1>
+  <p class="page-sub">輸入兩間公司代號，AI即時生成毛利率、增長率、現金流對比表格，附邏輯推理及風險評估</p>
+  <div class="page-tag" style="margin-bottom:0.4rem;">熱門比較</div>
+  <div class="quick-compare">
+    <div class="qc-btn" onclick="setCompare('AAPL','MSFT')">🍎 蘋果 vs 微軟</div>
+    <div class="qc-btn" onclick="setCompare('GOOGL','META')">Google vs Meta</div>
+    <div class="qc-btn" onclick="setCompare('700.HK','9988.HK')">騰訊 vs 阿里</div>
+    <div class="qc-btn" onclick="setCompare('TSLA','BYD')">特斯拉 vs 比亞迪</div>
+    <div class="qc-btn" onclick="setCompare('NVDA','AMD')">NVDA vs AMD</div>
+    <div class="qc-btn" onclick="setCompare('JPM','GS')">摩根大通 vs 高盛</div>
+  </div>
+  <div class="input-grid">
+    <div class="input-group">
+      <label>公司 A</label>
+      <input class="input-field" id="compA" placeholder="例：AAPL 或 700.HK">
+    </div>
+    <div class="input-group">
+      <label>公司 B</label>
+      <input class="input-field" id="compB" placeholder="例：MSFT 或 9988.HK">
+    </div>
+  </div>
+  <button class="analyze-btn" id="analyzeBtn" onclick="doCompare()">⚖️ 開始深度比較分析</button>
+  <div class="result-area" id="resultArea">
+    <div class="loading" id="loadingDiv"><div class="dot-ani">AI 分析中<span>.</span><span>.</span><span>.</span></div></div>
+    <div id="resultContent"></div>
+  </div>
+</div>
+<script>
+function setCompare(a,b){document.getElementById('compA').value=a;document.getElementById('compB').value=b;}
+async function doCompare(){
+  const a=document.getElementById('compA').value.trim();
+  const b=document.getElementById('compB').value.trim();
+  if(!a||!b){alert('請輸入兩間公司代號');return;}
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('resultArea').className='result-area show';
+  document.getElementById('loadingDiv').style.display='block';
+  document.getElementById('resultContent').innerHTML='';
+  const query=`請深度比較以下兩間公司：${a} 和 ${b}
+
+請用以下格式輸出：
+
+## 📊 基本面對比表格
+用表格列出：毛利率、淨利率、營收增長率、EPS增長、負債比率、自由現金流、市盈率(PE)、市值
+
+## ⚖️ 競爭優勢分析
+分析各自的護城河、核心競爭力
+
+## ⚠️ 潛在風險
+列出各公司主要風險因素
+
+## 🧠 邏輯推理總結
+簡易明白地說明哪間公司目前更值得關注及原因
+
+## 評分
+技術面：X/5星 基本面：X/5星 風險：X/5星`;
+  try{
+    const payload = { query, user: 'xfinlab-compare', companies: [a,b] };
+    const res = await postApi('/api/company-compare', payload);
+    document.getElementById('loadingDiv').style.display='none';
+    const answer = res?.data?.answer || res?.answer || '';
+    if(answer){
+      document.getElementById('resultContent').innerHTML=`<div class="result-card"><div class="result-title">${a} vs ${b} 深度分析報告</div><div class="analysis-text">${formatText(answer)}</div><div class="disclaimer">⚠️ 以上分析純為參考，不構成投資建議。投資涉及風險，請自行判斷。</div></div>`;
+    }
+  }catch(e){document.getElementById('loadingDiv').style.display='none';document.getElementById('resultContent').innerHTML='<div class="result-card"><p style="color:var(--accent-red)">分析出現問題，請稍後重試。</p></div>';} 
+  document.getElementById('analyzeBtn').disabled=false;
+}
+function formatText(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
+</script>
+</body>
+</html>

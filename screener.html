@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — 股票篩選器</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/mvp-api.js"></script>
+
+<style>nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
+
+.filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.filter-group label{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);display:block;margin-bottom:0.4rem;}
+.filter-select{width:100%;background:var(--navy4);border:1px solid var(--border2);border-radius:4px;padding:0.6rem 0.8rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;cursor:pointer;}
+.filter-select option{background:var(--navy3);}
+.preset-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.preset-btn{padding:0.35rem 0.9rem;border:1px solid var(--border);border-radius:12px;font-size:0.75rem;color:var(--text2);cursor:pointer;transition:all 0.2s;background:transparent;}
+.preset-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08);}
+.screen-btn{width:100%;background:var(--blue2);color:#fff;border:none;border-radius:4px;padding:0.85rem;font-size:0.88rem;font-weight:500;cursor:pointer;transition:background 0.2s;margin-bottom:2rem;}
+.screen-btn:hover{background:var(--blue);}
+.screen-btn:disabled{background:var(--navy4);color:var(--text3);cursor:not-allowed;}
+.result-card{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:1rem;display:none;}
+.result-card.show{display:block;}
+.result-title{font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;}
+.analysis-text{font-size:0.85rem;color:var(--text2);line-height:1.8;}
+.analysis-text h3{color:var(--blue);font-size:0.88rem;font-weight:500;margin:0.8rem 0 0.3rem;}
+.analysis-text strong{color:var(--gold);}
+.loading-text{text-align:center;padding:2rem;color:var(--text2);}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block;}
+.dot-ani span:nth-child(2){animation-delay:0.2s;}
+.dot-ani span:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
+  <div class="nav-links">
+    <a href="chart.html" class="nav-link">圖表</a>
+    <a href="compare.html" class="nav-link">比較</a>
+    <a href="news.html" class="nav-link">新聞</a>
+    <a href="chat.html" class="nav-cta">AI 分析</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="page-tag">智能篩選</div>
+  <h1 class="page-title">股票篩選器</h1>
+  <p class="page-sub">設定條件，AI為你篩選符合標準的潛力股票並提供分析報告</p>
+  <div class="page-tag" style="margin-bottom:0.4rem;">快速預設</div>
+  <div class="preset-row">
+    <div class="preset-btn" onclick="setPreset('growth')">🚀 高增長股</div>
+    <div class="preset-btn" onclick="setPreset('value')">💎 價值投資</div>
+    <div class="preset-btn" onclick="setPreset('dividend')">💰 高息股</div>
+    <div class="preset-btn" onclick="setPreset('momentum')">⚡ 動能強勢</div>
+    <div class="preset-btn" onclick="setPreset('smallcap')">🌱 小市值潛力</div>
+    <div class="preset-btn" onclick="setPreset('tech')">💻 科技龍頭</div>
+  </div>
+  <div class="filter-grid">
+    <div class="filter-group">
+      <label>市場</label>
+      <select class="filter-select" id="f_market">
+        <option value="全球">🌍 全球</option>
+        <option value="港股">🇭🇰 港股</option>
+        <option value="美股">🇺🇸 美股</option>
+        <option value="A股">🇨🇳 A股</option>
+        <option value="加密貨幣">🪙 加密貨幣</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>行業</label>
+      <select class="filter-select" id="f_sector">
+        <option value="所有行業">所有行業</option>
+        <option value="科技">科技</option>
+        <option value="金融">金融</option>
+        <option value="醫療">醫療</option>
+        <option value="消費">消費</option>
+        <option value="能源">能源</option>
+        <option value="房地產">房地產</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>市值</label>
+      <select class="filter-select" id="f_cap">
+        <option value="任何市值">任何市值</option>
+        <option value="大型股(>500億美元)">大型股 &gt;500億</option>
+        <option value="中型股(50-500億美元)">中型股 50-500億</option>
+        <option value="小型股(<50億美元)">小型股 &lt;50億</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>增長率</label>
+      <select class="filter-select" id="f_growth">
+        <option value="任何增長率">任何增長率</option>
+        <option value="高增長(>30%)">高增長 &gt;30%</option>
+        <option value="穩健增長(10-30%)">穩健增長 10-30%</option>
+        <option value="低增長(<10%)">低增長 &lt;10%</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>估值</label>
+      <select class="filter-select" id="f_value">
+        <option value="任何估值">任何估值</option>
+        <option value="低估值(PE<15)">低估值 PE&lt;15</option>
+        <option value="合理估值(PE 15-30)">合理估值 PE 15-30</option>
+        <option value="高增長溢價(PE>30)">高增長溢價 PE&gt;30</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>風險</label>
+      <select class="filter-select" id="f_risk">
+        <option value="任何風險">任何風險</option>
+        <option value="低風險">低風險</option>
+        <option value="中等風險">中等風險</option>
+        <option value="高風險高回報">高風險高回報</option>
+      </select>
+    </div>
+  </div>
+  <button class="screen-btn" id="screenBtn" onclick="doScreen()">🔍 AI 智能篩選分析</button>
+  <div class="result-card" id="resultCard">
+    <div class="result-title" id="resultTitle">篩選結果</div>
+    <div class="analysis-text" id="resultContent"></div>
+    <div style="font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;">⚠️ 以上篩選結果由AI生成，僅供參考，不構成投資建議。</div>
+  </div>
+</div>
+<script>
+const presets={
+  growth:{market:'美股',sector:'科技',cap:'任何市值',growth:'高增長(>30%)',value:'高增長溢價(PE>30)',risk:'中等風險'},
+  value:{market:'全球',sector:'所有行業',cap:'大型股(>500億美元)',growth:'穩健增長(10-30%)',value:'低估值(PE<15)',risk:'低風險'},
+  dividend:{market:'港股',sector:'所有行業',cap:'大型股(>500億美元)',growth:'低增長(<10%)',value:'合理估值(PE 15-30)',risk:'低風險'},
+  momentum:{market:'美股',sector:'所有行業',cap:'任何市值',growth:'高增長(>30%)',value:'任何估值',risk:'高風險高回報'},
+  smallcap:{market:'全球',sector:'科技',cap:'小型股(<50億美元)',growth:'高增長(>30%)',value:'任何估值',risk:'高風險高回報'},
+  tech:{market:'美股',sector:'科技',cap:'大型股(>500億美元)',growth:'穩健增長(10-30%)',value:'合理估值(PE 15-30)',risk:'中等風險'}
+};
+function setPreset(p){
+  const s=presets[p];
+  document.getElementById('f_market').value=s.market;
+  document.getElementById('f_sector').value=s.sector;
+  document.getElementById('f_cap').value=s.cap;
+  document.getElementById('f_growth').value=s.growth;
+  document.getElementById('f_value').value=s.value;
+  document.getElementById('f_risk').value=s.risk;
+}
+async function doScreen(){
+  const market=document.getElementById('f_market').value;
+  const sector=document.getElementById('f_sector').value;
+  const cap=document.getElementById('f_cap').value;
+  const growth=document.getElementById('f_growth').value;
+  const value=document.getElementById('f_value').value;
+  const risk=document.getElementById('f_risk').value;
+  document.getElementById('screenBtn').disabled=true;
+  document.getElementById('resultCard').className='result-card show';
+  document.getElementById('resultTitle').textContent='AI 篩選分析中...';
+  document.getElementById('resultContent').innerHTML='<div class="loading-text"><div class="dot-ani">AI 智能篩選中<span>.</span><span>.</span><span>.</span></div></div>';
+  const query=`請根據以下條件篩選推薦股票：
+市場：${market}
+行業：${sector}
+市值：${cap}
+增長率：${growth}
+估值：${value}
+風險：${risk}
+
+請提供：
+## 🎯 篩選結果（推薦5-8隻股票）
+每隻股票包含：代號、公司名、核心理由（2句）、風險提示
+
+## 📊 行業分析
+當前該條件下最值得關注的行業趨勢
+
+## ⚠️ 整體風險提示
+目前市場環境下的主要風險因素`;
+  try{
+    const payload = { query, user: 'xfinlab-screener', filters: { market, sector, cap, growth, value, risk } };
+    const res = await postApi('/api/ai-analysis', payload);
+    const answer = res?.data?.conclusion || res?.data?.analysis || res?.answer || '';
+    if(answer){
+      document.getElementById('resultTitle').textContent=`${market} · ${sector} · ${risk} 篩選結果`;
+      document.getElementById('resultContent').innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
+    }
+  }catch(e){document.getElementById('resultContent').innerHTML='<p style="color:var(--accent-red)">篩選出現問題，請稍後重試。</p>';} 
+  document.getElementById('screenBtn').disabled=false;
+}
+function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
+</script>
+</body>
+</html>

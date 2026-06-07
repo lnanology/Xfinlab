@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — AI 市場分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+.primary-btn{background:var(--accent-blue);color:#fff;border:none;padding:0 14px;border-radius:8px;cursor:pointer;height:44px}
+
+.prob-section{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.prob-bar{flex:1;height:12px;background:var(--bg-secondary);border-radius:8px;overflow:hidden;position:relative}
+.prob-fill{height:100%;position:absolute;left:0;top:0}
+.prob-fill.bull{background:linear-gradient(90deg,var(--accent-green),var(--accent-blue))}
+.prob-fill.flat{background:linear-gradient(90deg,var(--text-muted),var(--accent-orange))}
+.prob-fill.bear{background:linear-gradient(90deg,var(--accent-red),var(--accent-orange))}
+.prob-label{width:110px;text-align:right;font-size:0.85rem;color:var(--text-secondary)}
+
+.risk-list{list-style:none;padding-left:0}
+.risk-item{padding:0.6rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary)}
+
+.ai-conclusion{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem}
+.ai-conclusion h4{color:var(--accent-blue);margin-bottom:0.5rem}
+.ai-conclusion p{color:var(--text-secondary);margin-bottom:0.6rem}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+
+@media(max-width:768px){.prob-section{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link">首頁</a>
+    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link">K線分析</a>
+  </div>
+  <div class="nav-right">
+    <select id="langSelectTop" onchange="changeLang(this.value)" style="border:1px solid var(--border-color);padding:6px 8px;border-radius:8px;background:transparent;color:var(--text-primary);">
+      <option value="zh-HK">繁體中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+    </select>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">AI 分析</div>
+  <h1 class="page-title">AI 市場快速分析</h1>
+  <p class="page-sub">輸入股票 / ETF / 加密代號（例如 NVDA、AAPL、TSLA、BTC），系統將示範 AI 的多面向評分與機率分析（使用 Mock Data）。</p>
+
+  <div class="panel">
+    <div class="input-row">
+      <input id="symbolInput" class="input-field" placeholder="輸入代號，支援多個以逗號分隔，例如 NVDA,AAPL,BTC">
+      <select id="assetType" class="input-field">
+        <option value="auto">自動辨識（股票/ETF/加密）</option>
+        <option value="stock">股票</option>
+        <option value="etf">ETF</option>
+        <option value="crypto">加密貨幣</option>
+      </select>
+      <button class="primary-btn" onclick="runAnalysis()">🔍 執行分析</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="score-card">
+      <div class="score-label">基本面評分</div>
+      <div class="score-value" id="fundScore">-</div>
+      <div class="score-sub">衡量盈利能力與估值</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">技術面評分</div>
+      <div class="score-value" id="techScore">-</div>
+      <div class="score-sub">趨勢、動能與波動</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">新聞面評分</div>
+      <div class="score-value" id="newsScore">-</div>
+      <div class="score-sub">媒體情緒與話題熱度</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">風險評分</div>
+      <div class="score-value" id="riskScore">-</div>
+      <div class="score-sub">短中期風險評估</div>
+    </div>
+  </div>
+
+  <div style="margin:1.2rem 0;">
+    <div class="reusable-score-card" data-title="示例：綜合評分" data-fund="78" data-tech="65" data-news="82" data-risk="28" data-overall="73"></div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title">機率分析（未來 30 日）</div>
+    <div style="margin-top:0.8rem">
+      <div class="prob-section">
+        <div class="prob-label">偏多機率</div>
+        <div class="prob-bar"><div id="bullFill" class="prob-fill bull" style="width:0%"></div></div>
+        <div style="width:60px;text-align:right;color:var(--text2)" id="bullPct">-</div>
+      </div>
+      <div class="prob-section">
+        <div class="prob-label">盤整機率</div>
+        <div class="prob-bar"><div id="flatFill" class="prob-fill flat" style="width:0%"></div></div>
+        <div style="width:60px;text-align:right;color:var(--text2)" id="flatPct">-</div>
+      </div>
+      <div class="prob-section">
+        <div class="prob-label">偏空機率</div>
+        <div class="prob-bar"><div id="bearFill" class="prob-fill bear" style="width:0%"></div></div>
+        <div style="width:60px;text-align:right;color:var(--text2)" id="bearPct">-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title">風險因素</div>
+    <ul class="risk-list" id="riskList">
+      <li class="risk-item">產業風險：-</li>
+      <li class="risk-item">財務風險：-</li>
+      <li class="risk-item">政策風險：-</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <div class="result-title">AI 結論</div>
+    <div class="ai-conclusion" id="aiConclusion">
+      <h4>目前優勢</h4>
+      <p>-</p>
+      <h4>目前風險</h4>
+      <p>-</p>
+      <h4>需要持續追蹤的指標</h4>
+      <p>-</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · AI 市場分析 · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+</footer>
+
+<script src="js/reusable-score-card.js"></script>
+<script src="js/mvp-api.js"></script>
+
+<script>
+async function runAnalysis(){
+  const input=document.getElementById('symbolInput').value.trim();
+  if(!input){alert('請輸入至少一個代號');return}
+  const symbols=input.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
+  const assetType=document.getElementById('assetType').value;
+
+  try {
+    const result = await postApi('/api/ai-analysis', { symbols, assetType });
+    const data = result.data;
+    const scores = data.scores;
+    document.getElementById('fundScore').textContent = scores.fund + '/100';
+    document.getElementById('techScore').textContent = scores.tech + '/100';
+    document.getElementById('newsScore').textContent = scores.news + '/100';
+    document.getElementById('riskScore').textContent = scores.risk + '/100';
+
+    const probs = data.probabilities;
+    document.getElementById('bullFill').style.width = probs.bull + '%';
+    document.getElementById('flatFill').style.width = probs.flat + '%';
+    document.getElementById('bearFill').style.width = probs.bear + '%';
+    document.getElementById('bullPct').textContent = probs.bull + '%';
+    document.getElementById('flatPct').textContent = probs.flat + '%';
+    document.getElementById('bearPct').textContent = probs.bear + '%';
+
+    const riskList=document.getElementById('riskList');
+    riskList.innerHTML='';
+    data.risks.forEach(item=>{
+      const li=document.createElement('li');
+      li.className='risk-item';
+      li.textContent=`${item.title}：${item.desc}`;
+      riskList.appendChild(li);
+    });
+
+    document.getElementById('aiConclusion').innerHTML = `
+      <h4>目前優勢</h4>
+      <p>${data.conclusion}</p>
+    `;
+  } catch (error) {
+    console.error(error);
+    alert('分析失敗，請稍後重試');
+  }
+}
+</script>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>

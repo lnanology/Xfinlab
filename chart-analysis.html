@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — AI K線圖分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* Page-specific small adjustments while fully using site style */
+.container{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem;flex:1}
+.uploader{display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap}
+.upload-area{flex:1;min-width:260px;background:var(--navy2);border:1px dashed var(--border);border-radius:8px;padding:1.2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+.upload-area.dragover{background:linear-gradient(180deg, rgba(34,58,74,0.6), rgba(17,31,48,0.8));}
+.upload-hint{color:var(--text3);font-size:0.9rem;margin-top:0.6rem;text-align:center}
+.preview-area{width:320px;background:var(--navy3);border:1px solid var(--border2);border-radius:8px;padding:0.8rem}
+.preview-img{width:100%;height:auto;border-radius:4px;display:block}
+.meta-line{font-size:0.82rem;color:var(--text2);margin-top:0.5rem}
+.analysis-section{margin-top:1.2rem;display:grid;grid-template-columns:1fr 320px;gap:1rem}
+.analysis-main{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.analysis-side{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.result-row{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
+.result-label{color:var(--text3)}
+.result-value{font-weight:600;color:var(--text)}
+.pattern-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-top:0.6rem}
+.pattern-item{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.6rem;text-align:center}
+.education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
+@media(max-width:980px){.analysis-section{grid-template-columns:1fr}.preview-area{width:100%}.analysis-side{order:2}}
+@media(max-width:520px){.upload-area{padding:1rem}.uploader{flex-direction:column}.preview-area{width:100%}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link">首頁</a>
+    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
+    <a href="compare.html" class="nav-link">公司比較</a>
+    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link">壓力測試實驗室</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">AI 工具</div>
+  <h1 class="page-title">AI K線圖分析</h1>
+  <p class="page-sub">上傳你的 K 線截圖（支援 JPG / PNG / WebP），AI 將示範型態辨識、支撐阻力與風險提示（目前為 Mock Data）。</p>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <div style="flex:1;min-width:240px">
+        <label class="input-label">圖片上傳</label>
+        <div class="uploader">
+          <div id="uploadArea" class="upload-area" tabindex="0">
+            <div style="font-size:1.4rem;color:var(--text3)">📷 拖放或點擊上傳</div>
+            <div class="upload-hint">支援：手機截圖 / TradingView / 券商截圖（JPG, PNG, WebP）</div>
+            <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none">
+          </div>
+          <div class="preview-area" id="previewArea">
+            <div style="text-align:center;color:var(--text3);font-size:0.9rem">尚未上傳圖片</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:260px;min-width:200px">
+        <label class="input-label">上傳狀態</label>
+        <div class="panel" style="padding:0.8rem;background:var(--navy2);border:1px solid var(--border);border-radius:6px">
+          <div class="meta-line" id="uploadName">檔案：-</div>
+          <div class="meta-line" id="uploadTime">時間：-</div>
+          <div style="margin-top:0.8rem">
+            <button class="primary-btn" id="analyzeBtn" onclick="runImageAnalysis()" disabled>🔍 執行 AI 分析</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="analysis-section">
+    <div class="analysis-main">
+      <h3 style="margin-top:0">AI 分析結果（Mock）</h3>
+
+      <div class="result-row"><div class="result-label">趨勢方向</div><div class="result-value" id="trendValue">-</div></div>
+      <div class="result-row"><div class="result-label">支撐位</div><div class="result-value" id="supportValue">-</div></div>
+      <div class="result-row"><div class="result-label">阻力位</div><div class="result-value" id="resistanceValue">-</div></div>
+      <div class="result-row"><div class="result-label">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
+      <div class="result-row"><div class="result-label">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
+      <div class="result-row"><div class="result-label">風險提示</div><div class="result-value" id="riskTips">-</div></div>
+
+      <h4 style="margin-top:0.8rem">型態詳情</h4>
+      <div class="pattern-list" id="patternList">
+        <div class="pattern-item">雙頂：<span id="p_double_top">-</span></div>
+        <div class="pattern-item">雙底：<span id="p_double_bottom">-</span></div>
+        <div class="pattern-item">頭肩頂：<span id="p_head_shoulder_top">-</span></div>
+        <div class="pattern-item">頭肩底：<span id="p_head_shoulder_bottom">-</span></div>
+        <div class="pattern-item">三角收斂：<span id="p_triangle">-</span></div>
+        <div class="pattern-item">突破回測：<span id="p_breakback">-</span></div>
+        <div class="pattern-item">0.618 回調：<span id="p_0618">-</span></div>
+      </div>
+
+      <div class="education">
+        <h4>AI 教育：指標說明</h4>
+        <p><strong>支撐位</strong>：價格下跌時多方可能出現買盤的位置，若跌破可能轉為賣壓。</p>
+        <p><strong>阻力位</strong>：價格上漲時空方可能出現的賣壓位置，若突破可能帶來延續上漲。</p>
+        <p><strong>型態失效條件</strong>：當價格反向穿越關鍵頸線或支撐/阻力，原先型態將被視為失效。</p>
+      </div>
+
+    </div>
+
+    <aside class="analysis-side">
+      <h4 style="margin-top:0">原始圖片</h4>
+      <div id="sidePreview" style="background:var(--navy3);border-radius:6px;padding:0.6rem;text-align:center">
+        <div style="color:var(--text3)" id="sidePreviewText">尚未上傳</div>
+        <img id="sideImg" src="" alt="preview" style="max-width:100%;display:none;margin-top:0.6rem;border-radius:4px">
+      </div>
+
+      <div style="margin-top:0.8rem">
+        <h4 style="margin:0.2rem 0">上傳時間</h4>
+        <div class="meta-line" id="sideUploadTime">-</div>
+      </div>
+
+      <div style="margin-top:0.8rem">
+        <button class="btn-secondary" id="downloadBtn" style="width:100%;display:none">⬇ 下載圖片</button>
+      </div>
+    </aside>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · AI K線圖分析 · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+</footer>
+
+<script>
+// Drag & drop + preview + mock analysis
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const previewArea = document.getElementById('previewArea');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const sideImg = document.getElementById('sideImg');
+
+function preventDefaults(e){e.preventDefault();e.stopPropagation();}
+['dragenter','dragover','dragleave','drop'].forEach(eventName=>{
+  uploadArea.addEventListener(eventName, preventDefaults, false)
+});
+
+uploadArea.addEventListener('click', ()=> fileInput.click());
+uploadArea.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') fileInput.click(); });
+
+uploadArea.addEventListener('dragover', ()=> uploadArea.classList.add('dragover'));
+uploadArea.addEventListener('dragleave', ()=> uploadArea.classList.remove('dragover'));
+
+uploadArea.addEventListener('drop', (e)=>{
+  uploadArea.classList.remove('dragover');
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  handleFiles(files);
+});
+
+fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
+
+function handleFiles(files){
+  if(!files || files.length===0) return;
+  const f = files[0];
+  const allowed = ['image/jpeg','image/png','image/webp'];
+  if(!allowed.includes(f.type)){
+    alert('僅支援 JPG / PNG / WebP 格式');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    previewArea.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = ev.target.result; img.className='preview-img';
+    previewArea.appendChild(img);
+
+    // side preview
+    sideImg.src = ev.target.result; sideImg.style.display='block';
+    document.getElementById('sidePreviewText').style.display='none';
+    document.getElementById('downloadBtn').style.display='block';
+    document.getElementById('downloadBtn').onclick = ()=>{
+      const a = document.createElement('a'); a.href = ev.target.result; a.download = f.name || 'chart.png'; a.click();
+    }
+
+    // meta
+    document.getElementById('uploadName').textContent = '檔案：' + (f.name || 'image');
+    const now = new Date();
+    const timestr = now.toLocaleString();
+    document.getElementById('uploadTime').textContent = '時間：' + timestr;
+    document.getElementById('sideUploadTime').textContent = timestr;
+
+    // enable analyze
+    analyzeBtn.disabled = false;
+
+    // store for analysis
+    uploadArea.dataset.filename = f.name || '';
+  }
+  reader.readAsDataURL(f);
+}
+
+function mockAnalyzeFromName(name){
+  // generate deterministic-ish mock based on name hash
+  let h=0; for(let i=0;i<name.length;i++) h = (h<<5)-h + name.charCodeAt(i);
+  h = Math.abs(h);
+  const trend = (h%3===0)?'向上趨勢':(h%3===1)?'盤整':'向下趨勢';
+  const support = (300 + (h%120)).toString();
+  const resistance = (600 + (h%160)).toString();
+  const volume = `${(Math.floor((h%50)+20))}k - ${(Math.floor((h%200)+80))}k`;
+  const patterns = {
+    p_double_top: (h%7===0)?'可能':'不明',
+    p_double_bottom: (h%5===0)?'可能':'不明',
+    p_head_shoulder_top: (h%11===0)?'可能':'不明',
+    p_head_shoulder_bottom: (h%13===0)?'可能':'不明',
+    p_triangle: (h%3===0)?'可能':'不明',
+    p_breakback: (h%4===0)?'可能':'不明',
+    p_0618: (h%2===0)?'可能':'不明'
+  };
+  const risk = (h%100<40)?'中高風險：注意假突破與成交量放大':'';
+  return {trend,support,resistance,volume,patterns,risk};
+}
+
+function runImageAnalysis(){
+  const fname = uploadArea.dataset.filename || 'uploaded';
+  analyzeBtn.disabled = true; analyzeBtn.textContent='分析中...';
+  setTimeout(()=>{
+    const res = mockAnalyzeFromName(fname);
+    document.getElementById('trendValue').textContent = res.trend;
+    document.getElementById('supportValue').textContent = res.support;
+    document.getElementById('resistanceValue').textContent = res.resistance;
+    document.getElementById('volumeZone').textContent = res.volume;
+    document.getElementById('patternSummary').textContent = Object.values(res.patterns).filter(p=>p==='可能').length>0? '偵測到若干型態':'未偵測到明顯型態';
+    document.getElementById('riskTips').textContent = res.risk || '無顯著風險提示';
+
+    // patterns
+    document.getElementById('p_double_top').textContent = res.patterns.p_double_top;
+    document.getElementById('p_double_bottom').textContent = res.patterns.p_double_bottom;
+    document.getElementById('p_head_shoulder_top').textContent = res.patterns.p_head_shoulder_top;
+    document.getElementById('p_head_shoulder_bottom').textContent = res.patterns.p_head_shoulder_bottom;
+    document.getElementById('p_triangle').textContent = res.patterns.p_triangle;
+    document.getElementById('p_breakback').textContent = res.patterns.p_breakback;
+    document.getElementById('p_0618').textContent = res.patterns.p_0618;
+
+    analyzeBtn.disabled = false; analyzeBtn.textContent='🔍 執行 AI 分析';
+  }, 900);
+}
+
+// keep navbar behavior consistent
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>

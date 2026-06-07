@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — 圖表分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);background:var(--bg-primary);flex-shrink:0}
+.nav-right{display:flex;align-items:center;gap:0.8rem}
+
+.nav-cta{background:var(--accent-blue);color:#fff;padding:6px 12px;border-radius:8px;font-size:0.88rem;font-weight:600;text-decoration:none;transition:background 0.12s}
+.nav-cta:hover{background:#1D4ED8}
+.main{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.sb-section{padding:0.75rem 0.9rem;}
+.sb-label{font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);margin-bottom:0.5rem;}
+.mkt-btn{display:flex;align-items:center;gap:0.5rem;padding:0.42rem 0.65rem;border-radius:4px;cursor:pointer;transition:all 0.2s;border:1px solid transparent;margin-bottom:0.2rem;font-size:0.8rem;color:var(--text2);background:transparent;width:100%;text-align:left;}
+.mkt-btn:hover{background:var(--navy3);color:var(--text);}
+.mkt-btn.active{background:var(--blue-dim);border-color:var(--border2);color:var(--blue);}
+.divider{border:none;border-top:1px solid var(--border);margin:0.2rem 0;}
+.search-wrap{padding:0.5rem 0.9rem 0.6rem;}
+.search-input{width:100%;background:var(--navy4);border:1px solid var(--border);border-radius:4px;padding:0.5rem 0.75rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--blue);}
+.search-input::placeholder{color:var(--text3);}
+.search-hint{font-size:0.65rem;color:var(--text3);margin-top:0.3rem;line-height:1.5;}
+.quick-wrap{padding:0.3rem 0.9rem 0.6rem;}
+.quick-row{display:flex;flex-wrap:wrap;gap:0.3rem;}
+.qtag{padding:0.2rem 0.55rem;border:1px solid var(--border);border-radius:12px;font-size:0.7rem;color:var(--text2);cursor:pointer;transition:all 0.2s;}
+.qtag:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim);}
+.tf-wrap{padding:0.3rem 0.9rem 0.6rem;}
+.tf-row{display:flex;flex-wrap:wrap;gap:0.3rem;}
+.tf-btn{padding:0.2rem 0.5rem;border:1px solid var(--border);border-radius:3px;font-size:0.7rem;color:var(--text2);cursor:pointer;transition:all 0.2s;background:transparent;}
+.tf-btn:hover{border-color:var(--blue);color:var(--blue);}
+.tf-btn.active{background:var(--blue-dim);border-color:var(--blue2);color:var(--blue);}
+.ai-wrap{padding:0.75rem 0.9rem;margin-top:auto;border-top:1px solid var(--border);}
+.ai-btn{display:block;width:100%;background:var(--blue2);color:#fff;padding:0.65rem;border-radius:4px;font-size:0.78rem;font-weight:500;text-decoration:none;text-align:center;transition:background 0.2s;border:none;cursor:pointer;margin-bottom:0.35rem;}
+.ai-btn:hover{background:var(--blue);}
+.ai-sub{font-size:0.65rem;color:var(--text3);text-align:center;line-height:1.5;}
+
+/* CHART AREA */
+.chart-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.chart-header{padding:0.5rem 1rem;background:var(--navy2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:0.5rem;}
+.ch-left{display:flex;align-items:baseline;gap:0.4rem;}
+.ch-ticker{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--text);}
+.ch-name{font-size:0.72rem;color:var(--text2);}
+.ch-right{display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;}
+.mkt-tag{font-size:0.7rem;color:var(--text3);background:var(--navy3);padding:0.2rem 0.6rem;border-radius:3px;border:1px solid var(--border);}
+.upload-btn{font-size:0.72rem;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:0.25rem 0.75rem;border-radius:3px;transition:all 0.2s;white-space:nowrap;}
+.upload-btn:hover{background:rgba(201,168,76,0.08);border-color:var(--gold);}
+.tv-wrap{flex:1;position:relative;}
+#tv_chart{width:100%;height:100%;}
+.bottom-bar{padding:0.4rem 1rem;background:var(--navy2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:0.4rem;}
+.bottom-note{font-size:0.65rem;color:var(--text3);}
+.bottom-links{display:flex;gap:1rem;}
+.bottom-link{font-size:0.65rem;color:var(--text3);text-decoration:none;transition:color 0.2s;}
+.bottom-link:hover{color:var(--blue);}
+@media(max-width:600px){.sidebar{display:none;}.tv-wrap{height:60vh;}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
+  <div class="nav-right">
+    <a href="index.html" class="nav-link">首頁</a>
+    <a href="chat.html" target="_blank" class="nav-cta">🤖 AI 深度分析</a>
+    <select id="langSelectChart" onchange="changeLang(this.value)" style="border:1px solid var(--border-color);padding:6px 8px;border-radius:8px;background:transparent;color:var(--text-primary);margin-left:8px;">
+      <option value="zh-HK">繁體中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+    </select>
+  </div>
+</nav>
+<div class="main">
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-label">市場類型</div>
+      <button class="mkt-btn active" onclick="setMkt('stock',this)">📈 港股 / 美股</button>
+      <button class="mkt-btn" onclick="setMkt('futures',this)">📊 期貨 / 指數</button>
+      <button class="mkt-btn" onclick="setMkt('crypto',this)">🪙 加密貨幣</button>
+      <button class="mkt-btn" onclick="setMkt('forex',this)">💱 外匯</button>
+      <button class="mkt-btn" onclick="setMkt('etf',this)">🏦 ETF</button>
+    </div>
+    <div class="divider"></div>
+    <div class="search-wrap">
+      <div class="sb-label">搜尋</div>
+      <input class="search-input" id="si" placeholder="代號或公司名…" onkeydown="if(event.key==='Enter')doSearch()">
+      <div class="search-hint">💡 圖表頂部搜尋欄支援全球交易所自動識別</div>
+    </div>
+    <div class="divider"></div>
+    <div class="quick-wrap">
+      <div class="sb-label">熱門</div>
+      <div class="quick-row" id="qr"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="tf-wrap">
+      <div class="sb-label">時間框架</div>
+      <div class="tf-row">
+        <button class="tf-btn" onclick="setTF('1',this)">1分</button>
+        <button class="tf-btn" onclick="setTF('5',this)">5分</button>
+        <button class="tf-btn" onclick="setTF('15',this)">15分</button>
+        <button class="tf-btn" onclick="setTF('60',this)">1時</button>
+        <button class="tf-btn active" onclick="setTF('D',this)">日線</button>
+        <button class="tf-btn" onclick="setTF('W',this)">週線</button>
+        <button class="tf-btn" onclick="setTF('M',this)">月線</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="ai-wrap">
+      <a href="chat.html" target="_blank" class="ai-btn">🤖 AI 深度分析</a>
+      <div class="ai-sub">截圖上傳 或 輸入代號<br>支撐阻力 · 公司比較 · 現金流分析</div>
+    </div>
+  </div>
+  <div class="chart-area">
+    <div class="chart-header">
+      <div class="ch-left">
+        <span class="ch-ticker" id="ct">700</span>
+        <span class="ch-name" id="cn">騰訊控股</span>
+      </div>
+      <div class="ch-right">
+        <span class="mkt-tag" id="mt">🇭🇰 港股</span>
+        <span style="font-size:0.7rem;color:var(--text3);">TradingView 即時圖表</span>
+        <a href="chat.html" target="_blank" class="upload-btn">截圖 → AI 分析</a>
+      </div>
+    </div>
+    <div class="tv-wrap"><div id="tv_chart"></div></div>
+    <div class="bottom-bar">
+      <div class="bottom-note">⚠️ 圖表及AI分析僅供參考，不構成投資建議。投資涉及風險。</div>
+      <div class="bottom-links">
+        <a href="index.html" class="bottom-link">首頁</a>
+        <a href="chat.html" target="_blank" class="bottom-link">AI 分析</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+let sym='HKEX:700',tf='D';
+const mkts={
+  stock:{tag:'🇭🇰 港股/美股',q:[{l:'700',s:'HKEX:700',n:'騰訊'},{l:'9988',s:'HKEX:9988',n:'阿里'},{l:'AAPL',s:'NASDAQ:AAPL',n:'蘋果'},{l:'NVDA',s:'NASDAQ:NVDA',n:'英偉達'},{l:'TSLA',s:'NASDAQ:TSLA',n:'特斯拉'},{l:'MSFT',s:'NASDAQ:MSFT',n:'微軟'}]},
+  futures:{tag:'📊 期貨/指數',q:[{l:'HSI',s:'TVC:HSI',n:'恒生指數'},{l:'SPX',s:'SP:SPX',n:'標普500'},{l:'NQ1!',s:'CME_MINI:NQ1!',n:'納指期貨'},{l:'GC1!',s:'COMEX:GC1!',n:'黃金'},{l:'VIX',s:'TVC:VIX',n:'恐慌指數'}]},
+  crypto:{tag:'🪙 加密貨幣',q:[{l:'BTC',s:'BINANCE:BTCUSDT',n:'Bitcoin'},{l:'ETH',s:'BINANCE:ETHUSDT',n:'Ethereum'},{l:'SOL',s:'BINANCE:SOLUSDT',n:'Solana'},{l:'BNB',s:'BINANCE:BNBUSDT',n:'BNB'}]},
+  forex:{tag:'💱 外匯',q:[{l:'USD/JPY',s:'FX:USDJPY',n:'美元/日元'},{l:'EUR/USD',s:'FX:EURUSD',n:'歐元/美元'},{l:'USD/HKD',s:'FX:USDHKD',n:'美元/港元'},{l:'GBP/USD',s:'FX:GBPUSD',n:'英鎊/美元'}]},
+  etf:{tag:'🏦 ETF',q:[{l:'SPY',s:'AMEX:SPY',n:'標普ETF'},{l:'QQQ',s:'NASDAQ:QQQ',n:'納指ETF'},{l:'GLD',s:'AMEX:GLD',n:'黃金ETF'},{l:'2800',s:'HKEX:2800',n:'盈富基金'}]}
+};
+function bw(){
+  document.getElementById('tv_chart').innerHTML='';
+  new TradingView.widget({container_id:'tv_chart',symbol:sym,interval:tf,timezone:'Asia/Hong_Kong',theme:'light',style:'1',locale:'zh_TW',toolbar_bg:'#FFFFFF',enable_publishing:false,autosize:true,width:'100%',height:'100%',studies:['MASimple@tv-basicstudies','RSI@tv-basicstudies','MACD@tv-basicstudies','BB@tv-basicstudies'],show_popup_button:true});
+}
+function setMkt(m,btn){
+  document.querySelectorAll('.mkt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mt').textContent=mkts[m].tag;
+  rq(m);const f=mkts[m].q[0];ls(f.s,f.l,f.n);
+}
+function rq(m){
+  const r=document.getElementById('qr');r.innerHTML='';
+  mkts[m].q.forEach(t=>{const el=document.createElement('div');el.className='qtag';el.textContent=t.l;el.onclick=()=>ls(t.s,t.l,t.n);r.appendChild(el);});
+}
+function ls(s,l,n){sym=s;document.getElementById('ct').textContent=l;document.getElementById('cn').textContent=' '+n;bw();}
+function doSearch(){
+  const v=document.getElementById('si').value.trim().toUpperCase();if(!v)return;
+  let s=v;if(/^\d{4,5}$/.test(v))s='HKEX:'+v;else if(/^\d{6}$/.test(v))s='SSE:'+v;else if(!v.includes(':'))s='NASDAQ:'+v;
+  ls(s,v,'');document.getElementById('si').value='';
+}
+function setTF(t,btn){
+  tf=t;document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');bw();
+}
+rq('stock');bw();
+</script>
+</body>
+</html>

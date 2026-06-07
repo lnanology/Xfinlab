@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — 烏鴉嘴壓力測試實驗室</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+.form-row{display:flex;gap:0.8rem;align-items:center}
+.select, .input{background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);padding:0.6rem 0.8rem;border-radius:8px;outline:none}
+.input{width:160px}
+.primary-btn{background:var(--accent-blue);color:#fff;border:none;padding:0 14px;border-radius:8px;cursor:pointer;height:44px}
+.primary-btn:hover{background:#1D4ED8}
+.metric{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem;text-align:center}
+.metric .label{color:var(--text-secondary);font-size:0.95rem;margin-bottom:0.6rem}
+.metric .value{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--accent-blue)}
+.metric .sub{font-size:0.88rem;color:var(--text-muted);margin-top:0.4rem}
+
+/* PSYCHOLOGICAL TEST */
+.psych{display:flex;flex-direction:column;gap:0.6rem}
+.choice-row{display:flex;gap:0.6rem;flex-wrap:wrap}
+.choice{flex:1;padding:0.8rem;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;text-align:center}
+.choice.selected{border-color:var(--accent-blue);background:var(--bg-secondary);color:var(--text-primary)}
+.result-box{background:var(--bg-card);border:1px solid var(--border-color);padding:1rem;border-radius:8px;margin-top:0.8rem}
+
+/* EDUCATION */
+.edu{line-height:1.7}
+.edu h3{color:var(--accent-blue);margin-top:0.6rem}
+.edu p{color:var(--text-secondary);margin-bottom:0.6rem}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+
+@media(max-width:768px){.form-row{flex-direction:column;align-items:stretch}.input{width:100%}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link">首頁</a>
+    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link">K線分析</a>
+  </div>
+  <div class="nav-right">
+    <select id="langSelectStress" onchange="changeLang(this.value)" style="border:1px solid var(--border-color);padding:6px 8px;border-radius:8px;background:transparent;color:var(--text-primary);">
+      <option value="zh-HK">繁體中文</option>
+      <option value="en">English</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+    </select>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">模擬實驗</div>
+  <h1 class="page-title">烏鴉嘴壓力測試實驗室</h1>
+  <p class="page-sub">幫助投資人理解策略在歷史黑天鵝事件中的最大風險與心理壓力。此頁使用 Mock Data 示範。</p>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem">
+      <div style="flex:1;min-width:240px">
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem">策略選擇</label>
+        <select id="strategySelect" class="select">
+          <option value="60-40">股債 60/40</option>
+          <option value="all-weather">全天候策略</option>
+          <option value="tech-momentum">科技動能策略</option>
+          <option value="high-dividend">高股息策略</option>
+          <option value="defensive">防禦型策略</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem">投入金額 (USD)</label>
+        <input id="amountInput" class="input" type="number" value="100000" min="1000" step="1000">
+      </div>
+
+      <div style="align-self:flex-end">
+        <button class="primary-btn" onclick="runStressTest()">開始模擬</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="result-title">情境 A：2008 金融海嘯</div>
+      <div class="metric">
+        <div class="label">最大跌幅</div>
+        <div class="value" id="dd2008">-</div>
+        <div class="sub" id="sub2008">帳面剩餘：-</div>
+        <div class="sub" id="rec2008">回本時間：-</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="result-title">情境 B：2020 疫情熔斷</div>
+      <div class="metric">
+        <div class="label">最大跌幅</div>
+        <div class="value" id="dd2020">-</div>
+        <div class="sub" id="sub2020">帳面剩餘：-</div>
+        <div class="sub" id="rec2020">回本時間：-</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="result-title">情境 C：2022 升息熊市</div>
+      <div class="metric">
+        <div class="label">最大跌幅</div>
+        <div class="value" id="dd2022">-</div>
+        <div class="sub" id="sub2022">帳面剩餘：-</div>
+        <div class="sub" id="rec2022">回本時間：-</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title">心理測驗區</div>
+    <div class="psych">
+      <div style="color:var(--text2);margin-bottom:0.6rem">如果明天帳面虧損 30%，你會：</div>
+      <div class="choice-row">
+        <div class="choice" data-choice="A" onclick="selectChoice(this)">A 繼續持有</div>
+        <div class="choice" data-choice="B" onclick="selectChoice(this)">B 減碼</div>
+        <div class="choice" data-choice="C" onclick="selectChoice(this)">C 全部賣出</div>
+      </div>
+      <div class="result-box" id="psychResult">尚未作答</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title">AI 教育解說</div>
+    <div class="edu">
+      <h3>最大回撤 (Max Drawdown)</h3>
+      <p>最大回撤表示在一段期間內投資組合從峰值到谷底的最大資本損失，通常用百分比表示。</p>
+
+      <h3>回本期</h3>
+      <p>回本期是指在假設固定年化報酬下，從當前帳面價值回到投入本金所需的大致年數（示範用估算）。</p>
+
+      <h3>資產配置原理</h3>
+      <p>不同策略在黑天鴉事件中表現不同：股債配置能降低波動，動能策略往往在劇烈震盪中承受更大跌幅，但若抓到反彈可快速回本。</p>
+
+      <p style="color:var(--text3);margin-top:0.6rem">（此頁示範使用 Mock Data，實際策略回測應使用歷史價格序列與回測框架計算。）</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · 烏鴉嘴壓力測試實驗室 · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+</footer>
+
+<script src="js/mvp-api.js"></script>
+<script>
+const strategyProfiles = {
+  '60-40':{
+    name:'股債 60/40',
+    annualReturn:0.06,
+    scenarioDrawdowns:{'2008':-0.35,'2020':-0.25,'2022':-0.22}
+  },
+  'all-weather':{name:'全天候策略',annualReturn:0.05,scenarioDrawdowns:{'2008':-0.22,'2020':-0.18,'2022':-0.12}},
+  'tech-momentum':{name:'科技動能策略',annualReturn:0.09,scenarioDrawdowns:{'2008':-0.55,'2020':-0.45,'2022':-0.38}},
+  'high-dividend':{name:'高股息策略',annualReturn:0.055,scenarioDrawdowns:{'2008':-0.30,'2020':-0.20,'2022':-0.18}},
+  'defensive':{name:'防禦型策略',annualReturn:0.04,scenarioDrawdowns:{'2008':-0.18,'2020':-0.12,'2022':-0.10}}
+};
+
+function formatCurrency(n){return '$'+n.toLocaleString();}
+
+async function runStressTest(){
+  const stratKey=document.getElementById('strategySelect').value;
+  const amount=parseFloat(document.getElementById('amountInput').value)||100000;
+  const analyzeBtn=document.querySelector('.primary-btn');
+  analyzeBtn.disabled=true;
+
+  try {
+    const response = await postApi('/api/stress-lab', { strategy: stratKey, amount });
+    const data = response.data;
+    const scenarios = data.scenarios;
+
+    ['2008','2020','2022'].forEach(key=>{
+      const item = scenarios[key];
+      document.getElementById('dd'+key).textContent = item.drawdown.toFixed(0) + '%';
+      document.getElementById('sub'+key).textContent = '帳面剩餘：' + formatCurrency(Math.round(item.remaining));
+      document.getElementById('rec'+key).textContent = '回本時間：' + item.recoveryYears + ' 年';
+    });
+
+    document.getElementById('psychResult').innerHTML = `心理壓力分數：<strong>${data.psych.score}/100</strong><br><span style="color:var(--text2)">${data.psych.result}</span>`;
+  } catch (error) {
+    console.error(error);
+    alert('分析失敗，請稍後重試');
+  } finally {
+    analyzeBtn.disabled=false;
+  }
+}
+
+// Map IDs dd2008 etc used in DOM
+['2008','2020','2022'].forEach(k=>{if(!document.getElementById('dd'+k)){
+  // noop
+}});
+
+// Psychological test
+let selectedChoice=null;
+function selectChoice(el){
+  document.querySelectorAll('.choice').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedChoice=el.getAttribute('data-choice');
+  showPsychResult();
+}
+
+function showPsychResult(){
+  const box=document.getElementById('psychResult');
+  if(!selectedChoice){box.textContent='尚未作答';return}
+  let score,desc;
+  if(selectedChoice==='A'){score=80;desc='高風險承受度 — 你傾向長期持有並耐受短期波動。'}
+  else if(selectedChoice==='B'){score=50;desc='中等風險承受度 — 你傾向在壓力下減碼以保留部分部位。'}
+  else {score=20;desc='低風險承受度 — 你傾向在遭遇重大損失時完全退出市場。'}
+  box.innerHTML=`風險承受能力：<strong>${score}/100</strong><br><span style="color:var(--text2)">${desc}</span>`;
+}
+
+// initial mock fill
+document.getElementById('dd2008').textContent='-';
+
+</script>
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — 即時市場新聞</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/mvp-api.js"></script>
+
+<style>nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
+
+.category-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.cat-btn{padding:0.35rem 1rem;border:1px solid var(--border);border-radius:20px;font-size:0.78rem;color:var(--text2);cursor:pointer;transition:all 0.2s;background:transparent;}
+.cat-btn:hover,.cat-btn.active{background:var(--blue-dim);border-color:var(--border2);color:var(--blue);}
+.search-row{display:flex;gap:0.8rem;margin-bottom:2rem;}
+.search-field{flex:1;background:var(--navy4);border:1px solid var(--border2);border-radius:4px;padding:0.65rem 1rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s;}
+.search-field:focus{border-color:var(--blue);}
+.search-field::placeholder{color:var(--text3);}
+.search-btn{background:var(--blue2);color:#fff;border:none;border-radius:4px;padding:0.65rem 1.5rem;font-size:0.85rem;cursor:pointer;transition:background 0.2s;white-space:nowrap;}
+.search-btn:hover{background:var(--blue);}
+.news-grid{display:grid;gap:1rem;}
+.news-card{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.2rem 1.4rem;transition:border-color 0.2s;cursor:pointer;}
+.news-card:hover{border-color:var(--border2);}
+.news-meta{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.6rem;}
+.news-cat{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.15rem 0.6rem;border-radius:3px;font-weight:500;}
+.cat-hk{background:rgba(88,166,255,0.15);color:var(--blue);}
+.cat-us{background:rgba(46,204,113,0.15);color:var(--green);}
+.cat-crypto{background:rgba(201,168,76,0.15);color:var(--gold);}
+.cat-macro{background:rgba(231,76,60,0.15);color:var(--red);}
+.news-time{font-size:0.72rem;color:var(--text3);}
+.news-title{font-size:0.92rem;font-weight:500;color:var(--text);margin-bottom:0.4rem;line-height:1.5;}
+.news-desc{font-size:0.82rem;color:var(--text2);line-height:1.6;}
+.news-footer{display:flex;align-items:center;justify-content:space-between;margin-top:0.8rem;}
+.news-source{font-size:0.72rem;color:var(--text3);}
+.news-impact{font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:3px;}
+.impact-pos{background:rgba(46,204,113,0.1);color:var(--green);}
+.impact-neg{background:rgba(231,76,60,0.1);color:var(--red);}
+.impact-neu{background:rgba(139,148,158,0.1);color:var(--text2);}
+.ai-summary{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:1.2rem 1.4rem;margin-bottom:1.5rem;}
+.ai-summary-title{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--blue);margin-bottom:0.6rem;}
+.ai-summary-text{font-size:0.85rem;color:var(--text2);line-height:1.7;}
+.loading{text-align:center;padding:3rem;color:var(--text2);}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block;}
+.dot-ani span:nth-child(2){animation-delay:0.2s;}
+.dot-ani span:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
+  <div class="nav-links">
+    <a href="chart.html" class="nav-link">圖表</a>
+    <a href="compare.html" class="nav-link">比較</a>
+    <a href="screener.html" class="nav-link">篩選</a>
+    <a href="chat.html" class="nav-cta">AI 分析</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="page-tag">即時資訊</div>
+  <h1 class="page-title">市場新聞追蹤</h1>
+  <p class="page-sub">輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響</p>
+  <div class="category-row">
+    <div class="cat-btn active" onclick="setActive(this);loadNews('全球金融市場最新重要新聞')">🌍 全部</div>
+    <div class="cat-btn" onclick="setActive(this);loadNews('港股市場最新重要新聞及分析')">🇭🇰 港股</div>
+    <div class="cat-btn" onclick="setActive(this);loadNews('美股市場最新重要新聞及分析')">🇺🇸 美股</div>
+    <div class="cat-btn" onclick="setActive(this);loadNews('加密貨幣市場最新重要新聞')">🪙 加密</div>
+    <div class="cat-btn" onclick="setActive(this);loadNews('全球宏觀經濟最新新聞及央行政策')">📊 宏觀</div>
+    <div class="cat-btn" onclick="setActive(this);loadNews('地緣政治及戰爭對金融市場的最新影響')">⚠️ 地緣</div>
+  </div>
+  <div class="search-row">
+    <input class="search-field" id="newsSearch" placeholder="搜尋股票代號或關鍵詞，例：騰訊、AAPL、加息…" onkeydown="if(event.key==='Enter')searchNews()">
+    <button class="search-btn" onclick="searchNews()">🔍 AI 搜尋分析</button>
+  </div>
+  <div id="newsArea"><div class="loading"><div class="dot-ani">載入中<span>.</span><span>.</span><span>.</span></div></div></div>
+</div>
+<script>
+function setActive(btn){document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+async function loadNews(topic){
+  document.getElementById('newsArea').innerHTML='<div class="loading"><div class="dot-ani">AI 搜尋分析中<span>.</span><span>.</span><span>.</span></div></div>';
+  const query=`請提供關於「${topic}」的最新市場資訊分析。
+
+格式如下：
+## 📰 市場摘要
+（2-3句總結當前市況）
+
+## 🔥 重點新聞（列出5條最重要新聞，每條包含：標題、簡述、市場影響）
+
+## 📊 AI 市場影響分析
+（分析對相關股票/市場的短期影響）
+
+## ⚠️ 需要關注的風險
+（列出2-3個主要風險點）`;
+  try{
+    const payload = { query, user: 'xfinlab-news' };
+    const res = await postApi('/api/news-denoise', payload);
+    const answer = (res && (res.data?.answer || res.answer || res.data?.summary)) || '';
+    if (answer) {
+      document.getElementById('newsArea').innerHTML = `
+        <div class="ai-summary"><div class="ai-summary-title">🤖 AI 市場分析報告 — ${new Date().toLocaleString('zh-HK')}</div><div class="ai-summary-text">${fmt(answer)}</div></div>
+        <div style="font-size:0.72rem;color:var(--text3);margin-top:1rem;">⚠️ 以上分析由AI生成，僅供參考，不構成投資建議。</div>`;
+    } else {
+      document.getElementById('newsArea').innerHTML = '<div class="loading" style="color:var(--accent-red)">搜尋完成，但無結果可顯示。</div>';
+    }
+  } catch(e){ document.getElementById('newsArea').innerHTML = '<div class="loading" style="color:var(--accent-red)">搜尋出現問題，請稍後重試。</div>'; }
+}
+function searchNews(){
+  const v=document.getElementById('newsSearch').value.trim();
+  if(!v)return;
+  loadNews(`${v}的最新市場新聞及影響分析`);
+}
+function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>').replace(/^## (.+)$/gm,'<h3 style="color:var(--blue);font-size:0.88rem;font-weight:500;margin:0.8rem 0 0.3rem">$1</h3>').replace(/\n/g,'<br>');}
+loadNews('全球金融市場最新重要新聞');
+</script>
+</body>
+</html>
