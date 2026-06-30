@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — XFINLAB</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); }
+  .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .nav-brand span { color: var(--text); }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+  .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 100%; max-width: 420px; }
+  .auth-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+  .auth-sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 32px; }
+  .tabs { display: flex; gap: 0; margin-bottom: 28px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .tab { flex: 1; padding: 10px; text-align: center; font-size: 0.875rem; font-weight: 500; cursor: pointer; background: transparent; border: none; color: var(--muted); transition: all 0.2s; }
+  .tab.active { background: var(--accent); color: #000; font-weight: 600; }
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--label); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 11px 14px; border-radius: 8px; font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; }
+  input:focus { outline: none; border-color: var(--accent); }
+  .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; margin-top: 8px; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 16px; display: none; }
+  .success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 16px; display: none; }
+  .divider { text-align: center; color: var(--muted); font-size: 0.78rem; margin: 20px 0; position: relative; }
+  .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
+  .divider span { background: var(--surface); padding: 0 12px; position: relative; }
+  .switch-text { text-align: center; font-size: 0.82rem; color: var(--muted); margin-top: 20px; }
+  .switch-text a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand" style="text-decoration:none">X<span>FIN</span>LAB</a>
+</nav>
+<main>
+  <div class="auth-box">
+    <div class="auth-title">Welcome Back</div>
+    <div class="auth-sub">Sign in to your XFINLAB account</div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <div id="errorMsg" class="error"></div>
+    <div id="successMsg" class="success"></div>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+        <div style="text-align:right;margin-top:6px"><a href="forgot-password.html" style="color:var(--accent);font-size:0.78rem;text-decoration:none">忘記密碼？</a></div>
+        <div style="text-align:right;margin-top:6px"><a href="forgot-password.html" style="color:var(--accent);font-size:0.78rem;text-decoration:none">忘記密碼？</a></div>
+      </div>
+      <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Sign In</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerForm" style="display:none">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="Your name">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPassword" placeholder="Min 6 characters">
+      </div>
+      <button class="btn btn-primary" id="registerBtn" onclick="handleRegister()">Create Account</button>
+    </div>
+  </div>
+</main>
+<footer>© 2026 XFINLAB — AI Investment Intelligence</footer>
+
+<script>
+const API = "http://127.0.0.1:8002/api";
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  hideMessages();
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('successMsg').style.display = 'none';
+}
+
+function showSuccess(msg) {
+  const el = document.getElementById('successMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+function hideMessages() {
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('successMsg').style.display = 'none';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { showError('Please fill in all fields'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.detail || 'Login failed'); return; }
+
+    localStorage.setItem('xfinlab_token', data.token);
+    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
+    showSuccess('Login successful! Redirecting...');
+    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+  } catch(e) {
+    showError('Connection error. Make sure API is running.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+async function handleRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if (!name || !email || !password) { showError('Please fill in all fields'); return; }
+  if (password.length < 6) { showError('Password must be at least 6 characters'); return; }
+
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating account...';
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, email, password})
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.detail || 'Registration failed'); return; }
+
+    localStorage.setItem('xfinlab_token', data.token);
+    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
+    showSuccess('Account created! Redirecting...');
+    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+  } catch(e) {
+    showError('Connection error. Make sure API is running.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const loginVisible = document.getElementById('loginForm').style.display !== 'none';
+    loginVisible ? handleLogin() : handleRegister();
+  }
+});
+</script>
+</body>
+</html>

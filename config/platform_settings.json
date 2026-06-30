@@ -1,0 +1,21 @@
+"{
+  \"default_language\": \"en\",
+  \"supported_languages\": [
+    \"en\",
+    \"zh-TW\",
+    \"zh-CN\",
+    \"ja\",
+    \"ko\",
+    \"de\",
+    \"fr\",
+    \"es\",
+    \"pt\",
+    \"it\",
+    \"nl\",
+    \"hi\",
+    \"ar\",
+    \"bn\",
+    \"ru\",
+    \"id\"
+  ]
+}"

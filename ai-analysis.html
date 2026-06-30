@@ -32,6 +32,8 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
 @media(max-width:768px){.prob-section{flex-direction:column}}
 </style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
 </head>
 <body>
 
@@ -63,7 +65,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
   <div class="panel">
     <div class="input-row">
-      <input id="symbolInput" class="input-field" placeholder="輸入代號，支援多個以逗號分隔，例如 NVDA,AAPL,BTC">
+      <input id="symbolInput" autocomplete="off" class="input-field" placeholder="輸入代號，支援多個以逗號分隔，例如 NVDA,AAPL,BTC">
       <select id="assetType" class="input-field">
         <option value="auto">自動辨識（股票/ETF/加密）</option>
         <option value="stock">股票</option>

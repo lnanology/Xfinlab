@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>驗證電郵 — XFINLAB</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080c14; --surface: #0d1525; --border: #1e2d45;
+    --accent: #00d4ff; --green: #10b981; --red: #ef4444;
+    --text: #e2e8f0; --muted: #64748b;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+  nav { display: flex; align-items: center; padding: 16px 32px; border-bottom: 1px solid var(--border); }
+  .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .nav-brand span { color: var(--text); }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+  .box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px; width: 100%; max-width: 420px; text-align: center; }
+  .icon { font-size: 3rem; margin-bottom: 20px; }
+  .title { font-size: 1.4rem; font-weight: 700; margin-bottom: 12px; }
+  .desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 28px; }
+  .btn { background: var(--accent); color: #000; padding: 12px 32px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block; }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<nav><a href="index.html" class="nav-brand">X<span>FIN</span>LAB</a></nav>
+<main>
+  <div class="box" id="content">
+    <div class="spinner"></div>
+    <div class="title">驗證中...</div>
+    <div class="desc">請稍候，正在驗證你的電郵地址</div>
+  </div>
+</main>
+
+<script>
+const API = "http://127.0.0.1:8002/api";
+const token = new URLSearchParams(window.location.search).get('token');
+
+async function verify() {
+  if (!token) {
+    showResult('❌', '無效連結', '驗證連結無效，請重新申請。', false);
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/auth/verify-email?token=${token}`);
+    const data = await res.json();
+    if (res.ok) {
+      showResult('✅', '驗證成功！', '你的電郵已成功驗證，現在可以使用全部功能。', true);
+    } else {
+      showResult('❌', '驗證失敗', data.detail || '連結無效或已過期', false);
+    }
+  } catch(e) {
+    showResult('❌', '連接錯誤', '請確保 API 正在運行', false);
+  }
+}
+
+function showResult(icon, title, desc, success) {
+  document.getElementById('content').innerHTML = `
+    <div class="icon">${icon}</div>
+    <div class="title">${title}</div>
+    <div class="desc">${desc}</div>
+    <a href="${success ? 'dashboard.html' : 'login.html'}" class="btn">${success ? '前往 Dashboard' : '返回登入'}</a>
+  `;
+}
+
+verify();
+</script>
+</body>
+</html>

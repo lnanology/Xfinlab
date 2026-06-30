@@ -1,0 +1,29 @@
+from fastapi import APIRouter, HTTPException
+from services.quota_service import QuotaService
+from backend.auth.jwt_handler import verify_token
+
+router = APIRouter()
+
+@router.get("/quota/usage")
+def get_usage(token: str):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return QuotaService.get_usage(payload["id"])
+
+@router.get("/quota/check/{feature}")
+def check_quota(feature: str, token: str):
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    import sqlite3
+    conn = sqlite3.connect("/Users/aj/Desktop/Xfinlab-main/xfinlab.db")
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT plan FROM users WHERE id=?", (payload["id"],)).fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return QuotaService.check(payload["id"], row["plan"], feature)

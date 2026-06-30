@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+yfinance
+python-dotenv
+groq
+requests
+beautifulsoup4
+python-jose
+passlib
+bcrypt
+python-multipart
+reportlab
+apscheduler
+python-telegram-bot

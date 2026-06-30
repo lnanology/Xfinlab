@@ -341,15 +341,12 @@ async function sendMessage() {
       image: imageBase64
     };
 
-    const res = await postApi('/api/ai-analysis', payload);
+    const res = await postApi('/api/chat', payload);
     removeTyping();
-    if (res && res.answer) {
-      conversationId = res.conversation_id || conversationId;
-      addMessage('bot', res.answer);
-      addToHistory(text || '圖表分析');
-    } else if (res && res.data && res.data.answer) {
-      conversationId = res.data.conversation_id || conversationId;
-      addMessage('bot', res.data.answer);
+    const answer = res?.answer || res?.data?.answer || res?.data?.conclusion || null;
+    if (answer) {
+      conversationId = res.conversation_id || res?.data?.conversation_id || conversationId;
+      addMessage('bot', answer);
       addToHistory(text || '圖表分析');
     } else {
       addMessage('bot', '⚠️ 分析時出現問題，請稍後重試。');

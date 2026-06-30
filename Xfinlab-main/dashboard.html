@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>XFINLAB Dashboard</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background:#0f172a;
+    color:white;
+    margin:0;
+    padding:30px;
+}
+
+h1{
+    margin-bottom:30px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(350px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:#1e293b;
+    border-radius:12px;
+    padding:20px;
+}
+
+button{
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+input{
+    padding:10px;
+    width:120px;
+}
+
+pre{
+    white-space:pre-wrap;
+    word-wrap:break-word;
+}
+
+</style>
+
+</head>
+<body>
+
+<h1>🚀 XFINLAB Dashboard</h1>
+
+<div class="grid">
+
+    <!-- Full Analysis -->
+    <div class="card">
+        <h2>Full Analysis</h2>
+
+        <input
+            id="ticker"
+            value="AAPL"
+        >
+
+        <button onclick="loadAnalysis()">
+            Analyze
+        </button>
+
+        <pre id="analysis"></pre>
+    </div>
+
+    <!-- Screener -->
+    <div class="card">
+        <h2>Screener</h2>
+
+        <button onclick="loadScreener()">
+            Load Screener
+        </button>
+
+        <pre id="screener"></pre>
+    </div>
+
+    <!-- Portfolio -->
+    <div class="card">
+        <h2>Portfolio</h2>
+
+        <button onclick="loadPortfolio()">
+            Load Portfolio
+        </button>
+
+        <pre id="portfolio"></pre>
+    </div>
+
+    <!-- Anomaly -->
+    <div class="card">
+        <h2>Anomaly Radar</h2>
+
+        <button onclick="loadAnomaly()">
+            Scan
+        </button>
+
+        <pre id="anomaly"></pre>
+    </div>
+
+</div>
+
+<script>
+
+const API_BASE = "http://127.0.0.1:8002/api";
+
+async function loadAnalysis(){
+
+    const ticker =
+        document.getElementById("ticker").value;
+
+    const response =
+        await fetch(
+            `${API_BASE}/full-analysis/${ticker}`
+        );
+
+    const data = await response.json();
+
+    document.getElementById(
+        "analysis"
+    ).textContent =
+        JSON.stringify(data,null,2);
+}
+
+async function loadScreener(){
+
+    const response =
+        await fetch(
+            `${API_BASE}/screener`
+        );
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "screener"
+    ).textContent =
+        JSON.stringify(data,null,2);
+}
+
+async function loadPortfolio(){
+
+    const response =
+        await fetch(
+            `${API_BASE}/portfolio`
+        );
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "portfolio"
+    ).textContent =
+        JSON.stringify(data,null,2);
+}
+
+async function loadAnomaly(){
+
+    const response =
+        await fetch(
+            `${API_BASE}/anomaly`
+        );
+
+    const data =
+        await response.json();
+
+    document.getElementById(
+        "anomaly"
+    ).textContent =
+        JSON.stringify(data,null,2);
+}
+
+</script>
+
+</body>
+</html>

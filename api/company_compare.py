@@ -1,0 +1,35 @@
+from fastapi import APIRouter
+from ai.ai_router import get_ai_response
+from services.market_data_service import MarketDataService
+
+router = APIRouter()
+market_svc = MarketDataService()
+
+@router.post("/company-compare")
+async def company_compare(body: dict):
+    symbols = body.get("symbols", [])
+    if not symbols:
+        return {"status": "ok", "data": {"analysis": "請輸入公司代號"}}
+
+    market_data = {}
+    for s in symbols:
+        try:
+            data = market_svc.get_stock_data(s.upper())
+            market_data[s] = data
+        except:
+            market_data[s] = {}
+
+    summary = ", ".join([f"{s}: ${market_data[s].get('price', 'N/A')}" for s in symbols])
+
+    prompt = (
+        f"你是專業金融分析師。請比較以下公司：{', '.join(symbols)}。"
+        f"當前價格：{summary}。"
+        "請用繁體中文提供：1) 各公司優劣勢 2) 財務比較 3) 投資建議 4) 風險提示。"
+        "格式清晰，使用 ## 標題。"
+    )
+    try:
+        answer = get_ai_response(prompt, max_tokens=1000)
+    except:
+        answer = "比較分析服務暫時不可用，請稍後再試。"
+
+    return {"status": "ok", "data": {"analysis": answer, "conclusion": answer, "market_data": market_data}}

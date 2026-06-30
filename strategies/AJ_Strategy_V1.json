@@ -1,0 +1,15 @@
+{
+  "name": "AJ Strategy V1",
+  "rules": [
+    {
+      "name": "volume_spike",
+      "condition": "data['volume_ratio'] > 2",
+      "weight": 20
+    },
+    {
+      "name": "price_above_100",
+      "condition": "data['price'] > 100",
+      "weight": 30
+    }
+  ]
+}

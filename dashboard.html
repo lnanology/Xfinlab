@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — Investment Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --surface2: #111d30;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,12,20,0.95);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-brand {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+
+  .nav-brand span { color: var(--text); }
+
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--green);
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* MAIN */
+  main { max-width: 1280px; margin: 0 auto; padding: 32px 24px; }
+
+  /* SEARCH BAR */
+  .search-section {
+    margin-bottom: 32px;
+  }
+
+  .search-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .ticker-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 8px;
+    width: 160px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: border-color 0.2s;
+  }
+
+  .ticker-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--label);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* SCORE HERO */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .score-card .label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .score-card .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .score-card .sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .c-accent { color: var(--accent); }
+  .c-green { color: var(--green); }
+  .c-red { color: var(--red); }
+  .c-amber { color: var(--amber); }
+  .c-purple { color: #a78bfa; }
+
+  /* RATING BADGE */
+  .rating-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-top: 8px;
+  }
+
+  .rating-buy { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .rating-hold { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+  .rating-sell { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* CONTENT GRID */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .panel-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* RESEARCH SECTIONS */
+  .research-item {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .research-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .research-item-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .research-item-text {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--label);
+  }
+
+  /* SCORES TABLE */
+  .scores-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-row-label {
+    font-size: 0.8rem;
+    color: var(--label);
+    width: 120px;
+    flex-shrink: 0;
+  }
+
+  .score-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .score-row-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    width: 36px;
+    text-align: right;
+  }
+
+  /* RISK INDICATORS */
+  .risk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .risk-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .risk-item .risk-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .risk-item .risk-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  /* BOTTOM PANELS */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* SCREENER TABLE */
+  .screener-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .screener-table th {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .screener-table td {
+    padding: 10px 0;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    color: var(--label);
+  }
+
+  .screener-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .screener-table td:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* PORTFOLIO DONUT (CSS only) */
+  .alloc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .alloc-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alloc-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .alloc-ticker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    width: 50px;
+  }
+
+  .alloc-bar-wrap {
+    flex: 1;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .alloc-bar { height: 100%; border-radius: 99px; }
+
+  .alloc-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    width: 42px;
+    text-align: right;
+  }
+
+  /* ANOMALY */
+  .anomaly-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .anomaly-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .anomaly-icon { font-size: 1rem; flex-shrink: 0; }
+
+  .anomaly-type {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+    margin-bottom: 2px;
+  }
+
+  .anomaly-detail {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .severity-HIGH { color: var(--red); }
+  .severity-MEDIUM { color: var(--amber); }
+  .severity-NONE { color: var(--green); }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 20px 0;
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty {
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  /* AI SUMMARY */
+  .ai-summary {
+    background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(124,58,237,0.06));
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--label);
+  }
+
+  .ai-summary strong {
+    color: var(--accent);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr 1fr; }
+    .content-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="js/nav.js"></script>
+</head>
+<body>
+
+<nav>
+  <a href="/index.html" class="nav-brand" style="text-decoration:none;color:var(--accent)">X<span style="color:var(--text)">FIN</span>LAB</a>
+  <div class="nav-status">
+    <div class="dot"></div>
+    Intelligence Core v2.0
+  </div>
+  <div id="userMenu" style="display:flex;align-items:center;gap:12px">
+    <div id="userInfo" style="font-size:0.8rem;color:var(--muted)"></div>
+    <div id="loginBtn" style="display:none">
+      <a href="login.html" style="background:var(--accent);color:#000;padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:600;text-decoration:none">Sign In</a>
+    </div>
+    <div id="accountBtn" style="position:relative">
+      <button onclick="toggleDropdown()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:6px">
+        <span id="userName">Account</span> ▾
+      </button>
+      <div id="dropdown" style="display:none;position:absolute;right:0;top:40px;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:160px;z-index:100;overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="font-size:0.75rem;color:var(--muted)">Signed in as</div>
+          <div id="dropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
+          <div id="dropdownPlan" style="font-size:0.7rem;color:var(--accent);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
+        </div>
+        <a href="index.html" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🏠 Home</a>
+        <a href="#" onclick="copyReferral()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🔗 Copy Referral Link</a>
+        <a href="#" onclick="showShareMenu()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">📤 Share XFINLAB</a>
+        <a href="#" onclick="logout()" style="display:block;padding:10px 16px;color:var(--red);font-size:0.82rem;text-decoration:none">↩ Sign Out</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+<!-- Share Modal -->
+<div id="shareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:480px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-weight:600;font-size:1rem">Share XFINLAB</div>
+      <button onclick="closeShareMenu()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
+    </div>
+
+    <div id="shareText" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.82rem;color:var(--label);margin-bottom:20px;line-height:1.6"></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+      <button onclick="shareTo('whatsapp')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">💬</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">WhatsApp</div>
+      </button>
+      <button onclick="shareTo('telegram')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">✈️</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Telegram</div>
+      </button>
+      <button onclick="shareTo('twitter')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">𝕏</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">X</div>
+      </button>
+      <button onclick="shareTo('facebook')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">📘</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Facebook</div>
+      </button>
+      <button onclick="shareTo('linkedin')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">💼</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">LinkedIn</div>
+      </button>
+      <button onclick="shareTo('reddit')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🤖</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Reddit</div>
+      </button>
+      <button onclick="shareTo('line')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🟢</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">LINE</div>
+      </button>
+      <button onclick="shareTo('wechat')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">💚</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">WeChat</div>
+      </button>
+      <button onclick="shareTo('instagram')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">📸</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Instagram</div>
+      </button>
+      <button onclick="shareTo('tiktok')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🎵</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">TikTok</div>
+      </button>
+      <button onclick="shareTo('threads')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🧵</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Threads</div>
+      </button>
+      <button onclick="copyShareText()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">📋</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Copy</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- SEARCH -->
+  <div class="search-section">
+    <div class="search-label">Stock Analysis</div>
+    <div class="search-row">
+      <input class="ticker-input" id="ticker" value="AAPL" maxlength="6" placeholder="TICKER">
+      <button class="btn-primary" id="analyzeBtn" onclick="runFullAnalysis()">Analyze</button>
+      <button class="btn-secondary" onclick="loadScreener()">Screener</button>
+      <button class="btn-secondary" onclick="loadPortfolio()">Portfolio</button>
+      <button class="btn-secondary" onclick="loadAnomaly()">Anomaly</button>
+    </div>
+  </div>
+
+  <!-- SCORE HERO -->
+  <div class="hero-grid" id="heroGrid">
+    <div class="score-card">
+      <div class="label">Final Score</div>
+      <div class="value c-accent" id="finalScore">—</div>
+      <div class="sub">out of 100</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Price</div>
+      <div class="value c-green" id="price">—</div>
+      <div class="sub" id="tickerLabel">Enter ticker to analyze</div>
+    </div>
+    <div class="score-card">
+      <div class="label">Risk Level</div>
+      <div class="value" id="riskLevel">—</div>
+      <div class="sub" id="riskScore">—</div>
+    </div>
+    <div class="score-card">
+      <div class="label">AI Rating</div>
+      <div class="value" id="rating">—</div>
+      <div id="ratingBadge"></div>
+    </div>
+  </div>
+
+  <!-- ANALYSIS + RESEARCH -->
+  <div class="content-grid">
+
+    <!-- Score Breakdown -->
+    <div class="panel">
+      <div class="panel-title">Score Breakdown</div>
+      <div class="scores-list" id="scoresList">
+        <div class="empty">Run an analysis to see scores</div>
+      </div>
+    </div>
+
+    <!-- AI Research -->
+    <div class="panel">
+      <div class="panel-title">AI Research Report</div>
+      <div id="researchContent">
+        <div class="empty">AI research will appear here</div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Watchlist -->
+  <div class="panel" style="margin-bottom:24px">
+    <div class="panel-title">我的自選股</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input id="watchlistTicker" placeholder="輸入代號加入" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:0.82rem;text-transform:uppercase">
+      <button onclick="addToWatchlist()" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">加入</button>
+    </div>
+    <div id="watchlistContent"><div class="empty">登入後查看你的自選股</div></div>
+  </div>
+
+  <!-- BOTTOM PANELS -->
+  <div class="bottom-grid">
+
+    <!-- Screener -->
+    <div class="panel">
+      <div class="panel-title">Screener</div>
+      <div id="screenerContent">
+        <div class="empty">Click Screener to load</div>
+      </div>
+    </div>
+
+    <!-- Portfolio -->
+    <div class="panel">
+      <div class="panel-title">Portfolio Allocation</div>
+      <div id="portfolioContent">
+        <div class="empty">Click Portfolio to load</div>
+      </div>
+    </div>
+
+    <!-- Anomaly -->
+    <div class="panel">
+      <div class="panel-title">Anomaly Radar</div>
+      <div id="anomalyContent">
+        <div class="empty">Click Anomaly to scan</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+const API = "http://127.0.0.1:8002/api";
+const ALLOC_COLORS = ["#00d4ff","#7c3aed","#10b981","#f59e0b","#ef4444"];
+
+function loading(html = '') {
+  return html || '<div class="loading"><div class="spinner"></div>Loading...</div>';
+}
+
+function getRatingClass(rating) {
+  if (!rating) return '';
+  const r = rating.toUpperCase();
+  if (r.includes('BUY') || r === 'BULLISH') return 'rating-buy';
+  if (r.includes('SELL') || r === 'BEARISH') return 'rating-sell';
+  return 'rating-hold';
+}
+
+function getScoreColor(score) {
+  if (score >= 70) return '#10b981';
+  if (score >= 45) return '#f59e0b';
+  return '#ef4444';
+}
+
+function getRiskColor(level) {
+  if (!level) return '#94a3b8';
+  const l = level.toUpperCase();
+  if (l === 'LOW') return '#10b981';
+  if (l === 'HIGH') return '#ef4444';
+  return '#f59e0b';
+}
+
+async function runFullAnalysis() {
+  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+  trackEvent('search', {ticker});
+  if (!ticker) return;
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+
+  // Reset hero
+  ['finalScore','price','riskLevel','rating'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+  document.getElementById('ratingBadge').innerHTML = '';
+  document.getElementById('tickerLabel').textContent = ticker;
+  document.getElementById('scoresList').innerHTML = loading();
+  document.getElementById('researchContent').innerHTML = loading();
+
+  try {
+    // Run analysis + research in parallel
+    const [analysisRes, researchRes] = await Promise.all([
+      fetch(`${API}/full-analysis/${ticker}`),
+      fetch(`${API}/research/${ticker}`)
+    ]);
+
+    const analysis = await analysisRes.json();
+    const research = await researchRes.json();
+
+    // Hero scores
+    document.getElementById('finalScore').textContent = analysis.final_score?.toFixed(1) ?? '—';
+    document.getElementById('price').textContent = analysis.price ? `$${analysis.price.toFixed(2)}` : '—';
+
+    const riskEl = document.getElementById('riskLevel');
+    const riskLevel = analysis.risk?.risk_level ?? '—';
+    riskEl.textContent = riskLevel;
+    riskEl.style.color = getRiskColor(riskLevel);
+    document.getElementById('riskScore').textContent = `Risk Score: ${analysis.risk_score?.toFixed(1) ?? '—'}`;
+
+    const ratingEl = document.getElementById('rating');
+    const rating = analysis.rating ?? research.ai_recommendation ?? '—';
+    ratingEl.textContent = rating;
+    document.getElementById('ratingBadge').innerHTML = `<span class="rating-badge ${getRatingClass(rating)}">${rating}</span>`;
+
+    // Score breakdown
+    const scores = [
+      { label: 'Market Score', value: analysis.market_score },
+      { label: 'News Score', value: analysis.news_score },
+      { label: 'Strategy Score', value: analysis.strategy_score },
+      { label: 'Risk (inverse)', value: 100 - (analysis.risk_score ?? 0) },
+      { label: 'Final Score', value: analysis.final_score },
+    ];
+
+    document.getElementById('scoresList').innerHTML = scores.map(s => {
+      const v = s.value?.toFixed(1) ?? 0;
+      const color = getScoreColor(s.value);
+      return `
+        <div class="score-row">
+          <div class="score-row-label">${s.label}</div>
+          <div class="score-bar-wrap">
+            <div class="score-bar" style="width:${Math.min(s.value,100)}%;background:${color}"></div>
+          </div>
+          <div class="score-row-value" style="color:${color}">${v}</div>
+        </div>`;
+    }).join('');
+
+    // AI Research
+    if (research.error) {
+      document.getElementById('researchContent').innerHTML = `<div class="empty">Research unavailable: ${research.error}</div>`;
+    } else {
+      const sections = [
+        { key: 'company_overview', label: 'Company Overview' },
+        { key: 'financial_analysis', label: 'Financial Analysis' },
+        { key: 'competitive_advantage', label: 'Competitive Advantage' },
+        { key: 'risk_factors', label: 'Risk Factors' },
+        { key: 'valuation', label: 'Valuation' },
+      ];
+
+      const researchHTML = sections.map(s => {
+        const val = research[s.key];
+        if (!val) return '';
+        const text = typeof val === 'object' ? Object.entries(val).map(([k,v]) => `${k}: ${v}`).join(' · ') : val;
+        return `
+          <div class="research-item">
+            <div class="research-item-label">${s.label}</div>
+            <div class="research-item-text">${text}</div>
+          </div>`;
+      }).join('');
+
+      const summary = research.summary || '';
+      const confidence = research.confidence ? Math.round(research.confidence * (research.confidence <= 1 ? 100 : 1)) : 0;
+      const targetPrice = research.target_price ? `$${research.target_price.toFixed(2)}` : '—';
+
+      document.getElementById('researchContent').innerHTML = researchHTML + `
+        <div class="ai-summary">
+          <strong>AI Verdict — ${confidence}% confidence · Target ${targetPrice}</strong>
+          ${summary}
+        </div>`;
+    }
+
+  } catch(e) {
+    document.getElementById('scoresList').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+    document.getElementById('researchContent').innerHTML = `<div class="empty">Connection error</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Analyze';
+}
+
+async function loadScreener() {
+  document.getElementById('screenerContent').innerHTML = loading();
+  try {
+    const res = await fetch(`${API}/screener`);
+    const data = await res.json();
+    const rows = (data.results || []).map(s => `
+      <tr>
+        <td>${s.ticker}</td>
+        <td>${s.market_score}</td>
+        <td>${s.news_score}</td>
+        <td>${s.final_score}</td>
+      </tr>`).join('');
+    document.getElementById('screenerContent').innerHTML = `
+      <table class="screener-table">
+        <thead><tr><th>Ticker</th><th>Market</th><th>News</th><th>Score</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4" style="color:var(--muted)">No results</td></tr>'}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('screenerContent').innerHTML = `<div class="empty">Error loading screener</div>`;
+  }
+}
+
+async function loadPortfolio() {
+  document.getElementById('portfolioContent').innerHTML = loading();
+  try {
+    const res = await fetch(`${API}/portfolio`);
+    const data = await res.json();
+    const rows = (data.portfolio || []).map((p, i) => `
+      <div class="alloc-row">
+        <div class="alloc-dot" style="background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
+        <div class="alloc-ticker">${p.ticker}</div>
+        <div class="alloc-bar-wrap">
+          <div class="alloc-bar" style="width:${p.allocation}%;background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
+        </div>
+        <div class="alloc-pct">${p.allocation}%</div>
+      </div>`).join('');
+    document.getElementById('portfolioContent').innerHTML = `<div class="alloc-list">${rows}</div>`;
+  } catch(e) {
+    document.getElementById('portfolioContent').innerHTML = `<div class="empty">Error loading portfolio</div>`;
+  }
+}
+
+async function loadAnomaly() {
+  document.getElementById('anomalyContent').innerHTML = loading();
+  try {
+    const res = await fetch(`${API}/anomaly`);
+    const data = await res.json();
+    const severity = data.severity || 'NONE';
+    const items = (data.anomalies || []).map(a => `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">⚡</div>
+        <div>
+          <div class="anomaly-type">${a.type.replace(/_/g,' ')}</div>
+          <div class="anomaly-detail">${a.detail}</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('anomalyContent').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Severity</span>
+        <span class="rating-badge severity-${severity}">${severity}</span>
+      </div>
+      <div class="anomaly-list">${items || '<div class="empty">No anomalies detected</div>'}</div>`;
+  } catch(e) {
+    document.getElementById('anomalyContent').innerHTML = `<div class="empty">Error scanning</div>`;
+  }
+}
+
+// Auto-uppercase ticker input
+document.getElementById('ticker').addEventListener('input', function() {
+  this.value = this.value.toUpperCase();
+});
+
+// Enter key triggers analysis
+document.getElementById('ticker').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') runFullAnalysis();
+});
+
+
+
+// Analytics tracking
+const SESSION_ID = Math.random().toString(36).substring(2);
+
+async function trackEvent(event_type, event_data = null) {
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    await fetch(`${API}/analytics/track`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        event_type,
+        event_data,
+        token,
+        session_id: SESSION_ID,
+        page: 'dashboard'
+      })
+    });
+  } catch(e) {}
+}
+
+// Track page view
+trackEvent('page_view', {page: 'dashboard'});
+
+// Share functions
+let currentShareData = {};
+
+async function showShareMenu() {
+  const token = localStorage.getItem('xfinlab_token');
+  const ticker = document.getElementById('ticker')?.value || 'XFINLAB';
+  const score = document.getElementById('finalScore')?.textContent || '—';
+  const rating = document.getElementById('rating')?.textContent || '—';
+
+  let refLink = 'https://finlab-ai.vercel.app';
+  if (token) {
+    try {
+      const res = await fetch(`${API}/referral/code?token=${token}`);
+      const data = await res.json();
+      refLink = data.referral_link || refLink;
+    } catch(e) {}
+  }
+
+  const shareText = `📊 ${ticker} Analysis by XFINLAB AI\n\nScore: ${score}/100\nRating: ${rating}\n\nGet free AI stock analysis:\n${refLink}`;
+  document.getElementById('shareText').textContent = shareText;
+  currentShareData = { text: shareText, url: refLink, ticker };
+  document.getElementById('shareModal').style.display = 'flex';
+  document.getElementById('dropdown').style.display = 'none';
+}
+
+function closeShareMenu() {
+  document.getElementById('shareModal').style.display = 'none';
+}
+
+function shareTo(platform) {
+  const text = encodeURIComponent(currentShareData.text);
+  const url = encodeURIComponent(currentShareData.url);
+  const urls = {
+    whatsapp:  `https://wa.me/?text=${text}`,
+    telegram:  `https://t.me/share/url?url=${url}&text=${text}`,
+    twitter:   `https://twitter.com/intent/tweet?text=${text}`,
+    facebook:  `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+    linkedin:  `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+    reddit:    `https://reddit.com/submit?url=${url}&title=${encodeURIComponent(currentShareData.ticker + ' Analysis - XFINLAB AI')}`,
+    line:      `https://social-plugins.line.me/lineit/share?url=${url}`,
+    wechat:    null,
+    instagram: null,
+    tiktok:    null,
+    threads:   `https://www.threads.net/intent/post?text=${text}`,
+  };
+
+  if (platform === 'wechat') {
+    copyShareText();
+    alert('WeChat: Link copied! Paste it in WeChat 💚');
+    return;
+  }
+  if (platform === 'instagram') {
+    copyShareText();
+    alert('Instagram: Link copied! Paste it in your bio or story 📸');
+    return;
+  }
+  if (platform === 'tiktok') {
+    copyShareText();
+    alert('TikTok: Link copied! Add it to your bio 🎵');
+    return;
+  }
+
+  if (urls[platform]) window.open(urls[platform], '_blank');
+}
+
+function copyShareText() {
+  navigator.clipboard.writeText(currentShareData.text);
+  alert('Copied to clipboard! 📋');
+}
+
+// User menu
+function loadUserInfo() {
+  const user = JSON.parse(localStorage.getItem('xfinlab_user') || '{}');
+  if (user.name) {
+    document.getElementById('userName').textContent = user.name.split(' ')[0];
+    document.getElementById('dropdownEmail').textContent = user.email || '';
+    document.getElementById('dropdownPlan').textContent = (user.plan || 'free').toUpperCase() + ' PLAN';
+    document.getElementById('accountBtn').style.display = 'block';
+    document.getElementById('loginBtn').style.display = 'none';
+  } else {
+    document.getElementById('accountBtn').style.display = 'none';
+    document.getElementById('loginBtn').style.display = 'block';
+  }
+}
+
+function toggleDropdown() {
+  const d = document.getElementById('dropdown');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#userMenu')) {
+    const d = document.getElementById('dropdown');
+    if (d) d.style.display = 'none';
+  }
+});
+
+function logout() {
+  localStorage.removeItem('xfinlab_token');
+  localStorage.removeItem('xfinlab_user');
+  window.location.href = 'login.html';
+}
+
+async function copyReferral() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) { alert('Please login first'); return; }
+  try {
+    const res = await fetch(`${API}/referral/code?token=${token}`);
+    const data = await res.json();
+    navigator.clipboard.writeText(data.referral_link);
+    alert('Referral link copied: ' + data.referral_link);
+  } catch(e) {
+    alert('Error getting referral link');
+  }
+}
+
+loadUserInfo();
+
+async function loadWatchlist() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) {
+    document.getElementById('watchlistContent').innerHTML = '<div class="empty"><a href="login.html" style="color:var(--accent)">登入</a>後查看你的自選股</div>';
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/watchlist?token=${token}`);
+    const data = await res.json();
+    const items = data.watchlist || [];
+    if (items.length === 0) {
+      document.getElementById('watchlistContent').innerHTML = '<div class="empty">未有自選股，輸入代號加入</div>';
+      return;
+    }
+    document.getElementById('watchlistContent').innerHTML = items.map(item => {
+      const color = item.trend === 'bullish' ? 'var(--green)' : item.trend === 'bearish' ? 'var(--red)' : 'var(--muted)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:monospace;font-weight:600">${item.ticker}</span>
+          <span style="color:${color};font-size:0.78rem">${item.trend}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-family:monospace;color:var(--accent)">$${item.price?.toFixed(2) || 'N/A'}</span>
+          <button onclick="removeFromWatchlist('${item.ticker}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('watchlistContent').innerHTML = '<div class="empty">載入失敗</div>';
+  }
+}
+
+async function addToWatchlist() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) { window.location.href = 'login.html'; return; }
+  const ticker = document.getElementById('watchlistTicker').value.trim().toUpperCase();
+  if (!ticker) return;
+  try {
+    await fetch(`${API}/watchlist/add/${ticker}?token=${token}`, { method: 'POST' });
+    document.getElementById('watchlistTicker').value = '';
+    loadWatchlist();
+  } catch(e) {}
+}
+
+async function removeFromWatchlist(ticker) {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) return;
+  try {
+    await fetch(`${API}/watchlist/remove/${ticker}?token=${token}`, { method: 'DELETE' });
+    loadWatchlist();
+  } catch(e) {}
+}
+
+loadWatchlist();
+
+</script>
+</body>
+</html>
