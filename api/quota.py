@@ -18,7 +18,7 @@ def check_quota(feature: str, token: str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     import sqlite3
-    conn = sqlite3.connect("/Users/aj/Desktop/Xfinlab-main/xfinlab.db")
+    conn = sqlite3.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db"))
     conn.row_factory = sqlite3.Row
     row = conn.execute("SELECT plan FROM users WHERE id=?", (payload["id"],)).fetchone()
     conn.close()

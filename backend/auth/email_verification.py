@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from services.email_service import EmailService
 
 router = APIRouter()
-DB_PATH = "/Users/aj/Desktop/Xfinlab-main/xfinlab.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 
 
 def get_db():

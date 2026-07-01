@@ -9,7 +9,7 @@ from services.email_service import EmailService
 from auth.email_verification import send_verification_email
 
 router = APIRouter()
-DB_PATH = "/Users/aj/Desktop/Xfinlab-main/xfinlab.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

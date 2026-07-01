@@ -2,7 +2,7 @@ import sqlite3
 import os
 from datetime import datetime
 
-DB_PATH = "/Users/aj/Desktop/Xfinlab-main/xfinlab.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 
 # Free plan limits
 FREE_LIMITS = {
