@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import secrets
 from datetime import datetime, timedelta
