@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, HTTPException
 from services.quota_service import QuotaService
 from backend.auth.jwt_handler import verify_token
