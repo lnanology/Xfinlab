@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8002";
+const API_BASE = "https://web-production-86882.up.railway.app";
 
 async function postApi(path, payload) {
   const response = await fetch(API_BASE + path, {
