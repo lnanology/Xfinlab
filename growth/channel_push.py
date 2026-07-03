@@ -5,6 +5,7 @@ sys.path.insert(0, "/Users/aj/Desktop/Xfinlab-main")
 
 from telegram import Bot
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -76,7 +77,7 @@ def get_top_crypto(n=20):
             "symbol": c["symbol"].upper(),
             "price": c["current_price"],
             "volume_24h": c["total_volume"],
-            "market_cap": c["market_cap"]
+            "change_24h": c.get("price_change_percentage_24h", 0)
         } for c in data]
     except Exception as e:
         print(f"Crypto error: {e}")
@@ -109,6 +110,8 @@ def get_top_futures(n=20):
 
 async def push_daily_analysis():
     bot = Bot(token=TOKEN)
+    date_str = datetime.now().strftime("%Y/%m/%d")
+    weekday = datetime.now().strftime("%A")
 
     try:
         from services.market_data_service import MarketDataService
@@ -118,11 +121,13 @@ async def push_daily_analysis():
         market_svc = MarketDataService()
         news_svc = NewsService()
 
-        # Core Watchlist
-        msg = "📊 *XFINLAB Daily Intelligence*\n"
+        # Header
+        msg = f"🚀 *XFINLAB Daily Intelligence*\n"
+        msg += f"📅 {date_str} · {weekday}\n"
         msg += "━━━━━━━━━━━━━━━━━━━━\n\n"
-        msg += "🔵 *Core Watchlist*\n\n"
 
+        # Core Watchlist
+        msg += "🔵 *Core Watchlist*\n"
         for symbol in CORE_SYMBOLS:
             try:
                 market = market_svc.get_stock_data(symbol)
@@ -134,49 +139,52 @@ async def push_daily_analysis():
                 price = market.get("price", "N/A")
                 sentiment = news_result["sentiment"]
                 emoji = "🟢" if sentiment == "Positive" else "🔴" if sentiment == "Negative" else "🟡"
-                msg += f"{emoji} *{symbol}* — ${price} | {sentiment}\n"
+                msg += f"{emoji} `{symbol}` ${price} · {sentiment}\n"
             except:
-                msg += f"⚪ *{symbol}* — Unavailable\n"
+                msg += f"⚪ `{symbol}` · Unavailable\n"
 
         # Top 20 Stocks
-        msg += "\n━━━━━━━━━━━━━━━━━━━━\n"
-        msg += "🔥 *Top 20 Most Active Stocks*\n\n"
+        msg += "\n🔥 *Top 20 Most Active Stocks*\n"
         volume_stocks = get_top_volume_stocks(20)
         if volume_stocks:
             for stock in volume_stocks:
                 ratio = stock["volume_ratio"]
                 spike = "🚀" if ratio > 3 else "⚡" if ratio > 2 else "📈"
-                msg += f"{spike} *{stock['symbol']}* — ${stock['price']} | Vol {ratio}x\n"
+                msg += f"{spike} `{stock['symbol']}` ${stock['price']} · {ratio}x vol\n"
         else:
             msg += "Data unavailable\n"
 
-        # Top 20 Crypto
-        msg += "\n━━━━━━━━━━━━━━━━━━━━\n"
-        msg += "₿ *Top 20 Crypto by Volume*\n\n"
+        # Top Crypto
+        msg += "\n₿ *Top 20 Crypto by Volume*\n"
         crypto_list = get_top_crypto(20)
         if crypto_list:
             for coin in crypto_list:
                 vol = coin["volume_24h"]
                 vol_str = f"${vol/1e9:.1f}B" if vol > 1e9 else f"${vol/1e6:.0f}M"
-                msg += f"💎 *{coin['symbol']}* — ${coin['price']:,.2f} | Vol {vol_str}\n"
+                chg = coin.get("change_24h", 0)
+                chg_emoji = "🟢" if chg > 0 else "🔴"
+                sign = "+" if chg > 0 else ""
+                msg += f"{chg_emoji} `{coin['symbol']}` ${coin['price']:,.2f} · {sign}{chg:.1f}% · Vol {vol_str}\n"
         else:
             msg += "Data unavailable\n"
 
-        # Top 20 Futures
-        msg += "\n━━━━━━━━━━━━━━━━━━━━\n"
-        msg += "📈 *Top 20 Futures*\n\n"
+        # Top Futures
+        msg += "\n📈 *Top 20 Futures*\n"
         futures_list = get_top_futures(20)
         if futures_list:
             for f in futures_list:
                 chg = f["change_pct"]
                 emoji = "🟢" if chg > 0 else "🔴" if chg < 0 else "⚪"
                 sign = "+" if chg > 0 else ""
-                msg += f"{emoji} *{f['name']}* ({f['symbol']}) — ${f['price']} | {sign}{chg}%\n"
+                msg += f"{emoji} `{f['symbol']}` ({f['name']}) ${f['price']} · {sign}{chg}%\n"
         else:
             msg += "Data unavailable\n"
 
+        # Footer
         msg += "\n━━━━━━━━━━━━━━━━━━━━\n"
-        msg += "🔗 [Full Analysis](https://finlab-ai.vercel.app)"
+        msg += "🔗 [Full AI Analysis](https://finlab-ai.vercel.app)\n"
+        msg += "📊 [Dashboard](https://finlab-ai.vercel.app/dashboard.html)\n"
+        msg += "💬 Share with friends → @xfinlab\_daily"
 
         await bot.send_message(
             chat_id=CHANNEL_ID,
