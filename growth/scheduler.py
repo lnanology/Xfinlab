@@ -82,6 +82,15 @@ async def check_anomalies():
 
 scheduler.add_job(check_anomalies, "interval", minutes=30)
 
+async def generate_fb_content():
+    import subprocess
+    subprocess.run([
+        "python3",
+        "/Users/aj/Desktop/Xfinlab-main/growth/media/facebook_generator.py"
+    ])
+
+scheduler.add_job(generate_fb_content, "cron", hour=8, minute=30)
+
 async def push_channel():
     import subprocess
     subprocess.run([
