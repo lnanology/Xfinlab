@@ -28,6 +28,7 @@ from api.watchlist import router as watchlist_router
 from api.admin import router as admin_router
 from api.pipeline_api import router as pipeline_router
 from api.feedback import router as feedback_router
+from api.dify import router as dify_router
 from auth.email_verification import router as email_verification_router
 
 
@@ -80,6 +81,7 @@ app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
 app.include_router(pipeline_router, prefix="/api", tags=["Pipeline"])
 app.include_router(feedback_router, prefix="/api", tags=["Feedback"])
+app.include_router(dify_router, prefix="/api", tags=["DIFY"])
 app.include_router(email_verification_router, prefix="/api", tags=["Email Verification"])
 
 
