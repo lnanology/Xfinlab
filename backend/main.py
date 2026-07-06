@@ -26,6 +26,7 @@ from api.chat import router as chat_router
 from auth.password_reset import router as password_reset_router
 from api.watchlist import router as watchlist_router
 from api.admin import router as admin_router
+from api.pipeline_api import router as pipeline_router
 from api.feedback import router as feedback_router
 from auth.email_verification import router as email_verification_router
 
@@ -77,6 +78,7 @@ app.include_router(chat_router, prefix="/api", tags=["Chat"])
 app.include_router(password_reset_router, prefix="/api", tags=["Password Reset"])
 app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
+app.include_router(pipeline_router, prefix="/api", tags=["Pipeline"])
 app.include_router(feedback_router, prefix="/api", tags=["Feedback"])
 app.include_router(email_verification_router, prefix="/api", tags=["Email Verification"])
 
