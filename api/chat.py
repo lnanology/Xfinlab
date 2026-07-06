@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from ai.ai_router import get_ai_response
+from services.dify_service import DifyService
 
 router = APIRouter()
 
@@ -26,14 +26,11 @@ async def chat(body: dict):
     )
     
     try:
-        answer = get_ai_response(prompt, max_tokens=800)
-        history.append({"q": query, "a": answer})
-        if len(history) > 10:
-            history.pop(0)
+        result = DifyService.chat(query, user_id="xfinlab-user", conversation_id=conversation_id if conversation_id != "default" else None)
         return {
             "status": "ok",
-            "answer": answer,
-            "conversation_id": conversation_id
+            "answer": result.get("answer", "AI 服務暫時不可用"),
+            "conversation_id": result.get("conversation_id", conversation_id)
         }
     except Exception as e:
         return {
