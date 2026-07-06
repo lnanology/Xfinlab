@@ -62,3 +62,4 @@ if __name__ == "__main__":
         print("JSON 文件有效！")
         print(data)
     except json.JSONDecodeError as e:
+        print(f"JSON 錯誤: {e}")
