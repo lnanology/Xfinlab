@@ -1,4 +1,3 @@
-cat > /Users/aj/Desktop/Xfinlab-main/engines/risk_engine.py << 'EOF'
 """Risk Engine Module - Evaluates market risk based on volatility"""
 
 from typing import Dict
@@ -48,4 +47,3 @@ class RiskEngine:
             "overall_risk": overall_risk,
             "risk_level": risk_level
         }
-EOF
