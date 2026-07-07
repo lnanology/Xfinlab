@@ -7,3 +7,8 @@ router = APIRouter()
 @router.get("/analyze/{symbol}")
 def analyze_stock(symbol: str):
     return get_stock_data(symbol)
+
+
+@router.get("/market/{symbol}")
+def market_stock(symbol: str):
+    return get_stock_data(symbol)
