@@ -141,5 +141,5 @@ class ReferralService:
             "referral_code": row["referral_code"],
             "referred_count": row["referred_count"],
             "reward_days": row["reward_days"],
-            "referral_link": f"https://finlab-ai.vercel.app?ref={row['referral_code']}"
+            "referral_link": f"https://xfinlab.com?ref={row['referral_code']}"
         }

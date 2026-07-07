@@ -48,7 +48,7 @@ def send_verification_email(user_id: int, email: str, name: str):
     conn.commit()
     conn.close()
 
-    verify_link = f"https://finlab-ai.vercel.app/verify-email.html?token={token}"
+    verify_link = f"https://xfinlab.com/verify-email.html?token={token}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#080c14;color:#e2e8f0;padding:40px;border-radius:12px;">
         <h1 style="color:#00d4ff;">驗證你的電郵</h1>

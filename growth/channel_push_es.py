@@ -185,7 +185,7 @@ async def push_es_analysis():
             msg += "數據不可用\n"
 
         msg += "\n━━━━━━━━━━━━━━━━━━━━\n"
-        msg += "🔗 [Análisis Completo](https://finlab-ai.vercel.app)"
+        msg += "🔗 [Análisis Completo](https://xfinlab.com)"
 
         await bot.send_message(
             chat_id=ES_CHANNEL_ID,

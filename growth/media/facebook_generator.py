@@ -15,7 +15,7 @@ class FacebookGenerator:
             "生成吸引人的 Facebook 帖子，今日股票市場分析。"
             "格式：吸引標題(emoji)+3-4重點+CTA加入Telegram+hashtag。"
             "150-200字繁體中文。"
-            "Telegram:t.me/xfinlab_zh 網站:finlab-ai.vercel.app。"
+            "Telegram:t.me/xfinlab_zh 網站:xfinlab.com。"
             "只回覆帖子文字。"
         )
         return get_ai_response(prompt, max_tokens=500)
@@ -26,7 +26,7 @@ class FacebookGenerator:
         prompt = (
             f"生成{ticker}{price_info}的Facebook帖子。"
             "格式：標題+分析+AI評級+風險提示+CTA+hashtag。"
-            "150-200字繁體中文，加入t.me/xfinlab_zh和finlab-ai.vercel.app。"
+            "150-200字繁體中文，加入t.me/xfinlab_zh和xfinlab.com。"
             "只回覆帖子文字。"
         )
         return get_ai_response(prompt, max_tokens=500)
@@ -38,7 +38,7 @@ class FacebookGenerator:
             "重點：AI分析、免費使用、Telegram免費訊號、多語言。"
             "格式：標題+3個優勢+免費試用CTA+hashtag。"
             "150-200字繁體中文。"
-            "網站:finlab-ai.vercel.app Telegram:t.me/xfinlab_zh。"
+            "網站:xfinlab.com Telegram:t.me/xfinlab_zh。"
             "只回覆帖子文字。"
         )
         return get_ai_response(prompt, max_tokens=500)
@@ -48,7 +48,7 @@ class FacebookGenerator:
         prompt = (
             "生成每週市場總結Facebook帖子。"
             "格式：本週亮點+下週展望+推薦股票+CTA+hashtag。"
-            "200-250字繁體中文，加入t.me/xfinlab_zh和finlab-ai.vercel.app。"
+            "200-250字繁體中文，加入t.me/xfinlab_zh和xfinlab.com。"
             "只回覆帖子文字。"
         )
         return get_ai_response(prompt, max_tokens=600)

@@ -42,7 +42,7 @@ class EmailSequences:
                 <p>📰 <strong>新聞情緒分析</strong> — 即時市場情緒評估</p>
                 <p>📈 <strong>AI 研究報告</strong> — 完整投資研究（每日3次免費）</p>
             </div>
-            <a href="https://finlab-ai.vercel.app/ai-analysis.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">立即試用 →</a>
+            <a href="https://xfinlab.com/ai-analysis.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">立即試用 →</a>
             <p style="color:#64748b;font-size:0.85rem;">XFINLAB Team</p>
         </div>
         """
@@ -72,7 +72,7 @@ class EmailSequences:
                 <p>✅ 可下載 PDF 報告</p>
             </div>
             <p>免費用戶每日 3 次，Pro 用戶無限次。</p>
-            <a href="https://finlab-ai.vercel.app/dashboard.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">生成我的研究報告 →</a>
+            <a href="https://xfinlab.com/dashboard.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">生成我的研究報告 →</a>
             <p style="color:#64748b;font-size:0.85rem;">XFINLAB Team</p>
         </div>
         """
@@ -105,7 +105,7 @@ class EmailSequences:
                 <div style="font-size:2rem;font-weight:bold;color:#00d4ff">$19/月</div>
                 <div style="color:#64748b;font-size:0.85rem">或 $15/月（年付節省20%）</div>
             </div>
-            <a href="https://finlab-ai.vercel.app/pricing.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;width:100%;text-align:center;">立即升級 Pro →</a>
+            <a href="https://xfinlab.com/pricing.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;width:100%;text-align:center;">立即升級 Pro →</a>
             <p style="color:#64748b;font-size:0.85rem;">14天退款保證 · 隨時取消</p>
         </div>
         """

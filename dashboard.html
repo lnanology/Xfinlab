@@ -971,7 +971,7 @@ async function showShareMenu() {
   const score = document.getElementById('finalScore')?.textContent || '—';
   const rating = document.getElementById('rating')?.textContent || '—';
 
-  let refLink = 'https://finlab-ai.vercel.app';
+  let refLink = 'https://xfinlab.com';
   if (token) {
     try {
       const res = await fetch(`${API}/referral/code?token=${token}`);

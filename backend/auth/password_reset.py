@@ -63,7 +63,7 @@ def forgot_password(body: ForgotPasswordRequest):
     conn.commit()
     conn.close()
 
-    reset_link = f"https://finlab-ai.vercel.app/reset-password.html?token={token}"
+    reset_link = f"https://xfinlab.com/reset-password.html?token={token}"
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;background:#080c14;color:#e2e8f0;padding:40px;border-radius:12px;">
         <h1 style="color:#00d4ff;">重設密碼</h1>

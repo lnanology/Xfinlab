@@ -51,7 +51,7 @@ def check_and_increment(token: str, feature: str):
                 "message": f"今日 {feature} 額度已用完（{result['limit']} 次/日）",
                 "used": result["used"],
                 "limit": result["limit"],
-                "upgrade_url": "https://finlab-ai.vercel.app/pricing.html",
+                "upgrade_url": "https://xfinlab.com/pricing.html",
                 "feature": feature
             }
         )

@@ -10,7 +10,7 @@ def get_referral_code(token: str):
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
     code = ReferralService.generate_code(payload["id"])
-    return {"referral_code": code, "referral_link": f"https://finlab-ai.vercel.app?ref={code}"}
+    return {"referral_code": code, "referral_link": f"https://xfinlab.com?ref={code}"}
 
 @router.post("/referral/use/{code}")
 def use_referral(code: str, token: str):

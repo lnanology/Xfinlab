@@ -54,7 +54,7 @@ class EmailService:
             <p>你好 {name}，</p>
             <p>感謝你註冊 XFINLAB AI 投資決策平台！</p>
             <p>立即開始你的第一次 AI 股票分析：</p>
-            <a href="https://finlab-ai.vercel.app/ai-analysis.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">開始分析</a>
+            <a href="https://xfinlab.com/ai-analysis.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">開始分析</a>
             <p style="color:#64748b;font-size:0.85rem;">XFINLAB Team</p>
         </div>
         """
@@ -69,7 +69,7 @@ class EmailService:
             <p>你好 {name}，</p>
             <p>你今日的 {feature} 額度只剩 {remaining} 次。</p>
             <p>升級 Pro 享受無限次數使用：</p>
-            <a href="https://finlab-ai.vercel.app/pricing.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">立即升級</a>
+            <a href="https://xfinlab.com/pricing.html" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">立即升級</a>
         </div>
         """
         return EmailService.send(to_email, "額度即將用完 - XFINLAB", html)
@@ -86,7 +86,7 @@ class EmailService:
                 <div style="font-size:2rem;font-weight:bold;color:#00d4ff;">${price}</div>
                 <div style="color:#64748b;">{change}</div>
             </div>
-            <a href="https://finlab-ai.vercel.app/ai-analysis.html?ticker={ticker}" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">查看完整分析</a>
+            <a href="https://xfinlab.com/ai-analysis.html?ticker={ticker}" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">查看完整分析</a>
         </div>
         """
         return EmailService.send(to_email, f"{ticker} 市場異動提醒 - XFINLAB", html)

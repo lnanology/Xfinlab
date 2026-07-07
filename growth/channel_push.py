@@ -182,8 +182,8 @@ async def push_daily_analysis():
 
         # Footer
         msg += "\n━━━━━━━━━━━━━━━━━━━━\n"
-        msg += "🔗 [Full AI Analysis](https://finlab-ai.vercel.app)\n"
-        msg += "📊 [Dashboard](https://finlab-ai.vercel.app/dashboard.html)\n"
+        msg += "🔗 [Full AI Analysis](https://xfinlab.com)\n"
+        msg += "📊 [Dashboard](https://xfinlab.com/dashboard.html)\n"
         msg += "💬 Share with friends → @xfinlab\_daily"
 
         await bot.send_message(

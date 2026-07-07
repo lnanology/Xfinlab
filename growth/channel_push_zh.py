@@ -181,7 +181,7 @@ async def push_zh_analysis():
             msg += "數據不可用\n"
 
         msg += "\n━━━━━━━━━━━━━━━━━━━━\n"
-        msg += "🔗 [完整分析](https://finlab-ai.vercel.app)"
+        msg += "🔗 [完整分析](https://xfinlab.com)"
 
         await bot.send_message(
             chat_id=ZH_CHANNEL_ID,
