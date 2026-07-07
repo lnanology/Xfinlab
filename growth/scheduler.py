@@ -82,6 +82,15 @@ async def check_anomalies():
 
 scheduler.add_job(check_anomalies, "interval", minutes=30)
 
+async def run_email_sequences():
+    import subprocess
+    subprocess.run([
+        "/Library/Developer/CommandLineTools/usr/bin/python3.9",
+        "/Users/aj/Desktop/Xfinlab-main/services/email_sequences.py"
+    ])
+
+scheduler.add_job(run_email_sequences, "cron", hour=10, minute=0)
+
 async def generate_fb_content():
     import subprocess
     subprocess.run([
