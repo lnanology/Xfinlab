@@ -6,7 +6,7 @@ const I18N = {
   async init() {
     try {
       const lang = this.currentLang;
-      const url = lang ? `http://127.0.0.1:8002/api/i18n/${lang}` : `http://127.0.0.1:8002/api/i18n/detect`;
+      const url = lang ? `https://web-production-86882.up.railway.app/api/i18n/${lang}` : `https://web-production-86882.up.railway.app/api/i18n/detect`;
       const res = await fetch(url);
       const data = await res.json();
       this.currentLang = data.language;

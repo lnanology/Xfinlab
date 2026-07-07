@@ -44,7 +44,7 @@ const Onboarding = {
   async nextStep(){
     if(this.currentStep===1){const el=document.querySelector('#heroTicker,#symbolInput,.ticker-input');if(el)el.focus();}
     if(this.currentStep===2){const el=document.querySelector('#tgWidget button');if(el)el.click();}
-    if(this.token){try{await fetch('http://127.0.0.1:8002/api/onboarding/complete-step/'+(this.currentStep+1)+'?token='+this.token,{method:'POST'});}catch(e){}}
+    if(this.token){try{await fetch('https://web-production-86882.up.railway.app/api/onboarding/complete-step/'+(this.currentStep+1)+'?token='+this.token,{method:'POST'});}catch(e){}}
     if(this.currentStep<this.steps.length-1){this.currentStep++;const m=document.getElementById('onboardingModal');if(m)this.renderStep(m);}
     else this.dismiss();
   },
