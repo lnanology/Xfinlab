@@ -1,16 +1,12 @@
 const I18N = {
   currentLang: localStorage.getItem('xfinlab_lang') || null,
   translations: {},
-
-  // 優先顯示語言
-  PRIORITY_LANGS: ['en', 'es', 'de', 'fr', 'pt', 'ja', 'zh-TW', 'zh-CN'],
+  PRIORITY_LANGS: ['en', 'es', 'de', 'fr', 'pt', 'ja', 'zh-TW', 'zh-CN', 'zh-HK', 'ko', 'ru', 'ar', 'hi', 'id', 'tr'],
 
   async init() {
     try {
       const lang = this.currentLang;
-      const url = lang
-        ? `http://127.0.0.1:8002/api/i18n/${lang}`
-        : `http://127.0.0.1:8002/api/i18n/detect`;
+      const url = lang ? `http://127.0.0.1:8002/api/i18n/${lang}` : `http://127.0.0.1:8002/api/i18n/detect`;
       const res = await fetch(url);
       const data = await res.json();
       this.currentLang = data.language;
@@ -44,76 +40,82 @@ const I18N = {
 
     const switcher = document.createElement('div');
     switcher.id = 'langSwitcher';
-    switcher.style.cssText = 'position:fixed;bottom:80px;right:24px;z-index:998;';
+    switcher.style.cssText = 'position:fixed;bottom:80px;right:24px;z-index:9998;';
 
     const btn = document.createElement('button');
-    btn.style.cssText = 'background:#0d1525;border:1px solid #1e2d45;color:#e2e8f0;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;';
+    btn.style.cssText = 'background:#0d1525;border:1px solid #1e2d45;color:#e2e8f0;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
     btn.textContent = '🌐 ' + (supportedLangs[this.currentLang] || 'Language');
 
     const panel = document.createElement('div');
-    panel.style.cssText = 'display:none;position:absolute;bottom:44px;right:0;background:#0d1525;border:1px solid #1e2d45;border-radius:10px;width:200px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);';
+    panel.style.cssText = 'display:none;position:absolute;bottom:44px;right:0;background:#0d1525;border:1px solid #1e2d45;border-radius:10px;width:210px;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden;';
+
+    // Header
+    const header = document.createElement('div');
+    header.style.cssText = 'padding:10px 14px 6px;border-bottom:1px solid #1e2d45;';
+    header.innerHTML = '<div style="font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px;">Language</div>';
 
     // 搜尋框
-    const searchWrap = document.createElement('div');
-    searchWrap.style.cssText = 'padding:8px;border-bottom:1px solid #1e2d45;';
     const searchInput = document.createElement('input');
-    searchInput.placeholder = '🔍 Search...';
+    searchInput.placeholder = '🔍 Search all 46 languages...';
     searchInput.style.cssText = 'width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:0.78rem;font-family:inherit;box-sizing:border-box;outline:none;';
-    searchWrap.appendChild(searchInput);
-    panel.appendChild(searchWrap);
+    header.appendChild(searchInput);
+    panel.appendChild(header);
 
-    // 語言列表
+    // 語言列表（固定高度可滾動）
     const list = document.createElement('div');
-    list.style.cssText = 'max-height:220px;overflow-y:auto;';
+    list.style.cssText = 'height:280px;overflow-y:auto;overscroll-behavior:contain;';
+
+    // 自定義 scrollbar
+    const style = document.createElement('style');
+    style.textContent = '#langSwitcher div::-webkit-scrollbar{width:4px}#langSwitcher div::-webkit-scrollbar-track{background:#0d1525}#langSwitcher div::-webkit-scrollbar-thumb{background:#1e2d45;border-radius:99px}';
+    document.head.appendChild(style);
 
     const allEntries = Object.entries(supportedLangs);
+    const priorityCodes = this.PRIORITY_LANGS;
 
     const renderList = (filter = '') => {
       list.innerHTML = '';
 
       let entries;
-      if (filter) {
-        // 搜尋模式：顯示所有匹配
+      if (filter.trim()) {
         entries = allEntries.filter(([code, name]) =>
           name.toLowerCase().includes(filter.toLowerCase()) ||
           code.toLowerCase().includes(filter.toLowerCase())
         );
       } else {
-        // 預設：只顯示8個優先語言
-        const priority = this.PRIORITY_LANGS;
-        const priorityEntries = priority
-          .filter(code => supportedLangs[code])
-          .map(code => [code, supportedLangs[code]]);
+        // 優先語言在頂，其餘按字母排
+        const priorityEntries = priorityCodes
+          .filter(c => supportedLangs[c])
+          .map(c => [c, supportedLangs[c]]);
+        const restEntries = allEntries
+          .filter(([c]) => !priorityCodes.includes(c))
+          .sort((a, b) => a[1].localeCompare(b[1]));
 
-        // 如果目前語言唔係優先清單，加在頂部
-        const curInPriority = priority.includes(this.currentLang);
-        if (!curInPriority && this.currentLang && supportedLangs[this.currentLang]) {
-          priorityEntries.unshift([this.currentLang, supportedLangs[this.currentLang]]);
-        }
-        entries = priorityEntries.slice(0, 8);
-
-        // 加提示
-        const hint = document.createElement('div');
-        hint.style.cssText = 'padding:6px 14px;font-size:0.68rem;color:#64748b;border-bottom:1px solid #1e2d45;';
-        hint.textContent = `Search to see all ${allEntries.length} languages`;
-        list.appendChild(hint);
+        // 分隔線
+        entries = [...priorityEntries, null, ...restEntries];
       }
 
       if (entries.length === 0) {
-        const empty = document.createElement('div');
-        empty.style.cssText = 'padding:12px;color:#64748b;font-size:0.8rem;text-align:center;';
-        empty.textContent = 'No results';
-        list.appendChild(empty);
+        list.innerHTML = '<div style="padding:16px;color:#64748b;font-size:0.8rem;text-align:center;">No results</div>';
         return;
       }
 
-      entries.forEach(([code, name]) => {
+      entries.forEach(entry => {
+        if (entry === null) {
+          // 分隔線
+          const sep = document.createElement('div');
+          sep.style.cssText = 'height:1px;background:#1e2d45;margin:4px 0;';
+          list.appendChild(sep);
+          return;
+        }
+
+        const [code, name] = entry;
         const isActive = code === this.currentLang;
         const item = document.createElement('div');
-        item.style.cssText = `padding:9px 14px;cursor:pointer;font-size:0.82rem;color:${isActive ? '#00d4ff' : '#e2e8f0'};background:${isActive ? 'rgba(0,212,255,0.08)' : 'transparent'};display:flex;justify-content:space-between;align-items:center;`;
-        item.innerHTML = `<span>${name}</span>${isActive ? '<span style="color:#00d4ff;font-size:0.7rem">✓</span>' : ''}`;
+        item.style.cssText = `padding:9px 14px;cursor:pointer;font-size:0.82rem;display:flex;justify-content:space-between;align-items:center;transition:background 0.1s;color:${isActive ? '#00d4ff' : '#e2e8f0'};background:${isActive ? 'rgba(0,212,255,0.08)' : 'transparent'};`;
+        item.innerHTML = `<span>${name}</span>${isActive ? '<span style="color:#00d4ff;font-size:0.75rem;font-weight:700;">✓</span>' : ''}`;
         item.onmouseenter = () => { if (!isActive) item.style.background = '#111d30'; };
-        item.onmouseleave = () => { if (!isActive) item.style.background = isActive ? 'rgba(0,212,255,0.08)' : 'transparent'; };
+        item.onmouseleave = () => { item.style.background = isActive ? 'rgba(0,212,255,0.08)' : 'transparent'; };
         item.onclick = () => I18N.setLang(code);
         list.appendChild(item);
       });
@@ -122,6 +124,12 @@ const I18N = {
     renderList();
     searchInput.addEventListener('input', () => renderList(searchInput.value));
     panel.appendChild(list);
+
+    // Footer
+    const footer = document.createElement('div');
+    footer.style.cssText = 'padding:6px 14px;border-top:1px solid #1e2d45;font-size:0.68rem;color:#64748b;text-align:center;';
+    footer.textContent = `${allEntries.length} languages available`;
+    panel.appendChild(footer);
 
     btn.onclick = (e) => {
       e.stopPropagation();
