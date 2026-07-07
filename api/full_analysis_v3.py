@@ -72,6 +72,7 @@ async def full_analysis(ticker: str, token: str = None):
     Returns:
         FullAnalysisResponse: Complete investment decision
     """
+    check_and_increment(token, "full_analysis")
     symbol = ticker.upper()
 
     # ── Step 1: Market Data ──────────────────────────────
