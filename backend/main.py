@@ -41,7 +41,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://xfinlab.com", "http://localhost:3001", "http://localhost:3000"],
+    allow_origins=["https://xfinlab.com", "https://www.xfinlab.com", "http://localhost:3001", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
