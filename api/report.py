@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from services.quota_middleware import check_and_increment
 from fastapi.responses import FileResponse
 from ai.research_agent import ResearchAgent
 from ai.report_generator import ReportGenerator

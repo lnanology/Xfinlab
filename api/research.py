@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from services.quota_middleware import check_and_increment
 from ai.research_agent import ResearchAgent
 from services.market_data_service import MarketDataService
 
