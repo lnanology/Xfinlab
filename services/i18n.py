@@ -1,48 +1,236 @@
-"""Internationalization Module - Handles language translation and loading"""
-
+import os
 import json
-from pathlib import Path
-from typing import Dict
+
+# 支援語言
+SUPPORTED_LANGUAGES = {
+    "zh-TW": "繁體中文",
+    "zh-HK": "繁體中文",
+    "zh-CN": "简体中文",
+    "en": "English",
+    "es": "Español",
+    "ja": "日本語",
+    "ko": "한국어",
+    "hi": "हिन्दी",
+    "ar": "العربية",
+    "pt": "Português",
+    "th": "ภาษาไทย",
+    "vi": "Tiếng Việt",
+    "id": "Bahasa Indonesia",
+}
+
+# 國家 → 語言映射
+COUNTRY_LANGUAGE_MAP = {
+    "TW": "zh-TW", "HK": "zh-HK", "MO": "zh-HK",
+    "CN": "zh-CN", "SG": "zh-TW",
+    "US": "en", "GB": "en", "AU": "en", "CA": "en",
+    "ES": "es", "MX": "es", "AR": "es", "CO": "es",
+    "JP": "ja", "KR": "ko",
+}
+
+# 翻譯字典
+TRANSLATIONS = {
+    "en": {
+        "nav_home": "Home",
+        "nav_analysis": "AI Analysis",
+        "nav_screener": "Screener",
+        "nav_news": "News",
+        "nav_dashboard": "Dashboard",
+        "nav_pricing": "Pricing",
+        "nav_login": "Sign In",
+        "hero_title": "Invest Smarter with AI",
+        "hero_subtitle": "AI-powered stock analysis, crypto & futures. Real-time signals.",
+        "hero_search": "Enter ticker symbol",
+        "hero_btn": "Analyze →",
+        "free_signals": "Free Signals",
+        "feedback": "Feedback",
+    },
+    "zh-TW": {
+        "nav_home": "首頁",
+        "nav_analysis": "AI 分析",
+        "nav_screener": "篩選器",
+        "nav_news": "新聞",
+        "nav_dashboard": "主控台",
+        "nav_pricing": "定價",
+        "nav_login": "登入",
+        "hero_title": "用 AI 做更明智的投資",
+        "hero_subtitle": "AI 驅動的股票分析、加密貨幣及期貨。即時訊號。",
+        "hero_search": "輸入股票代號",
+        "hero_btn": "分析 →",
+        "free_signals": "免費訊號",
+        "feedback": "意見反饋",
+    },
+    "zh-HK": {
+        "nav_home": "主頁",
+        "nav_analysis": "AI 分析",
+        "nav_screener": "篩選器",
+        "nav_news": "新聞",
+        "nav_dashboard": "主控台",
+        "nav_pricing": "定價",
+        "nav_login": "登入",
+        "hero_title": "用 AI 做更精明的投資",
+        "hero_subtitle": "AI 驅動的股票分析、加密貨幣及期貨。即時訊號。",
+        "hero_search": "輸入股票代號",
+        "hero_btn": "分析 →",
+        "free_signals": "免費訊號",
+        "feedback": "意見反饋",
+    },
+    "zh-CN": {
+        "nav_home": "首页",
+        "nav_analysis": "AI 分析",
+        "nav_screener": "筛选器",
+        "nav_news": "新闻",
+        "nav_dashboard": "控制台",
+        "nav_pricing": "定价",
+        "nav_login": "登录",
+        "hero_title": "用 AI 做更明智的投资",
+        "hero_subtitle": "AI 驱动的股票分析、加密货币及期货。实时信号。",
+        "hero_search": "输入股票代码",
+        "hero_btn": "分析 →",
+        "free_signals": "免费信号",
+        "feedback": "意见反馈",
+    },
+    "es": {
+        "nav_home": "Inicio",
+        "nav_analysis": "Análisis AI",
+        "nav_screener": "Selector",
+        "nav_news": "Noticias",
+        "nav_dashboard": "Panel",
+        "nav_pricing": "Precios",
+        "nav_login": "Iniciar sesión",
+        "hero_title": "Invierte mejor con IA",
+        "hero_subtitle": "Análisis de acciones, cripto y futuros con IA. Señales en tiempo real.",
+        "hero_search": "Ingresa símbolo bursátil",
+        "hero_btn": "Analizar →",
+        "free_signals": "Señales Gratis",
+        "feedback": "Comentarios",
+    },
+    "ja": {
+        "nav_home": "ホーム",
+        "nav_analysis": "AI分析",
+        "nav_screener": "スクリーナー",
+        "nav_news": "ニュース",
+        "nav_dashboard": "ダッシュボード",
+        "nav_pricing": "料金",
+        "nav_login": "ログイン",
+        "hero_title": "AIでよりスマートに投資",
+        "hero_subtitle": "AI駆動の株式分析、仮想通貨、先物。リアルタイムシグナル。",
+        "hero_search": "ティッカーシンボルを入力",
+        "hero_btn": "分析 →",
+        "free_signals": "無料シグナル",
+        "feedback": "フィードバック",
+    },
+
+    "hi": {
+        "nav_home": "होम",
+        "nav_analysis": "AI विश्लेषण",
+        "nav_screener": "स्क्रीनर",
+        "nav_news": "समाचार",
+        "nav_dashboard": "डैशबोर्ड",
+        "nav_pricing": "मूल्य निर्धारण",
+        "nav_login": "साइन इन",
+        "hero_title": "AI से स्मार्ट निवेश करें",
+        "hero_subtitle": "AI-संचालित स्टॉक विश्लेषण, क्रिप्टो और वायदा। रियल-टाइम सिग्नल।",
+        "hero_search": "टिकर सिंबल दर्ज करें",
+        "hero_btn": "विश्लेषण करें →",
+        "free_signals": "निःशुल्क सिग्नल",
+        "feedback": "प्रतिक्रिया",
+    },
+    "ar": {
+        "nav_home": "الرئيسية",
+        "nav_analysis": "تحليل الذكاء الاصطناعي",
+        "nav_screener": "الفلتر",
+        "nav_news": "الأخبار",
+        "nav_dashboard": "لوحة التحكم",
+        "nav_pricing": "الأسعار",
+        "nav_login": "تسجيل الدخول",
+        "hero_title": "استثمر بذكاء مع الذكاء الاصطناعي",
+        "hero_subtitle": "تحليل الأسهم والعملات المشفرة والعقود الآجلة بالذكاء الاصطناعي.",
+        "hero_search": "أدخل رمز السهم",
+        "hero_btn": "تحليل →",
+        "free_signals": "إشارات مجانية",
+        "feedback": "ملاحظات",
+    },
+    "pt": {
+        "nav_home": "Início",
+        "nav_analysis": "Análise AI",
+        "nav_screener": "Seletor",
+        "nav_news": "Notícias",
+        "nav_dashboard": "Painel",
+        "nav_pricing": "Preços",
+        "nav_login": "Entrar",
+        "hero_title": "Invista com inteligência usando IA",
+        "hero_subtitle": "Análise de ações, cripto e futuros com IA. Sinais em tempo real.",
+        "hero_search": "Digite o símbolo do ticker",
+        "hero_btn": "Analisar →",
+        "free_signals": "Sinais Gratuitos",
+        "feedback": "Feedback",
+    },
+    "th": {
+        "nav_home": "หน้าแรก",
+        "nav_analysis": "วิเคราะห์ AI",
+        "nav_screener": "ตัวกรอง",
+        "nav_news": "ข่าวสาร",
+        "nav_dashboard": "แดชบอร์ด",
+        "nav_pricing": "ราคา",
+        "nav_login": "เข้าสู่ระบบ",
+        "hero_title": "ลงทุนอย่างชาญฉลาดด้วย AI",
+        "hero_subtitle": "วิเคราะห์หุ้น คริปโต และฟิวเจอร์สด้วย AI สัญญาณเรียลไทม์",
+        "hero_search": "ป้อนสัญลักษณ์หุ้น",
+        "hero_btn": "วิเคราะห์ →",
+        "free_signals": "สัญญาณฟรี",
+        "feedback": "ข้อเสนอแนะ",
+    },
+    "vi": {
+        "nav_home": "Trang chủ",
+        "nav_analysis": "Phân tích AI",
+        "nav_screener": "Bộ lọc",
+        "nav_news": "Tin tức",
+        "nav_dashboard": "Bảng điều khiển",
+        "nav_pricing": "Giá cả",
+        "nav_login": "Đăng nhập",
+        "hero_title": "Đầu tư thông minh hơn với AI",
+        "hero_subtitle": "Phân tích cổ phiếu, tiền điện tử và hợp đồng tương lai bằng AI.",
+        "hero_search": "Nhập mã cổ phiếu",
+        "hero_btn": "Phân tích →",
+        "free_signals": "Tín hiệu miễn phí",
+        "feedback": "Phản hồi",
+    },
+    "id": {
+        "nav_home": "Beranda",
+        "nav_analysis": "Analisis AI",
+        "nav_screener": "Penyaring",
+        "nav_news": "Berita",
+        "nav_dashboard": "Dasbor",
+        "nav_pricing": "Harga",
+        "nav_login": "Masuk",
+        "hero_title": "Investasi Lebih Cerdas dengan AI",
+        "hero_subtitle": "Analisis saham, kripto, dan futures bertenaga AI. Sinyal real-time.",
+        "hero_search": "Masukkan simbol saham",
+        "hero_btn": "Analisis →",
+        "free_signals": "Sinyal Gratis",
+        "feedback": "Umpan Balik",
+    },
+    "ko": {
+        "nav_home": "홈",
+        "nav_analysis": "AI 분석",
+        "nav_screener": "스크리너",
+        "nav_news": "뉴스",
+        "nav_dashboard": "대시보드",
+        "nav_pricing": "가격",
+        "nav_login": "로그인",
+        "hero_title": "AI로 더 스마트하게 투자",
+        "hero_subtitle": "AI 기반 주식 분석, 암호화폐 및 선물. 실시간 신호.",
+        "hero_search": "티커 심볼 입력",
+        "hero_btn": "분석 →",
+        "free_signals": "무료 신호",
+        "feedback": "피드백",
+    },
+}
 
 
-class I18N:
-    """Manages language translations"""
-
-    def __init__(self):
-        self.translations: Dict[str, Dict[str, str]] = {}
-        self.load_languages()
-
-    def load_languages(self) -> None:
-        """Load all translation files"""
-        locale_path = Path("locales")
-        for lang_file in locale_path.glob("*.json"):
-            with open(lang_file, "r", encoding="utf-8") as f:
-                self.translations[lang_file.stem] = json.load(f)
-
-    def translate(self, key: str, lang: str = "en") -> str:
-        """
-        Translate a key to specified language
-
-        Args:
-            key (str): Translation key
-            lang (str): Language code (default: 'en')
-
-        Returns:
-            str: Translated text
-        """
-        return self.translations.get(lang, {}).get(key, key)
-
-    def get_supported_languages(self) -> List[str]:
-        """
-        Get list of supported languages
-
-        Returns:
-            List[str]: List of language codes
-        """
-        return list(self.translations.keys())
+def get_translations(lang: str) -> dict:
+    return TRANSLATIONS.get(lang, TRANSLATIONS["en"])
 
 
-# Example usage
-if __name__ == "__main__":
-    i18n = I18N()
-    print(i18n.translate("market_risk_radar", "ja"))
+def detect_language_from_country(country_code: str) -> str:
+    return COUNTRY_LANGUAGE_MAP.get(country_code, "en")

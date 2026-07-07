@@ -29,6 +29,7 @@ from api.admin import router as admin_router
 from api.pipeline_api import router as pipeline_router
 from api.feedback import router as feedback_router
 from api.onboarding import router as onboarding_router
+from api.i18n import router as i18n_router
 from api.dify import router as dify_router
 from auth.email_verification import router as email_verification_router
 
@@ -83,6 +84,7 @@ app.include_router(admin_router, prefix="/api", tags=["Admin"])
 app.include_router(pipeline_router, prefix="/api", tags=["Pipeline"])
 app.include_router(feedback_router, prefix="/api", tags=["Feedback"])
 app.include_router(onboarding_router, prefix="/api", tags=["Onboarding"])
+app.include_router(i18n_router, prefix="/api", tags=["i18n"])
 app.include_router(dify_router, prefix="/api", tags=["DIFY"])
 app.include_router(email_verification_router, prefix="/api", tags=["Email Verification"])
 
