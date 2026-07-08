@@ -722,7 +722,7 @@
 </main>
 
 <script>
-const API = "https://web-production-86882.up.railway.app/api";
+const API = "https://patient-connection-production-9c1f.up.railway.app/api";
 const ALLOC_COLORS = ["#00d4ff","#7c3aed","#10b981","#f59e0b","#ef4444"];
 
 function loading(html = '') {
@@ -1182,7 +1182,7 @@ async function submitFeedback() {
   if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
 
   try {
-    const res = await fetch('https://web-production-86882.up.railway.app/api/feedback', {
+    const res = await fetch('https://patient-connection-production-9c1f.up.railway.app/api/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ type, message, email: email || null, token })
