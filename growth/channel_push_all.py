@@ -266,7 +266,14 @@ async def push_all():
     from services.news_service import NewsService
 
     market_svc = MarketDataService()
-    news_svc = NewsService()
+
+    # NewsService needs NEWS_API_KEY. If it not configured, dont crash the whole
+    # push - just send prices without sentiment until the key is added.
+    try:
+        news_svc = NewsService()
+    except Exception as e:
+        print(f"NewsService unavailable ({e}) - sending without sentiment.")
+        news_svc = None
 
     volume_stocks = get_top_volume_stocks(20)
     crypto_list = get_top_crypto(20)
