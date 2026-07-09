@@ -47,7 +47,7 @@
 <div class="container">
   <div class="page-tag">AI 工具</div>
   <h1 class="page-title">AI K線圖分析</h1>
-  <p class="page-sub">上傳你的 K 線截圖（支援 JPG / PNG / WebP），AI 將示範型態辨識、支撐阻力與風險提示（目前為 Mock Data）。</p>
+  <p class="page-sub">上傳你的 K 線截圖（支援 JPG / PNG / WebP），AI 將分析型態辨識、支撐阻力與風險提示。</p>
 
   <div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
@@ -194,56 +194,70 @@ function handleFiles(files){
     // enable analyze
     analyzeBtn.disabled = false;
 
-    // store for analysis
+    // store for analysis (real image data + filename)
     uploadArea.dataset.filename = f.name || '';
+    window.__uploadedImageDataUrl = ev.target.result;
   }
   reader.readAsDataURL(f);
 }
 
-function mockAnalyzeFromName(name){
-  // generate deterministic-ish mock based on name hash
-  let h=0; for(let i=0;i<name.length;i++) h = (h<<5)-h + name.charCodeAt(i);
-  h = Math.abs(h);
-  const trend = (h%3===0)?'向上趨勢':(h%3===1)?'盤整':'向下趨勢';
-  const support = (300 + (h%120)).toString();
-  const resistance = (600 + (h%160)).toString();
-  const volume = `${(Math.floor((h%50)+20))}k - ${(Math.floor((h%200)+80))}k`;
-  const patterns = {
-    p_double_top: (h%7===0)?'可能':'不明',
-    p_double_bottom: (h%5===0)?'可能':'不明',
-    p_head_shoulder_top: (h%11===0)?'可能':'不明',
-    p_head_shoulder_bottom: (h%13===0)?'可能':'不明',
-    p_triangle: (h%3===0)?'可能':'不明',
-    p_breakback: (h%4===0)?'可能':'不明',
-    p_0618: (h%2===0)?'可能':'不明'
-  };
-  const risk = (h%100<40)?'中高風險：注意假突破與成交量放大':'';
-  return {trend,support,resistance,volume,patterns,risk};
-}
+const API = 'https://patient-connection-production-9c1f.up.railway.app/api';
 
-function runImageAnalysis(){
-  const fname = uploadArea.dataset.filename || 'uploaded';
+async function runImageAnalysis(){
+  const dataUrl = window.__uploadedImageDataUrl;
+  if(!dataUrl){
+    alert('請先上傳圖片');
+    return;
+  }
+
   analyzeBtn.disabled = true; analyzeBtn.textContent='分析中...';
-  setTimeout(()=>{
-    const res = mockAnalyzeFromName(fname);
-    document.getElementById('trendValue').textContent = res.trend;
-    document.getElementById('supportValue').textContent = res.support;
-    document.getElementById('resistanceValue').textContent = res.resistance;
-    document.getElementById('volumeZone').textContent = res.volume;
-    document.getElementById('patternSummary').textContent = Object.values(res.patterns).filter(p=>p==='可能').length>0? '偵測到若干型態':'未偵測到明顯型態';
+
+  try {
+    // dataUrl looks like: data:image/png;base64,AAAA....
+    const commaIndex = dataUrl.indexOf(',');
+    const meta = dataUrl.substring(5, dataUrl.indexOf(';')); // e.g. image/png
+    const base64Data = dataUrl.substring(commaIndex + 1);
+
+    const response = await fetch(`${API}/chart-analysis`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        image: base64Data,
+        mime_type: meta || 'image/jpeg',
+        symbol: ''
+      })
+    });
+
+    const json = await response.json();
+
+    if(json.status !== 'ok'){
+      throw new Error(json.message || '分析失敗');
+    }
+
+    const res = json.data;
+
+    document.getElementById('trendValue').textContent = res.trend || '-';
+    document.getElementById('supportValue').textContent = res.support || '-';
+    document.getElementById('resistanceValue').textContent = res.resistance || '-';
+    document.getElementById('volumeZone').textContent = res.volume || '-';
+    const patterns = res.patterns || {};
+    document.getElementById('patternSummary').textContent =
+      Object.values(patterns).filter(p => p === '可能').length > 0 ? '偵測到若干型態' : '未偵測到明顯型態';
     document.getElementById('riskTips').textContent = res.risk || '無顯著風險提示';
 
-    // patterns
-    document.getElementById('p_double_top').textContent = res.patterns.p_double_top;
-    document.getElementById('p_double_bottom').textContent = res.patterns.p_double_bottom;
-    document.getElementById('p_head_shoulder_top').textContent = res.patterns.p_head_shoulder_top;
-    document.getElementById('p_head_shoulder_bottom').textContent = res.patterns.p_head_shoulder_bottom;
-    document.getElementById('p_triangle').textContent = res.patterns.p_triangle;
-    document.getElementById('p_breakback').textContent = res.patterns.p_breakback;
-    document.getElementById('p_0618').textContent = res.patterns.p_0618;
+    document.getElementById('p_double_top').textContent = patterns.p_double_top || '不明';
+    document.getElementById('p_double_bottom').textContent = patterns.p_double_bottom || '不明';
+    document.getElementById('p_head_shoulder_top').textContent = patterns.p_head_shoulder_top || '不明';
+    document.getElementById('p_head_shoulder_bottom').textContent = patterns.p_head_shoulder_bottom || '不明';
+    document.getElementById('p_triangle').textContent = patterns.p_triangle || '不明';
+    document.getElementById('p_breakback').textContent = patterns.p_breakback || '不明';
+    document.getElementById('p_0618').textContent = patterns.p_0618 || '不明';
 
+  } catch (err) {
+    alert('分析失敗，請重試：' + err.message);
+  } finally {
     analyzeBtn.disabled = false; analyzeBtn.textContent='🔍 執行 AI 分析';
-  }, 900);
+  }
 }
 
 // keep navbar behavior consistent

@@ -34,11 +34,50 @@ def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
         raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude")
 
 
+def get_vision_response(prompt: str, image_base64: str, mime_type: str = "image/jpeg", max_tokens: int = 1000) -> str:
+    """
+    Analyze an image with a vision-capable model.
+
+    Args:
+        prompt: The text instructions/question about the image
+        image_base64: Base64-encoded image data (no data: prefix)
+        mime_type: Image MIME type (image/jpeg, image/png, image/webp)
+        max_tokens: Max response tokens
+
+    Returns:
+        str: AI response text
+    """
+    from groq import Groq
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    response = client.chat.completions.create(
+        # Groq deprecated llama-4-scout/llama-3.2-vision in June 2026.
+        # qwen/qwen3.6-27b is the current vision-capable model (preview tier).
+        model="qwen/qwen3.6-27b",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime_type};base64,{image_base64}"},
+                    },
+                ],
+            }
+        ],
+        temperature=0.3,
+        max_tokens=max_tokens,
+    )
+    return response.choices[0].message.content.strip()
+
+
 def _groq(prompt: str, max_tokens: int) -> str:
     from groq import Groq
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        # llama-3.1-8b-instant was deprecated by Groq on 2026-06-17.
+        # openai/gpt-oss-120b is Groq's recommended replacement.
+        model="openai/gpt-oss-120b",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=max_tokens
