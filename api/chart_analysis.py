@@ -101,15 +101,17 @@ async def chart_analysis(body: dict):
         "3. 如果睇唔清楚、圖片太細或者冇顯示某項資訊（例如RSI、MACD），"
         "就照實寫「圖中未能清楚辨識」或者「圖中未顯示」，唔好亂up答案。\n"
         "4. 檢查圖表下方有冇獨立嘅指標窗格（RSI通常0-100，MACD通常有柱狀圖+兩條線），"
-        "如果有先評論，如果冇就講明冇顯示。\n\n"
-        "用繁體中文提供以下分析，只回覆一個JSON物件，唔好加任何其他文字：\n"
+        "如果有先評論，如果冇就講明冇顯示。\n"
+        "5. 每個欄位嘅答案要精簡，唔好超過15隻字，唔好寫長句子。\n\n"
+        "用繁體中文提供以下分析，只回覆一個JSON物件，唔好加任何其他文字，"
+        "唔好加markdown、唔好加解釋，只回覆單一個完整JSON：\n"
         "{\n"
-        '  "trend": "上升/下降/橫盤（根據圖中K棒走勢判斷）",\n'
-        '  "support": "根據Y軸刻度讀出嘅支撐位價格，睇唔清就寫『圖中未能清楚辨識』",\n'
-        '  "resistance": "根據Y軸刻度讀出嘅阻力位價格，睇唔清就寫『圖中未能清楚辨識』",\n'
-        '  "volume": "成交量分析，圖中冇顯示就寫『圖中未顯示成交量』",\n'
-        '  "rsi": "RSI數值同解讀，圖中冇顯示就寫『圖中未顯示RSI』",\n'
-        '  "macd": "MACD走勢同解讀，圖中冇顯示就寫『圖中未顯示MACD』",\n'
+        '  "trend": "上升/下降/橫盤",\n'
+        '  "support": "價格數字或『未能辨識』",\n'
+        '  "resistance": "價格數字或『未能辨識』",\n'
+        '  "volume": "簡短描述或『未顯示』",\n'
+        '  "rsi": "數值+簡短描述或『未顯示』",\n'
+        '  "macd": "簡短描述或『未顯示』",\n'
         '  "patterns": {\n'
         '    "p_double_top": "可能/不可能",\n'
         '    "p_double_bottom": "可能/不可能",\n'
@@ -119,13 +121,13 @@ async def chart_analysis(body: dict):
         '    "p_breakback": "可能/不可能",\n'
         '    "p_0618": "可能/不可能"\n'
         '  },\n'
-        '  "risk": "根據圖中型態嘅風險提示",\n'
-        '  "recommendation": "建議操作"\n'
+        '  "risk": "簡短風險提示，15隻字內",\n'
+        '  "recommendation": "簡短建議，15隻字內"\n'
         "}"
     )
 
     try:
-        answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=700)
+        answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=1500)
         answer = answer.replace("```json", "").replace("```", "").strip()
         start = answer.find("{")
         end = answer.rfind("}") + 1
