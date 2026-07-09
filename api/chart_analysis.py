@@ -1,6 +1,7 @@
 import base64
 import binascii
 import json
+import re
 from fastapi import APIRouter
 
 from ai.ai_router import get_vision_response
@@ -127,13 +128,28 @@ async def chart_analysis(body: dict):
     )
 
     try:
-        answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=1500)
-        answer = answer.replace("```json", "").replace("```", "").strip()
+        raw_answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=1500)
+        answer = raw_answer.replace("```json", "").replace("```", "").strip()
         start = answer.find("{")
         end = answer.rfind("}") + 1
         if start != -1 and end > start:
             answer = answer[start:end]
-        result = json.loads(answer)
+
+        # AI models sometimes leave a trailing comma before } or ] which
+        # breaks strict JSON parsing — strip those before parsing.
+        answer_cleaned = re.sub(r",\s*([}\]])", r"\1", answer)
+
+        try:
+            result = json.loads(answer_cleaned)
+        except json.JSONDecodeError as e:
+            # Temporary debug aid: include a snippet of what the AI actually
+            # returned so we can see exactly what's malformed.
+            snippet = answer_cleaned[:300]
+            return {
+                "status": "error",
+                "message": f"AI回覆格式有問題：{str(e)} | 原始回覆片段：{snippet}"
+            }
+
         return {"status": "ok", "data": result}
     except Exception as e:
         return {
