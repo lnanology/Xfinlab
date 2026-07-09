@@ -1,0 +1,10 @@
+dbs:
+  - path: /app/xfinlab.db
+    replicas:
+      - type: s3
+        endpoint: ${R2_ENDPOINT}
+        bucket: xfinlab-backup
+        path: xfinlab-db-backup
+        access-key-id: ${R2_ACCESS_KEY_ID}
+        secret-access-key: ${R2_SECRET_ACCESS_KEY}
+        region: auto
