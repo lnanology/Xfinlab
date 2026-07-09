@@ -128,7 +128,7 @@ async def chart_analysis(body: dict):
     )
 
     try:
-        raw_answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=1500)
+        raw_answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=3000)
         answer = raw_answer.replace("```json", "").replace("```", "").strip()
         start = answer.find("{")
         end = answer.rfind("}") + 1

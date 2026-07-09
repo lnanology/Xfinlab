@@ -85,6 +85,15 @@ def _gemini_vision(prompt: str, image_base64: str, mime_type: str, max_tokens: i
         "generationConfig": {
             "temperature": 0.2,
             "maxOutputTokens": max_tokens,
+            # Gemini 2.5 Flash uses hidden "thinking" tokens by default, which
+            # count against maxOutputTokens and were eating the whole budget
+            # before any visible JSON got written — hence truncated output.
+            # Disable thinking so all tokens go to the actual answer.
+            "thinkingConfig": {"thinkingBudget": 0},
+            # Force strict JSON output — the API guarantees a syntactically
+            # valid, complete JSON object instead of markdown-wrapped or
+            # truncated free-form text.
+            "responseMimeType": "application/json",
         },
     }
     res = requests.post(url, json=payload, timeout=60)
