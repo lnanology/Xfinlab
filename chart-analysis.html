@@ -86,6 +86,8 @@
       <div class="result-row"><div class="result-label">支撐位</div><div class="result-value" id="supportValue">-</div></div>
       <div class="result-row"><div class="result-label">阻力位</div><div class="result-value" id="resistanceValue">-</div></div>
       <div class="result-row"><div class="result-label">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
+      <div class="result-row"><div class="result-label">RSI</div><div class="result-value" id="rsiValue">-</div></div>
+      <div class="result-row"><div class="result-label">MACD</div><div class="result-value" id="macdValue">-</div></div>
       <div class="result-row"><div class="result-label">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
       <div class="result-row"><div class="result-label">風險提示</div><div class="result-value" id="riskTips">-</div></div>
 
@@ -240,6 +242,8 @@ async function runImageAnalysis(){
     document.getElementById('supportValue').textContent = res.support || '-';
     document.getElementById('resistanceValue').textContent = res.resistance || '-';
     document.getElementById('volumeZone').textContent = res.volume || '-';
+    document.getElementById('rsiValue').textContent = res.rsi || '-';
+    document.getElementById('macdValue').textContent = res.macd || '-';
     const patterns = res.patterns || {};
     document.getElementById('patternSummary').textContent =
       Object.values(patterns).filter(p => p === '可能').length > 0 ? '偵測到若干型態' : '未偵測到明顯型態';

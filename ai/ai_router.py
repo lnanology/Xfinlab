@@ -34,9 +34,17 @@ def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
         raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude")
 
 
+VISION_PROVIDER = os.getenv("VISION_PROVIDER", "gemini")
+
+
 def get_vision_response(prompt: str, image_base64: str, mime_type: str = "image/jpeg", max_tokens: int = 1000) -> str:
     """
     Analyze an image with a vision-capable model.
+
+    Switch provider via VISION_PROVIDER env var:
+        gemini → Google Gemini (recommended — much better at reading exact
+                 numbers/axis labels off charts than Groq's preview models)
+        groq   → Groq (fast/cheap, but weaker at precise number-reading)
 
     Args:
         prompt: The text instructions/question about the image
@@ -47,6 +55,45 @@ def get_vision_response(prompt: str, image_base64: str, mime_type: str = "image/
     Returns:
         str: AI response text
     """
+    provider = VISION_PROVIDER.lower()
+
+    if provider == "gemini":
+        return _gemini_vision(prompt, image_base64, mime_type, max_tokens)
+    elif provider == "groq":
+        return _groq_vision(prompt, image_base64, mime_type, max_tokens)
+    else:
+        raise ValueError(f"Unknown VISION_PROVIDER: {provider}. Use gemini / groq")
+
+
+def _gemini_vision(prompt: str, image_base64: str, mime_type: str, max_tokens: int) -> str:
+    import requests
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.5-flash:generateContent?key={api_key}"
+    )
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt},
+                    {"inline_data": {"mime_type": mime_type, "data": image_base64}},
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": max_tokens,
+        },
+    }
+    res = requests.post(url, json=payload, timeout=60)
+    res.raise_for_status()
+    data = res.json()
+    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+
+def _groq_vision(prompt: str, image_base64: str, mime_type: str, max_tokens: int) -> str:
     from groq import Groq
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
     response = client.chat.completions.create(
