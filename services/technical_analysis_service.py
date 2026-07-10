@@ -1,7 +1,16 @@
 """
 Technical Analysis Service — computes indicators & structural levels from
-REAL historical OHLC data (yfinance), instead of asking an AI model to
-"eyeball" a chart image and guess numbers.
+REAL historical OHLC data, instead of asking an AI model to "eyeball" a
+chart image and guess numbers.
+
+Data source: US-listed symbols use Alpaca Markets' free IEX feed when
+ALPACA_API_KEY_ID / ALPACA_API_SECRET_KEY are configured — Alpaca's data API
+is free and its terms permit showing the data to end users (see
+services/source_registry.py). Everything else (non-US symbols, or Alpaca
+not configured / a request fails) falls back to yfinance, same as before.
+This reduces — but does not eliminate — reliance on yfinance's
+non-commercial-license grey area (see services/license_registry.py) without
+requiring a paid data plan to ship today.
 
 This is the numeric backbone for Chart Analysis MVP Phase 1:
     真實數據計算 RSI / MACD / Swing High-Low / 支撐阻力 / 0.618 Fibonacci
@@ -11,10 +20,24 @@ genuinely need a "human eye" — visual pattern recognition (雙頂/雙底/
 頭肩頂底/三角收斂 etc.) — never for numeric price levels.
 """
 
+import os
+import re
+from datetime import datetime, timedelta
+
 import numpy as np
 import pandas as pd
+import requests
 import yfinance as yf
 from typing import Dict, List, Optional
+
+ALPACA_DATA_URL = "https://data.alpaca.markets/v2/stocks/bars"
+ALPACA_PERIOD_DAYS = {"1mo": 30, "3mo": 90, "6mo": 182, "1y": 365, "2y": 730}
+ALPACA_INTERVAL_TIMEFRAME = {"1d": "1Day", "1h": "1Hour"}
+
+# Alpaca only lists US exchanges. A symbol with a dot-suffix (0700.HK,
+# 2330.TW, 7203.T ...) is never a US ticker, so don't even try Alpaca for
+# those — go straight to yfinance.
+_US_SYMBOL_RE = re.compile(r"^[A-Z]{1,5}$")
 
 
 class TechnicalAnalysisService:
@@ -26,7 +49,7 @@ class TechnicalAnalysisService:
         interval: str = "1d",
     ) -> Dict:
         try:
-            df = yf.Ticker(symbol).history(period=period, interval=interval)
+            df = self._fetch_history(symbol, period, interval)
         except Exception as e:
             return {"error": f"攞唔到 {symbol} 嘅歷史數據：{str(e)}"}
 
@@ -102,6 +125,69 @@ class TechnicalAnalysisService:
             "period": period,
             "interval": interval,
         }
+
+    # ---- data source routing ----
+
+    @staticmethod
+    def _fetch_history(symbol: str, period: str, interval: str) -> pd.DataFrame:
+        """
+        US-listed symbols try Alpaca first (free, commercial-use-friendly)
+        when API keys are configured; everything else — non-US symbols,
+        missing keys, or any Alpaca error — falls back to yfinance so
+        behaviour never breaks because of this routing.
+        """
+        symbol_upper = symbol.upper().strip()
+        alpaca_key = os.getenv("ALPACA_API_KEY_ID")
+        alpaca_secret = os.getenv("ALPACA_API_SECRET_KEY")
+
+        if alpaca_key and alpaca_secret and _US_SYMBOL_RE.match(symbol_upper):
+            try:
+                df = TechnicalAnalysisService._fetch_alpaca(
+                    symbol_upper, period, interval, alpaca_key, alpaca_secret
+                )
+                if df is not None and not df.empty:
+                    return df
+            except Exception:
+                pass  # fall through to yfinance below — never hard-fail here
+
+        return yf.Ticker(symbol).history(period=period, interval=interval)
+
+    @staticmethod
+    def _fetch_alpaca(
+        symbol: str, period: str, interval: str, api_key: str, api_secret: str
+    ) -> Optional[pd.DataFrame]:
+        days = ALPACA_PERIOD_DAYS.get(period, 182)
+        timeframe = ALPACA_INTERVAL_TIMEFRAME.get(interval, "1Day")
+        end = datetime.utcnow()
+        start = end - timedelta(days=days)
+
+        res = requests.get(
+            ALPACA_DATA_URL,
+            params={
+                "symbols": symbol,
+                "timeframe": timeframe,
+                "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "end": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "limit": 10000,
+                "feed": "iex",  # Alpaca's free tier feed
+            },
+            headers={
+                "APCA-API-KEY-ID": api_key,
+                "APCA-API-SECRET-KEY": api_secret,
+            },
+            timeout=15,
+        )
+        res.raise_for_status()
+        bars = res.json().get("bars", {}).get(symbol, [])
+        if not bars:
+            return None
+
+        df = pd.DataFrame(bars)
+        df["t"] = pd.to_datetime(df["t"])
+        df = df.set_index("t").rename(
+            columns={"o": "Open", "h": "High", "l": "Low", "c": "Close", "v": "Volume"}
+        )
+        return df[["Open", "High", "Low", "Close", "Volume"]]
 
     # ---- indicators ----
 
