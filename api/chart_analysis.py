@@ -118,12 +118,18 @@ async def chart_analysis(body: dict):
             f"- 支撐位：{tech['support']['level'] if tech['support'] else '未偵測到'}\n"
             f"- 阻力位：{tech['resistance']['level'] if tech['resistance'] else '未偵測到'}\n"
             f"- 0.618 Fibonacci回調位：{tech['fibonacci_0618']['level_0618'] if tech['fibonacci_0618'] else '未偵測到'}\n"
-            f"- 成交量：{tech['volume_desc']}\n\n"
+            f"- 成交量：{tech['volume_desc']}\n"
+            f"- 綜合訊號評分（Confluence）：{tech['confluence']['direction']}"
+            f"（分數{tech['confluence']['score']}，信心{tech['confluence']['confidence']}）\n"
+            f"  睇多訊號：{'、'.join(tech['confluence']['bullish_signals']) or '無'}\n"
+            f"  睇淡訊號：{'、'.join(tech['confluence']['bearish_signals']) or '無'}\n\n"
             "你嘅任務淨係兩樣：\n"
             "1. 純粹用眼睇圖，辨識圖表入面嘅視覺型態（雙頂/雙底/頭肩頂/頭肩底/三角收斂/突破回測/0.618回調結構）。\n"
-            "2. 結合上面提供嘅真實數據 + 你睇到嘅視覺型態，畀出簡短風險提示同建議。\n"
+            "2. 結合上面提供嘅真實數據 + Confluence評分 + 你睇到嘅視覺型態，畀出簡短風險提示同建議，"
+            "如果你睇到嘅型態同Confluence評分方向一致，要喺建議入面講明「型態同數據訊號一致」；"
+            "如果矛盾，要講明邊樣同邊樣有衝突，唔好扮冇睇到。\n"
             "唔好自己再估支撐位/阻力位/RSI/MACD數值，一律以上面提供嘅真實數據為準。\n"
-            "每個欄位答案要精簡，唔好超過15隻字。\n\n"
+            "每個欄位答案要精簡，唔好超過20隻字。\n\n"
             "只回覆一個JSON物件，唔好加任何其他文字、唔好加markdown、唔好加解釋：\n"
             "{\n"
             '  "patterns": {\n'
@@ -209,6 +215,7 @@ async def chart_analysis(body: dict):
                 "rsi": tech["rsi"],
                 "macd": tech["macd"]["trend"],
                 "fibonacci_0618": tech["fibonacci_0618"]["level_0618"] if tech["fibonacci_0618"] else None,
+                "confluence": tech["confluence"],
                 "patterns": ai_result.get("patterns", {}),
                 "risk": ai_result.get("risk", ""),
                 "recommendation": ai_result.get("recommendation", ""),

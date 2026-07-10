@@ -88,6 +88,7 @@
       <div class="result-row"><div class="result-label">支撐位</div><div class="result-value" id="supportValue">-</div></div>
       <div class="result-row"><div class="result-label">阻力位</div><div class="result-value" id="resistanceValue">-</div></div>
       <div class="result-row"><div class="result-label">0.618 回調位</div><div class="result-value" id="fibValue">-</div></div>
+      <div class="result-row"><div class="result-label">綜合訊號（Confluence）</div><div class="result-value" id="confluenceValue">-</div></div>
       <div class="result-row"><div class="result-label">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
       <div class="result-row"><div class="result-label">RSI</div><div class="result-value" id="rsiValue">-</div></div>
       <div class="result-row"><div class="result-label">MACD</div><div class="result-value" id="macdValue">-</div></div>
@@ -252,6 +253,12 @@ async function runImageAnalysis(){
     document.getElementById('supportValue').textContent = res.support || '-';
     document.getElementById('resistanceValue').textContent = res.resistance || '-';
     document.getElementById('fibValue').textContent = res.fibonacci_0618 != null ? res.fibonacci_0618 : '未有真實數據';
+    if(res.confluence){
+      const c = res.confluence;
+      document.getElementById('confluenceValue').textContent = `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`;
+    } else {
+      document.getElementById('confluenceValue').textContent = '未有真實數據';
+    }
     document.getElementById('volumeZone').textContent = res.volume || '-';
     document.getElementById('rsiValue').textContent = res.rsi || '-';
     document.getElementById('macdValue').textContent = res.macd || '-';
