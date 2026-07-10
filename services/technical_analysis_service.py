@@ -20,6 +20,7 @@ genuinely need a "human eye" — visual pattern recognition (雙頂/雙底/
 頭肩頂底/三角收斂 etc.) — never for numeric price levels.
 """
 
+import logging
 import os
 import re
 from datetime import datetime, timedelta
@@ -29,6 +30,8 @@ import pandas as pd
 import requests
 import yfinance as yf
 from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 ALPACA_DATA_URL = "https://data.alpaca.markets/v2/stocks/bars"
 ALPACA_PERIOD_DAYS = {"1mo": 30, "3mo": 90, "6mo": 182, "1y": 365, "2y": 730}
@@ -147,8 +150,15 @@ class TechnicalAnalysisService:
                 )
                 if df is not None and not df.empty:
                     return df
-            except Exception:
-                pass  # fall through to yfinance below — never hard-fail here
+            except Exception as e:
+                # Never hard-fail here — just fall through to yfinance below.
+                # The warning already logged inside _fetch_alpaca (with the
+                # X-Request-ID, if Alpaca returned one) is what you'd quote
+                # in a support ticket to Alpaca if this keeps happening.
+                logger.info(
+                    "Alpaca fetch failed for %s, falling back to yfinance: %s",
+                    symbol_upper, e,
+                )
 
         return yf.Ticker(symbol).history(period=period, interval=interval)
 
@@ -177,9 +187,28 @@ class TechnicalAnalysisService:
             },
             timeout=15,
         )
-        res.raise_for_status()
+        # Alpaca stamps every response with a unique X-Request-ID. Their own
+        # docs say to quote this in support tickets since it can't be looked
+        # up any other way after the fact — so capture it before anything
+        # else can raise, and log it alongside any failure.
+        request_id = res.headers.get("X-Request-ID")
+
+        try:
+            res.raise_for_status()
+        except requests.HTTPError as e:
+            logger.warning(
+                "Alpaca API error for %s: %s | X-Request-ID: %s "
+                "(quote this ID if contacting Alpaca support)",
+                symbol, e, request_id,
+            )
+            raise
+
         bars = res.json().get("bars", {}).get(symbol, [])
         if not bars:
+            logger.info(
+                "Alpaca returned no bars for %s | X-Request-ID: %s",
+                symbol, request_id,
+            )
             return None
 
         df = pd.DataFrame(bars)
