@@ -36,8 +36,9 @@ def check_and_increment(token: str, feature: str):
 
     plan = user["plan"]
 
-    # Pro 用戶無限制
-    if plan == "pro":
+    # Pro/Starter 用戶無限制（同services/quota_service.py::check()一致，
+    # 見嗰邊註解 -- pricing.html由Starter層開始就承諾「Unlimited」）
+    if plan in ("pro", "starter"):
         return True
 
     # 檢查 quota

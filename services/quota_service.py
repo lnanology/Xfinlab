@@ -64,8 +64,16 @@ class QuotaService:
         Returns:
             Dict with allowed, used, limit
         """
-        if plan == "pro":
-            return {"allowed": True, "used": 0, "limit": -1, "plan": "pro"}
+        # pricing.html promises "Unlimited AI analyses/research/PDF
+        # reports" starting from the Starter tier, not just Pro -- Pro's
+        # extra value-add over Starter is portfolio tracking/API
+        # access/priority processing, not higher quota. Payment isn't
+        # wired up yet (pricing.html's handleUpgrade() is still a
+        # "coming soon" stub), but this must be correct before it is,
+        # otherwise a paying Starter customer would silently still be
+        # capped at the free daily limits.
+        if plan in ("pro", "starter"):
+            return {"allowed": True, "used": 0, "limit": -1, "plan": plan}
 
         today = datetime.now().strftime("%Y-%m-%d")
         base_limit = FREE_LIMITS.get(feature, 5)
