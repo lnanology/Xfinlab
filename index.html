@@ -64,6 +64,51 @@
   .cta h2 { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
   .cta p { color: #64748b; margin-bottom: 28px; }
 
+  /* Problem -> Relief */
+  .pr-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; }
+  .pr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+  .pr-bad, .pr-good { padding: 16px 20px; border-radius: 10px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+  .pr-bad { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); color: #94a3b8; }
+  .pr-good { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.25); color: #e2e8f0; font-weight: 500; }
+  @media (max-width: 640px) { .pr-row { grid-template-columns: 1fr; } }
+
+  /* How it works */
+  .how-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; text-align: center; }
+  .steps-row { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
+  .step-box { background: #0d1525; border: 1px solid #1e2d45; border-radius: 14px; padding: 24px 28px; width: 180px; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(0,212,255,0.12); color: #00d4ff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; }
+  .step-title { font-size: 0.9rem; font-weight: 600; }
+  .step-arrow { color: #1e2d45; font-size: 1.4rem; }
+
+  /* Demo widget */
+  .demo-section { max-width: 640px; margin: 0 auto; padding: 60px 24px; text-align: center; }
+  .demo-box { background: #0d1525; border: 1px solid #1e2d45; border-radius: 16px; padding: 28px; margin-top: 20px; }
+  .demo-input-row { display: flex; gap: 8px; }
+  .demo-input-row input { flex: 1; background: #080c14; border: 1px solid #1e2d45; color: #e2e8f0; padding: 12px 16px; border-radius: 8px; font-size: 0.95rem; text-transform: uppercase; }
+  .demo-input-row input:focus { outline: none; border-color: #00d4ff; }
+  .demo-input-row button { background: #00d4ff; color: #000; border: none; padding: 12px 22px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+  .demo-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .demo-result { margin-top: 18px; text-align: left; background: #080c14; border: 1px solid #1e2d45; border-radius: 10px; padding: 18px; }
+  .demo-result-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.88rem; border-bottom: 1px dashed #1e2d45; }
+  .demo-result-row:last-child { border-bottom: none; }
+  .demo-cta { margin-top: 14px; font-size: 0.85rem; color: #64748b; }
+  .demo-error { margin-top: 14px; color: #f59e0b; font-size: 0.85rem; }
+
+  /* Pricing summary */
+  .pricing-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; text-align: center; }
+  .pricing-cards-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+  .price-mini { background: #0d1525; border: 1px solid #1e2d45; border-radius: 14px; padding: 24px; width: 200px; }
+  .price-mini.featured { border-color: rgba(0,212,255,0.4); }
+  .price-mini-name { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .price-mini-amount { font-size: 1.6rem; font-weight: 700; color: #00d4ff; margin-bottom: 6px; }
+  .price-mini-desc { font-size: 0.78rem; color: #64748b; }
+
+  /* FAQ */
+  .faq-section { max-width: 760px; margin: 0 auto; padding: 60px 24px; }
+  .faq-item { border-bottom: 1px solid #1e2d45; padding: 18px 0; }
+  .faq-q { font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; }
+  .faq-a { font-size: 0.85rem; color: #64748b; line-height: 1.7; }
+
   /* Footer */
   footer { border-top: 1px solid #1e2d45; padding: 32px 24px; text-align: center; color: #64748b; font-size: 0.78rem; }
   footer a { color: #64748b; text-decoration: none; margin: 0 12px; }
@@ -121,10 +166,28 @@
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="stat-num">20+</div><div class="stat-label">分析指標</div></div>
-    <div class="stat"><div class="stat-num">即時</div><div class="stat-label">市場數據</div></div>
-    <div class="stat"><div class="stat-num">AI</div><div class="stat-label">智能研究報告</div></div>
-    <div class="stat"><div class="stat-num">多幣</div><div class="stat-label">股票+加密+期貨</div></div>
+    <div class="stat"><div class="stat-num" id="statUsers">--</div><div class="stat-label">註冊用戶</div></div>
+    <div class="stat"><div class="stat-num" id="statAnalyses">--</div><div class="stat-label">已完成分析</div></div>
+    <div class="stat"><div class="stat-num">8</div><div class="stat-label">大技術指標</div></div>
+    <div class="stat"><div class="stat-num">股票+加密</div><div class="stat-label">覆蓋市場</div></div>
+  </div>
+</div>
+
+<!-- Problem -> Relief -->
+<div class="pr-section">
+  <div class="section-label">你嘅困擾</div>
+  <div class="section-title">由痛點到解決方案</div>
+  <div class="pr-row">
+    <div class="pr-bad">❌ 每日睇幾十篇新聞先搵到重點</div>
+    <div class="pr-good">✅ AI幾秒內幫你整合新聞情緒</div>
+  </div>
+  <div class="pr-row">
+    <div class="pr-bad">❌ 唔知支撐位、阻力位喺邊</div>
+    <div class="pr-good">✅ 用真實歷史數據自動計算</div>
+  </div>
+  <div class="pr-row">
+    <div class="pr-bad">❌ 唔知而家市場風險有幾大</div>
+    <div class="pr-good">✅ Risk Score + 壓力測試一目了然</div>
   </div>
 </div>
 
@@ -172,10 +235,92 @@
   </div>
 </div>
 
+<!-- How it works -->
+<div class="how-section">
+  <div class="section-label">開始好簡單</div>
+  <div class="section-title">3步即刻開始</div>
+  <div class="steps-row">
+    <div class="step-box"><div class="step-num">1</div><div class="step-title">輸入股票代號</div></div>
+    <div class="step-arrow">→</div>
+    <div class="step-box"><div class="step-num">2</div><div class="step-title">AI即時分析</div></div>
+    <div class="step-arrow">→</div>
+    <div class="step-box"><div class="step-num">3</div><div class="step-title">獲得完整報告</div></div>
+  </div>
+</div>
+
+<!-- Anonymous AI Demo -->
+<div class="demo-section">
+  <div class="section-label">免費體驗</div>
+  <div class="section-title">唔使註冊，即刻試用</div>
+  <p style="color:#64748b;font-size:0.88rem">每個IP每日可以免費試用一次真實技術分析（唔係mockup）</p>
+  <div class="demo-box">
+    <div class="demo-input-row">
+      <input id="demoTicker" placeholder="輸入股票代號 例如 AAPL" maxlength="10">
+      <button id="demoBtn" onclick="runDemo()">立即體驗</button>
+    </div>
+    <div id="demoResult" class="demo-result" style="display:none"></div>
+    <div id="demoError" class="demo-error" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Pricing summary -->
+<div class="pricing-section">
+  <div class="section-label">收費方案</div>
+  <div class="section-title">由免費開始</div>
+  <div class="pricing-cards-row">
+    <div class="price-mini">
+      <div class="price-mini-name">Free</div>
+      <div class="price-mini-amount">$0</div>
+      <div class="price-mini-desc">每日10次AI分析</div>
+    </div>
+    <div class="price-mini featured">
+      <div class="price-mini-name">Starter</div>
+      <div class="price-mini-amount">$19/月</div>
+      <div class="price-mini-desc">無限分析＋組合追蹤</div>
+    </div>
+    <div class="price-mini">
+      <div class="price-mini-name">Pro</div>
+      <div class="price-mini-amount">$49/月</div>
+      <div class="price-mini-desc">AI研究助手＋API</div>
+    </div>
+  </div>
+  <div style="margin-top:20px"><a href="pricing.html" class="feature-link">查看完整方案 →</a></div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section">
+  <div class="section-label" style="text-align:center">常見問題</div>
+  <div class="section-title" style="text-align:center">解答你嘅疑慮</div>
+  <div class="faq-item">
+    <div class="faq-q">支援邊啲市場？</div>
+    <div class="faq-a">美股（透過Alpaca即時數據）、全球其他市場同加密貨幣（透過yfinance/CoinGecko）。</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">數據來源係咩？</div>
+    <div class="faq-a">技術指標（RSI/MACD/支撐阻力/Fibonacci）由真實歷史股價計算，唔係AI估計。</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">AI分析可唔可靠？</div>
+    <div class="faq-a">數值指標100%基於真實數據計算；AI負責型態辨識同文字解讀，僅供參考，唔構成投資建議。</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">會唔會直接推薦邊隻股票買賣？</div>
+    <div class="faq-a">唔會。XFINLAB提供數據同分析參考，最終買賣決定由你自己判斷同承擔。</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">有冇免費版？</div>
+    <div class="faq-a">有，免費帳號每日10次AI分析，無需信用卡。</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">唔登入可唔可以試用？</div>
+    <div class="faq-a">可以，首頁「免費體驗」每個IP每日可以試一次真實技術分析。</div>
+  </div>
+</div>
+
 <!-- CTA -->
 <div style="padding: 0 24px;">
   <div class="cta">
-    <h2>立即開始免費分析</h2>
+    <h2>免費分析第一隻股票</h2>
     <p>免費帳號每日 10 次分析，無需信用卡</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
       <a href="login.html" class="btn-primary">免費註冊</a>
@@ -225,6 +370,58 @@ async function loadTickers() {
 
 loadTickers();
 initAutocomplete("heroTicker", "heroDropdown");
+
+// Trust Numbers -- 真實、live-computed數字，唔係hardcode
+async function loadPublicStats() {
+  try {
+    const res = await fetch(`${API}/public-stats`);
+    const data = await res.json();
+    document.getElementById('statUsers').textContent = (data.total_users || 0).toLocaleString();
+    document.getElementById('statAnalyses').textContent = (data.total_analyses || 0).toLocaleString();
+  } catch(e) {}
+}
+loadPublicStats();
+
+// 免登入AI Demo -- 每個IP每日限用一次，見api/public_demo.py
+async function runDemo() {
+  const ticker = (document.getElementById('demoTicker').value || '').trim().toUpperCase();
+  const btn = document.getElementById('demoBtn');
+  const resultBox = document.getElementById('demoResult');
+  const errorBox = document.getElementById('demoError');
+  if (!ticker) { alert('請輸入股票代號'); return; }
+
+  btn.disabled = true; btn.textContent = '分析緊...';
+  resultBox.style.display = 'none';
+  errorBox.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API}/demo/analyze/${encodeURIComponent(ticker)}`);
+    const data = await res.json();
+    if (!res.ok) {
+      errorBox.textContent = data.detail || '今日免費體驗已用完';
+      errorBox.style.display = 'block';
+      return;
+    }
+    resultBox.innerHTML = `
+      <div class="demo-result-row"><span>股票</span><strong>${data.ticker}</strong></div>
+      <div class="demo-result-row"><span>現價</span><strong>$${data.price}</strong></div>
+      <div class="demo-result-row"><span>趨勢</span><strong>${data.trend}</strong></div>
+      <div class="demo-result-row"><span>RSI</span><strong>${data.rsi}</strong></div>
+      <div class="demo-result-row"><span>綜合訊號</span><strong>${data.confluence_direction}（信心${data.confluence_confidence}）</strong></div>
+      <div class="demo-cta">呢個係精簡版 —— <a href="login.html" style="color:#00d4ff">免費註冊</a>解鎖支撐/阻力/Fibonacci/型態辨識完整報告</div>
+    `;
+    resultBox.style.display = 'block';
+    if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'demo', ticker});
+  } catch(e) {
+    errorBox.textContent = '分析失敗，請重試';
+    errorBox.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = '立即體驗';
+  }
+}
+document.getElementById('demoTicker').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') runDemo();
+});
 </script>
 
 <!-- Telegram Subscribe Widget -->
