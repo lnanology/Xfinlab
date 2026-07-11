@@ -802,7 +802,7 @@ async function runFullAnalysis() {
     const riskLevel = analysis.risk?.risk_level ?? '—';
     riskEl.textContent = riskLevel;
     riskEl.style.color = getRiskColor(riskLevel);
-    document.getElementById('riskScore').textContent = `Risk Score: ${analysis.risk_score?.toFixed(1) ?? '—'}`;
+    document.getElementById('riskScore').textContent = `RiskDNA™: ${analysis.risk_score?.toFixed(1) ?? '—'}`;
 
     const ratingEl = document.getElementById('rating');
     const rating = analysis.rating ?? research.ai_recommendation ?? '—';
