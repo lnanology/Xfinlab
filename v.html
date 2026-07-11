@@ -7,7 +7,7 @@
 <meta name="description" content="AI-powered V (Visa Inc.) stock analysis. Get real-time price, risk assessment, and investment rating powered by XFINLAB Intelligence.">
 <meta name="keywords" content="V, V stock, V analysis, Visa Inc., stock analysis, AI investment, XFINLAB">
 <meta property="og:title" content="V Stock Analysis - XFINLAB AI">
-<meta property="og:description" content="Get AI-powered V stock analysis. Price: $N/A | Score: N/A/100 | Rating: N/A">
+<meta property="og:description" content="Get AI-powered V stock analysis: real-time price, risk assessment, and investment rating — free on XFINLAB.">
 <style>
 body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
 nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45}
@@ -33,10 +33,13 @@ footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:
 <p class="subtitle">AI Investment Analysis · Updated June 21, 2026</p>
 
 <div class="grid">
-  <div class="card"><div class="label">Price</div><div class="value">$N/A</div></div>
-  <div class="card"><div class="label">AI Score</div><div class="value">N/A</div></div>
-  <div class="card"><div class="label">Risk Level</div><div class="value">N/A</div></div>
-  <div class="card"><div class="label">Rating</div><div class="value">N/A</div></div>
+  <div class="card"><div class="label">Price</div><div class="value" id="priceValue">—</div></div>
+  <div class="card"><div class="label">Trend</div><div class="value" id="trendValue" style="font-size:1.1rem">—</div></div>
+</div>
+
+<div class="section">
+<h2>Full AI Score, Risk &amp; Rating for V</h2>
+<p>XFINLAB's full platform generates a complete AI investment score, risk assessment, and rating for V from real market data, news sentiment, and technical indicators — free, no credit card required.</p>
 </div>
 
 <div class="section">
@@ -57,5 +60,25 @@ footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:
 <a href="https://xfinlab.com" class="cta">Get Full AI Analysis →</a>
 </main>
 <footer>© 2026 XFINLAB — AI Investment Intelligence Platform</footer>
+<script>
+(function() {
+  fetch('https://api.xfinlab.com/api/market/V')
+    .then(r => r.json())
+    .then(data => {
+      if (data && !data.error && data.price) {
+        document.getElementById('priceValue').textContent = '$' + data.price.toLocaleString();
+        const trendMap = { bullish: '📈 Bullish', bearish: '📉 Bearish' };
+        document.getElementById('trendValue').textContent = trendMap[data.trend] || '—';
+      } else {
+        document.getElementById('priceValue').textContent = 'N/A';
+        document.getElementById('trendValue').textContent = 'N/A';
+      }
+    })
+    .catch(() => {
+      document.getElementById('priceValue').textContent = 'N/A';
+      document.getElementById('trendValue').textContent = 'N/A';
+    });
+})();
+</script>
 </body>
 </html>
