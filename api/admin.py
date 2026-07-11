@@ -15,6 +15,46 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Default flag set + state. admin.html's toggle previously did nothing but
+# flip a CSS class client-side -- looked functional, wasn't. This makes it
+# real: values are persisted in a feature_flags table, seeded with these
+# defaults the first time the table is touched. NOTE: persisting the value
+# is as far as this goes for now -- none of the 7 actual endpoints
+# (research_agent/portfolio/anomaly/screener/chart_analysis/telegram_bot/
+# referral) currently check this table before serving a request, so
+# toggling a flag off here does NOT yet disable the feature. Wiring real
+# enforcement into each endpoint is separate, larger-scope work.
+_DEFAULT_FLAGS = {
+    "research_agent": True,
+    "portfolio": True,
+    "anomaly": True,
+    "screener": True,
+    "chart_analysis": True,
+    "telegram_bot": True,
+    "referral": True,
+}
+
+def init_feature_flags_table():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS feature_flags (
+            key TEXT PRIMARY KEY,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    existing = {r["key"] for r in conn.execute("SELECT key FROM feature_flags").fetchall()}
+    for key, default_enabled in _DEFAULT_FLAGS.items():
+        if key not in existing:
+            conn.execute(
+                "INSERT INTO feature_flags (key, enabled) VALUES (?, ?)",
+                (key, 1 if default_enabled else 0),
+            )
+    conn.commit()
+    conn.close()
+
+init_feature_flags_table()
+
 def verify_admin(token: str, action: str = None, request: Request = None):
     """
     Verifies the caller is the admin. When `action` is supplied, also
@@ -215,14 +255,22 @@ def get_audit_logs(token: str, request: Request, limit: int = 100):
 @router.get("/admin/feature-flags")
 def get_feature_flags(token: str, request: Request):
     verify_admin(token, "get_feature_flags", request)
-    return {
-        "flags": {
-            "research_agent": True,
-            "portfolio": True,
-            "anomaly": True,
-            "screener": True,
-            "chart_analysis": True,
-            "telegram_bot": True,
-            "referral": True,
-        }
-    }
+    conn = get_db()
+    rows = conn.execute("SELECT key, enabled FROM feature_flags").fetchall()
+    conn.close()
+    return {"flags": {r["key"]: bool(r["enabled"]) for r in rows}}
+
+@router.post("/admin/feature-flags/{key}")
+def set_feature_flag(key: str, token: str, request: Request, body: dict = {}):
+    verify_admin(token, f"set_feature_flag:{key}", request)
+    if key not in _DEFAULT_FLAGS:
+        raise HTTPException(status_code=404, detail=f"Unknown flag: {key}")
+    enabled = bool(body.get("enabled", True))
+    conn = get_db()
+    conn.execute(
+        "UPDATE feature_flags SET enabled = ?, updated_at = datetime('now') WHERE key = ?",
+        (1 if enabled else 0, key),
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "ok", "key": key, "enabled": enabled}

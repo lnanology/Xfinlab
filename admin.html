@@ -625,11 +625,31 @@ async function loadFlags() {
           <div class="flag-desc">${FLAGS_DESC[key]||''}</div>
         </div>
         <div class="toggle-wrap">
-          <div class="toggle ${val?'on':''}" onclick="this.classList.toggle('on')"></div>
+          <div class="toggle ${val?'on':''}" onclick="toggleFlag('${key}', this)"></div>
           <span class="toggle-label">${val?'ON':'OFF'}</span>
         </div>
       </div>`).join('');
   } catch(e) {}
+}
+
+async function toggleFlag(key, toggleEl) {
+  const willBeOn = !toggleEl.classList.contains('on');
+  const label = toggleEl.nextElementSibling;
+  toggleEl.classList.toggle('on');
+  if (label) label.textContent = willBeOn ? 'ON' : 'OFF';
+  try {
+    const res = await fetch(`${API}/admin/feature-flags/${key}?token=${adminToken}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({enabled: willBeOn})
+    });
+    if (!res.ok) throw new Error('save failed');
+  } catch(e) {
+    // 存唔到就還原返個toggle,唔好俾用戶以為save咗但其實冇
+    toggleEl.classList.toggle('on');
+    if (label) label.textContent = willBeOn ? 'OFF' : 'ON';
+    alert('設定儲存失敗，請重試');
+  }
 }
 
 async function upgradeUser(id) {
