@@ -196,7 +196,7 @@
 </footer>
 
 <script>
-const API = "https://patient-connection-production-9c1f.up.railway.app/api";
+const API = "https://api.xfinlab.com/api";
 
 function goAnalyze() {
   const ticker = document.getElementById('heroTicker').value.trim().toUpperCase();
@@ -272,7 +272,7 @@ async function submitFeedback() {
   if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
 
   try {
-    const res = await fetch('https://patient-connection-production-9c1f.up.railway.app/api/feedback', {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ type, message, email: email || null, token })

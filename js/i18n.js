@@ -6,7 +6,7 @@ const I18N = {
   async init() {
     try {
       const lang = this.currentLang;
-      const url = lang ? `https://patient-connection-production-9c1f.up.railway.app/api/i18n/${lang}` : `https://patient-connection-production-9c1f.up.railway.app/api/i18n/detect`;
+      const url = lang ? `https://api.xfinlab.com/api/i18n/${lang}` : `https://api.xfinlab.com/api/i18n/detect`;
       const res = await fetch(url);
       const data = await res.json();
       this.currentLang = data.language;
