@@ -6,7 +6,9 @@ from fastapi import APIRouter, HTTPException
 from services.email_service import EmailService
 
 router = APIRouter()
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+# See backend/auth/auth.py for why this needs ".." twice (backend/auth/ ->
+# backend/ -> repo root) to reach the canonical, Litestream-backed xfinlab.db.
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "xfinlab.db")
 
 
 def get_db():

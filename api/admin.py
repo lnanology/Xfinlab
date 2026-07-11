@@ -2,8 +2,9 @@ import sqlite3
 import os
 import time
 import requests
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from backend.auth.jwt_handler import verify_token
+from services.audit_log_service import log_action
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
@@ -14,17 +15,25 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-def verify_admin(token: str):
+def verify_admin(token: str, action: str = None, request: Request = None):
+    """
+    Verifies the caller is the admin. When `action` is supplied, also
+    writes an audit_logs entry for it -- every admin endpoint below passes
+    its own action name so there's a full trail of what the admin did.
+    """
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
     if payload.get("sub") != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Admin access required")
+    if action:
+        ip = request.client.host if request and request.client else None
+        log_action(payload.get("id"), f"admin:{action}", ip)
     return payload
 
 @router.get("/admin/stats")
-def get_stats(token: str):
-    verify_admin(token)
+def get_stats(token: str, request: Request):
+    verify_admin(token, "get_stats", request)
     conn = get_db()
     total_users = conn.execute("SELECT COUNT(*) as c FROM users").fetchone()["c"]
     pro_users = conn.execute("SELECT COUNT(*) as c FROM users WHERE plan='pro'").fetchone()["c"]
@@ -81,8 +90,8 @@ def get_stats(token: str):
     }
 
 @router.get("/admin/health")
-def get_health(token: str):
-    verify_admin(token)
+def get_health(token: str, request: Request):
+    verify_admin(token, "get_health", request)
     results = {}
 
     # Market API
@@ -128,8 +137,8 @@ def get_health(token: str):
     return results
 
 @router.get("/admin/users")
-def get_users(token: str, page: int = 1, limit: int = 20):
-    verify_admin(token)
+def get_users(token: str, request: Request, page: int = 1, limit: int = 20):
+    verify_admin(token, "get_users", request)
     conn = get_db()
     offset = (page - 1) * limit
     users = conn.execute(
@@ -141,8 +150,8 @@ def get_users(token: str, page: int = 1, limit: int = 20):
     return {"users": [dict(u) for u in users], "total": total, "page": page}
 
 @router.post("/admin/users/{user_id}/upgrade")
-def upgrade_user(user_id: int, token: str):
-    verify_admin(token)
+def upgrade_user(user_id: int, token: str, request: Request):
+    verify_admin(token, f"upgrade_user:{user_id}", request)
     conn = get_db()
     conn.execute("UPDATE users SET plan='pro' WHERE id=?", (user_id,))
     conn.commit()
@@ -150,8 +159,8 @@ def upgrade_user(user_id: int, token: str):
     return {"status": "ok", "message": f"User {user_id} upgraded to Pro"}
 
 @router.post("/admin/users/{user_id}/downgrade")
-def downgrade_user(user_id: int, token: str):
-    verify_admin(token)
+def downgrade_user(user_id: int, token: str, request: Request):
+    verify_admin(token, f"downgrade_user:{user_id}", request)
     conn = get_db()
     conn.execute("UPDATE users SET plan='free' WHERE id=?", (user_id,))
     conn.commit()
@@ -159,8 +168,8 @@ def downgrade_user(user_id: int, token: str):
     return {"status": "ok", "message": f"User {user_id} downgraded to Free"}
 
 @router.delete("/admin/users/{user_id}")
-def delete_user(user_id: int, token: str):
-    verify_admin(token)
+def delete_user(user_id: int, token: str, request: Request):
+    verify_admin(token, f"delete_user:{user_id}", request)
     conn = get_db()
     conn.execute("DELETE FROM users WHERE id=?", (user_id,))
     conn.commit()
@@ -168,9 +177,9 @@ def delete_user(user_id: int, token: str):
     return {"status": "ok", "message": f"User {user_id} deleted"}
 
 @router.post("/admin/push/telegram")
-async def push_telegram(token: str, body: dict = {}):
-    verify_admin(token)
+async def push_telegram(token: str, request: Request, body: dict = {}):
     channel = body.get("channel", "en")
+    verify_admin(token, f"push_telegram:{channel}", request)
     try:
         import subprocess
         scripts = {
@@ -188,8 +197,8 @@ async def push_telegram(token: str, body: dict = {}):
         return {"status": "error", "message": str(e)}
 
 @router.get("/admin/feature-flags")
-def get_feature_flags(token: str):
-    verify_admin(token)
+def get_feature_flags(token: str, request: Request):
+    verify_admin(token, "get_feature_flags", request)
     return {
         "flags": {
             "research_agent": True,

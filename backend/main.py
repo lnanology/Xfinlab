@@ -43,6 +43,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# One-time, idempotent: merges any users stranded in the legacy
+# backend/xfinlab.db (a DB_PATH bug, now fixed) into the canonical,
+# Litestream-backed root xfinlab.db. See services/db_migration.py.
+from services.db_migration import migrate_legacy_backend_db
+migrate_legacy_backend_db()
+
 # --- Rate limiting (Security & Operations Layer, Phase 2) ---
 # Blanket per-IP safety net against abuse/scraping bursts. This is separate
 # from services/quota_middleware.py, which limits per-user *feature* usage
