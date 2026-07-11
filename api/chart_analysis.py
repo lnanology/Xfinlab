@@ -1,7 +1,9 @@
 import base64
 import binascii
+import hashlib
 import json
 import re
+import time
 from fastapi import APIRouter
 
 from ai.ai_router import get_vision_response
@@ -11,6 +13,48 @@ router = APIRouter()
 
 # --- Security limits ---
 MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8MB, after base64 decoding
+
+# --- AI response cache (Security & Operations Layer, Phase 4 -- cost-free
+# version) ---
+# Keyed on a hash of the actual image bytes + symbol, so an IDENTICAL
+# repeated request (same screenshot, same symbol -- e.g. a double-click, a
+# page refresh, or a user re-checking the same chart minutes later) skips
+# the paid vision-model call entirely and returns the prior result. This is
+# a plain in-memory dict rather than Redis: same reasoning as the rate
+# limiter in backend/main.py -- we're a single Railway instance today, so
+# no shared-cache infra is needed yet, and a cache MISS always falls back
+# to a normal live call, so correctness never depends on the cache being
+# warm. Would need to move to Redis only if we ever scale to multiple
+# instances.
+_AI_RESPONSE_CACHE: dict[str, tuple[float, dict]] = {}
+_CACHE_TTL_SECONDS = 600  # 10 minutes
+_CACHE_MAX_ENTRIES = 500  # simple cap so this can never grow unbounded
+
+
+def _cache_key(raw_bytes: bytes, symbol: str) -> str:
+    h = hashlib.sha256()
+    h.update(raw_bytes)
+    h.update(symbol.encode("utf-8"))
+    return h.hexdigest()
+
+
+def _cache_get(key: str):
+    entry = _AI_RESPONSE_CACHE.get(key)
+    if not entry:
+        return None
+    ts, result = entry
+    if time.time() - ts > _CACHE_TTL_SECONDS:
+        _AI_RESPONSE_CACHE.pop(key, None)
+        return None
+    return result
+
+
+def _cache_set(key: str, result: dict) -> None:
+    if len(_AI_RESPONSE_CACHE) >= _CACHE_MAX_ENTRIES:
+        # Evict the oldest entry rather than letting the dict grow forever.
+        oldest_key = min(_AI_RESPONSE_CACHE, key=lambda k: _AI_RESPONSE_CACHE[k][0])
+        _AI_RESPONSE_CACHE.pop(oldest_key, None)
+    _AI_RESPONSE_CACHE[key] = (time.time(), result)
 
 # Real file signatures ("magic bytes") for the formats we accept.
 # We check the ACTUAL decoded bytes, not whatever mime_type the client claims.
@@ -93,6 +137,13 @@ async def chart_analysis(body: dict):
             "status": "error",
             "message": "僅支援 JPG / PNG / WebP 格式嘅圖片，請重新上傳。"
         }
+
+    # --- Cache check: identical (image bytes + symbol) within TTL skips
+    # the paid AI vision call entirely. ---
+    cache_key = _cache_key(raw_bytes, symbol)
+    cached_result = _cache_get(cache_key)
+    if cached_result is not None:
+        return {"status": "ok", "data": {**cached_result, "cached": True}}
 
     # --- Try to get REAL market data first (if a symbol was supplied) ---
     # This is the Chart Analysis MVP: numeric levels (支撐/阻力/RSI/MACD/
@@ -225,7 +276,8 @@ async def chart_analysis(body: dict):
             result = ai_result
             result["data_source"] = "ai_vision_only"
 
-        return {"status": "ok", "data": result}
+        _cache_set(cache_key, result)
+        return {"status": "ok", "data": {**result, "cached": False}}
     except Exception as e:
         return {
             "status": "error",
