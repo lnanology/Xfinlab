@@ -64,6 +64,26 @@
   .cta h2 { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
   .cta p { color: #64748b; margin-bottom: 28px; }
 
+  /* Live Market Pulse */
+  .pulse-section { max-width: 1000px; margin: 0 auto; padding: 40px 24px 0; }
+  .pulse-box { background: #0d1525; border: 1px solid #1e2d45; border-radius: 16px; padding: 24px 28px; }
+  .pulse-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+  .pulse-title { font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; animation: pulseDot 2s infinite; }
+  @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .pulse-overall { font-size: 0.85rem; color: #64748b; }
+  .pulse-overall strong { color: #e2e8f0; }
+  .pulse-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .pulse-card { background: #080c14; border: 1px solid #1e2d45; border-radius: 10px; padding: 14px; text-align: center; }
+  .pulse-card-label { font-size: 0.72rem; color: #64748b; margin-bottom: 6px; }
+  .pulse-card-price { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+  .pulse-card-dir { font-size: 0.75rem; }
+  .pulse-card-dir.bull { color: #10b981; }
+  .pulse-card-dir.bear { color: #ef4444; }
+  .pulse-card-dir.neutral { color: #f59e0b; }
+  .pulse-disclaimer { font-size: 0.72rem; color: #475569; margin-top: 14px; text-align: center; }
+  @media (max-width: 640px) { .pulse-grid { grid-template-columns: repeat(2, 1fr); } }
+
   /* Problem -> Relief */
   .pr-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; }
   .pr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
@@ -170,6 +190,23 @@
     <div class="stat"><div class="stat-num" id="statAnalyses">--</div><div class="stat-label">已完成分析</div></div>
     <div class="stat"><div class="stat-num">8</div><div class="stat-label">大技術指標</div></div>
     <div class="stat"><div class="stat-num">股票+加密</div><div class="stat-label">覆蓋市場</div></div>
+  </div>
+</div>
+
+<!-- Live Market Pulse -->
+<div class="pulse-section">
+  <div class="pulse-box">
+    <div class="pulse-head">
+      <div class="pulse-title"><span class="pulse-dot"></span>即時市場脈搏</div>
+      <div class="pulse-overall" id="pulseOverall">載入緊...</div>
+    </div>
+    <div class="pulse-grid" id="pulseGrid">
+      <div class="pulse-card"><div class="pulse-card-label">美股大盤</div><div class="pulse-card-price">--</div></div>
+      <div class="pulse-card"><div class="pulse-card-label">科技股</div><div class="pulse-card-price">--</div></div>
+      <div class="pulse-card"><div class="pulse-card-label">道瓊工業</div><div class="pulse-card-price">--</div></div>
+      <div class="pulse-card"><div class="pulse-card-label">加密貨幣</div><div class="pulse-card-price">--</div></div>
+    </div>
+    <div class="pulse-disclaimer">數據來自真實技術分析（非AI猜測），僅供參考，唔係投資建議</div>
   </div>
 </div>
 
@@ -381,6 +418,36 @@ async function loadPublicStats() {
   } catch(e) {}
 }
 loadPublicStats();
+
+// Live Market Pulse -- 見api/market_pulse.py, 5分鐘快取
+async function loadMarketPulse() {
+  try {
+    const res = await fetch(`${API}/market-pulse`);
+    const data = await res.json();
+    const overallEl = document.getElementById('pulseOverall');
+    if (overallEl) {
+      overallEl.innerHTML = `整體：<strong>${data.overall_sentiment}</strong> · ${data.volatility_desc}`;
+    }
+    const grid = document.getElementById('pulseGrid');
+    if (grid && Array.isArray(data.basket)) {
+      grid.innerHTML = data.basket.map(b => {
+        if (!b.available) {
+          return `<div class="pulse-card"><div class="pulse-card-label">${b.label}</div><div class="pulse-card-price">--</div></div>`;
+        }
+        const dirClass = b.confluence_direction === '偏多' ? 'bull' : (b.confluence_direction === '偏空' ? 'bear' : 'neutral');
+        return `<div class="pulse-card">
+          <div class="pulse-card-label">${b.label}</div>
+          <div class="pulse-card-price">$${b.price}</div>
+          <div class="pulse-card-dir ${dirClass}">${b.confluence_direction}</div>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) {
+    const overallEl = document.getElementById('pulseOverall');
+    if (overallEl) overallEl.textContent = '暫時無法載入';
+  }
+}
+loadMarketPulse();
 
 // 免登入AI Demo -- 每個IP每日限用一次，見api/public_demo.py
 async function runDemo() {

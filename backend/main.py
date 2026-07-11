@@ -38,6 +38,7 @@ from api.i18n import router as i18n_router
 from auth.email_verification import router as email_verification_router
 from api.public_stats import router as public_stats_router
 from api.public_demo import router as public_demo_router
+from api.market_pulse import router as market_pulse_router
 
 
 app = FastAPI(
@@ -49,10 +50,14 @@ app = FastAPI(
 # backend/xfinlab.db (a DB_PATH bug, now fixed) into the canonical,
 # Litestream-backed root xfinlab.db. See services/db_migration.py.
 from services.db_migration import (
+    ensure_wal_mode,
     migrate_legacy_backend_db,
     migrate_audit_logs_nullable_user_id,
     reset_admin_password_if_requested,
 )
+# Must run first — Litestream can only replicate writes once the DB is in
+# WAL mode. See ensure_wal_mode()'s docstring in services/db_migration.py.
+ensure_wal_mode()
 migrate_legacy_backend_db()
 migrate_audit_logs_nullable_user_id()
 reset_admin_password_if_requested()
@@ -138,6 +143,7 @@ app.include_router(i18n_router, prefix="/api", tags=["i18n"])
 app.include_router(email_verification_router, prefix="/api", tags=["Email Verification"])
 app.include_router(public_stats_router, prefix="/api", tags=["Public Stats"])
 app.include_router(public_demo_router, prefix="/api", tags=["Public Demo"])
+app.include_router(market_pulse_router, prefix="/api", tags=["Market Pulse"])
 
 
 @app.get("/")

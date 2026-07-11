@@ -37,6 +37,53 @@ ROOT_DB = os.path.join(_HERE, "..", "xfinlab.db")
 LEGACY_BACKEND_DB = os.path.join(_HERE, "..", "backend", "xfinlab.db")
 
 
+def ensure_wal_mode() -> None:
+    """
+    Critical Litestream prerequisite, found 2026-07-11 while debugging why
+    the admin account kept disappearing after every Railway redeploy.
+
+    Litestream replicates a SQLite database by watching its `-wal` file for
+    new frames and shipping them to R2. That `-wal` sidecar file only
+    exists once the database's journal_mode is set to "wal" -- SQLite's
+    default is "delete" mode (plain rollback journal, no `-wal` file at
+    all). This codebase never once called `PRAGMA journal_mode=WAL`
+    anywhere, and a fresh `sqlite3.connect()` + `CREATE TABLE` confirmed
+    locally that the default mode really is "delete", not "wal".
+
+    Net effect: every write this app ever made was going through the
+    ordinary rollback journal, which Litestream has nothing to watch --
+    so `litestream replicate` had no committed WAL frames to ship to R2
+    (or an unpredictable partial/inconsistent view of them). This means
+    the account-creation "timing race" theorised earlier may not have
+    been a race at all -- these writes were very possibly never being
+    backed up to R2 in the first place, on ANY deploy, since day one.
+
+    Fix: force journal_mode=WAL once at startup. This is stored in the
+    database file's header (not a per-connection setting), so it only
+    needs to succeed once -- subsequent calls are a no-op check. Safe to
+    run on every startup. Must run BEFORE any other migration/write in
+    this module so every write from here on is properly WAL-backed.
+    """
+    try:
+        conn = sqlite3.connect(ROOT_DB)
+        current = conn.execute("PRAGMA journal_mode").fetchone()
+        current_mode = current[0] if current else None
+        if current_mode and current_mode.lower() == "wal":
+            conn.close()
+            return
+        new_mode = conn.execute("PRAGMA journal_mode=WAL").fetchone()
+        conn.close()
+        logger.warning(
+            "db_migration: journal_mode was '%s', forced to '%s' -- this is "
+            "required for Litestream to actually replicate writes to R2. "
+            "See ensure_wal_mode() docstring for why this was silently "
+            "broken before.",
+            current_mode, new_mode[0] if new_mode else "unknown",
+        )
+    except Exception as e:
+        logger.warning("db_migration: ensure_wal_mode failed (non-fatal): %s", e)
+
+
 def migrate_legacy_backend_db() -> None:
     if not os.path.exists(LEGACY_BACKEND_DB):
         return
