@@ -68,6 +68,17 @@ class MarketDataService:
                     else "bearish"
                 )
 
+                # Price change % vs previous close - real figure (not
+                # estimated), used by AnomalyEngine for price_spike
+                # detection. yfinance sometimes exposes this directly as
+                # regularMarketChangePercent; fall back to computing it
+                # from previousClose if that field is missing.
+                previous_close = info.get("regularMarketPreviousClose") or info.get("previousClose")
+                change_pct = info.get("regularMarketChangePercent")
+                if change_pct is None and previous_close and price:
+                    change_pct = ((price - previous_close) / previous_close) * 100
+                price_change_pct = round(change_pct, 2) if change_pct is not None else 0.0
+
                 return {
                     "symbol": symbol.upper(),
                     "price": round(price, 2) if price else 0,
@@ -78,6 +89,7 @@ class MarketDataService:
                     "trend": trend,
                     "breakout": breakout,
                     "sentiment": sentiment,
+                    "price_change_pct": price_change_pct,
                 }
 
             except Exception as e:

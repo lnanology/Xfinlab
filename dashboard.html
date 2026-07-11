@@ -877,7 +877,8 @@ async function runFullAnalysis() {
 async function loadScreener() {
   document.getElementById('screenerContent').innerHTML = loading();
   try {
-    const res = await fetch(`${API}/screener`);
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/screener${token ? '?token=' + token : ''}`);
     const data = await res.json();
     const rows = (data.results || []).map(s => `
       <tr>
@@ -899,7 +900,8 @@ async function loadScreener() {
 async function loadPortfolio() {
   document.getElementById('portfolioContent').innerHTML = loading();
   try {
-    const res = await fetch(`${API}/portfolio`);
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/portfolio${token ? '?token=' + token : ''}`);
     const data = await res.json();
     const rows = (data.portfolio || []).map((p, i) => `
       <div class="alloc-row">
@@ -919,17 +921,22 @@ async function loadPortfolio() {
 async function loadAnomaly() {
   document.getElementById('anomalyContent').innerHTML = loading();
   try {
-    const res = await fetch(`${API}/anomaly`);
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/anomaly${token ? '?token=' + token : ''}`);
     const data = await res.json();
     const severity = data.severity || 'NONE';
-    const items = (data.anomalies || []).map(a => `
+    // Response shape is now per-ticker (data.items), since the scan
+    // covers the user's watchlist instead of one fixed hardcoded stock.
+    const items = (data.items || []).flatMap(tickerItem =>
+      (tickerItem.anomalies || []).map(a => `
       <div class="anomaly-item">
         <div class="anomaly-icon">⚡</div>
         <div>
-          <div class="anomaly-type">${a.type.replace(/_/g,' ')}</div>
+          <div class="anomaly-type">${tickerItem.ticker} · ${a.type.replace(/_/g,' ')}</div>
           <div class="anomaly-detail">${a.detail}</div>
         </div>
-      </div>`).join('');
+      </div>`)
+    ).join('');
 
     document.getElementById('anomalyContent').innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">

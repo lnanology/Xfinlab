@@ -1,13 +1,20 @@
 from fastapi import APIRouter
 from engines.screener_engine import ScreenerEngine
+from services.dashboard_snapshot_service import get_dashboard_tickers, compute_snapshots
 
 router = APIRouter()
 
+
 @router.get("/screener")
-def screener():
-    stocks = [
-        {"ticker": "AAPL", "market_score": 94, "news_score": 53, "strategy_score": 50, "risk_score": 29},
-        {"ticker": "NVDA", "market_score": 88, "news_score": 72, "strategy_score": 80, "risk_score": 45},
-        {"ticker": "TSLA", "market_score": 60, "news_score": 40, "strategy_score": 55, "risk_score": 75}
-    ]
+def screener(token: str = None):
+    """
+    Dashboard Screener panel. Was previously always the same 3
+    hardcoded stocks (AAPL/NVDA/TSLA) with hand-picked fake scores for
+    every user. Now scores the user's real watchlist (or a small
+    default basket if logged out / no watchlist yet) from live market
+    + news data, then ranks/filters through the existing
+    ScreenerEngine formula.
+    """
+    tickers = get_dashboard_tickers(token)
+    stocks = compute_snapshots(tickers)
     return ScreenerEngine.screen(stocks)
