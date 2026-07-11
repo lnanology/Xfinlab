@@ -4,7 +4,7 @@ import time
 import requests
 from fastapi import APIRouter, HTTPException, Request
 from backend.auth.jwt_handler import verify_token
-from services.audit_log_service import log_action
+from services.audit_log_service import log_action, get_recent_logs
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
@@ -201,6 +201,16 @@ async def push_telegram(token: str, request: Request, body: dict = {}):
         return {"status": "ok", "message": f"Pushing to {channel} channel"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@router.get("/admin/audit-logs")
+def get_audit_logs(token: str, request: Request, limit: int = 100):
+    """
+    Security & Operations Layer, Phase 2 -- surfaces the audit_logs table
+    (login/register/admin actions, written by services/audit_log_service.py)
+    in the admin dashboard. Capped at 200 to keep the response light.
+    """
+    verify_admin(token, "get_audit_logs", request)
+    return {"logs": get_recent_logs(limit=min(limit, 200))}
 
 @router.get("/admin/feature-flags")
 def get_feature_flags(token: str, request: Request):
