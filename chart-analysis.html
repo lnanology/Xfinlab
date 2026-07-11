@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="js/ai-loading.js"></script>
 <script src="js/decision-footer.js"></script>
+<script src="js/share-tools.js"></script>
 <style>
 /* Page-specific small adjustments while fully using site style */
 .container{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem;flex:1}
@@ -85,6 +86,7 @@
 
   <div class="analysis-section">
     <div class="analysis-main">
+      <div id="resultContent">
       <h3 style="margin-top:0">AI 分析結果 <span class="meta-line" id="dataSourceTag" style="display:inline;margin-left:0.4rem"></span></h3>
 
       <div class="result-row"><div class="result-label">趨勢方向</div><div class="result-value" id="trendValue">-</div></div>
@@ -118,6 +120,9 @@
       </div>
 
       <div id="decisionFooter"></div>
+      </div>
+
+      <div id="shareBar"></div>
 
     </div>
 
@@ -335,6 +340,17 @@ async function runImageAnalysis(){
         // fabricated Decision Score™.
         window.renderDecisionFooter('decisionFooter', {});
       }
+    }
+
+    // Share System -- Image/PDF only, NO Link. Unlike ai-analysis.html,
+    // the input here is an uploaded image, which isn't something a URL
+    // query param can carry, so a "shareable link that re-runs the same
+    // analysis" isn't honestly possible on this page. Omitting the Link
+    // button rather than shipping a broken/fake one.
+    if (typeof window.renderShareBar === 'function') {
+      window.renderShareBar('shareBar', 'resultContent', {
+        filename: `xfinlab-chart-analysis-${symbol || 'result'}`
+      });
     }
 
   } catch (err) {

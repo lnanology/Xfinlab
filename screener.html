@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
 
 <style>nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
@@ -131,6 +132,7 @@
     <div class="analysis-text" id="resultContent"></div>
     <div style="font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;">⚠️ 以上篩選結果由AI生成，僅供參考，不構成投資建議。</div>
   </div>
+  <div id="shareBar"></div>
 </div>
 <script>
 const presets={
@@ -185,11 +187,34 @@ async function doScreen(){
     if(answer){
       document.getElementById('resultTitle').textContent=`${market} · ${sector} · ${risk} 篩選結果`;
       document.getElementById('resultContent').innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
+
+      if (typeof window.renderShareBar === 'function') {
+        const params = new URLSearchParams({ market, sector, cap, growth, value, risk });
+        const shareUrl = `${location.origin}${location.pathname}?${params.toString()}`;
+        window.renderShareBar('shareBar', 'resultCard', {
+          filename: `xfinlab-screener-${market}-${sector}`,
+          shareUrl: shareUrl
+        });
+      }
     }
-  }catch(e){document.getElementById('resultContent').innerHTML='<p style="color:var(--accent-red)">篩選出現問題，請稍後重試。</p>';} 
+  }catch(e){document.getElementById('resultContent').innerHTML='<p style="color:var(--accent-red)">篩選出現問題，請稍後重試。</p>';}
   document.getElementById('screenBtn').disabled=false;
 }
 function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
+
+// Share System: a link with the same filter params (?market=...&sector=...)
+// prefills every dropdown and re-runs the same real screening query.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  if (params.has('market')) {
+    ['market','sector','cap','growth','value','risk'].forEach(key => {
+      const v = params.get(key);
+      const el = document.getElementById('f_' + key);
+      if (v && el) el.value = v;
+    });
+    doScreen();
+  }
+});
 </script>
 
 <!-- Telegram Subscribe Widget -->

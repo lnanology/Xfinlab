@@ -148,32 +148,36 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
     </div>
   </div>
 
-  <!-- COMPARISON TABLE -->
-  <div class="table-section" id="tableSection">
-    <div class="result-title">📊 即時市場數據對比表</div>
-    <div class="table-wrapper">
-      <table class="compare-table" id="comparisonTable">
-        <thead>
-          <tr>
-            <th>市場指標</th>
-            <th colspan="5">公司比較</th>
-          </tr>
-          <tr id="headerRow">
-            <th style="background:var(--navy4);">指標</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-        </tbody>
-      </table>
+  <div id="resultContent">
+    <!-- COMPARISON TABLE -->
+    <div class="table-section" id="tableSection">
+      <div class="result-title">📊 即時市場數據對比表</div>
+      <div class="table-wrapper">
+        <table class="compare-table" id="comparisonTable">
+          <thead>
+            <tr>
+              <th>市場指標</th>
+              <th colspan="5">公司比較</th>
+            </tr>
+            <tr id="headerRow">
+              <th style="background:var(--navy4);">指標</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AI ANALYSIS SECTION -->
+    <div class="analysis-section" id="analysisSection">
+      <div class="result-title">🤖 AI 對標分析結果</div>
+      <div class="analysis-content" id="analysisContent"></div>
+      <div class="disclaimer">⚠️ 以上分析由AI根據即時市場數據生成，屬於文字對比與觀點整理，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
     </div>
   </div>
 
-  <!-- AI ANALYSIS SECTION -->
-  <div class="analysis-section" id="analysisSection">
-    <div class="result-title">🤖 AI 對標分析結果</div>
-    <div class="analysis-content" id="analysisContent"></div>
-    <div class="disclaimer">⚠️ 以上分析由AI根據即時市場數據生成，屬於文字對比與觀點整理，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
-  </div>
+  <div id="shareBar"></div>
 </div>
 
 <footer>
@@ -181,6 +185,7 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 </footer>
 
 <script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
 <script>
 function updateCompanyCount(){
@@ -279,7 +284,29 @@ function displayResults(data){
 
   const analysisText = data.analysis || data.conclusion || '';
   document.getElementById('analysisContent').innerHTML = analysisText ? formatAnalysis(analysisText) : '<p>暫時未能取得分析內容，請稍後重試。</p>';
+
+  if (symbols.length && typeof window.renderShareBar === 'function') {
+    const shareUrl = `${location.origin}${location.pathname}?companies=${encodeURIComponent(symbols.join(','))}`;
+    window.renderShareBar('shareBar', 'resultContent', {
+      filename: `xfinlab-compare-${symbols.join('-')}`,
+      shareUrl: shareUrl
+    });
+  }
 }
+
+// Share System: a link like company-compare.html?companies=AAPL,MSFT
+// prefills the input boxes and re-runs the same real comparison.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const companiesParam = params.get('companies');
+  if (companiesParam) {
+    const list = companiesParam.split(',').map(s => s.trim()).filter(Boolean).slice(0, 5);
+    const inputs = document.querySelectorAll('.company-input');
+    list.forEach((v, i) => { if (inputs[i]) inputs[i].value = v; });
+    updateCompanyCount();
+    doCompare();
+  }
+});
 
 function formatAnalysis(text){
   return text

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="js/nav.js"></script>
 <script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
 <style>
 nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
@@ -102,6 +103,8 @@ nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-
     <div class="data-quality-tag" id="dataQualityTag"></div>
   </div>
 
+  <div id="shareBar"></div>
+
   <div id="loadingBox" class="loading-text" style="display:none">計算緊…</div>
   <div id="errorBox" style="display:none;color:#e06868;font-size:0.85rem;padding:1rem 0;"></div>
 </div>
@@ -149,6 +152,20 @@ async function runScan(){
       `數據來源：技術分析${dq.tech_ok ? '✅' : '⚠️退回預設值'} · 即時報價${dq.snapshot_ok ? '✅' : '⚠️退回預設值'}`;
 
     panel.classList.add('show');
+
+    // Share System -- Link re-runs this SAME real scan for the same
+    // ticker. No "Suggested Action" text is ever attached on this page
+    // (see api/pipeline_api.py's docstring: these internal formulas
+    // aren't backtested/calibrated, so this page deliberately avoids
+    // anything recommendation-shaped) -- Image/PDF/Link here just export
+    // the same disclosed probability view, nothing more.
+    if (typeof window.renderShareBar === 'function') {
+      const shareUrl = `${location.origin}${location.pathname}?ticker=${encodeURIComponent(ticker)}`;
+      window.renderShareBar('shareBar', 'resultPanel', {
+        filename: `xfinlab-probability-scan-${ticker}`,
+        shareUrl: shareUrl
+      });
+    }
   } catch(err) {
     errorBox.textContent = '掃描失敗：' + err.message;
     errorBox.style.display = 'block';
@@ -157,6 +174,17 @@ async function runScan(){
     btn.disabled = false; btn.textContent = '🔍 掃描';
   }
 }
+
+// Share System: a link like probability-scan.html?ticker=TSLA prefills
+// the input and re-runs the same real scan.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const tickerParam = params.get('ticker');
+  if (tickerParam) {
+    document.getElementById('tickerInput').value = tickerParam;
+    runScan();
+  }
+});
 
 document.getElementById('tickerInput').addEventListener('keydown', function(e){
   if(e.key === 'Enter') runScan();

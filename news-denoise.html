@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="js/nav.js"></script>
 <script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
 
 <style>
@@ -96,9 +97,12 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   </div>
 
   <div class="result-section" id="denoisedSection">
-    <div class="result-title">📰 News Engine™ 分析報告</div>
-    <div class="result-content" id="denoisedContent"></div>
-    <div class="disclaimer">💡 以上內容由 AI 模型根據你提供的主題即時生成，屬於摘要與觀點整理，並非結構化新聞資料庫的統計結果，僅供參考，不構成投資建議。</div>
+    <div id="resultContent">
+      <div class="result-title">📰 News Engine™ 分析報告</div>
+      <div class="result-content" id="denoisedContent"></div>
+      <div class="disclaimer">💡 以上內容由 AI 模型根據你提供的主題即時生成，屬於摘要與觀點整理，並非結構化新聞資料庫的統計結果，僅供參考，不構成投資建議。</div>
+    </div>
+    <div id="shareBar"></div>
   </div>
 </div>
 
@@ -128,6 +132,14 @@ async function simulateDifyApi() {
 
     const text = data.analysis || data.conclusion || '';
     denoisedContent.innerHTML = text ? formatAnalysisText(text) : '<p>暫時未能取得分析內容，請稍後重試。</p>';
+
+    if (text && typeof window.renderShareBar === 'function') {
+      const shareUrl = `${location.origin}${location.pathname}?query=${encodeURIComponent(symbol)}`;
+      window.renderShareBar('shareBar', 'resultContent', {
+        filename: `xfinlab-news-${symbol}`,
+        shareUrl: shareUrl
+      });
+    }
   } catch (error) {
     console.error(error);
     responseJson.textContent = 'API 呼叫失敗，請稍後重試。';
@@ -136,6 +148,18 @@ async function simulateDifyApi() {
     button.disabled = false;
   }
 }
+
+// Share System: a link like news-denoise.html?query=AAPL prefills the
+// input and re-runs the same real analysis so it always shows live,
+// current news rather than a frozen snapshot.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const queryParam = params.get('query');
+  if (queryParam) {
+    document.getElementById('difySymbolInput').value = queryParam;
+    simulateDifyApi();
+  }
+});
 
 function formatAnalysisText(text) {
   return text
