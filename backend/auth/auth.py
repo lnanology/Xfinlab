@@ -4,7 +4,17 @@ import os
 from fastapi import APIRouter, HTTPException, Request
 from auth.user_model import UserRegister, UserLogin, UserResponse
 from auth.password import hash_password, verify_password
-from auth.jwt_handler import create_access_token
+# 2026-07-11 fix: 呢度之前用緊短路徑 `from auth.jwt_handler import ...`，
+# 但codebase入面第9個地方（quota_middleware/referral/quota/analytics/
+# onboarding/feedback/admin/watchlist）全部用緊長路徑
+# `from backend.auth.jwt_handler import ...`。Python嘅import系統將呢兩條
+# 路徑當做兩個唔同嘅module object，各自獨立執行一次jwt_handler.py嘅
+# top-level code——如果JWT_SECRET env var冇set，兩個instance會各自
+# 生成一個唔同嘅random secret，導致喺呢度create嘅token喺其他地方
+# verify唔到（反之亦然）。生產環境因為JWT_SECRET有set，兩個instance
+# 讀返同一個env var值，暫時冇壞，但呢個fragility喺local testing已經
+# 引致混淆，值得徹底消除。統一用返長路徑。
+from backend.auth.jwt_handler import create_access_token
 from services.email_service import EmailService
 from services.audit_log_service import log_action, count_recent_failed_logins
 from auth.email_verification import send_verification_email
@@ -126,7 +136,7 @@ def login(user: UserLogin, request: Request):
 
 @router.get("/auth/me")
 def get_me(token: str):
-    from auth.jwt_handler import verify_token
+    from backend.auth.jwt_handler import verify_token
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
