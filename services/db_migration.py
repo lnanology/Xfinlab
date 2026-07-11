@@ -179,16 +179,26 @@ def reset_admin_password_if_requested() -> None:
         conn = sqlite3.connect(ROOT_DB)
         conn.row_factory = sqlite3.Row
         row = conn.execute("SELECT id FROM users WHERE email = ?", (ADMIN_EMAIL,)).fetchone()
+        hashed = hash_password(new_password)
+
         if not row:
+            # 2026-07-11: production xfinlab.db 實際上係0個用戶(見
+            # api/public_stats.py 確認)，即係admin帳號本身都未存在過，
+            # 淨係UPDATE係冇用嘅。而家改成搵唔到就直接create一個。
+            conn.execute(
+                "INSERT INTO users (email, password, name, plan) VALUES (?, ?, ?, 'free')",
+                (ADMIN_EMAIL, hashed, "Admin"),
+            )
+            conn.commit()
+            conn.close()
             logger.warning(
-                "reset_admin_password_if_requested: no user row for %s -- "
-                "nothing to reset. Register that email first.",
+                "reset_admin_password_if_requested: no existing user row for %s -- "
+                "CREATED a new admin account via ADMIN_PASSWORD_RESET env var. "
+                "REMOVE THAT ENV VAR FROM RAILWAY NOW that you've logged in.",
                 ADMIN_EMAIL,
             )
-            conn.close()
             return
 
-        hashed = hash_password(new_password)
         conn.execute("UPDATE users SET password = ? WHERE email = ?", (hashed, ADMIN_EMAIL))
         conn.commit()
         conn.close()
