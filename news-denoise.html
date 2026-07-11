@@ -6,6 +6,8 @@
 <title>XFINLAB — 新聞去噪分析</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script src="js/nav.js"></script>
+<script src="js/mvp-api.js"></script>
 
 <style>
 body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
@@ -14,69 +16,33 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
 .input-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
 .input-label{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);display:block;margin-top:0.5rem;font-weight:600}
+.input-row{display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem}
+.input{flex:1;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);padding:0.6rem 0.8rem;border-radius:8px;outline:none;font-family:'Inter',sans-serif;font-size:0.95rem}
 .analyze-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0 16px;font-size:0.95rem;font-weight:600;cursor:pointer;height:44px}
 .analyze-btn:hover{background:#1D4ED8}
 .analyze-btn:disabled{background:#F3F4F6;color:var(--text-muted);cursor:not-allowed}
 .api-hint{font-size:0.88rem;color:var(--text-muted);margin-top:0.6rem}
+
 .api-response-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
-.api-response-title{font-size:0.92rem;color:var(--accent-blue);font-weight:600}
-.api-response{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:8px}
-.api-response-json{white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:0.88rem;color:var(--text-secondary);line-height:1.6;word-break:break-word}
+.api-response-title{font-size:0.92rem;color:var(--accent-blue);font-weight:600;cursor:pointer}
+.api-response{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:8px;display:none}
+.api-response.show{display:block}
+.api-response-json{white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--text-secondary);line-height:1.6;word-break:break-word}
 
 .loading-state{text-align:center;padding:1.75rem 1.5rem;color:var(--text-secondary)}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block}
+.dot-ani span:nth-child(2){animation-delay:0.2s}
+.dot-ani span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1}}
 
 .result-title{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent-blue);margin-bottom:0.8rem;font-weight:600}
 
-.sentiment-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px;display:none}
-.sentiment-section.show{display:block}
-.sentiment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:12px}
-.sentiment-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:12px;text-align:center}
-.sentiment-label{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:0.6rem}
-.sentiment-gauge{width:100%;height:44px;border-radius:22px;background:var(--bg-secondary);overflow:hidden;margin-bottom:12px;position:relative}
-.sentiment-fill{height:100%;transition:width 0.6s ease;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:0.9rem}
-.sentiment-bullish{background:linear-gradient(90deg,var(--accent-green),var(--accent-blue))}
-.sentiment-neutral{background:linear-gradient(90deg,var(--text-muted),var(--accent-orange))}
-.sentiment-bearish{background:linear-gradient(90deg,var(--accent-red),var(--accent-orange))}
-.sentiment-score{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--text-primary);margin-bottom:0.3rem}
-.sentiment-label-small{font-size:0.72rem;color:var(--text-muted)}
-
-.news-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-.news-section.show{display:block}
-.news-list{display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto}
-.news-item{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:12px}
-.news-source{font-size:0.75rem;color:var(--text-muted);margin-bottom:6px}
-.news-headline{font-size:0.96rem;color:var(--text-primary);font-weight:600;margin-bottom:6px;line-height:1.4}
-.news-snippet{font-size:0.88rem;color:var(--text-secondary);line-height:1.6}
-.news-sentiment-badge{display:inline-block;font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:12px;margin-top:0.6rem;font-weight:600}
-.sentiment-pos{background:rgba(22,163,74,0.12);color:var(--accent-green)}
-.sentiment-neg{background:rgba(220,38,38,0.12);color:var(--accent-red)}
-.sentiment-neu{background:rgba(107,114,128,0.08);color:var(--text-secondary)}
-
-.denoised-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-.denoised-section.show{display:block}
-.denoised-content{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:8px}
-.fact-item{border-left:3px solid var(--accent-blue);padding-left:1rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-color)}
-.fact-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-.fact-title{font-size:0.88rem;font-weight:600;color:var(--accent-blue);margin-bottom:0.3rem}
-.fact-description{font-size:0.88rem;color:var(--text-secondary);line-height:1.6}
-.fact-impact{display:inline-block;font-size:0.78rem;color:var(--text-muted);margin-top:0.4rem;padding:0.2rem 0.5rem;background:var(--bg-secondary);border-radius:3px}
-
-.blindspot-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-.blindspot-section.show{display:block}
-.blindspot-content{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:8px}
-.blindspot-item{border-left:3px solid var(--accent-orange);padding-left:1rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-color)}
-.blindspot-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-.blindspot-title{font-size:0.88rem;font-weight:600;color:var(--accent-orange);margin-bottom:0.3rem}
-.blindspot-description{font-size:0.88rem;color:var(--text-secondary);line-height:1.6}
-
-.education-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-.education-section.show{display:block}
-.education-content{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:8px;line-height:1.6}
-.education-content h3{color:var(--accent-blue);font-size:0.92rem;font-weight:600;margin:1rem 0 0.4rem}
-.education-content strong{color:var(--accent-orange)}
-.education-content p{font-size:0.9rem;color:var(--text-secondary);margin-bottom:0.8rem}
-.education-content ul{padding-left:1.5rem;font-size:0.9rem;color:var(--text-secondary)}
-.education-content li{margin-bottom:0.4rem}
+.result-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px;display:none}
+.result-section.show{display:block}
+.result-content{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:14px;margin-top:8px;line-height:1.75;font-size:0.92rem;color:var(--text-secondary)}
+.result-content h3{color:var(--accent-blue);font-size:0.95rem;font-weight:600;margin:1rem 0 0.4rem}
+.result-content h3:first-child{margin-top:0}
+.result-content strong{color:var(--accent-orange)}
 
 .disclaimer{font-size:0.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:1rem;margin-top:1rem;line-height:1.6}
 
@@ -86,205 +52,104 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   nav{padding:0.7rem 1rem}
   .container{padding:18px 12px}
   .input-section{padding:12px}
+  .input-row{flex-direction:column;align-items:stretch}
   .analyze-btn{width:100%}
-  <style>
-  body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
-  nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
-  .container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+}
+</style>
+</head>
+<body>
 
-  .input-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
-  .input-label{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);display:block;margin-top:0.4rem;font-weight:600}
-  .analyze-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0 16px;height:44px;font-size:0.95rem;font-weight:600;cursor:pointer;white-space:nowrap}
-  .analyze-btn:hover{background:#1D4ED8}
-  .analyze-btn:disabled{background:#F3F4F6;color:var(--text-muted);cursor:not-allowed}
-  .api-hint{font-size:0.86rem;color:var(--text-muted);margin-top:0.6rem}
-  .api-response-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px}
-  .api-response-title{font-size:0.95rem;color:var(--accent-blue);font-weight:600}
-  .api-response{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:12px}
-  .api-response-json{white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:0.92rem;color:var(--text-secondary);line-height:1.6;word-break:break-word}
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link">首頁</a>
+    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link">K線分析</a>
+    <a href="probability-scan.html" class="nav-link">機率掃描</a>
+  </div>
+</nav>
 
-  .loading-state{text-align:center;padding:2rem 1.5rem;color:var(--text-secondary)}
-  .dot-ani span{animation:blink 1.4s infinite;display:inline-block}
-  .dot-ani span:nth-child(2){animation-delay:0.2s}
-  .dot-ani span:nth-child(3){animation-delay:0.4s}
-  @keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1}}
+<div class="container">
+  <div class="page-tag">AI 分析工具</div>
+  <h1 class="page-title">新聞去噪分析</h1>
+  <p class="page-sub">輸入股票代號或市場主題，AI 會整理最新新聞重點並過濾情感化炒作字眼，給你一份簡潔摘要。</p>
 
-  .result-title{font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent-blue);margin-bottom:0.8rem;font-weight:600}
-
-  .sentiment-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-  .sentiment-section.show{display:block}
-  .sentiment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-top:1rem}
-  .sentiment-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:12px;text-align:center}
-  .sentiment-label{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:0.6rem}
-  .sentiment-gauge{width:100%;height:52px;border-radius:26px;background:var(--bg-primary);overflow:hidden;margin-bottom:0.8rem;position:relative}
-  .sentiment-fill{height:100%;transition:width 0.6s ease;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:0.9rem}
-  .sentiment-bullish{background:linear-gradient(90deg,var(--accent-green),var(--accent-blue))}
-  .sentiment-neutral{background:linear-gradient(90deg,var(--text-muted),var(--accent-orange))}
-  .sentiment-bearish{background:linear-gradient(90deg,var(--accent-red),var(--accent-orange))}
-  .sentiment-score{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--text-primary);margin-bottom:0.2rem}
-  .sentiment-label-small{font-size:0.75rem;color:var(--text-muted)}
-
-  .news-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-  .news-section.show{display:block}
-  .news-list{display:flex;flex-direction:column;gap:0.8rem;max-height:400px;overflow-y:auto}
-  .news-item{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:12px}
-  .news-source{font-size:0.74rem;color:var(--text-muted);margin-bottom:0.4rem}
-  .news-headline{font-size:0.9rem;color:var(--text-primary);font-weight:600;margin-bottom:0.4rem;line-height:1.4}
-  .news-snippet{font-size:0.86rem;color:var(--text-secondary);line-height:1.6}
-  .news-sentiment-badge{display:inline-block;font-size:0.72rem;padding:0.18rem 0.5rem;border-radius:12px;margin-top:0.6rem;font-weight:600}
-  .sentiment-pos{background:rgba(22,163,74,0.08);color:var(--accent-green)}
-  .sentiment-neg{background:rgba(220,38,38,0.08);color:var(--accent-red)}
-  .sentiment-neu{background:rgba(107,114,128,0.08);color:var(--text-secondary)}
-
-  .denoised-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-  .denoised-section.show{display:block}
-  .denoised-content{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:12px;margin-top:8px}
-  .fact-item{border-left:3px solid var(--accent-blue);padding-left:1rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-color)}
-  .fact-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-  .fact-title{font-size:0.9rem;font-weight:600;color:var(--accent-blue);margin-bottom:0.3rem}
-  .fact-description{font-size:0.86rem;color:var(--text-secondary);line-height:1.6}
-  .fact-impact{display:inline-block;font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem;padding:0.18rem 0.5rem;background:var(--bg-primary);border-radius:6px}
-
-  .blindspot-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-  .blindspot-section.show{display:block}
-  .blindspot-content{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:12px;margin-top:8px}
-  .blindspot-item{border-left:3px solid var(--accent-orange);padding-left:1rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-color)}
-  .blindspot-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-  .blindspot-title{font-size:0.9rem;font-weight:600;color:var(--accent-orange);margin-bottom:0.3rem}
-  .blindspot-description{font-size:0.86rem;color:var(--text-secondary);line-height:1.6}
-
-  .education-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:12px;margin-bottom:16px;display:none}
-  .education-section.show{display:block}
-  .education-content{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:12px;margin-top:8px;line-height:1.8}
-  .education-content h3{color:var(--accent-blue);font-size:0.92rem;font-weight:600;margin:0.8rem 0 0.4rem}
-  .education-content strong{color:var(--accent-orange)}
-  .education-content p{font-size:0.88rem;color:var(--text-secondary);margin-bottom:0.6rem}
-  .education-content ul{padding-left:1.5rem;font-size:0.88rem;color:var(--text-secondary)}
-  .education-content li{margin-bottom:0.4rem}
-
-  .disclaimer{font-size:0.82rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:1rem;margin-top:1rem;line-height:1.6}
-
-  .footer{padding:2rem 1.5rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
-
-  @media(max-width:768px){
-    nav{padding:8px 12px}
-    .container{padding:16px}
-    .input-section{padding:12px}
-    .analyze-btn{width:100%}
-    .sentiment-grid{grid-template-columns:1fr}
-    .news-list{max-height:300px}
-  }
-
-  @media(max-width:600px){
-    .nav-cta{padding:0.3rem 0.8rem;font-size:0.7rem}
-    .input-section{padding:10px}
-    .sentiment-card{padding:10px}
-    .news-item{padding:8px}
-    .denoised-content,.blindspot-content,.education-content{padding:10px}
-  }
-  </style>
-      <div style="margin-top:1rem;">
-        <div class="reusable-score-card" data-title="新聞面評分" data-fund="0" data-tech="0" data-news="75" data-risk="20" data-overall="72"></div>
-      </div>
-    <div class="disclaimer">💡 降噪後事實基於新聞流量、重複度、來源權威性綜合判斷，過濾情感化表述與炒作。</div>
+  <div class="input-section">
+    <label class="input-label">股票代號或主題</label>
+    <div class="input-row">
+      <input type="text" id="difySymbolInput" class="input" placeholder="例如：AAPL、0700.HK、Fed 議息、大盤走勢">
+      <button class="analyze-btn" id="difyAnalyzeBtn" onclick="simulateDifyApi()">開始分析</button>
+    </div>
+    <div class="api-hint">💡 由 AI 即時生成，非結構化新聞資料庫統計。</div>
   </div>
 
-  <!-- BLINDSPOT SECTION -->
-  <div class="blindspot-section" id="blindspotSection">
-    <div class="result-title">⚠️ 散戶常見盲點</div>
-    <div class="blindspot-content" id="blindspotContent">
-      <div class="loading-state"><div class="dot-ani">識別盲點中<span>.</span><span>.</span><span>.</span></div></div>
+  <div class="api-response-section">
+    <div class="api-response-title" onclick="document.getElementById('apiResponseBox').classList.toggle('show')">🔍 查看原始 API 回應（除錯用）</div>
+    <div class="api-response" id="apiResponseBox">
+      <div class="api-response-json" id="apiResponseJson">尚未查詢。</div>
     </div>
-    <div class="disclaimer">🎓 盲點分析旨在教育投資者如何識別媒體操縱、避免情感化決策。</div>
   </div>
 
-  <!-- EDUCATION SECTION -->
-  <div class="education-section" id="educationSection">
-    <div class="result-title">📚 AI教育解說區</div>
-    <div class="education-content" id="educationContent">
-      <div class="loading-state"><div class="dot-ani">生成教學內容<span>.</span><span>.</span><span>.</span></div></div>
-    </div>
-    <div class="disclaimer">本教育內容幫助投資者理解新聞如何影響股價，學習如何透過數據而非情感進行決策。</div>
+  <div class="result-section" id="denoisedSection">
+    <div class="result-title">📰 新聞分析報告</div>
+    <div class="result-content" id="denoisedContent"></div>
+    <div class="disclaimer">💡 以上內容由 AI 模型根據你提供的主題即時生成，屬於摘要與觀點整理，並非結構化新聞資料庫的統計結果，僅供參考，不構成投資建議。</div>
   </div>
 </div>
 
 <script>
 async function simulateDifyApi() {
-  const symbol = document.getElementById('difySymbolInput').value.trim().toUpperCase();
+  const symbol = document.getElementById('difySymbolInput').value.trim();
   const responseJson = document.getElementById('apiResponseJson');
   const button = document.getElementById('difyAnalyzeBtn');
+  const denoisedSection = document.getElementById('denoisedSection');
+  const denoisedContent = document.getElementById('denoisedContent');
 
   if (!symbol) {
-    responseJson.textContent = '請先輸入股票代號，例如 AAPL 或 700.HK。';
+    responseJson.textContent = '請先輸入股票代號或主題，例如 AAPL 或 700.HK。';
     return;
   }
 
   button.disabled = true;
+  denoisedSection.classList.remove('show');
+  denoisedContent.innerHTML = '<div class="loading-state"><div class="dot-ani">AI 分析中<span>.</span><span>.</span><span>.</span></div></div>';
+  denoisedSection.classList.add('show');
   responseJson.textContent = '正在呼叫 /api/news-denoise，請稍候…';
 
   try {
-    const result = await postApi('/api/news-denoise', { symbol });
-    const data = result.data;
+    const result = await postApi('/api/news-denoise', { query: symbol });
+    const data = result.data || {};
     responseJson.textContent = JSON.stringify(result, null, 2);
 
-    document.getElementById('sentimentSection').classList.add('show');
-    document.getElementById('newsSection').classList.add('show');
-    document.getElementById('denoisedSection').classList.add('show');
-    document.getElementById('blindspotSection').classList.add('show');
-    document.getElementById('educationSection').classList.add('show');
-
-    document.getElementById('totalSentiment').style.width = data.sentimentIndex + '%';
-    document.getElementById('totalScore').textContent = data.sentimentIndex + '/100';
-    document.getElementById('totalLabel').textContent = data.sentimentIndex >= 60 ? '情緒較正面' : '情緒偏保守';
-    document.getElementById('bullishGauge').style.width = data.sentiment.bullish + '%';
-    document.getElementById('neutralGauge').style.width = data.sentiment.neutral + '%';
-    document.getElementById('bearishGauge').style.width = data.sentiment.bearish + '%';
-    document.getElementById('bullishPercent').textContent = data.sentiment.bullish + '%';
-    document.getElementById('neutralPercent').textContent = data.sentiment.neutral + '%';
-    document.getElementById('bearishPercent').textContent = data.sentiment.bearish + '%';
-
-    const newsList = document.getElementById('newsList');
-    newsList.innerHTML = data.facts.map(item => `
-      <div class="news-item">
-        <div class="news-source">${item.title}</div>
-        <div class="news-headline">${item.text}</div>
-      </div>
-    `).join('');
-
-    const denoisedContent = document.getElementById('denoisedContent');
-    denoisedContent.innerHTML = data.facts.map(item => `
-      <div class="fact-item">
-        <div class="fact-title">${item.title}</div>
-        <div class="fact-description">${item.text}</div>
-      </div>
-    `).join('');
-
-    const blindspotContent = document.getElementById('blindspotContent');
-    blindspotContent.innerHTML = data.blindspots.map(item => `
-      <div class="blindspot-item">
-        <div class="blindspot-title">${item.title}</div>
-        <div class="blindspot-description">${item.text}</div>
-      </div>
-    `).join('');
-
-    const educationContent = document.getElementById('educationContent');
-    educationContent.innerHTML = `<p>${data.explanation}</p>`;
+    const text = data.analysis || data.conclusion || '';
+    denoisedContent.innerHTML = text ? formatAnalysisText(text) : '<p>暫時未能取得分析內容，請稍後重試。</p>';
   } catch (error) {
     console.error(error);
-    responseJson.textContent = '模擬 API 呼叫失敗，請稍後重試。';
+    responseJson.textContent = 'API 呼叫失敗，請稍後重試。';
+    denoisedContent.innerHTML = '<p>⚠️ 分析時出現問題，請稍後重試。</p>';
   } finally {
     button.disabled = false;
   }
+}
+
+function formatAnalysisText(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\n/g, '<br>');
 }
 </script>
 
 <footer>
   <div class="footer-note">XFINLAB © 2026 · 智能金融分析平台 · <a href="privacy.html" style="color:var(--blue);text-decoration:none;">私隱政策</a></div>
 </footer>
-
-<script src="js/nav.js"></script>
-<script src="js/reusable-score-card.js"></script>
-<script src="js/mvp-api.js"></script>
 
 <script>
 function toggleNav(){
