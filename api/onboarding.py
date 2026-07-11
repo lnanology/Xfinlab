@@ -79,17 +79,14 @@ def complete_step(step: int, token: str):
 
         # 送額外 3 次分析 bonus
         if not record["bonus_given"]:
+            # 2026-07-11 fix: 之前呢度直接insert入quota_usage、用個
+            # 從來冇被check()讀過嘅feature key('full_analysis_bonus')，
+            # QuotaService.check()淨係睇'full_analysis'呢個key，所以
+            # 個bonus承諾咗都好，用戶實際上從未真正收到過任何額外額度。
+            # 而家用返QuotaService.grant_bonus()，真正加落today嘅
+            # 'full_analysis' limit度。
             from services.quota_service import QuotaService
-            # 加入 bonus quota
-            for _ in range(3):
-                try:
-                    conn.execute("""
-                        INSERT INTO quota_usage (user_id, feature, date, count)
-                        VALUES (?, 'full_analysis_bonus', date('now'), 0)
-                        ON CONFLICT DO NOTHING
-                    """, (user_id,))
-                except:
-                    pass
+            QuotaService.grant_bonus(user_id, "full_analysis", 3)
             conn.execute("UPDATE onboarding SET bonus_given=1 WHERE user_id=?", (user_id,))
             bonus_message = "🎉 Onboarding 完成！獲得額外 3 次分析獎勵！"
 
