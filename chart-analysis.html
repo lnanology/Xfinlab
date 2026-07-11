@@ -6,6 +6,7 @@
 <title>XFINLAB — Chart Engine™ AI K線圖分析</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script src="js/ai-loading.js"></script>
 <style>
 /* Page-specific small adjustments while fully using site style */
 .container{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem;flex:1}
@@ -243,6 +244,7 @@ async function runImageAnalysis(){
   }
 
   analyzeBtn.disabled = true; analyzeBtn.textContent='分析中...';
+  if (typeof window.startAiLoading === 'function') window.startAiLoading();
 
   try {
     // dataUrl looks like: data:image/png;base64,AAAA....
@@ -306,6 +308,7 @@ async function runImageAnalysis(){
     alert('分析失敗，請重試：' + err.message);
   } finally {
     analyzeBtn.disabled = false; analyzeBtn.textContent='🔍 執行 AI 分析';
+    if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
   }
 }
 

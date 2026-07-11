@@ -16,26 +16,36 @@ function _trackApiCall(path, payload) {
 
 async function postApi(path, payload) {
   _trackApiCall(path, payload);
-  const response = await fetch(API_BASE + path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`API 錯誤: ${response.status} ${text}`);
+  if (typeof window.startAiLoading === 'function') window.startAiLoading();
+  try {
+    const response = await fetch(API_BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`API 錯誤: ${response.status} ${text}`);
+    }
+    const data = await response.json();
+    return { status: 'ok', data: data.data || data };
+  } finally {
+    if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
   }
-  const data = await response.json();
-  return { status: 'ok', data: data.data || data };
 }
 
 async function getApi(path) {
   _trackApiCall(path, null);
-  const response = await fetch(API_BASE + path);
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`API 錯誤: ${response.status} ${text}`);
+  if (typeof window.startAiLoading === 'function') window.startAiLoading();
+  try {
+    const response = await fetch(API_BASE + path);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`API 錯誤: ${response.status} ${text}`);
+    }
+    const data = await response.json();
+    return { status: 'ok', data: data.data || data };
+  } finally {
+    if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
   }
-  const data = await response.json();
-  return { status: 'ok', data: data.data || data };
 }
