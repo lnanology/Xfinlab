@@ -36,6 +36,8 @@ from api.feedback import router as feedback_router
 from api.onboarding import router as onboarding_router
 from api.i18n import router as i18n_router
 from auth.email_verification import router as email_verification_router
+from api.public_stats import router as public_stats_router
+from api.public_demo import router as public_demo_router
 
 
 app = FastAPI(
@@ -129,6 +131,8 @@ app.include_router(feedback_router, prefix="/api", tags=["Feedback"])
 app.include_router(onboarding_router, prefix="/api", tags=["Onboarding"])
 app.include_router(i18n_router, prefix="/api", tags=["i18n"])
 app.include_router(email_verification_router, prefix="/api", tags=["Email Verification"])
+app.include_router(public_stats_router, prefix="/api", tags=["Public Stats"])
+app.include_router(public_demo_router, prefix="/api", tags=["Public Demo"])
 
 
 @app.get("/")
