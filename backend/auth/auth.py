@@ -70,6 +70,11 @@ def login(user: UserLogin, request: Request):
     row = conn.execute("SELECT * FROM users WHERE email = ?", (user.email,)).fetchone()
     conn.close()
     if not row or not verify_password(user.password, row["password"]):
+        # user_id=None is now allowed (see services/db_migration.py --
+        # audit_logs.user_id nullable migration) so failed attempts are
+        # visible for brute-force/credential-stuffing monitoring, not just
+        # successful logins.
+        log_action(None, f"login_failed:{user.email}", request.client.host if request.client else None)
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token = create_access_token({"sub": row["email"], "id": row["id"]})
     log_action(row["id"], "login", request.client.host if request.client else None)
