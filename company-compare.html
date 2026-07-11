@@ -108,20 +108,13 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
     <a href="chart-analysis.html" class="nav-link">K線分析</a>
     <a href="probability-scan.html" class="nav-link">機率掃描</a>
   </div>
-  <div class="nav-right">
-    <select id="langSelectComp" onchange="changeLang(this.value)" style="border:1px solid var(--border-color);padding:6px 8px;border-radius:8px;background:transparent;color:var(--text-primary);">
-      <option value="zh-HK">繁體中文</option>
-      <option value="en">English</option>
-      <option value="ja">日本語</option>
-      <option value="ko">한국어</option>
-    </select>
-  </div>
+
 </nav>
 
 <div class="container">
   <div class="page-tag">進階分析</div>
   <h1 class="page-title">多公司對標分析</h1>
-  <p class="page-sub">同時比較最多5家公司，AI深度分析市值、成長率、盈利能力及財務健康，幫你找出最值得投資的標的</p>
+  <p class="page-sub">同時比較最多5家公司嘅即時市場數據，並由AI提供優劣勢、風險及投資角度嘅文字對比</p>
 
   <!-- INPUT SECTION -->
   <div class="input-section">
@@ -157,12 +150,12 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 
   <!-- COMPARISON TABLE -->
   <div class="table-section" id="tableSection">
-    <div class="result-title">📊 財務指標對比表</div>
+    <div class="result-title">📊 即時市場數據對比表</div>
     <div class="table-wrapper">
       <table class="compare-table" id="comparisonTable">
         <thead>
           <tr>
-            <th>財務指標</th>
+            <th>市場指標</th>
             <th colspan="5">公司比較</th>
           </tr>
           <tr id="headerRow">
@@ -170,12 +163,6 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td class="metric-name">市值 (USD)</td></tr>
-          <tr><td class="metric-name">營收成長率 (%)</td></tr>
-          <tr><td class="metric-name">毛利率 (%)</td></tr>
-          <tr><td class="metric-name">ROE (%)</td></tr>
-          <tr><td class="metric-name">自由現金流 (M)</td></tr>
-          <tr><td class="metric-name">負債比率 (%)</td></tr>
         </tbody>
       </table>
     </div>
@@ -184,39 +171,8 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
   <!-- AI ANALYSIS SECTION -->
   <div class="analysis-section" id="analysisSection">
     <div class="result-title">🤖 AI 對標分析結果</div>
-    <div class="analysis-grid">
-      <div class="analysis-card">
-        <div class="analysis-card-title">🚀 最佳成長</div>
-        <div class="analysis-card-value" id="bestGrowth">-</div>
-        <div class="analysis-card-desc" id="bestGrowthDesc">營收與利潤增長最快</div>
-      </div>
-      <div class="analysis-card">
-        <div class="analysis-card-title">💎 最佳價值</div>
-        <div class="analysis-card-value" id="bestValue">-</div>
-        <div class="analysis-card-desc" id="bestValueDesc">估值最合理，護城河最強</div>
-      </div>
-      <div class="analysis-card">
-        <div class="analysis-card-title">⭐ 最佳品質</div>
-        <div class="analysis-card-value" id="bestQuality">-</div>
-        <div class="analysis-card-desc" id="bestQualityDesc">盈利能力與財務健康最優</div>
-      </div>
-      <div class="analysis-card">
-        <div class="analysis-card-title">⚠️ 最大風險</div>
-        <div class="analysis-card-value" id="maxRisk">-</div>
-        <div class="analysis-card-desc" id="maxRiskDesc">需關注的財務隱患</div>
-      </div>
-    </div>
     <div class="analysis-content" id="analysisContent"></div>
-    <div class="disclaimer">⚠️ 以上分析由AI生成，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
-  </div>
-
-  <!-- SCORE SECTION -->
-  <div class="score-section" id="scoreSection">
-    <div class="result-title">📈 綜合機率評分</div>
-    <div class="score-grid" id="scoreGrid">
-      <div class="reusable-score-card" data-title="示例：公司評分" data-fund="82" data-tech="70" data-news="68" data-risk="22" data-overall="74"></div>
-    </div>
-    <div class="disclaimer">💡 評分基於多維度財務指標：基本面反映盈利能力、成長力反映收入增速、財務健康度反映槓桿與流動性。</div>
+    <div class="disclaimer">⚠️ 以上分析由AI根據即時市場數據生成，屬於文字對比與觀點整理，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
   </div>
 </div>
 
@@ -241,7 +197,6 @@ function clearInputs(){
   document.querySelectorAll('.company-input').forEach(i=>i.value='');
   document.getElementById('tableSection').classList.remove('show');
   document.getElementById('analysisSection').classList.remove('show');
-  document.getElementById('scoreSection').classList.remove('show');
   updateCompanyCount();
 }
 
@@ -266,108 +221,74 @@ async function doCompare(){
   document.getElementById('analyzeBtn').disabled=true;
   document.getElementById('tableSection').classList.add('show');
   document.getElementById('analysisSection').classList.add('show');
-  document.getElementById('scoreSection').classList.add('show');
 
   // Show loading state
-  document.getElementById('tableBody').innerHTML='<tr><td colspan="99" style="text-align:center;padding:2rem;"><div class="loading-state"><div class="dot-ani">API 分析中<span>.</span><span>.</span><span>.</span></div></div></td></tr>';
+  document.getElementById('tableBody').innerHTML='<tr><td colspan="99" style="text-align:center;padding:2rem;"><div class="loading-state"><div class="dot-ani">讀取市場數據中<span>.</span><span>.</span><span>.</span></div></div></td></tr>';
   document.getElementById('analysisContent').innerHTML='<div class="loading-state"><div class="dot-ani">生成對標分析<span>.</span><span>.</span><span>.</span></div></div>';
-  document.getElementById('scoreGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:2rem;"><div class="dot-ani">計算評分<span>.</span><span>.</span><span>.</span></div></div>';
 
   try {
     const response = await postApi('/api/company-compare', { symbols: companies });
     displayResults(response.data);
   } catch (error) {
     console.error(error);
-    alert('分析失敗，請稍後重試');
+    document.getElementById('tableBody').innerHTML='<tr><td colspan="99" style="text-align:center;padding:2rem;color:var(--text3)">⚠️ 分析失敗，請稍後重試</td></tr>';
+    document.getElementById('analysisContent').innerHTML='<p>⚠️ 分析失敗，請稍後重試。</p>';
   }
 
   document.getElementById('analyzeBtn').disabled=false;
 }
 
 function displayResults(data){
-  const companies=data.companies;
-  const columns = companies.map(c=>c.symbol);
+  const marketData = data.market_data || {};
+  const symbols = Object.keys(marketData);
+
   let headerHtml='<tr id="headerRow"><th style="background:var(--navy4);">指標</th>';
-  columns.forEach(c=>{ headerHtml+=`<th>${c}</th>`; });
+  symbols.forEach(s=>{ headerHtml+=`<th>${s}</th>`; });
   headerHtml+='</tr>';
   document.getElementById('headerRow').innerHTML=headerHtml;
 
-  const metrics=[
-    {label:'毛利率 (%)', key:'grossMargin', unit:'%'},
-    {label:'成長率 (%)', key:'growthRate', unit:'%'},
-    {label:'ROE (%)', key:'roe', unit:'%'},
-    {label:'現金流 (M)', key:'cashFlow', unit:'M'},
-    {label:'風險評分', key:'riskScore', unit:''}
+  const fmtPrice = v => (v || v===0) ? `$${Number(v).toLocaleString()}` : 'N/A';
+  const fmtCap = v => {
+    if(!v) return 'N/A';
+    if(v>=1e12) return `$${(v/1e12).toFixed(2)}T`;
+    if(v>=1e9) return `$${(v/1e9).toFixed(2)}B`;
+    if(v>=1e6) return `$${(v/1e6).toFixed(1)}M`;
+    return `$${v}`;
+  };
+  const rows=[
+    {label:'現價', fn:c=>fmtPrice(c.price)},
+    {label:'市值', fn:c=>fmtCap(c.market_cap)},
+    {label:'成交量比 (今日/平均)', fn:c=>c.volume_ratio!=null?c.volume_ratio:'N/A'},
+    {label:'趨勢 (相對50日均線)', fn:c=>c.trend==='bullish'?'📈 偏多':c.trend==='bearish'?'📉 偏空':'N/A'},
+    {label:'接近52週高位', fn:c=>c.breakout?'✅ 是':'—'},
+    {label:'分析師評級傾向', fn:c=>c.sentiment==='bullish'?'看好':c.sentiment==='bearish'?'看淡':'N/A'},
   ];
 
   let tableHtml='';
-  metrics.forEach(metric=>{
-    tableHtml+=`<tr><td class="metric-name">${metric.label}</td>`;
-    companies.forEach(company=>{
-      const value = company[metric.key];
-      const isRisk = metric.key === 'riskScore';
-      const className = isRisk ? (value <= 40 ? 'best-value' : value >= 70 ? 'worst-value' : 'neutral-value') : 'neutral-value';
-      tableHtml+=`<td class="value-cell ${className}">${value}${metric.unit}</td>`;
+  rows.forEach(row=>{
+    tableHtml+=`<tr><td class="metric-name">${row.label}</td>`;
+    symbols.forEach(s=>{
+      const company = marketData[s] || {};
+      const cellVal = company.error ? '取數失敗' : row.fn(company);
+      tableHtml+=`<td class="value-cell neutral-value">${cellVal}</td>`;
     });
     tableHtml+='</tr>';
   });
-  document.getElementById('tableBody').innerHTML=tableHtml;
+  document.getElementById('tableBody').innerHTML=tableHtml || '<tr><td colspan="99" style="text-align:center;padding:2rem;">暫時未能取得市場數據</td></tr>';
 
-  document.getElementById('analysisContent').innerHTML=`<p>${data.analysis}</p>`;
-
-  const sortedByGrowth = [...companies].sort((a,b)=>b.growthRate-a.growthRate);
-  const sortedByValue = [...companies].sort((a,b)=>b.grossMargin-a.grossMargin);
-  const sortedByQuality = [...companies].sort((a,b)=>b.roe-a.roe);
-  const sortedByRisk = [...companies].sort((a,b)=>b.riskScore-a.riskScore);
-
-  document.getElementById('bestGrowth').textContent = sortedByGrowth[0].symbol;
-  document.getElementById('bestValue').textContent = sortedByValue[0].symbol;
-  document.getElementById('bestQuality').textContent = sortedByQuality[0].symbol;
-  document.getElementById('maxRisk').textContent = sortedByRisk[sortedByRisk.length-1].symbol;
-
-  let scoreHtml='';
-  companies.forEach(company=>{
-    scoreHtml+=`
-    <div class="score-card">
-      <div class="score-label">${company.symbol}</div>
-      <div style="margin-bottom:0.8rem;">
-        <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.3rem;">毛利率</div>
-        <div class="score-bar"><div class="score-fill" style="width:${company.grossMargin}%"></div></div>
-      </div>
-      <div style="margin-bottom:0.8rem;">
-        <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.3rem;">成長率</div>
-        <div class="score-bar"><div class="score-fill" style="width:${company.growthRate}%"></div></div>
-      </div>
-      <div style="margin-bottom:0.8rem;">
-        <div style="font-size:0.75rem;color:var(--text3);margin-bottom:0.3rem;">ROE</div>
-        <div class="score-bar"><div class="score-fill" style="width:${company.roe}%"></div></div>
-      </div>
-      <div style="margin-top:0.8rem;border-top:1px solid var(--border);padding-top:0.9rem;">
-        <div class="score-label" style="margin-bottom:0.3rem;">風險評分</div>
-        <div class="score-number">${company.riskScore}/100</div>
-      </div>
-    </div>`;
-  });
-  document.getElementById('scoreGrid').innerHTML=scoreHtml;
+  const analysisText = data.analysis || data.conclusion || '';
+  document.getElementById('analysisContent').innerHTML = analysisText ? formatAnalysis(analysisText) : '<p>暫時未能取得分析內容，請稍後重試。</p>';
 }
 
 function formatAnalysis(text){
   return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/^### (.+)$/gm,'<h3>$1</h3>')
     .replace(/^## (.+)$/gm,'<h3>$1</h3>')
     .replace(/\n/g,'<br>');
 }
-
-function getScoreDescription(score){
-  if(score>=80)return '⭐⭐⭐⭐⭐ 卓越';
-  if(score>=70)return '⭐⭐⭐⭐ 優秀';
-  if(score>=60)return '⭐⭐⭐ 良好';
-  if(score>=50)return '⭐⭐ 中等';
-  return '⭐ 需觀察';
-}
 </script>
-<script src="js/reusable-score-card.js"></script>
 
 <script>
 function toggleNav(){
