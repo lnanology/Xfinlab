@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "/app/bin/litestream replicate -config /app/litestream.yml -exec \"uvicorn backend.main:app --host 0.0.0.0 --port $PORT\"",
+    "startCommand": "/app/bin/litestream restore -config /app/litestream.yml -if-replica-exists /app/xfinlab.db; /app/bin/litestream replicate -config /app/litestream.yml -exec \"uvicorn backend.main:app --host 0.0.0.0 --port $PORT\"",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
