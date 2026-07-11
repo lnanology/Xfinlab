@@ -1,5 +1,32 @@
-// XFINLAB Nav Enhancement - adds login/user button only
+// XFINLAB Nav Enhancement - adds login/user button + site-wide analytics tracking
 (function() {
+  const API = 'https://api.xfinlab.com/api';
+  const SESSION_ID = Math.random().toString(36).substring(2);
+
+  // Global tracker so any page can call trackEvent('search', {ticker}) etc.
+  // without redefining it. Fire-and-forget, never throws. Was previously
+  // only defined inline on dashboard.html/chart-analysis.html, so every
+  // other page (screener/stress-lab/company-compare/news/ai-analysis) was
+  // invisible in the admin dashboard's DAU/MAU/trending stats.
+  if (!window.trackEvent) {
+    window.trackEvent = async function(event_type, event_data = null) {
+      try {
+        const token = localStorage.getItem('xfinlab_token');
+        await fetch(`${API}/analytics/track`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            event_type,
+            event_data,
+            token,
+            session_id: SESSION_ID,
+            page: (location.pathname.split('/').pop() || 'index.html')
+          })
+        });
+      } catch (e) {}
+    };
+  }
+
   function enhanceNav() {
     const user = JSON.parse(localStorage.getItem('xfinlab_user') || '{}');
     const nav = document.querySelector('nav');
@@ -29,4 +56,10 @@
   } else {
     enhanceNav();
   }
+
+  // Auto page_view. Harmless if a page also fires its own (e.g.
+  // dashboard.html, chart-analysis.html already do) -- DAU/MAU count
+  // DISTINCT users per day, not raw event rows, so a duplicate page_view
+  // doesn't skew those numbers.
+  window.trackEvent('page_view', {page: (location.pathname.split('/').pop() || 'index.html')});
 })();
