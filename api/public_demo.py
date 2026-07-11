@@ -3,14 +3,23 @@ Anonymous, no-login-required "taste" demo for the homepage.
 
 Product decision (2026-07-11): homepage should let a visitor try a real
 analysis before signing up (higher conversion than "register first").
-But XFINLAB's actual business model is login-gated (10 free analyses/day
-per account), and this endpoint has NO identity to rate-limit against
-except IP -- so it's deliberately kept to exactly 1 use per IP per day,
-and deliberately uses ONLY the free, already-computed technical analysis
-(services/technical_analysis_service.py -- real market data, real RSI/
-Confluence math, zero AI-provider cost) rather than calling any paid AI
-model. This means even if someone hammers this endpoint, the worst case
-is extra Alpaca/yfinance calls (free tier), never a Groq/Gemini bill.
+XFINLAB's actual business model is login-gated (10 free analyses/day per
+account), and this endpoint has NO identity to rate-limit against except
+IP -- so it deliberately uses ONLY the free, already-computed technical
+analysis (services/technical_analysis_service.py -- real market data,
+real RSI/Confluence math, zero AI-provider cost) rather than calling any
+paid AI model. This means even if someone hammers this endpoint, the
+worst case is extra Alpaca/yfinance calls (free tier, and still capped by
+the blanket 100/min-per-IP limiter in backend/main.py), never a
+Groq/Gemini bill.
+
+Quota model updated 2026-07-11 (product decision): instead of a strict
+1-use-per-day cap, anonymous visitors now get a 30-minute trial WINDOW
+per IP (unlimited analyses inside that window), then must log in. A new
+window only opens again 4 hours after the first window started. This is
+safe to loosen because the underlying cost is just free-tier market-data
+calls, not paid AI -- the thing actually worth protecting (AI provider
+spend) was never exposed here in the first place.
 
 Explicitly NOT the same as the full /api/chart-analysis or
 /api/full-analysis endpoints -- this returns a deliberately smaller
@@ -19,13 +28,16 @@ Explicitly NOT the same as the full /api/chart-analysis or
 
 import os
 import sqlite3
-from datetime import date
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Request
 
 from services.technical_analysis_service import get_technical_analysis
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+
+TRIAL_WINDOW_MINUTES = 30
+COOLDOWN_HOURS = 4
 
 
 def _get_db():
@@ -36,12 +48,25 @@ def _get_db():
 
 def init_demo_usage_table():
     conn = _get_db()
+
+    # Schema changed 2026-07-11 (daily-count -> trial-window). The old
+    # table shape was (ip, usage_date, count) with a composite primary
+    # key; the new one is (ip PRIMARY KEY, window_started_at, use_count).
+    # This data is purely ephemeral anonymous-IP throttling state (no user
+    # data, nothing worth preserving across the schema change), so if the
+    # old shape is detected, just drop and recreate rather than migrate.
+    cols = conn.execute("PRAGMA table_info(demo_usage)").fetchall()
+    if cols and "window_started_at" not in [c["name"] for c in cols]:
+        conn.execute("DROP TABLE demo_usage")
+
+    # window_started_at: when this IP's current 30-min trial window began.
+    # A fresh window only opens once COOLDOWN_HOURS have passed since the
+    # previous window_started_at.
     conn.execute("""
         CREATE TABLE IF NOT EXISTS demo_usage (
-            ip TEXT NOT NULL,
-            usage_date TEXT NOT NULL,
-            count INTEGER DEFAULT 0,
-            PRIMARY KEY (ip, usage_date)
+            ip TEXT PRIMARY KEY,
+            window_started_at TEXT NOT NULL,
+            use_count INTEGER DEFAULT 0
         )
     """)
     conn.commit()
@@ -50,44 +75,59 @@ def init_demo_usage_table():
 
 init_demo_usage_table()
 
-DEMO_DAILY_LIMIT_PER_IP = 1
-
 
 @router.get("/demo/analyze/{ticker}")
 def demo_analyze(ticker: str, request: Request):
     ip = request.client.host if request.client else "unknown"
-    today = date.today().isoformat()
+    now = datetime.utcnow()
 
     conn = _get_db()
-    row = conn.execute(
-        "SELECT count FROM demo_usage WHERE ip = ? AND usage_date = ?", (ip, today)
-    ).fetchone()
-    used = row["count"] if row else 0
+    row = conn.execute("SELECT * FROM demo_usage WHERE ip = ?", (ip,)).fetchone()
 
-    if used >= DEMO_DAILY_LIMIT_PER_IP:
-        conn.close()
-        raise HTTPException(
-            status_code=429,
-            detail="今日免費體驗已用完，註冊帳號享受每日10次完整AI分析。",
-        )
+    if row:
+        window_started_at = datetime.fromisoformat(row["window_started_at"])
+        elapsed = now - window_started_at
+
+        if elapsed <= timedelta(minutes=TRIAL_WINDOW_MINUTES):
+            # Still inside the free trial window -- unlimited analyses.
+            new_window_start = window_started_at
+            new_count = row["use_count"] + 1
+        elif elapsed >= timedelta(hours=COOLDOWN_HOURS):
+            # Cooldown has fully elapsed -- open a brand new window.
+            new_window_start = now
+            new_count = 1
+        else:
+            # Window expired, cooldown not yet over -- blocked.
+            conn.close()
+            remaining_cooldown = timedelta(hours=COOLDOWN_HOURS) - elapsed
+            remaining_minutes = max(1, int(remaining_cooldown.total_seconds() // 60))
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    f"免費試用時段（30分鐘）已經用完，請登入繼續使用。"
+                    f"約{remaining_minutes}分鐘後可以再次免費試用。"
+                ),
+            )
+    else:
+        new_window_start = now
+        new_count = 1
 
     tech = get_technical_analysis(ticker)
     if not tech or "error" in tech:
         conn.close()
         raise HTTPException(status_code=404, detail=tech.get("error", "查唔到呢隻股票") if tech else "查唔到呢隻股票")
 
-    if row:
-        conn.execute(
-            "UPDATE demo_usage SET count = count + 1 WHERE ip = ? AND usage_date = ?",
-            (ip, today),
-        )
-    else:
-        conn.execute(
-            "INSERT INTO demo_usage (ip, usage_date, count) VALUES (?, ?, 1)",
-            (ip, today),
-        )
+    conn.execute(
+        "INSERT INTO demo_usage (ip, window_started_at, use_count) VALUES (?, ?, ?) "
+        "ON CONFLICT(ip) DO UPDATE SET window_started_at = excluded.window_started_at, "
+        "use_count = excluded.use_count",
+        (ip, new_window_start.isoformat(), new_count),
+    )
     conn.commit()
     conn.close()
+
+    window_remaining = timedelta(minutes=TRIAL_WINDOW_MINUTES) - (now - new_window_start)
+    window_remaining_minutes = max(0, int(window_remaining.total_seconds() // 60))
 
     # 刻意精簡嘅teaser shape -- 唔係全套/api/chart-analysis嗰個完整報告，
     # 引導用戶註冊睇齊全部（支撐/阻力/Fibonacci/型態辨識等）。
@@ -98,5 +138,5 @@ def demo_analyze(ticker: str, request: Request):
         "rsi": tech["rsi"],
         "confluence_direction": tech["confluence"]["direction"],
         "confluence_confidence": tech["confluence"]["confidence"],
-        "remaining_free_demo_today": max(0, DEMO_DAILY_LIMIT_PER_IP - used - 1),
+        "trial_window_minutes_remaining": window_remaining_minutes,
     }

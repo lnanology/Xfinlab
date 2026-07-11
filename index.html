@@ -184,13 +184,6 @@
   </div>
     <button class="search-btn" onclick="goAnalyze()">分析 →</button>
   </div>
-
-  <div class="stats">
-    <div class="stat"><div class="stat-num" id="statUsers">--</div><div class="stat-label">註冊用戶</div></div>
-    <div class="stat"><div class="stat-num" id="statAnalyses">--</div><div class="stat-label">已完成分析</div></div>
-    <div class="stat"><div class="stat-num">8</div><div class="stat-label">大技術指標</div></div>
-    <div class="stat"><div class="stat-num">股票+加密</div><div class="stat-label">覆蓋市場</div></div>
-  </div>
 </div>
 
 <!-- Live Market Pulse -->
@@ -289,11 +282,14 @@
 <div class="demo-section">
   <div class="section-label">免費體驗</div>
   <div class="section-title">唔使註冊，即刻試用</div>
-  <p style="color:#64748b;font-size:0.88rem">每個IP每日可以免費試用一次真實技術分析（唔係mockup）</p>
+  <p style="color:#64748b;font-size:0.88rem">真實技術分析（唔係mockup），即刻試用</p>
   <div class="demo-box">
     <div class="demo-input-row">
       <input id="demoTicker" placeholder="輸入股票代號 例如 AAPL" maxlength="10">
       <button id="demoBtn" onclick="runDemo()">立即體驗</button>
+    </div>
+    <div id="demoTrialInfo" style="display:none;margin-top:12px;font-size:0.8rem;color:#64748b;background:#080c14;border:1px solid #1e2d45;border-radius:8px;padding:10px 14px">
+      ⏱️ 免費試用時段為30分鐘（期間可任意查詢）。時段完結後請<a href="login.html" style="color:#00d4ff">登入</a>繼續使用，或者4小時後可以再次免費試用。
     </div>
     <div id="demoResult" class="demo-result" style="display:none"></div>
     <div id="demoError" class="demo-error" style="display:none"></div>
@@ -408,17 +404,6 @@ async function loadTickers() {
 loadTickers();
 initAutocomplete("heroTicker", "heroDropdown");
 
-// Trust Numbers -- 真實、live-computed數字，唔係hardcode
-async function loadPublicStats() {
-  try {
-    const res = await fetch(`${API}/public-stats`);
-    const data = await res.json();
-    document.getElementById('statUsers').textContent = (data.total_users || 0).toLocaleString();
-    document.getElementById('statAnalyses').textContent = (data.total_analyses || 0).toLocaleString();
-  } catch(e) {}
-}
-loadPublicStats();
-
 // Live Market Pulse -- 見api/market_pulse.py, 5分鐘快取
 async function loadMarketPulse() {
   try {
@@ -449,13 +434,18 @@ async function loadMarketPulse() {
 }
 loadMarketPulse();
 
-// 免登入AI Demo -- 每個IP每日限用一次，見api/public_demo.py
+// 免登入AI Demo -- 每個IP有30分鐘免費試用時段，時段完結後要login，
+// 4小時後先可以再開新時段。見api/public_demo.py
 async function runDemo() {
   const ticker = (document.getElementById('demoTicker').value || '').trim().toUpperCase();
   const btn = document.getElementById('demoBtn');
   const resultBox = document.getElementById('demoResult');
   const errorBox = document.getElementById('demoError');
+  const trialInfo = document.getElementById('demoTrialInfo');
   if (!ticker) { alert('請輸入股票代號'); return; }
+
+  // 按鈕按下時先顯示試用規則說明
+  if (trialInfo) trialInfo.style.display = 'block';
 
   btn.disabled = true; btn.textContent = '分析緊...';
   resultBox.style.display = 'none';
@@ -465,7 +455,7 @@ async function runDemo() {
     const res = await fetch(`${API}/demo/analyze/${encodeURIComponent(ticker)}`);
     const data = await res.json();
     if (!res.ok) {
-      errorBox.textContent = data.detail || '今日免費體驗已用完';
+      errorBox.textContent = data.detail || '免費試用時段已用完，請登入繼續使用';
       errorBox.style.display = 'block';
       return;
     }
@@ -475,7 +465,7 @@ async function runDemo() {
       <div class="demo-result-row"><span>趨勢</span><strong>${data.trend}</strong></div>
       <div class="demo-result-row"><span>RSI</span><strong>${data.rsi}</strong></div>
       <div class="demo-result-row"><span>綜合訊號</span><strong>${data.confluence_direction}（信心${data.confluence_confidence}）</strong></div>
-      <div class="demo-cta">呢個係精簡版 —— <a href="login.html" style="color:#00d4ff">免費註冊</a>解鎖支撐/阻力/Fibonacci/型態辨識完整報告</div>
+      <div class="demo-cta">呢個係精簡版 —— <a href="login.html" style="color:#00d4ff">免費註冊</a>解鎖支撐/阻力/Fibonacci/型態辨識完整報告 · 試用時段剩餘約${data.trial_window_minutes_remaining}分鐘</div>
     `;
     resultBox.style.display = 'block';
     if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'demo', ticker});
