@@ -210,6 +210,30 @@ function handleFiles(files){
 
 const API = 'https://api.xfinlab.com/api';
 
+// Analytics tracking (same pattern as dashboard.html) — Chart Analysis
+// usage was previously invisible in the admin dashboard's DAU/MAU/
+// trending stats because this page never called /analytics/track.
+const SESSION_ID = Math.random().toString(36).substring(2);
+
+async function trackEvent(event_type, event_data = null) {
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    await fetch(`${API}/analytics/track`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        event_type,
+        event_data,
+        token,
+        session_id: SESSION_ID,
+        page: 'chart-analysis'
+      })
+    });
+  } catch(e) {}
+}
+
+trackEvent('page_view', {page: 'chart-analysis'});
+
 async function runImageAnalysis(){
   const dataUrl = window.__uploadedImageDataUrl;
   if(!dataUrl){
@@ -244,6 +268,7 @@ async function runImageAnalysis(){
     }
 
     const res = json.data;
+    if (symbol) trackEvent('search', {ticker: symbol.toUpperCase()});
     const usedRealData = res.data_source === 'real_market_data+ai_vision_patterns';
     document.getElementById('dataSourceTag').textContent = usedRealData
       ? '（支撐/阻力/RSI/MACD 來自真實歷史數據，型態辨識來自AI視覺）'
