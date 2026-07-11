@@ -47,6 +47,17 @@
   .feature-icon { font-size: 2rem; margin-bottom: 16px; }
   .feature-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
   .feature-desc { font-size: 0.85rem; color: #64748b; line-height: 1.6; }
+
+  /* Tools overview strip (restrained -- see HOMEPAGE_CRO_REDESIGN_PROPOSAL.md Phase G) */
+  .tools-section { max-width: 1100px; margin: 0 auto; padding: 20px 24px 60px; }
+  .tools-sub { text-align: center; color: #64748b; font-size: 0.85rem; margin: -32px auto 32px; max-width: 560px; line-height: 1.6; }
+  .tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tool-pill { display: flex; align-items: center; gap: 10px; background: #0d1525; border: 1px solid #1e2d45; border-radius: 10px; padding: 12px 14px; text-decoration: none; color: #e2e8f0; transition: border-color 0.2s; }
+  .tool-pill:hover { border-color: rgba(0,212,255,0.3); }
+  .tool-pill-icon { font-size: 1.1rem; }
+  .tool-pill-name { font-size: 0.82rem; font-weight: 600; }
+  .tool-pill-desc { font-size: 0.7rem; color: #64748b; margin-top: 1px; }
+  @media (max-width: 768px) { .tools-grid { grid-template-columns: repeat(2, 1fr); } }
   .feature-link { display: inline-block; margin-top: 16px; font-size: 0.8rem; color: #00d4ff; text-decoration: none; font-weight: 500; }
 
   /* Live ticker */
@@ -73,8 +84,11 @@
   @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   .pulse-overall { font-size: 0.85rem; color: #64748b; }
   .pulse-overall strong { color: #e2e8f0; }
+  .pulse-top { font-size: 0.8rem; color: #64748b; margin-bottom: 14px; padding: 8px 12px; background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.18); border-radius: 8px; display: none; }
+  .pulse-top strong { color: #00d4ff; }
   .pulse-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .pulse-card { background: #080c14; border: 1px solid #1e2d45; border-radius: 10px; padding: 14px; text-align: center; }
+  .pulse-card { background: #080c14; border: 1px solid #1e2d45; border-radius: 10px; padding: 14px; text-align: center; transition: border-color 0.3s, transform 0.3s; }
+  .pulse-card.top-pick { border-color: rgba(0,212,255,0.4); }
   .pulse-card-label { font-size: 0.72rem; color: #64748b; margin-bottom: 6px; }
   .pulse-card-price { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
   .pulse-card-dir { font-size: 0.75rem; }
@@ -192,13 +206,18 @@
       <div class="pulse-title"><span class="pulse-dot"></span>即時市場脈搏</div>
       <div class="pulse-overall" id="pulseOverall">載入緊...</div>
     </div>
+    <div class="pulse-top" id="pulseTop"></div>
     <div class="pulse-grid" id="pulseGrid">
       <div class="pulse-card"><div class="pulse-card-label">美股大盤</div><div class="pulse-card-price">--</div></div>
       <div class="pulse-card"><div class="pulse-card-label">科技股</div><div class="pulse-card-price">--</div></div>
       <div class="pulse-card"><div class="pulse-card-label">道瓊工業</div><div class="pulse-card-price">--</div></div>
+      <div class="pulse-card"><div class="pulse-card-label">小型股</div><div class="pulse-card-price">--</div></div>
+      <div class="pulse-card"><div class="pulse-card-label">科技板塊</div><div class="pulse-card-price">--</div></div>
+      <div class="pulse-card"><div class="pulse-card-label">金融板塊</div><div class="pulse-card-price">--</div></div>
+      <div class="pulse-card"><div class="pulse-card-label">能源板塊</div><div class="pulse-card-price">--</div></div>
       <div class="pulse-card"><div class="pulse-card-label">加密貨幣</div><div class="pulse-card-price">--</div></div>
     </div>
-    <div class="pulse-disclaimer">數據來自真實技術分析（非AI猜測），僅供參考，唔係投資建議</div>
+    <div class="pulse-disclaimer">數據來自真實技術分析（非AI猜測），僅供參考，唔係投資建議 · 每90秒自動更新</div>
   </div>
 </div>
 
@@ -261,6 +280,47 @@
       <div class="feature-desc">智能組合分配建議，根據 AI 評分優化你的投資組合比例。</div>
       <a href="dashboard.html" class="feature-link">管理組合 →</a>
     </div>
+  </div>
+</div>
+
+<!-- Tools overview (restrained -- 8 real tools, no hype/™) -->
+<div class="tools-section">
+  <div class="section-label">分析工具</div>
+  <div class="section-title">8 個獨立分析工具</div>
+  <div class="tools-sub">每個工具各自處理唔同任務，用真實市場數據運算，AI 負責型態辨識同文字整理，數值指標唔靠AI估算</div>
+  <div class="tools-grid">
+    <a href="ai-analysis.html" class="tool-pill">
+      <span class="tool-pill-icon">📊</span>
+      <span><span class="tool-pill-name">AI 市場分析</span><br><span class="tool-pill-desc">評分／評級／風險</span></span>
+    </a>
+    <a href="chart-analysis.html" class="tool-pill">
+      <span class="tool-pill-icon">📈</span>
+      <span><span class="tool-pill-name">K線圖分析</span><br><span class="tool-pill-desc">型態辨識＋真實技術指標</span></span>
+    </a>
+    <a href="screener.html" class="tool-pill">
+      <span class="tool-pill-icon">🔍</span>
+      <span><span class="tool-pill-name">股票篩選器</span><br><span class="tool-pill-desc">按條件篩選</span></span>
+    </a>
+    <a href="probability-scan.html" class="tool-pill">
+      <span class="tool-pill-icon">🎯</span>
+      <span><span class="tool-pill-name">機率掃描</span><br><span class="tool-pill-desc">偏多／偏空機率</span></span>
+    </a>
+    <a href="company-compare.html" class="tool-pill">
+      <span class="tool-pill-icon">⚖️</span>
+      <span><span class="tool-pill-name">多公司對標</span><br><span class="tool-pill-desc">同業比較</span></span>
+    </a>
+    <a href="news-denoise.html" class="tool-pill">
+      <span class="tool-pill-icon">📰</span>
+      <span><span class="tool-pill-name">新聞去噪</span><br><span class="tool-pill-desc">情緒分析＋重點整合</span></span>
+    </a>
+    <a href="stress-lab.html" class="tool-pill">
+      <span class="tool-pill-icon">🧪</span>
+      <span><span class="tool-pill-name">壓力測試</span><br><span class="tool-pill-desc">情境模擬</span></span>
+    </a>
+    <a href="chat.html" class="tool-pill">
+      <span class="tool-pill-icon">💬</span>
+      <span><span class="tool-pill-name">AI 金融問答</span><br><span class="tool-pill-desc">對話式查詢</span></span>
+    </a>
   </div>
 </div>
 
@@ -403,7 +463,11 @@ async function loadTickers() {
 loadTickers();
 initAutocomplete("heroTicker", "heroDropdown");
 
-// Live Market Pulse -- 見api/market_pulse.py, 5分鐘快取
+// Live Market Pulse -- 見api/market_pulse.py, 5分鐘後端快取，basket已經
+// 按confluence_score由強到弱排序（sector rotation leaderboard）。
+// 前端每90秒refetch一次 -- 因為後端本身有5分鐘快取，呢個唔會加重
+// Alpaca/yfinance call量，淨係俾其他訪客共享緊嘅快取結果有機會被
+// 睇到更新，畀個「即時」感覺更真實。
 async function loadMarketPulse() {
   try {
     const res = await fetch(`${API}/market-pulse`);
@@ -412,14 +476,24 @@ async function loadMarketPulse() {
     if (overallEl) {
       overallEl.innerHTML = `整體：<strong>${data.overall_sentiment}</strong> · ${data.volatility_desc}`;
     }
+    const topEl = document.getElementById('pulseTop');
+    if (topEl) {
+      if (data.top_sector) {
+        topEl.innerHTML = `🏆 今日最強板塊：<strong>${data.top_sector.label}（${data.top_sector.ticker}）</strong> · ${data.top_sector.confluence_direction}`;
+        topEl.style.display = 'block';
+      } else {
+        topEl.style.display = 'none';
+      }
+    }
     const grid = document.getElementById('pulseGrid');
     if (grid && Array.isArray(data.basket)) {
-      grid.innerHTML = data.basket.map(b => {
+      grid.innerHTML = data.basket.map((b, i) => {
         if (!b.available) {
           return `<div class="pulse-card"><div class="pulse-card-label">${b.label}</div><div class="pulse-card-price">--</div></div>`;
         }
         const dirClass = b.confluence_direction === '偏多' ? 'bull' : (b.confluence_direction === '偏空' ? 'bear' : 'neutral');
-        return `<div class="pulse-card">
+        const topClass = i === 0 ? ' top-pick' : '';
+        return `<div class="pulse-card${topClass}">
           <div class="pulse-card-label">${b.label}</div>
           <div class="pulse-card-price">$${b.price}</div>
           <div class="pulse-card-dir ${dirClass}">${b.confluence_direction}</div>
@@ -432,6 +506,7 @@ async function loadMarketPulse() {
   }
 }
 loadMarketPulse();
+setInterval(loadMarketPulse, 90000);
 
 // 免登入AI Demo -- 每個IP有30分鐘免費試用時段，時段完結後要login，
 // 4小時後先可以再開新時段。見api/public_demo.py

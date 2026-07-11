@@ -8,16 +8,21 @@ any of the 🔴 high-risk decisions (no login-bypass AI cost, no fabricated
 authority claims, no fabricated testimonials, no colour rebrand).
 
 Design:
-- Aggregates a small, fixed basket of broad-market proxies (SPY/QQQ/DIA for
-  US equities, BTC-USD for crypto) using the EXISTING, already-audited
+- Aggregates a small, fixed basket of broad-market + sector proxies (SPY/
+  QQQ/DIA/IWM for broad US equities, XLK/XLF/XLE for sector rotation, plus
+  BTC-USD for crypto) using the EXISTING, already-audited
   services/technical_analysis_service.py Confluence Engine -- same real
   price-action math (trend/RSI/MACD/support-resistance/Fibonacci) already
   used everywhere else on the site, zero AI-provider cost.
 - Averages each basket member's confluence score into one overall
-  sentiment reading, plus per-ticker breakdown so it's not a black box.
-- Cached in-memory for 5 minutes: this runs on every homepage load, so
-  without a cache it would refetch 4 tickers' worth of history from
-  Alpaca/yfinance on every single visitor. A stale-by-5-minutes market
+  sentiment reading, plus a per-ticker breakdown SORTED by confluence
+  score (strongest first) so it reads as a sector-rotation leaderboard
+  rather than a static grid -- "which sector is strongest right now" is
+  more useful and more "alive" feeling than an unordered list.
+- Cached in-memory for 5 minutes: this runs on every homepage load
+  (including the client-side auto-refresh in index.html), so without a
+  cache it would refetch 8 tickers' worth of history from Alpaca/yfinance
+  on every single visitor/refresh cycle. A stale-by-5-minutes market
   sentiment reading is a completely reasonable tradeoff for a homepage
   widget (this is explicitly NOT the same code path as
   api/chart_analysis.py's ticker-specific analysis, which stays uncached
@@ -33,8 +38,11 @@ from services.technical_analysis_service import get_technical_analysis
 
 router = APIRouter()
 
-_PULSE_BASKET = ["SPY", "QQQ", "DIA", "BTC-USD"]
-_PULSE_LABELS = {"SPY": "美股大盤", "QQQ": "科技股", "DIA": "道瓊工業", "BTC-USD": "加密貨幣"}
+_PULSE_BASKET = ["SPY", "QQQ", "DIA", "IWM", "XLK", "XLF", "XLE", "BTC-USD"]
+_PULSE_LABELS = {
+    "SPY": "美股大盤", "QQQ": "科技股", "DIA": "道瓊工業", "IWM": "小型股",
+    "XLK": "科技板塊", "XLF": "金融板塊", "XLE": "能源板塊", "BTC-USD": "加密貨幣",
+}
 
 _CACHE_TTL_SECONDS = 300
 _cache: Optional[Dict] = None
@@ -106,11 +114,26 @@ def _compute_pulse() -> Dict:
     else:
         volatility_desc = "市場方向一致"
 
+    # Sort available members by confluence score descending -- turns the
+    # basket into a sector-rotation leaderboard ("what's strongest right
+    # now") instead of a fixed-order grid. Unavailable members (data fetch
+    # failed) sort last so the ranking only reflects real data.
+    available = [b for b in breakdown if b.get("available")]
+    unavailable = [b for b in breakdown if not b.get("available")]
+    available.sort(key=lambda b: b["confluence_score"], reverse=True)
+    sorted_breakdown = available + unavailable
+    top_sector = available[0] if available else None
+
     return {
         "overall_sentiment": overall,
         "overall_score": avg_score,
         "volatility_desc": volatility_desc,
-        "basket": breakdown,
+        "top_sector": {
+            "label": top_sector["label"],
+            "ticker": top_sector["ticker"],
+            "confluence_direction": top_sector["confluence_direction"],
+        } if top_sector else None,
+        "basket": sorted_breakdown,
         "data_source": "即市技術分析（真實價格數據，非AI猜測）",
         "disclaimer": "呢個係整體市場技術面參考，唔係投資建議。",
     }
