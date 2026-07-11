@@ -182,16 +182,22 @@ async def push_telegram(token: str, request: Request, body: dict = {}):
     verify_admin(token, f"push_telegram:{channel}", request)
     try:
         import subprocess
+        import sys
         scripts = {
             "en": "growth/channel_push.py",
             "zh": "growth/channel_push_zh.py",
             "es": "growth/channel_push_es.py"
         }
         script = scripts.get(channel, scripts["en"])
-        subprocess.Popen([
-            "/Library/Developer/CommandLineTools/usr/bin/python3.9",
-            f"/Users/aj/Desktop/Xfinlab-main/{script}"
-        ])
+        # Was hardcoded to a local Mac path (/Users/aj/... + a specific
+        # python3.9 binary) that only exists on the dev machine -- this
+        # would fail silently in Railway's container. Use sys.executable
+        # (whatever interpreter is actually running this app) and resolve
+        # the script path relative to the repo root, same pattern as
+        # DB_PATH elsewhere in this file.
+        repo_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+        script_path = os.path.join(repo_root, script)
+        subprocess.Popen([sys.executable, script_path])
         return {"status": "ok", "message": f"Pushing to {channel} channel"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
