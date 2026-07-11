@@ -48,9 +48,14 @@ app = FastAPI(
 # One-time, idempotent: merges any users stranded in the legacy
 # backend/xfinlab.db (a DB_PATH bug, now fixed) into the canonical,
 # Litestream-backed root xfinlab.db. See services/db_migration.py.
-from services.db_migration import migrate_legacy_backend_db, migrate_audit_logs_nullable_user_id
+from services.db_migration import (
+    migrate_legacy_backend_db,
+    migrate_audit_logs_nullable_user_id,
+    reset_admin_password_if_requested,
+)
 migrate_legacy_backend_db()
 migrate_audit_logs_nullable_user_id()
+reset_admin_password_if_requested()
 
 # --- Rate limiting (Security & Operations Layer, Phase 2) ---
 # Blanket per-IP safety net against abuse/scraping bursts. This is separate

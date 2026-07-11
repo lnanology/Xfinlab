@@ -144,3 +144,60 @@ def migrate_audit_logs_nullable_user_id() -> None:
         )
     except Exception as e:
         logger.warning("db_migration: audit_logs nullable-user_id migration failed (non-fatal): %s", e)
+
+
+def reset_admin_password_if_requested() -> None:
+    """
+    Email-free admin password recovery (2026-07-11) -- the normal
+    forgot-password flow depends on Gmail SMTP (services/email_service.py,
+    EMAIL_ADDRESS/EMAIL_APP_PASSWORD env vars) which may not be configured
+    yet, and the admin got locked out with no other way in.
+
+    If the ADMIN_PASSWORD_RESET env var is set (to any non-empty value) at
+    startup, this resets ONLY the ADMIN_EMAIL account's password to that
+    value and logs a loud warning. It does NOT clear the env var itself --
+    Railway env vars persist across restarts, so leaving it set would
+    reset the password back to the same value on every future deploy.
+    **After logging in successfully, remove ADMIN_PASSWORD_RESET from
+    Railway's Variables tab** so this stops running.
+
+    Deliberately scoped to ONLY the hardcoded ADMIN_EMAIL (see
+    api/admin.py) -- this is not a general-purpose password reset backdoor,
+    it only ever touches the one admin account, and only when its owner
+    has already proven they control the Railway project's env vars (the
+    same trust boundary as JWT_SECRET).
+    """
+    new_password = os.getenv("ADMIN_PASSWORD_RESET")
+    if not new_password:
+        return
+
+    ADMIN_EMAIL = "abcoaj888@gmail.com"
+
+    try:
+        from backend.auth.password import hash_password
+
+        conn = sqlite3.connect(ROOT_DB)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT id FROM users WHERE email = ?", (ADMIN_EMAIL,)).fetchone()
+        if not row:
+            logger.warning(
+                "reset_admin_password_if_requested: no user row for %s -- "
+                "nothing to reset. Register that email first.",
+                ADMIN_EMAIL,
+            )
+            conn.close()
+            return
+
+        hashed = hash_password(new_password)
+        conn.execute("UPDATE users SET password = ? WHERE email = ?", (hashed, ADMIN_EMAIL))
+        conn.commit()
+        conn.close()
+        logger.warning(
+            "reset_admin_password_if_requested: admin password for %s has been "
+            "reset via ADMIN_PASSWORD_RESET env var. REMOVE THAT ENV VAR FROM "
+            "RAILWAY NOW that you've logged in, or it will keep resetting the "
+            "password on every future restart.",
+            ADMIN_EMAIL,
+        )
+    except Exception as e:
+        logger.warning("reset_admin_password_if_requested failed (non-fatal): %s", e)
