@@ -1,8 +1,13 @@
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from api.market import router as market_router
 from api.analyze import router as analyze_router
@@ -37,6 +42,38 @@ app = FastAPI(
     title="XFINLAB API",
     version="1.0.0"
 )
+
+# --- Rate limiting (Security & Operations Layer, Phase 2) ---
+# Blanket per-IP safety net against abuse/scraping bursts. This is separate
+# from services/quota_middleware.py, which limits per-user *feature* usage
+# by subscription plan — this limits raw request volume regardless of who's
+# calling. In-memory backend is fine for our current single-instance Railway
+# deployment; would need a Redis backend if we ever scale to multiple
+# instances (limits would then be per-instance, not global).
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    # Must stay synchronous (not async def) — slowapi's SlowAPIMiddleware
+    # calls exception handlers from a sync context and silently falls back
+    # to its own default (English) message if the handler is a coroutine.
+    return JSONResponse(
+        status_code=429,
+        content={
+            "error": "rate_limit_exceeded",
+            "message": "請求太頻繁，請稍後再試。",
+        },
+    )
+
+
+# Starlette's add_middleware() inserts at position 0, so the middleware
+# added LAST ends up processing requests FIRST (outermost). We need CORS to
+# be outermost so it still sees/decorates the 429 response that
+# SlowAPIMiddleware returns early (without calling further inward) — so
+# SlowAPIMiddleware must be added BEFORE CORSMiddleware here.
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
