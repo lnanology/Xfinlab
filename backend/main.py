@@ -137,3 +137,30 @@ def root():
         "version": "1.0.0",
         "status": "running"
     }
+
+
+@app.get("/health")
+@limiter.exempt
+def health(request: Request):
+    """
+    Lightweight, unauthenticated health check for Railway / uptime
+    monitors. Deliberately separate from /api/admin/health, which needs an
+    admin token and makes slow external network calls (market/news/crypto
+    APIs) — not something a monitor should be hitting every 30 seconds.
+    This one just confirms the process is up and the database is reachable.
+    Exempt from rate limiting so frequent automated pings never 429.
+    """
+    try:
+        import sqlite3
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+        conn = sqlite3.connect(db_path)
+        conn.execute("SELECT 1")
+        conn.close()
+        db_status = "ok"
+    except Exception as e:
+        db_status = f"error: {str(e)[:100]}"
+
+    return {
+        "status": "ok" if db_status == "ok" else "degraded",
+        "database": db_status,
+    }
