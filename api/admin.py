@@ -2,6 +2,7 @@ import sqlite3
 import os
 import time
 import requests
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 from backend.auth.jwt_handler import verify_token
 from services.audit_log_service import log_action, get_recent_logs
@@ -173,6 +174,39 @@ def get_health(token: str, request: Request):
         results["database"] = {"status": "online", "detail": "SQLite Connected"}
     except Exception as e:
         results["database"] = {"status": "offline", "detail": str(e)[:50]}
+
+    # Litestream / WAL diagnostics (2026-07-11) -- added while debugging why
+    # the admin account kept disappearing after Railway redeploys. Litestream
+    # can only replicate writes to R2 when the DB is in WAL journal mode
+    # (see services/db_migration.py's ensure_wal_mode() for the full story).
+    # This surfaces that state directly instead of having to infer it
+    # indirectly from total_users counts after the fact.
+    try:
+        conn = get_db()
+        mode_row = conn.execute("PRAGMA journal_mode").fetchone()
+        journal_mode = mode_row[0] if mode_row else "unknown"
+        conn.close()
+
+        wal_path = DB_PATH + "-wal"
+        wal_exists = os.path.exists(wal_path)
+        wal_size = os.path.getsize(wal_path) if wal_exists else 0
+        db_size = os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0
+        db_mtime = (
+            datetime.fromtimestamp(os.path.getmtime(DB_PATH), tz=timezone.utc).isoformat()
+            if os.path.exists(DB_PATH)
+            else None
+        )
+
+        results["litestream_wal"] = {
+            "status": "online" if journal_mode.lower() == "wal" else "offline",
+            "detail": (
+                f"journal_mode={journal_mode}, wal_file_exists={wal_exists}, "
+                f"wal_size_bytes={wal_size}, db_size_bytes={db_size}, "
+                f"db_last_modified={db_mtime}"
+            ),
+        }
+    except Exception as e:
+        results["litestream_wal"] = {"status": "offline", "detail": str(e)[:100]}
 
     return results
 

@@ -770,11 +770,26 @@ async function runFullAnalysis() {
   document.getElementById('researchContent').innerHTML = loading();
 
   try {
+    // 2026-07-11 fix: 呢兩個call之前從未帶token，令backend嘅
+    // check_and_increment()永遠收到token=None，即係「免費10次/日」
+    // quota系統雖然code齊全但實際上從未真正生效過。而家用返
+    // xfinlab_token（同頁面其他fetch call一致嘅key）。
+    const _quotaToken = localStorage.getItem('xfinlab_token') || '';
+    const _tokenQS = _quotaToken ? `?token=${encodeURIComponent(_quotaToken)}` : '';
+
     // Run analysis + research in parallel
     const [analysisRes, researchRes] = await Promise.all([
-      fetch(`${API}/full-analysis/${ticker}`),
-      fetch(`${API}/research/${ticker}`)
+      fetch(`${API}/full-analysis/${ticker}${_tokenQS}`),
+      fetch(`${API}/research/${ticker}${_tokenQS}`)
     ]);
+
+    if (analysisRes.status === 429) {
+      const quotaErr = await analysisRes.json();
+      const msg = quotaErr?.detail?.message || '今日免費分析額度已用完，請升級Pro繼續使用';
+      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#00d4ff">查看方案</a></div>`;
+      document.getElementById('researchContent').innerHTML = '';
+      return;
+    }
 
     const analysis = await analysisRes.json();
     const research = await researchRes.json();

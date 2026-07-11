@@ -10,7 +10,12 @@ router = APIRouter()
 market_service = MarketDataService()
 
 @router.get("/report/{ticker}")
-def generate_report(ticker: str):
+def generate_report(ticker: str, token: str = None):
+    # 2026-07-11 fix: check_and_increment 之前得imported冇call過，
+    # 即係PDF報告呢個功能一直冇real quota限制（FREE_LIMITS話明1次/日）。
+    # 同api/full_analysis_v3.py用返同一個pattern。
+    check_and_increment(token, "report")
+
     ticker = ticker.upper()
 
     market_data = market_service.get_stock_data(ticker)
