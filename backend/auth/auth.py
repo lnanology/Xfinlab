@@ -6,7 +6,7 @@ from auth.user_model import UserRegister, UserLogin, UserResponse
 from auth.password import hash_password, verify_password
 from auth.jwt_handler import create_access_token
 from services.email_service import EmailService
-from services.audit_log_service import log_action
+from services.audit_log_service import log_action, count_recent_failed_logins
 from auth.email_verification import send_verification_email
 from infrastructure.event_bus import EventBus
 
@@ -92,8 +92,24 @@ def register(user: UserRegister, request: Request):
     finally:
         conn.close()
 
+LOGIN_LOCKOUT_THRESHOLD = 5   # failed attempts
+LOGIN_LOCKOUT_WINDOW_MINUTES = 15
+
 @router.post("/auth/login", response_model=UserResponse)
 def login(user: UserLogin, request: Request):
+    # Brute-force / credential-stuffing guard: block further attempts for
+    # this email once it's racked up too many recent failures, using the
+    # login_failed audit trail added earlier. Checked before touching the
+    # users table at all, so a locked-out email can't be used to keep
+    # probing passwords. Fails open (never locks anyone out) if the audit
+    # log query itself errors -- see count_recent_failed_logins().
+    recent_failures = count_recent_failed_logins(user.email, minutes=LOGIN_LOCKOUT_WINDOW_MINUTES)
+    if recent_failures >= LOGIN_LOCKOUT_THRESHOLD:
+        raise HTTPException(
+            status_code=429,
+            detail=f"登入失敗次數過多，請{LOGIN_LOCKOUT_WINDOW_MINUTES}分鐘後再試。",
+        )
+
     conn = get_db()
     row = conn.execute("SELECT * FROM users WHERE email = ?", (user.email,)).fetchone()
     conn.close()

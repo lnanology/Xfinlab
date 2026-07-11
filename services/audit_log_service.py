@@ -56,6 +56,29 @@ def log_action(user_id: int, action: str, ip_address: Optional[str] = None) -> N
         logger.warning("Audit log write failed for action=%s user_id=%s: %s", action, user_id, e)
 
 
+def count_recent_failed_logins(email: str, minutes: int = 15) -> int:
+    """
+    Brute-force / credential-stuffing guard for backend/auth/auth.py's
+    login(). Counts 'login_failed:<email>' entries logged in the last
+    `minutes`, using the audit_logs table that log_action() already
+    writes to on every failed attempt. Returns 0 (fail open, not closed)
+    on any DB error -- a broken lockout check should never itself become
+    a way to lock legitimate users out.
+    """
+    try:
+        conn = _get_db()
+        row = conn.execute(
+            "SELECT COUNT(*) as c FROM audit_logs "
+            "WHERE action = ? AND created_at >= datetime('now', ?)",
+            (f"login_failed:{email}", f"-{minutes} minutes"),
+        ).fetchone()
+        conn.close()
+        return row["c"] if row else 0
+    except Exception as e:
+        logger.warning("count_recent_failed_logins failed for %s: %s", email, e)
+        return 0
+
+
 def get_recent_logs(limit: int = 100):
     """Used by the admin dashboard to show a recent audit trail."""
     try:
