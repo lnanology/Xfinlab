@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — 機率掃描</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/nav.js"></script>
+<script src="js/mvp-api.js"></script>
+<style>
+nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
+.scan-bar{display:flex;gap:0.8rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.scan-input{flex:1;min-width:200px;background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.7rem 0.9rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.92rem;outline:none;}
+.scan-input:focus{border-color:var(--blue);}
+.scan-btn{background:var(--blue2);color:#fff;border:none;border-radius:6px;padding:0.7rem 1.6rem;font-size:0.88rem;font-weight:500;cursor:pointer;transition:background 0.2s;}
+.scan-btn:hover{background:var(--blue);}
+.scan-btn:disabled{background:var(--navy4);color:var(--text3);cursor:not-allowed;}
+.disclaimer-box{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:0.9rem 1.1rem;margin-bottom:1.5rem;font-size:0.8rem;color:var(--text2);line-height:1.6;}
+.prob-panel{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1.4rem;margin-bottom:1rem;display:none;}
+.prob-panel.show{display:block;}
+.prob-bar-row{display:flex;align-items:center;gap:1rem;margin-bottom:0.6rem;}
+.prob-bar-label{width:110px;font-size:0.82rem;color:var(--text2);flex-shrink:0;}
+.prob-bar-track{flex:1;height:22px;background:var(--navy3);border-radius:11px;overflow:hidden;position:relative;}
+.prob-bar-fill{height:100%;border-radius:11px;transition:width 0.4s ease;}
+.prob-bar-fill.bull{background:linear-gradient(90deg,#1a9c6a,#2ecc8f);}
+.prob-bar-fill.bear{background:linear-gradient(90deg,#c94c4c,#e06868);}
+.prob-bar-pct{width:60px;text-align:right;font-family:'DM Serif Display',serif;font-size:1rem;color:var(--text);}
+.sub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-top:1.2rem;}
+.sub-card{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.9rem;}
+.sub-card-label{font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:0.4rem;}
+.sub-card-value{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--blue);}
+.data-quality-tag{font-size:0.72rem;color:var(--text3);margin-top:1rem;}
+.loading-text{text-align:center;padding:2rem;color:var(--text2);}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
+  <div class="nav-links">
+    <a href="chart-analysis.html" class="nav-link">K線分析</a>
+    <a href="screener.html" class="nav-link">篩選器</a>
+    <a href="dashboard.html" class="nav-link">儀表板</a>
+    <a href="chat.html" class="nav-cta">AI 分析</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">實驗性功能</div>
+  <h1 class="page-title">機率掃描</h1>
+  <p class="page-sub">綜合真實市場數據、技術指標同新聞情緒，計算睇多/睇淡機率——唔係買賣建議。</p>
+
+  <div class="disclaimer-box">
+    ⚠️ 呢個功能用緊嘅內部評分公式（風險/因子/新聞情緒）暫時未經歷史回測校準，
+    純粹將真實數據代入公式計算出嚟嘅參考機率，<strong>唔構成任何投資建議</strong>，
+    請自行判斷同承擔風險。
+  </div>
+
+  <div class="scan-bar">
+    <input id="tickerInput" class="scan-input" type="text" placeholder="輸入股票代號，例如 AAPL、TSLA、0700.HK">
+    <button id="scanBtn" class="scan-btn" onclick="runScan()">🔍 掃描</button>
+  </div>
+
+  <div id="resultPanel" class="prob-panel">
+    <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1.2rem;" id="resultTicker">-</div>
+
+    <div class="prob-bar-row">
+      <div class="prob-bar-label">睇多機率</div>
+      <div class="prob-bar-track"><div class="prob-bar-fill bull" id="bullBar" style="width:0%"></div></div>
+      <div class="prob-bar-pct" id="bullPct">-</div>
+    </div>
+    <div class="prob-bar-row">
+      <div class="prob-bar-label">睇淡機率</div>
+      <div class="prob-bar-track"><div class="prob-bar-fill bear" id="bearBar" style="width:0%"></div></div>
+      <div class="prob-bar-pct" id="bearPct">-</div>
+    </div>
+
+    <div class="sub-grid">
+      <div class="sub-card">
+        <div class="sub-card-label">市況</div>
+        <div class="sub-card-value" id="regimeValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">風險分數</div>
+        <div class="sub-card-value" id="riskValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">因子分數</div>
+        <div class="sub-card-value" id="factorValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">新聞情緒</div>
+        <div class="sub-card-value" id="newsValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label">大盤相關性</div>
+        <div class="sub-card-value" id="corrValue">-</div>
+      </div>
+    </div>
+
+    <div class="data-quality-tag" id="dataQualityTag"></div>
+  </div>
+
+  <div id="loadingBox" class="loading-text" style="display:none">計算緊…</div>
+  <div id="errorBox" style="display:none;color:#e06868;font-size:0.85rem;padding:1rem 0;"></div>
+</div>
+
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · 機率掃描（實驗性）· <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+</footer>
+
+<script>
+async function runScan(){
+  const ticker = (document.getElementById('tickerInput').value || '').trim().toUpperCase();
+  if(!ticker){ alert('請輸入股票代號'); return; }
+
+  const btn = document.getElementById('scanBtn');
+  const panel = document.getElementById('resultPanel');
+  const loading = document.getElementById('loadingBox');
+  const errorBox = document.getElementById('errorBox');
+
+  btn.disabled = true; btn.textContent = '掃描中...';
+  panel.classList.remove('show');
+  errorBox.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    const res = await getApi(`/api/pipeline/${encodeURIComponent(ticker)}`);
+    const d = res.data;
+
+    document.getElementById('resultTicker').textContent = d.ticker || ticker;
+
+    const bullPct = Math.round((d.bullish_probability || 0) * 100);
+    const bearPct = Math.round((d.bearish_probability || 0) * 100);
+    document.getElementById('bullBar').style.width = bullPct + '%';
+    document.getElementById('bearBar').style.width = bearPct + '%';
+    document.getElementById('bullPct').textContent = bullPct + '%';
+    document.getElementById('bearPct').textContent = bearPct + '%';
+
+    document.getElementById('regimeValue').textContent = d.market_regime || '未知';
+    document.getElementById('riskValue').textContent = (d.risk_score != null ? d.risk_score : '-') + (d.risk_level ? ` (${d.risk_level})` : '');
+    document.getElementById('factorValue').textContent = d.factor_score != null ? d.factor_score : '-';
+    document.getElementById('newsValue').textContent = d.news_sentiment_score != null ? d.news_sentiment_score : '-';
+    document.getElementById('corrValue').textContent = d.market_correlation != null ? d.market_correlation : '-';
+
+    const dq = d.data_quality || {};
+    document.getElementById('dataQualityTag').textContent =
+      `數據來源：技術分析${dq.tech_ok ? '✅' : '⚠️退回預設值'} · 即時報價${dq.snapshot_ok ? '✅' : '⚠️退回預設值'}`;
+
+    panel.classList.add('show');
+  } catch(err) {
+    errorBox.textContent = '掃描失敗：' + err.message;
+    errorBox.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+    btn.disabled = false; btn.textContent = '🔍 掃描';
+  }
+}
+
+document.getElementById('tickerInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') runScan();
+});
+</script>
+</body>
+</html>

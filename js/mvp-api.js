@@ -30,6 +30,7 @@ async function postApi(path, payload) {
 }
 
 async function getApi(path) {
+  _trackApiCall(path, null);
   const response = await fetch(API_BASE + path);
   if (!response.ok) {
     const text = await response.text();
