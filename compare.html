@@ -46,7 +46,7 @@
 <nav>
   <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
   <div class="nav-links">
-    <a href="chart.html" class="nav-link">圖表</a>
+    <a href="chart-analysis.html" class="nav-link">圖表</a>
     <a href="news.html" class="nav-link">新聞</a>
     <a href="screener.html" class="nav-link">篩選</a>
     <a href="probability-scan.html" class="nav-link">機率掃描</a>
@@ -111,10 +111,10 @@ async function doCompare(){
 ## 評分
 技術面：X/5星 基本面：X/5星 風險：X/5星`;
   try{
-    const payload = { query, user: 'xfinlab-compare', companies: [a,b] };
+    const payload = { symbols: [a,b] };
     const res = await postApi('/api/company-compare', payload);
     document.getElementById('loadingDiv').style.display='none';
-    const answer = res?.data?.answer || res?.answer || '';
+    const answer = res?.data?.analysis || res?.data?.conclusion || '';
     if(answer){
       document.getElementById('resultContent').innerHTML=`<div class="result-card"><div class="result-title">${a} vs ${b} 深度分析報告</div><div class="analysis-text">${formatText(answer)}</div><div class="disclaimer">⚠️ 以上分析純為參考，不構成投資建議。投資涉及風險，請自行判斷。</div></div>`;
     }
