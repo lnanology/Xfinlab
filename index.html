@@ -48,6 +48,18 @@
   .feature-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
   .feature-desc { font-size: 0.85rem; color: #64748b; line-height: 1.6; }
 
+  /* Real results showcase (Phase C/D -- 真實screenshot, 唔係mockup) */
+  .showcase-section { max-width: 1100px; margin: 0 auto; padding: 20px 24px 60px; }
+  .showcase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .showcase-card { background: #0d1525; border: 1px solid #1e2d45; border-radius: 16px; overflow: hidden; text-decoration: none; color: #e2e8f0; display: block; transition: border-color 0.2s, transform 0.2s; }
+  .showcase-card:hover { border-color: rgba(0,212,255,0.35); transform: translateY(-2px); }
+  .showcase-img-wrap { width: 100%; aspect-ratio: 16/10; overflow: hidden; border-bottom: 1px solid #1e2d45; background: #080c14; }
+  .showcase-img-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .showcase-body { padding: 18px 20px; }
+  .showcase-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+  .showcase-desc { font-size: 0.8rem; color: #64748b; line-height: 1.5; }
+  @media (max-width: 768px) { .showcase-grid { grid-template-columns: 1fr; } }
+
   /* Tools overview strip (restrained -- see HOMEPAGE_CRO_REDESIGN_PROPOSAL.md Phase G) */
   .tools-section { max-width: 1100px; margin: 0 auto; padding: 20px 24px 60px; }
   .tools-sub { text-align: center; color: #64748b; font-size: 0.85rem; margin: -32px auto 32px; max-width: 560px; line-height: 1.6; }
@@ -280,6 +292,35 @@
       <div class="feature-desc">智能組合分配建議，根據 AI 評分優化你的投資組合比例。</div>
       <a href="dashboard.html" class="feature-link">管理組合 →</a>
     </div>
+  </div>
+</div>
+
+<!-- Real results showcase -- 真實screenshot，唔係mockup -->
+<div class="showcase-section">
+  <div class="section-label">真實效果</div>
+  <div class="section-title">唔係mockup，係真係跑得出</div>
+  <div class="showcase-grid">
+    <a href="chart-analysis.html" class="showcase-card">
+      <div class="showcase-img-wrap"><img src="img/chart-analysis-demo.jpg" alt="AI K線圖分析真實結果" loading="lazy"></div>
+      <div class="showcase-body">
+        <div class="showcase-title">📈 AI K線圖分析</div>
+        <div class="showcase-desc">支撐/阻力/RSI/MACD 全部來自真實歷史數據計算，型態辨識先至用AI視覺</div>
+      </div>
+    </a>
+    <a href="probability-scan.html" class="showcase-card">
+      <div class="showcase-img-wrap"><img src="img/probability-scan-demo.jpg" alt="機率掃描真實結果" loading="lazy"></div>
+      <div class="showcase-body">
+        <div class="showcase-title">🎯 機率掃描</div>
+        <div class="showcase-desc">綜合真實市場數據、技術指標同新聞情緒，計算偏多/偏空機率</div>
+      </div>
+    </a>
+    <a href="news.html" class="showcase-card">
+      <div class="showcase-img-wrap"><img src="img/news-demo.jpg" alt="市場新聞追蹤真實結果" loading="lazy"></div>
+      <div class="showcase-body">
+        <div class="showcase-title">📰 市場新聞追蹤</div>
+        <div class="showcase-desc">AI即時搜尋相關新聞，整合重點同市場影響分析</div>
+      </div>
+    </a>
   </div>
 </div>
 
