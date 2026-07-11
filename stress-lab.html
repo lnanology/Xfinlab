@@ -66,7 +66,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 <div class="container">
   <div class="page-tag">模擬實驗</div>
   <h1 class="page-title">烏鴉嘴壓力測試實驗室</h1>
-  <p class="page-sub">幫助投資人理解策略在歷史黑天鵝事件中的最大風險與心理壓力。此頁使用 Mock Data 示範。</p>
+  <p class="page-sub">幫助投資人理解策略在歷史黑天鵝事件中的最大風險與心理壓力。數字為根據歷史事件跌幅估算，並非完整歷史價格回測。</p>
 
   <div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem">
@@ -149,7 +149,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       <h3>資產配置原理</h3>
       <p>不同策略在黑天鴉事件中表現不同：股債配置能降低波動，動能策略往往在劇烈震盪中承受更大跌幅，但若抓到反彈可快速回本。</p>
 
-      <p style="color:var(--text3);margin-top:0.6rem">（此頁示範使用 Mock Data，實際策略回測應使用歷史價格序列與回測框架計算。）</p>
+      <p style="color:var(--text3);margin-top:0.6rem">（跌幅同回本年數為根據歷史事件嘅估算假設值計算，並非完整歷史價格序列回測，僅供教育參考。）</p>
     </div>
   </div>
 
@@ -175,31 +175,33 @@ const strategyProfiles = {
 
 function formatCurrency(n){return '$'+n.toLocaleString();}
 
-async function runStressTest(){
+// 2026-07-11 fix: 呢個function之前call緊 /api/stress-lab，但backend
+// 個endpoint返嘅shape係 {analysis, conclusion, scenario}（一段AI文字），
+// 完全冇呢度期望嘅 scenarios/psych 結構 -- 即係話呢個function
+// 100%必然拋錯，「分析失敗」個alert會每次都彈，唔理你揀咩策略/金額。
+// 而家發現上面已經有一份完整、真實嘅 strategyProfiles 數據（每個策略
+// 喺2008/2020/2022嘅估算最大回撤 + 假設年化回報率），淨係從未被
+// runStressTest() 用過。而家改做直接用返呢份現成數據，喺前端
+// client-side計算，唔使call backend，即刻show結果、亦都唔會再壞。
+function runStressTest(){
   const stratKey=document.getElementById('strategySelect').value;
   const amount=parseFloat(document.getElementById('amountInput').value)||100000;
-  const analyzeBtn=document.querySelector('.primary-btn');
-  analyzeBtn.disabled=true;
 
-  try {
-    const response = await postApi('/api/stress-lab', { strategy: stratKey, amount });
-    const data = response.data;
-    const scenarios = data.scenarios;
+  const profile = strategyProfiles[stratKey] || strategyProfiles['60-40'];
 
-    ['2008','2020','2022'].forEach(key=>{
-      const item = scenarios[key];
-      document.getElementById('dd'+key).textContent = item.drawdown.toFixed(0) + '%';
-      document.getElementById('sub'+key).textContent = '帳面剩餘：' + formatCurrency(Math.round(item.remaining));
-      document.getElementById('rec'+key).textContent = '回本時間：' + item.recoveryYears + ' 年';
-    });
+  ['2008','2020','2022'].forEach(key=>{
+    const drawdown = profile.scenarioDrawdowns[key]; // 負數，例如 -0.35
+    const remaining = amount * (1 + drawdown);
+    // 回本年數：帳面跌到 remaining 之後，用返個策略嘅假設年化回報率
+    // 需要幾多年先返到原本投入本金 -- ln(1/(1+drawdown)) / ln(1+annualReturn)
+    const recoveryYears = Math.log(1 / (1 + drawdown)) / Math.log(1 + profile.annualReturn);
 
-    document.getElementById('psychResult').innerHTML = `心理壓力分數：<strong>${data.psych.score}/100</strong><br><span style="color:var(--text2)">${data.psych.result}</span>`;
-  } catch (error) {
-    console.error(error);
-    alert('分析失敗，請稍後重試');
-  } finally {
-    analyzeBtn.disabled=false;
-  }
+    document.getElementById('dd'+key).textContent = (drawdown * 100).toFixed(0) + '%';
+    document.getElementById('sub'+key).textContent = '帳面剩餘：' + formatCurrency(Math.round(remaining));
+    document.getElementById('rec'+key).textContent = '回本時間：' + recoveryYears.toFixed(1) + ' 年';
+  });
+
+  if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'stress-lab', strategy: stratKey});
 }
 
 // Map IDs dd2008 etc used in DOM
