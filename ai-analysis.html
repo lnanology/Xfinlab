@@ -146,6 +146,8 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </div>
   </div>
 
+  <div id="decisionFooter"></div>
+
 </div>
 
 <footer>
@@ -154,6 +156,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
 <script src="js/reusable-score-card.js"></script>
 <script src="js/ai-loading.js"></script>
+<script src="js/decision-footer.js"></script>
 <script src="js/mvp-api.js"></script>
 
 <script>
@@ -193,6 +196,24 @@ async function runAnalysis(){
       <h4>目前優勢</h4>
       <p>${data.conclusion}</p>
     `;
+
+    // Decision Report™ footer -- reuses the SAME real numbers already
+    // shown above (tech_score as the composite decision figure, the
+    // probability spread as confidence, risk score decoded with the same
+    // Low/Medium/High thresholds the backend's RiskEngine already applies)
+    // rather than inventing a new score. See js/decision-footer.js for why
+    // this isn't wired into every page.
+    if (typeof window.renderDecisionFooter === 'function') {
+      const riskOut = scores.risk; // 0-100, higher = safer (100 - overall_risk)
+      const riskLabel = riskOut > 65 ? 'Low' : riskOut > 35 ? 'Medium' : 'High';
+      window.renderDecisionFooter('decisionFooter', {
+        decisionScore: scores.tech,
+        confidencePct: Math.max(probs.bull, probs.flat, probs.bear),
+        riskLabel: riskLabel,
+        keyReasons: data.risks.map(r => r.title),
+        suggestedAction: data.conclusion
+      });
+    }
   } catch (error) {
     console.error(error);
     alert('分析失敗，請稍後重試');

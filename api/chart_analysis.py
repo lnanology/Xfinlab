@@ -263,6 +263,12 @@ async def chart_analysis(body: dict):
                 "support": tech["support"]["level"] if tech["support"] else "未偵測到",
                 "resistance": tech["resistance"]["level"] if tech["resistance"] else "未偵測到",
                 "volume": tech["volume_desc"],
+                # Real value, needed by the frontend's unified "Decision
+                # Report" footer to compute a RiskDNA(TM) label using the
+                # SAME RiskEngine.assess(volume_ratio*15) formula already
+                # used in api/hero_showcase.py -- was previously computed
+                # here but never forwarded to the client.
+                "volume_ratio": tech.get("volume_ratio"),
                 "rsi": tech["rsi"],
                 "macd": tech["macd"]["trend"],
                 "fibonacci_0618": tech["fibonacci_0618"]["level_0618"] if tech["fibonacci_0618"] else None,

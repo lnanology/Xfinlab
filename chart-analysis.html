@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/ai-loading.js"></script>
+<script src="js/decision-footer.js"></script>
 <style>
 /* Page-specific small adjustments while fully using site style */
 .container{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem;flex:1}
@@ -115,6 +116,8 @@
         <p><strong>阻力位</strong>：價格上漲時空方可能出現的賣壓位置，若突破可能帶來延續上漲。</p>
         <p><strong>型態失效條件</strong>：當價格反向穿越關鍵頸線或支撐/阻力，原先型態將被視為失效。</p>
       </div>
+
+      <div id="decisionFooter"></div>
 
     </div>
 
@@ -303,6 +306,36 @@ async function runImageAnalysis(){
     document.getElementById('p_triangle').textContent = patterns.p_triangle || '不明';
     document.getElementById('p_breakback').textContent = patterns.p_breakback || '不明';
     document.getElementById('p_0618').textContent = patterns.p_0618 || '不明';
+
+    // Decision Report™ footer -- only when we have the real confluence
+    // engine output (i.e. a symbol was supplied and technical_analysis_
+    // service succeeded). Same (score+100)/2 mapping as api/hero_showcase.py
+    // and api/pipeline_api.py; RiskDNA™ decoded with the exact thresholds
+    // engines/risk_engine.py's assess() already uses server-side.
+    if (typeof window.renderDecisionFooter === 'function') {
+      if (res.confluence) {
+        const c = res.confluence;
+        const decisionScore = Math.round(((c.score + 100) / 2) * 10) / 10;
+        let riskLabel = null;
+        if (res.volume_ratio != null) {
+          const volatility = res.volume_ratio * 15;
+          riskLabel = volatility < 20 ? 'Low' : volatility <= 40 ? 'Medium' : 'High';
+        }
+        const reasons = [].concat(c.bullish_signals || [], c.bearish_signals || []);
+        window.renderDecisionFooter('decisionFooter', {
+          decisionScore: decisionScore,
+          confidencePct: c.confidence_pct,
+          riskLabel: riskLabel,
+          keyReasons: reasons.length ? reasons : null,
+          suggestedAction: res.recommendation || null
+        });
+      } else {
+        // AI-vision-only fallback (no symbol supplied) -- no real numeric
+        // composite score exists, so honestly show nothing rather than a
+        // fabricated Decision Score™.
+        window.renderDecisionFooter('decisionFooter', {});
+      }
+    }
 
   } catch (err) {
     alert('分析失敗，請重試：' + err.message);
