@@ -429,6 +429,11 @@ class TechnicalAnalysisService:
             "score": score,  # -100 (全部偏空) 至 +100 (全部偏多)
             "direction": direction,
             "confidence": confidence,
+            # Real numeric version of `confidence` (agree_ratio as a %),
+            # added for surfaces that want a number rather than a
+            # 高/中/低 label (e.g. the homepage Hero's live result card).
+            # Same underlying real signal-agreement math, just not bucketed.
+            "confidence_pct": round(agree_ratio * 100, 1),
             "signals_counted": counted,
             "bullish_signals": [s["signal"] for s in signals if s["bias"] > 0],
             "bearish_signals": [s["signal"] for s in signals if s["bias"] < 0],

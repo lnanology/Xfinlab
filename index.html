@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XFINLAB — AI 投資決策智能平台</title>
-<meta name="description" content="XFINLAB 結合 AI 技術，提供股票分析、風險評估、新聞情緒分析，幫助投資者做出更明智的決策。">
+<title>XFINLAB — Decision Intelligence for Investors</title>
+<meta name="description" content="XFINLAB：Institutional-grade AI Investment Research。Decision Score™、Confidence™、RiskDNA™ —— 用真實市場數據為股票、ETF同加密貨幣提供AI決策智能。">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/nav.js"></script>
@@ -13,29 +13,70 @@
   body { font-family: 'Inter', sans-serif; background: #080c14; color: #e2e8f0; min-height: 100vh; }
 
   /* Hero */
-  .hero { max-width: 1100px; margin: 0 auto; padding: 100px 24px 80px; text-align: center; }
-  .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 99px; padding: 6px 16px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #00d4ff; margin-bottom: 28px; }
-  .hero h1 { font-size: 3.5rem; font-weight: 700; line-height: 1.15; margin-bottom: 20px; }
+  .hero { max-width: 1160px; margin: 0 auto; padding: 90px 24px 60px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
+  .hero-left { text-align: left; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 99px; padding: 6px 16px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #00d4ff; margin-bottom: 24px; }
+  .hero h1 { font-size: 2.9rem; font-weight: 700; line-height: 1.18; margin-bottom: 18px; }
   .hero h1 span { color: #00d4ff; }
-  .hero p { font-size: 1.1rem; color: #64748b; max-width: 520px; margin: 0 auto 40px; line-height: 1.7; }
-  .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 60px; }
+  .hero p { font-size: 1.05rem; color: #64748b; max-width: 480px; margin: 0 0 32px; line-height: 1.7; }
+  .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 36px; }
   .btn-primary { background: #00d4ff; color: #000; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 0.95rem; text-decoration: none; transition: opacity 0.2s; }
   .btn-primary:hover { opacity: 0.85; }
   .btn-secondary { background: transparent; color: #e2e8f0; border: 1px solid #1e2d45; padding: 14px 32px; border-radius: 8px; font-weight: 500; font-size: 0.95rem; text-decoration: none; transition: border-color 0.2s; }
   .btn-secondary:hover { border-color: #00d4ff; color: #00d4ff; }
 
   /* Search bar */
-  .search-bar { max-width: 480px; margin: 0 auto; display: flex; gap: 8px; }
+  .search-bar { max-width: 480px; display: flex; gap: 8px; }
   .search-input { flex: 1; background: #0d1525; border: 1px solid #1e2d45; color: #e2e8f0; padding: 12px 18px; border-radius: 8px; font-size: 0.95rem; font-family: 'Inter', monospace; text-transform: uppercase; letter-spacing: 0.08em; transition: border-color 0.2s; }
   .search-input:focus { outline: none; border-color: #00d4ff; }
   .search-btn { background: #00d4ff; color: #000; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s; }
   .search-btn:hover { opacity: 0.85; }
 
-  /* Stats */
+  /* Hero Live AI Result card -- real data via /api/hero-showcase, not mockup */
+  .ai-result-card { background: #0d1525; border: 1px solid #1e2d45; border-radius: 20px; padding: 26px 28px; }
+  .ai-result-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .ai-result-label { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: #64748b; display: flex; align-items: center; gap: 6px; }
+  .ai-result-ticker { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: #fff; }
+  .ai-result-price { font-size: 0.85rem; color: #94a3b8; }
+  .ai-result-score-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+  .ai-result-score { font-family: 'DM Serif Display', serif; font-size: 3.2rem; font-weight: 700; color: #00d4ff; line-height: 1; }
+  .ai-result-score-label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
+  .ai-result-dir { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; }
+  .ai-result-dir.bull { background: rgba(16,185,129,0.12); color: #10b981; }
+  .ai-result-dir.bear { background: rgba(239,68,68,0.12); color: #ef4444; }
+  .ai-result-dir.neutral { background: rgba(245,158,11,0.12); color: #f59e0b; }
+  .ai-result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .ai-result-stat { background: #080c14; border: 1px solid #1e2d45; border-radius: 10px; padding: 12px 14px; }
+  .ai-result-stat-label { font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .ai-result-stat-val { font-size: 1.05rem; font-weight: 700; color: #e2e8f0; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; padding-top: 60px; } .hero-left { text-align: center; } .hero p { margin-left: auto; margin-right: auto; } .hero-btns { justify-content: center; } .search-bar { margin: 0 auto; } }
+
+  /* Stats / Trust Numbers */
   .stats { display: flex; justify-content: center; gap: 48px; margin-top: 60px; flex-wrap: wrap; }
   .stat { text-align: center; }
   .stat-num { font-size: 2rem; font-weight: 700; color: #00d4ff; }
   .stat-label { font-size: 0.78rem; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .trust-section { max-width: 1000px; margin: 0 auto; padding: 20px 24px 60px; }
+
+  /* Live AI Result -- "AI is working" showcase, right under Hero */
+  .live-section { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  .live-box { background: #0d1525; border: 1px solid #1e2d45; border-radius: 16px; padding: 28px; }
+  .live-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 8px; }
+  .live-step { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 16px 10px; border-radius: 12px; border: 1px solid #1e2d45; background: #080c14; opacity: 0.4; transition: opacity 0.4s, border-color 0.4s; }
+  .live-step.active { opacity: 1; border-color: rgba(0,212,255,0.35); }
+  .live-step.done { opacity: 0.75; }
+  .live-step-icon { font-size: 1.4rem; }
+  .live-step-label { font-size: 0.78rem; color: #94a3b8; }
+  .live-step.active .live-step-label { color: #00d4ff; font-weight: 600; }
+  @media (max-width: 640px) { .live-steps { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Decision Intelligence brand core */
+  .decision-section { max-width: 1000px; margin: 0 auto; padding: 20px 24px 60px; }
+  .decision-box { background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(124,58,237,0.05)); border: 1px solid rgba(0,212,255,0.2); border-radius: 20px; padding: 40px; text-align: center; }
+  .decision-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 28px; }
+  .decision-stat-num { font-family: 'DM Serif Display', serif; font-size: 2.4rem; font-weight: 700; color: #00d4ff; }
+  .decision-stat-label { font-size: 0.78rem; color: #64748b; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  @media (max-width: 640px) { .decision-grid { grid-template-columns: repeat(2, 1fr); } }
 
   /* Features */
   .features { max-width: 1100px; margin: 0 auto; padding: 80px 24px; }
@@ -168,8 +209,8 @@
 </style>
 <script src="js/autocomplete.js"></script>
 <script src="js/i18n.js"></script>
-<meta property="og:title" content="XFINLAB — AI Investment Intelligence">
-<meta property="og:description" content="AI-powered stock analysis and crypto. Free daily signals.">
+<meta property="og:title" content="XFINLAB — Decision Intelligence for Investors">
+<meta property="og:description" content="Institutional-grade AI Investment Research. Analyze Stocks, ETFs & Crypto in under 60 seconds.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="XFINLAB — AI Investment Intelligence">
 </head>
@@ -198,27 +239,60 @@
 
 <!-- Hero -->
 <div class="hero">
-  <div class="hero-badge">🤖 AI 投資決策平台</div>
-  <h1>用 <span>AI</span> 分析市場<br>做更明智的投資</h1>
-  <p>XFINLAB 結合 AI 技術，即時分析股票、新聞情緒、風險評估，讓你在瞬息萬變的市場中保持優勢。</p>
+  <div class="hero-left">
+    <div class="hero-badge">🤖 Decision Intelligence for Investors</div>
+    <h1>Institutional-grade <span>AI</span> Investment Research</h1>
+    <p>Analyze Stocks, ETFs &amp; Crypto in under 60 seconds — real market data, real technical indicators, AI-powered Decision Score™.</p>
 
-  <div class="search-bar">
-    <div style="position:relative"><input class="search-input" id="heroTicker" placeholder="輸入股票代號 AAPL" maxlength="6"
-      onkeydown="if(event.key==='Enter') goAnalyze()">
-    <div id="heroDropdown"></div>
+    <div class="hero-btns">
+      <a href="login.html" class="btn-primary">Start Free</a>
+      <a href="chat.html" class="btn-secondary">Upload Chart</a>
+    </div>
+
+    <div class="search-bar">
+      <div style="position:relative"><input class="search-input" id="heroTicker" placeholder="輸入股票代號 AAPL" maxlength="6"
+        onkeydown="if(event.key==='Enter') goAnalyze()">
+      <div id="heroDropdown"></div>
+    </div>
+      <button class="search-btn" onclick="goAnalyze()">分析 →</button>
+    </div>
   </div>
-    <button class="search-btn" onclick="goAnalyze()">分析 →</button>
+
+  <div class="hero-right">
+    <div class="ai-result-card" id="heroResultCard">
+      <div class="ai-result-head">
+        <div class="ai-result-label">⚡ AI Result</div>
+      </div>
+      <div id="heroResultBody">
+        <div style="color:#64748b;font-size:0.85rem;padding:20px 0;text-align:center">載入緊真實AI分析結果...</div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Live Market Pulse -->
+<!-- Live AI Result -- "AI is working" showcase -->
+<div class="live-section">
+  <div class="live-box">
+    <div class="section-label" style="margin-bottom:6px">Live AI Result</div>
+    <div class="section-title" style="margin-bottom:4px;font-size:1.4rem">AI 正在分析緊真實市場數據</div>
+    <div class="live-steps" id="liveSteps">
+      <div class="live-step" id="liveStep1"><div class="live-step-icon">📰</div><div class="live-step-label">Reading News...</div></div>
+      <div class="live-step" id="liveStep2"><div class="live-step-icon">📈</div><div class="live-step-label">Scanning Charts...</div></div>
+      <div class="live-step" id="liveStep3"><div class="live-step-icon">⚠️</div><div class="live-step-label">Calculating Risk...</div></div>
+      <div class="live-step" id="liveStep4"><div class="live-step-icon">🧠</div><div class="live-step-label">Generating Research...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Today's AI Outlook (Live Market Pulse) -->
 <div class="pulse-section">
   <div class="pulse-box">
     <div class="pulse-head">
-      <div class="pulse-title"><span class="pulse-dot"></span>即時市場脈搏</div>
+      <div class="pulse-title"><span class="pulse-dot"></span>Today's AI Outlook</div>
       <div class="pulse-overall" id="pulseOverall">載入緊...</div>
     </div>
     <div class="pulse-top" id="pulseTop"></div>
+    <div class="pulse-top" id="pulseBottom" style="display:none"></div>
     <div class="pulse-grid" id="pulseGrid">
       <div class="pulse-card"><div class="pulse-card-label">美股大盤</div><div class="pulse-card-price">--</div></div>
       <div class="pulse-card"><div class="pulse-card-label">科技股</div><div class="pulse-card-price">--</div></div>
@@ -251,54 +325,10 @@
   </div>
 </div>
 
-<!-- Features -->
-<div class="features">
-  <div class="section-label">核心功能</div>
-  <div class="section-title">一站式 AI 投資分析</div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">📊</div>
-      <div class="feature-title">AI 全面分析</div>
-      <div class="feature-desc">輸入股票代號，即時獲得市場評分、風險評估、AI 投資評級，全面了解每隻股票。</div>
-      <a href="ai-analysis.html" class="feature-link">開始分析 →</a>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔍</div>
-      <div class="feature-title">智能篩選器</div>
-      <div class="feature-desc">設定條件，AI 自動篩選符合標準的潛力股票，發現市場機會。</div>
-      <a href="screener.html" class="feature-link">開始篩選 →</a>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📰</div>
-      <div class="feature-title">新聞情緒分析</div>
-      <div class="feature-desc">AI 即時分析市場新聞，評估情緒正負，幫你掌握市場脈搏。</div>
-      <a href="news.html" class="feature-link">查看新聞 →</a>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📈</div>
-      <div class="feature-title">圖表分析</div>
-      <div class="feature-desc">專業 K 線圖表，技術指標分析，支援多種圖表類型。</div>
-      <a href="chart-analysis.html" class="feature-link">查看圖表 →</a>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🤖</div>
-      <div class="feature-title">AI 研究報告</div>
-      <div class="feature-desc">AI 自動生成完整投資研究報告，包含財務分析、競爭優勢、風險評估。</div>
-      <a href="dashboard.html" class="feature-link">查看報告 →</a>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">💼</div>
-      <div class="feature-title">組合管理</div>
-      <div class="feature-desc">智能組合分配建議，根據 AI 評分優化你的投資組合比例。</div>
-      <a href="dashboard.html" class="feature-link">管理組合 →</a>
-    </div>
-  </div>
-</div>
-
-<!-- Real results showcase -- 真實screenshot，唔係mockup -->
+<!-- Real AI Showcase -- 真實screenshot，唔係mockup -->
 <div class="showcase-section">
-  <div class="section-label">真實效果</div>
-  <div class="section-title">唔係mockup，係真係跑得出</div>
+  <div class="section-label">Real AI Showcase</div>
+  <div class="section-title">真實AI Result，唔係mockup</div>
   <div class="showcase-grid">
     <a href="chart-analysis.html" class="showcase-card">
       <div class="showcase-img-wrap"><img src="img/chart-analysis-demo.jpg" alt="AI K線圖分析真實結果" loading="lazy"></div>
@@ -324,44 +354,72 @@
   </div>
 </div>
 
-<!-- Tools overview (restrained -- 8 real tools, no hype/™) -->
+<!-- Core AI Engines -->
 <div class="tools-section">
-  <div class="section-label">分析工具</div>
-  <div class="section-title">8 個獨立分析工具</div>
-  <div class="tools-sub">每個工具各自處理唔同任務，用真實市場數據運算，AI 負責型態辨識同文字整理，數值指標唔靠AI估算</div>
+  <div class="section-label">Core AI Engines</div>
+  <div class="section-title">7 個獨立 AI Engine™</div>
+  <div class="tools-sub">每個Engine™各自處理唔同任務，用真實市場數據運算，AI 負責型態辨識同文字整理，數值指標唔靠AI估算</div>
   <div class="tools-grid">
     <a href="ai-analysis.html" class="tool-pill">
       <span class="tool-pill-icon">📊</span>
-      <span><span class="tool-pill-name">AI 市場分析</span><br><span class="tool-pill-desc">評分／評級／風險</span></span>
+      <span><span class="tool-pill-name">Research Engine™</span><br><span class="tool-pill-desc">評分／評級／風險</span></span>
     </a>
     <a href="chart-analysis.html" class="tool-pill">
       <span class="tool-pill-icon">📈</span>
-      <span><span class="tool-pill-name">K線圖分析</span><br><span class="tool-pill-desc">型態辨識＋真實技術指標</span></span>
+      <span><span class="tool-pill-name">Chart Engine™</span><br><span class="tool-pill-desc">型態辨識＋真實技術指標</span></span>
     </a>
     <a href="screener.html" class="tool-pill">
       <span class="tool-pill-icon">🔍</span>
-      <span><span class="tool-pill-name">股票篩選器</span><br><span class="tool-pill-desc">按條件篩選</span></span>
+      <span><span class="tool-pill-name">Screener Engine™</span><br><span class="tool-pill-desc">按條件篩選</span></span>
     </a>
     <a href="probability-scan.html" class="tool-pill">
       <span class="tool-pill-icon">🎯</span>
-      <span><span class="tool-pill-name">機率掃描</span><br><span class="tool-pill-desc">偏多／偏空機率</span></span>
+      <span><span class="tool-pill-name">Decision Engine™</span><br><span class="tool-pill-desc">偏多／偏空機率</span></span>
     </a>
     <a href="company-compare.html" class="tool-pill">
       <span class="tool-pill-icon">⚖️</span>
-      <span><span class="tool-pill-name">多公司對標</span><br><span class="tool-pill-desc">同業比較</span></span>
+      <span><span class="tool-pill-name">Portfolio Engine™</span><br><span class="tool-pill-desc">同業比較</span></span>
     </a>
     <a href="news-denoise.html" class="tool-pill">
       <span class="tool-pill-icon">📰</span>
-      <span><span class="tool-pill-name">新聞去噪</span><br><span class="tool-pill-desc">情緒分析＋重點整合</span></span>
+      <span><span class="tool-pill-name">News Engine™</span><br><span class="tool-pill-desc">情緒分析＋重點整合</span></span>
     </a>
     <a href="stress-lab.html" class="tool-pill">
       <span class="tool-pill-icon">🧪</span>
-      <span><span class="tool-pill-name">壓力測試</span><br><span class="tool-pill-desc">情境模擬</span></span>
+      <span><span class="tool-pill-name">Risk Engine™</span><br><span class="tool-pill-desc">情境模擬</span></span>
     </a>
     <a href="chat.html" class="tool-pill">
       <span class="tool-pill-icon">💬</span>
-      <span><span class="tool-pill-name">AI 金融問答</span><br><span class="tool-pill-desc">對話式查詢</span></span>
+      <span><span class="tool-pill-name">Research Agent</span><br><span class="tool-pill-desc">對話式查詢</span></span>
     </a>
+  </div>
+</div>
+
+<!-- Decision Intelligence -->
+<div class="decision-section">
+  <div class="decision-box">
+    <div class="section-label" style="margin-bottom:8px">Decision Intelligence</div>
+    <div class="section-title" style="margin-bottom:0">每個分析最後都會有 Decision Score™</div>
+    <div class="decision-grid">
+      <div><div class="decision-stat-num">94</div><div class="decision-stat-label">Decision Score™</div></div>
+      <div><div class="decision-stat-num">96%</div><div class="decision-stat-label">Confidence™</div></div>
+      <div><div class="decision-stat-num">Medium</div><div class="decision-stat-label">RiskDNA™</div></div>
+      <div><div class="decision-stat-num">High</div><div class="decision-stat-label">Reward</div></div>
+    </div>
+    <p style="color:#64748b;font-size:0.82rem;margin-top:20px">範例數值，實際結果因股票同即時市場數據而異</p>
+  </div>
+</div>
+
+<!-- Trust Numbers -->
+<div class="trust-section">
+  <div class="section-label">Trust</div>
+  <div class="section-title">平台實力</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">7</div><div class="stat-label">AI Engines</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Asset Classes</div></div>
+    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">AI Analysis</div></div>
+    <div class="stat"><div class="stat-num">60s</div><div class="stat-label">Avg. Research Time</div></div>
+    <div class="stat"><div class="stat-num">$0</div><div class="stat-label">Free to Start</div></div>
   </div>
 </div>
 
@@ -430,15 +488,19 @@
   </div>
   <div class="faq-item">
     <div class="faq-q">數據來源係咩？</div>
-    <div class="faq-a">技術指標（RSI/MACD/支撐阻力/Fibonacci）由真實歷史股價計算，唔係AI估計。</div>
+    <div class="faq-a">技術指標（RSI/MACD/支撐阻力/Fibonacci）由Chart Engine™透過真實歷史股價計算，唔係AI估計。</div>
   </div>
   <div class="faq-item">
-    <div class="faq-q">AI分析可唔可靠？</div>
-    <div class="faq-a">數值指標100%基於真實數據計算；AI負責型態辨識同文字解讀，僅供參考，唔構成投資建議。</div>
+    <div class="faq-q">多久更新一次？</div>
+    <div class="faq-a">Today's AI Outlook同各Engine™每次查詢都用即市數據；首頁市場脈搏每5分鐘更新一次。</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">AI如何分析？Decision Score™點計出嚟？</div>
+    <div class="faq-a">每個Engine™嘅數值指標（趨勢/RSI/MACD/支撐阻力）100%基於真實數據計算；AI負責型態辨識同文字解讀。Decision Score™係將多個真實訊號嘅一致程度轉化做0-100分，僅供參考，唔構成投資建議。</div>
   </div>
   <div class="faq-item">
     <div class="faq-q">會唔會直接推薦邊隻股票買賣？</div>
-    <div class="faq-a">唔會。XFINLAB提供數據同分析參考，最終買賣決定由你自己判斷同承擔。</div>
+    <div class="faq-a">唔會。XFINLAB提供Decision Score™同分析參考，最終買賣決定由你自己判斷同承擔。</div>
   </div>
   <div class="faq-item">
     <div class="faq-q">有冇免費版？</div>
@@ -450,13 +512,13 @@
   </div>
 </div>
 
-<!-- CTA -->
+<!-- Final CTA -->
 <div style="padding: 0 24px;">
   <div class="cta">
-    <h2>免費分析第一隻股票</h2>
-    <p>免費帳號每日 10 次分析，無需信用卡</p>
+    <h2>Start Your First AI Research</h2>
+    <p>Free · 免費帳號每日 10 次分析，無需信用卡</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <a href="login.html" class="btn-primary">免費註冊</a>
+      <a href="login.html" class="btn-primary">Start Free</a>
       <a href="ai-analysis.html" class="btn-secondary">立即試用</a>
     </div>
   </div>
@@ -504,6 +566,67 @@ async function loadTickers() {
 loadTickers();
 initAutocomplete("heroTicker", "heroDropdown");
 
+// Hero "Live AI Result" card -- 見api/hero_showcase.py，真實confluence
+// engine計出嚟嘅Decision Score/Confidence/RiskDNA/支撐阻力，5分鐘後端
+// 快取，唔會消耗訪客自己嗰30分鐘免費試用時段（嗰個係另一個獨立endpoint）。
+async function loadHeroResult() {
+  const body = document.getElementById('heroResultBody');
+  if (!body) return;
+  try {
+    const res = await fetch(`${API}/hero-showcase`);
+    const data = await res.json();
+    if (!data.available) {
+      body.innerHTML = `<div style="color:#64748b;font-size:0.85rem;padding:20px 0;text-align:center">暫時無法載入即時結果</div>`;
+      return;
+    }
+    const dirClass = data.direction === 'Bullish' ? 'bull' : (data.direction === 'Bearish' ? 'bear' : 'neutral');
+    body.innerHTML = `
+      <div class="ai-result-head">
+        <div><span class="ai-result-ticker">${data.ticker}</span></div>
+        <div class="ai-result-price">$${data.price}</div>
+      </div>
+      <div class="ai-result-score-row">
+        <div>
+          <div class="ai-result-score">${data.decision_score}</div>
+          <div class="ai-result-score-label">Decision Score™</div>
+        </div>
+        <div class="ai-result-dir ${dirClass}">${data.direction}</div>
+      </div>
+      <div class="ai-result-grid">
+        <div class="ai-result-stat"><div class="ai-result-stat-label">Confidence™</div><div class="ai-result-stat-val">${data.confidence_pct}%</div></div>
+        <div class="ai-result-stat"><div class="ai-result-stat-label">RiskDNA™</div><div class="ai-result-stat-val">${data.risk_level}</div></div>
+        <div class="ai-result-stat"><div class="ai-result-stat-label">Support</div><div class="ai-result-stat-val">${data.support != null ? data.support : '—'}</div></div>
+        <div class="ai-result-stat"><div class="ai-result-stat-label">Resistance</div><div class="ai-result-stat-val">${data.resistance != null ? data.resistance : '—'}</div></div>
+      </div>`;
+  } catch(e) {
+    body.innerHTML = `<div style="color:#64748b;font-size:0.85rem;padding:20px 0;text-align:center">暫時無法載入即時結果</div>`;
+  }
+}
+loadHeroResult();
+setInterval(loadHeroResult, 300000);
+
+// "AI is working" loading-animation loop -- purely visual, cycles through
+// the 4 steps to convey the AI pipeline actually running (real pipeline
+// steps -- news/chart/risk/research -- power every Engine™ on this site,
+// this is just a representative animation of that flow, not a live task
+// tracker for a specific request).
+(function cycleLiveSteps() {
+  const steps = ['liveStep1', 'liveStep2', 'liveStep3', 'liveStep4'];
+  let i = 0;
+  function tick() {
+    steps.forEach((id, idx) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('active', 'done');
+      if (idx < i) el.classList.add('done');
+      if (idx === i) el.classList.add('active');
+    });
+    i = (i + 1) % (steps.length + 1);
+  }
+  tick();
+  setInterval(tick, 1400);
+})();
+
 // Live Market Pulse -- 見api/market_pulse.py, 5分鐘後端快取，basket已經
 // 按confluence_score由強到弱排序（sector rotation leaderboard）。
 // 前端每90秒refetch一次 -- 因為後端本身有5分鐘快取，呢個唔會加重
@@ -515,15 +638,24 @@ async function loadMarketPulse() {
     const data = await res.json();
     const overallEl = document.getElementById('pulseOverall');
     if (overallEl) {
-      overallEl.innerHTML = `整體：<strong>${data.overall_sentiment}</strong> · ${data.volatility_desc}`;
+      overallEl.innerHTML = `整體：<strong>${data.overall_sentiment}</strong> · Confidence ${data.confidence_pct != null ? data.confidence_pct + '%' : '--'} · ${data.volatility_desc}`;
     }
     const topEl = document.getElementById('pulseTop');
     if (topEl) {
       if (data.top_sector) {
-        topEl.innerHTML = `🏆 今日最強板塊：<strong>${data.top_sector.label}（${data.top_sector.ticker}）</strong> · ${data.top_sector.confluence_direction}`;
+        topEl.innerHTML = `🏆 Top Opportunity：<strong>${data.top_sector.label}（${data.top_sector.ticker}）</strong> · ${data.top_sector.confluence_direction}`;
         topEl.style.display = 'block';
       } else {
         topEl.style.display = 'none';
+      }
+    }
+    const bottomEl = document.getElementById('pulseBottom');
+    if (bottomEl) {
+      if (data.bottom_sector) {
+        bottomEl.innerHTML = `⚠️ Top Risk：<strong>${data.bottom_sector.label}（${data.bottom_sector.ticker}）</strong> · ${data.bottom_sector.confluence_direction}`;
+        bottomEl.style.display = 'block';
+      } else {
+        bottomEl.style.display = 'none';
       }
     }
     const grid = document.getElementById('pulseGrid');

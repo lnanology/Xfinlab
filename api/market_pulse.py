@@ -123,16 +123,30 @@ def _compute_pulse() -> Dict:
     available.sort(key=lambda b: b["confluence_score"], reverse=True)
     sorted_breakdown = available + unavailable
     top_sector = available[0] if available else None
+    # Weakest/most-bearish member of the basket -- symmetric to top_sector,
+    # same real per-ticker confluence data, just picking the other end of
+    # the sorted list. Used by index.html's "Today's AI Outlook" summary
+    # as an honest "Top Risk" figure (not a separate risk model -- just
+    # which basket member currently has the worst real signal).
+    bottom_sector = available[-1] if len(available) > 1 else None
 
     return {
         "overall_sentiment": overall,
         "overall_score": avg_score,
+        # Confidence framing of the same overall_score: how strongly the
+        # basket agrees in one direction, as a 0-100 magnitude.
+        "confidence_pct": round(min(100.0, abs(avg_score)), 1),
         "volatility_desc": volatility_desc,
         "top_sector": {
             "label": top_sector["label"],
             "ticker": top_sector["ticker"],
             "confluence_direction": top_sector["confluence_direction"],
         } if top_sector else None,
+        "bottom_sector": {
+            "label": bottom_sector["label"],
+            "ticker": bottom_sector["ticker"],
+            "confluence_direction": bottom_sector["confluence_direction"],
+        } if bottom_sector else None,
         "basket": sorted_breakdown,
         "data_source": "即市技術分析（真實價格數據，非AI猜測）",
         "disclaimer": "呢個係整體市場技術面參考，唔係投資建議。",
