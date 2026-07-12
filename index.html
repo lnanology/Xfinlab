@@ -608,41 +608,65 @@ initAutocomplete("heroTicker", "heroDropdown");
 // Hero "Live AI Result" card -- 見api/hero_showcase.py，真實confluence
 // engine計出嚟嘅Decision Score/Confidence/RiskDNA/支撐阻力，5分鐘後端
 // 快取，唔會消耗訪客自己嗰30分鐘免費試用時段（嗰個係另一個獨立endpoint）。
+// 而家會自動輪流show basket入面10隻Top股票嘅真實結果，每10秒轉一隻。
+let heroItems = [];
+let heroIndex = 0;
+
+function renderHeroItem(data) {
+  const body = document.getElementById('heroResultBody');
+  if (!body || !data) return;
+  const dirClass = data.direction === 'Bullish' ? 'bull' : (data.direction === 'Bearish' ? 'bear' : 'neutral');
+  body.innerHTML = `
+    <div class="ai-result-head">
+      <div><span class="ai-result-ticker">${data.ticker}</span></div>
+      <div class="ai-result-price">$${data.price}</div>
+    </div>
+    <div class="ai-result-score-row">
+      <div>
+        <div class="ai-result-score">${data.decision_score}</div>
+        <div class="ai-result-score-label">Decision Score™</div>
+      </div>
+      <div class="ai-result-dir ${dirClass}">${data.direction}</div>
+    </div>
+    <div class="ai-result-grid">
+      <div class="ai-result-stat"><div class="ai-result-stat-label">Confidence™</div><div class="ai-result-stat-val">${data.confidence_pct}%</div></div>
+      <div class="ai-result-stat"><div class="ai-result-stat-label">RiskDNA™</div><div class="ai-result-stat-val">${data.risk_level}</div></div>
+      <div class="ai-result-stat"><div class="ai-result-stat-label">Support</div><div class="ai-result-stat-val">${data.support != null ? data.support : '—'}</div></div>
+      <div class="ai-result-stat"><div class="ai-result-stat-label">Resistance</div><div class="ai-result-stat-val">${data.resistance != null ? data.resistance : '—'}</div></div>
+    </div>`;
+}
+
 async function loadHeroResult() {
   const body = document.getElementById('heroResultBody');
   if (!body) return;
   try {
     const res = await fetch(`${API}/hero-showcase`);
     const data = await res.json();
-    if (!data.available) {
+    if (!data.available || !Array.isArray(data.items) || data.items.length === 0) {
       body.innerHTML = `<div style="color:#64748b;font-size:0.85rem;padding:20px 0;text-align:center">暫時無法載入即時結果</div>`;
+      heroItems = [];
       return;
     }
-    const dirClass = data.direction === 'Bullish' ? 'bull' : (data.direction === 'Bearish' ? 'bear' : 'neutral');
-    body.innerHTML = `
-      <div class="ai-result-head">
-        <div><span class="ai-result-ticker">${data.ticker}</span></div>
-        <div class="ai-result-price">$${data.price}</div>
-      </div>
-      <div class="ai-result-score-row">
-        <div>
-          <div class="ai-result-score">${data.decision_score}</div>
-          <div class="ai-result-score-label">Decision Score™</div>
-        </div>
-        <div class="ai-result-dir ${dirClass}">${data.direction}</div>
-      </div>
-      <div class="ai-result-grid">
-        <div class="ai-result-stat"><div class="ai-result-stat-label">Confidence™</div><div class="ai-result-stat-val">${data.confidence_pct}%</div></div>
-        <div class="ai-result-stat"><div class="ai-result-stat-label">RiskDNA™</div><div class="ai-result-stat-val">${data.risk_level}</div></div>
-        <div class="ai-result-stat"><div class="ai-result-stat-label">Support</div><div class="ai-result-stat-val">${data.support != null ? data.support : '—'}</div></div>
-        <div class="ai-result-stat"><div class="ai-result-stat-label">Resistance</div><div class="ai-result-stat-val">${data.resistance != null ? data.resistance : '—'}</div></div>
-      </div>`;
+    heroItems = data.items;
+    heroIndex = 0;
+    renderHeroItem(heroItems[0]);
   } catch(e) {
     body.innerHTML = `<div style="color:#64748b;font-size:0.85rem;padding:20px 0;text-align:center">暫時無法載入即時結果</div>`;
+    heroItems = [];
   }
 }
+
+// 每10秒輪去下一隻股票嘅真實結果 -- 淨係喺已經攞到嘅基礎上輪播顯示，
+// 唔會加多call API，5分鐘背景refetch先會再問後端拎新數據。
+function rotateHeroResult() {
+  if (!heroItems.length) return;
+  heroIndex = (heroIndex + 1) % heroItems.length;
+  renderHeroItem(heroItems[heroIndex]);
+}
+
 loadHeroResult();
 setInterval(loadHeroResult, 300000);
+setInterval(rotateHeroResult, 10000);
 
 // "AI is working" loading-animation loop -- purely visual, cycles through
 // the 4 steps to convey the AI pipeline actually running (real pipeline

@@ -17,12 +17,16 @@ server-side cached for 5 minutes so it can be hit by every homepage
 visitor without hammering the underlying data source or costing anything
 per-view.
 
-Picks whichever ticker in a small liquid-stock basket currently has the
-strongest confluence signal (|score| highest) -- makes the card feel
-genuinely alive/current rather than pinned to one name forever, while
-staying deterministic and explainable (same real formula used
-everywhere else: services/technical_analysis_service.py's confluence
-engine).
+2026-07 update: the Hero card now auto-rotates through a basket of 10
+liquid large-caps every 10 seconds (index.html's rotateHeroResult()),
+rather than pinning to a single "strongest signal" pick. Basket matches
+the site's existing 10 SEO landing pages (aapl.html/amzn.html/brk.html/
+googl.html/jpm.html/meta.html/msft.html/nvda.html/tsla.html/v.html) so
+the same 10 names are consistent across the site. Every entry in the
+response is a REAL computed result (same confluence engine, same
+Decision Score(TM)/Confidence(TM)/RiskDNA(TM) formulas used everywhere
+else) -- there is no fabricated placeholder entry for a ticker whose
+data fetch failed; it's simply omitted from the list.
 """
 
 import time
@@ -33,32 +37,22 @@ from engines.risk_engine import RiskEngine
 
 router = APIRouter()
 
-_SHOWCASE_BASKET = ["TSLA", "NVDA", "AAPL", "MSFT", "GOOGL"]
+_SHOWCASE_BASKET = [
+    "AAPL", "AMZN", "BRK-B", "GOOGL", "JPM",
+    "META", "MSFT", "NVDA", "TSLA", "V",
+]
 
 _cache = None
 _cache_time = 0
 _CACHE_TTL_SECONDS = 300  # 5 minutes, same cadence as api/market_pulse.py
 
 
-def _build_showcase():
-    candidates = []
-    for ticker in _SHOWCASE_BASKET:
-        tech = get_technical_analysis(ticker)
-        if not tech or "error" in tech:
-            continue
-        confluence = tech.get("confluence", {})
-        candidates.append((ticker, tech, confluence))
-
-    if not candidates:
+def _build_showcase_item(ticker: str):
+    tech = get_technical_analysis(ticker)
+    if not tech or "error" in tech:
         return None
 
-    # Pick the strongest, clearest signal (most decisive |score|) rather
-    # than always the same ticker -- real market conditions decide which
-    # name shows up.
-    best_ticker, tech, confluence = max(
-        candidates, key=lambda c: abs(c[2].get("score", 0))
-    )
-
+    confluence = tech.get("confluence", {})
     score = confluence.get("score", 0)
     # Decision Score(TM): map confluence's -100..+100 net-signal score to
     # a 0-100 scale -- same (score+100)/2 mapping already used in
@@ -92,6 +86,23 @@ def _build_showcase():
     }
 
 
+def _build_showcase():
+    items = []
+    for ticker in _SHOWCASE_BASKET:
+        item = _build_showcase_item(ticker)
+        if item is not None:
+            items.append(item)
+
+    if not items:
+        return None
+
+    # Strongest, clearest signal first (most decisive |score|) -- purely
+    # cosmetic ordering for whatever the card shows before the first
+    # rotation tick; the frontend cycles through every item regardless.
+    items.sort(key=lambda it: abs(it["decision_score"] - 50), reverse=True)
+    return items
+
+
 @router.get("/hero-showcase")
 def hero_showcase():
     global _cache, _cache_time
@@ -99,13 +110,13 @@ def hero_showcase():
     if _cache is not None and (now - _cache_time) < _CACHE_TTL_SECONDS:
         return _cache
 
-    result = _build_showcase()
-    if result is None:
+    items = _build_showcase()
+    if items is None:
         # Data source unavailable for the whole basket -- return an
         # honest "unavailable" shape rather than serving stale/fake data.
         return {"available": False}
 
-    payload = {"available": True, **result}
+    payload = {"available": True, "items": items}
     _cache = payload
     _cache_time = now
     return payload
