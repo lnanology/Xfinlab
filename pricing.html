@@ -49,7 +49,7 @@
   .save-badge { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
 
   /* Plans */
-  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 64px; }
+  .plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 64px; }
 
   .plan { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; position: relative; }
   .plan.popular { border-color: var(--accent); }
@@ -65,6 +65,7 @@
   .btn-free { background: var(--surface2); color: var(--label); border: 1px solid var(--border); }
   .btn-starter { background: var(--accent); color: #000; }
   .btn-pro { background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; }
+  .btn-enterprise { background: var(--surface2); color: var(--text); border: 1px solid var(--purple); }
   .btn-plan:hover { opacity: 0.85; }
 
   .features-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
@@ -91,15 +92,18 @@
 
   footer { text-align: center; padding: 32px; color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 80px; }
 
+  @media (max-width: 980px) {
+    .plans { grid-template-columns: repeat(2, 1fr); }
+  }
   @media (max-width: 768px) {
     .plans { grid-template-columns: 1fr; }
     .hero h1 { font-size: 2rem; }
   }
 </style>
 <script src="js/i18n.js"></script>
-<meta name="description" content="Free, Starter $19/mo, Pro $49/mo. AI investment plans.">
+<meta name="description" content="Free, Pro $19/mo, Professional $49/mo, Enterprise custom pricing. AI investment plans.">
 <meta property="og:title" content="Pricing — XFINLAB AI Platform">
-<meta property="og:description" content="Free, Starter $19/mo, Pro $49/mo. AI investment plans.">
+<meta property="og:description" content="Free, Pro $19/mo, Professional $49/mo, Enterprise custom pricing. AI investment plans.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Pricing — XFINLAB AI Platform">
 </head>
@@ -154,16 +158,16 @@
       <div class="feature muted"><span class="cross">✕</span> AI Research Assistant</div>
     </div>
 
-    <!-- Starter -->
+    <!-- Pro (was Starter — internal plan key stays "starter", see handleUpgrade()) -->
     <div class="plan popular">
       <div class="popular-badge">Most Popular</div>
-      <div class="plan-name">Starter</div>
+      <div class="plan-name">Pro</div>
       <div class="plan-price">
         <div class="amount" id="starterPrice">$19</div>
         <div class="period">/month</div>
       </div>
       <div class="plan-desc">For active investors who want more AI-powered insights.</div>
-      <button class="btn-plan btn-starter" onclick="handleUpgrade('starter')">Start Starter Plan</button>
+      <button class="btn-plan btn-starter" onclick="handleUpgrade('starter')">Start Pro Plan</button>
       <div class="features-label">Everything in Free, plus</div>
       <div class="feature"><span class="check">✓</span> Unlimited AI analyses</div>
       <div class="feature"><span class="check">✓</span> Unlimited research reports</div>
@@ -175,16 +179,16 @@
       <div class="feature muted"><span class="cross">✕</span> API access</div>
     </div>
 
-    <!-- Pro -->
+    <!-- Professional (was Pro — internal plan key stays "pro", see handleUpgrade()) -->
     <div class="plan">
-      <div class="plan-name">Pro</div>
+      <div class="plan-name">Professional</div>
       <div class="plan-price">
         <div class="amount" id="proPrice">$49</div>
         <div class="period">/month</div>
       </div>
       <div class="plan-desc">For serious investors and professionals who need everything.</div>
-      <button class="btn-plan btn-pro" onclick="handleUpgrade('pro')">Go Pro</button>
-      <div class="features-label">Everything in Starter, plus</div>
+      <button class="btn-plan btn-pro" onclick="handleUpgrade('pro')">Go Professional</button>
+      <div class="features-label">Everything in Pro, plus</div>
       <div class="feature"><span class="check">✓</span> AI Research Assistant</div>
       <div class="feature"><span class="check">✓</span> Unlimited portfolio tracking</div>
       <div class="feature"><span class="check">✓</span> Priority AI processing</div>
@@ -192,6 +196,25 @@
       <div class="feature"><span class="check">✓</span> Early access to new features</div>
       <div class="feature"><span class="check">✓</span> Email support</div>
       <div class="feature"><span class="check">✓</span> Custom strategy builder</div>
+    </div>
+
+    <!-- Enterprise: honest "contact us" tier -- no self-serve backend
+         exists for team seats/SLA/invoicing, so this deliberately routes
+         to a real human conversation (email) rather than pretending
+         there's an automated signup flow. -->
+    <div class="plan">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">
+        <div class="amount" style="font-size:1.7rem">Custom</div>
+      </div>
+      <div class="plan-desc">For teams and institutions that need volume, support, and custom terms.</div>
+      <button class="btn-plan btn-enterprise" onclick="window.location.href='mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry'">Contact Sales</button>
+      <div class="features-label">Everything in Professional, plus</div>
+      <div class="feature"><span class="check">✓</span> Multiple team seats</div>
+      <div class="feature"><span class="check">✓</span> Custom API rate limits</div>
+      <div class="feature"><span class="check">✓</span> Invoice billing</div>
+      <div class="feature"><span class="check">✓</span> Dedicated onboarding support</div>
+      <div class="feature muted"><span class="cross">✕</span> Self-serve signup (talk to us first)</div>
     </div>
 
   </div>
