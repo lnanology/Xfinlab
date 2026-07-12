@@ -35,6 +35,7 @@
 @keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
 </style>
 <script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/quota.js"></script>
 <meta name="description" content="AI stock screener. Find the best investment opportunities.">
 <meta property="og:title" content="Stock Screener — XFINLAB AI">
@@ -46,91 +47,91 @@
 <nav>
   <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
   <div class="nav-links">
-    <a href="chart-analysis.html" class="nav-link">圖表</a>
-    <a href="company-compare.html" class="nav-link">比較</a>
-    <a href="news.html" class="nav-link">新聞</a>
-    <a href="probability-scan.html" class="nav-link">機率掃描</a>
-    <a href="chat.html" class="nav-cta">AI 分析</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="sc_nav_chart">圖表</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="sc_nav_compare">比較</a>
+    <a href="news.html" class="nav-link" data-i18n="sc_nav_news">新聞</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="chat.html" class="nav-cta" data-i18n="sc_nav_ai">AI 分析</a>
   </div>
 </nav>
 <div class="container">
   <div class="page-tag">Screener Engine™</div>
-  <h1 class="page-title">股票篩選器</h1>
-  <p class="page-sub">設定條件，AI為你篩選符合標準的潛力股票並提供分析報告</p>
-  <div class="page-tag" style="margin-bottom:0.4rem;">快速預設</div>
+  <h1 class="page-title" data-i18n="sc_title">股票篩選器</h1>
+  <p class="page-sub" data-i18n="sc_subtitle">設定條件，AI為你篩選符合標準的潛力股票並提供分析報告</p>
+  <div class="page-tag" style="margin-bottom:0.4rem;" data-i18n="sc_quick_presets">快速預設</div>
   <div class="preset-row">
-    <div class="preset-btn" onclick="setPreset('growth')">🚀 高增長股</div>
-    <div class="preset-btn" onclick="setPreset('value')">💎 價值投資</div>
-    <div class="preset-btn" onclick="setPreset('dividend')">💰 高息股</div>
-    <div class="preset-btn" onclick="setPreset('momentum')">⚡ 動能強勢</div>
-    <div class="preset-btn" onclick="setPreset('smallcap')">🌱 小市值潛力</div>
-    <div class="preset-btn" onclick="setPreset('tech')">💻 科技龍頭</div>
+    <div class="preset-btn" onclick="setPreset('growth')" data-i18n="sc_preset_growth">🚀 高增長股</div>
+    <div class="preset-btn" onclick="setPreset('value')" data-i18n="sc_preset_value">💎 價值投資</div>
+    <div class="preset-btn" onclick="setPreset('dividend')" data-i18n="sc_preset_dividend">💰 高息股</div>
+    <div class="preset-btn" onclick="setPreset('momentum')" data-i18n="sc_preset_momentum">⚡ 動能強勢</div>
+    <div class="preset-btn" onclick="setPreset('smallcap')" data-i18n="sc_preset_smallcap">🌱 小市值潛力</div>
+    <div class="preset-btn" onclick="setPreset('tech')" data-i18n="sc_preset_tech">💻 科技龍頭</div>
   </div>
   <div class="filter-grid">
     <div class="filter-group">
-      <label>市場</label>
+      <label data-i18n="sc_f_market_label">市場</label>
       <select class="filter-select" id="f_market">
-        <option value="全球">🌍 全球</option>
-        <option value="港股">🇭🇰 港股</option>
-        <option value="美股">🇺🇸 美股</option>
-        <option value="A股">🇨🇳 A股</option>
-        <option value="加密貨幣">🪙 加密貨幣</option>
+        <option value="全球" data-i18n="sc_opt_global">🌍 全球</option>
+        <option value="港股" data-i18n="sc_opt_hk">🇭🇰 港股</option>
+        <option value="美股" data-i18n="sc_opt_us">🇺🇸 美股</option>
+        <option value="A股" data-i18n="sc_opt_ashare">🇨🇳 A股</option>
+        <option value="加密貨幣" data-i18n="sc_opt_crypto">🪙 加密貨幣</option>
       </select>
     </div>
     <div class="filter-group">
-      <label>行業</label>
+      <label data-i18n="sc_f_sector_label">行業</label>
       <select class="filter-select" id="f_sector">
-        <option value="所有行業">所有行業</option>
-        <option value="科技">科技</option>
-        <option value="金融">金融</option>
-        <option value="醫療">醫療</option>
-        <option value="消費">消費</option>
-        <option value="能源">能源</option>
-        <option value="房地產">房地產</option>
+        <option value="所有行業" data-i18n="sc_opt_all_sectors">所有行業</option>
+        <option value="科技" data-i18n="sc_opt_tech">科技</option>
+        <option value="金融" data-i18n="sc_opt_finance">金融</option>
+        <option value="醫療" data-i18n="sc_opt_healthcare">醫療</option>
+        <option value="消費" data-i18n="sc_opt_consumer">消費</option>
+        <option value="能源" data-i18n="sc_opt_energy">能源</option>
+        <option value="房地產" data-i18n="sc_opt_realestate">房地產</option>
       </select>
     </div>
     <div class="filter-group">
-      <label>市值</label>
+      <label data-i18n="sc_f_cap_label">市值</label>
       <select class="filter-select" id="f_cap">
-        <option value="任何市值">任何市值</option>
-        <option value="大型股(>500億美元)">大型股 &gt;500億</option>
-        <option value="中型股(50-500億美元)">中型股 50-500億</option>
-        <option value="小型股(<50億美元)">小型股 &lt;50億</option>
+        <option value="任何市值" data-i18n="sc_opt_any_cap">任何市值</option>
+        <option value="大型股(>500億美元)" data-i18n="sc_opt_large_cap">大型股 &gt;500億</option>
+        <option value="中型股(50-500億美元)" data-i18n="sc_opt_mid_cap">中型股 50-500億</option>
+        <option value="小型股(<50億美元)" data-i18n="sc_opt_small_cap">小型股 &lt;50億</option>
       </select>
     </div>
     <div class="filter-group">
-      <label>增長率</label>
+      <label data-i18n="sc_f_growth_label">增長率</label>
       <select class="filter-select" id="f_growth">
-        <option value="任何增長率">任何增長率</option>
-        <option value="高增長(>30%)">高增長 &gt;30%</option>
-        <option value="穩健增長(10-30%)">穩健增長 10-30%</option>
-        <option value="低增長(<10%)">低增長 &lt;10%</option>
+        <option value="任何增長率" data-i18n="sc_opt_any_growth">任何增長率</option>
+        <option value="高增長(>30%)" data-i18n="sc_opt_high_growth">高增長 &gt;30%</option>
+        <option value="穩健增長(10-30%)" data-i18n="sc_opt_steady_growth">穩健增長 10-30%</option>
+        <option value="低增長(<10%)" data-i18n="sc_opt_low_growth">低增長 &lt;10%</option>
       </select>
     </div>
     <div class="filter-group">
-      <label>估值</label>
+      <label data-i18n="sc_f_value_label">估值</label>
       <select class="filter-select" id="f_value">
-        <option value="任何估值">任何估值</option>
-        <option value="低估值(PE<15)">低估值 PE&lt;15</option>
-        <option value="合理估值(PE 15-30)">合理估值 PE 15-30</option>
-        <option value="高增長溢價(PE>30)">高增長溢價 PE&gt;30</option>
+        <option value="任何估值" data-i18n="sc_opt_any_value">任何估值</option>
+        <option value="低估值(PE<15)" data-i18n="sc_opt_low_value">低估值 PE&lt;15</option>
+        <option value="合理估值(PE 15-30)" data-i18n="sc_opt_fair_value">合理估值 PE 15-30</option>
+        <option value="高增長溢價(PE>30)" data-i18n="sc_opt_growth_premium">高增長溢價 PE&gt;30</option>
       </select>
     </div>
     <div class="filter-group">
-      <label>風險</label>
+      <label data-i18n="sc_f_risk_label">風險</label>
       <select class="filter-select" id="f_risk">
-        <option value="任何風險">任何風險</option>
-        <option value="低風險">低風險</option>
-        <option value="中等風險">中等風險</option>
-        <option value="高風險高回報">高風險高回報</option>
+        <option value="任何風險" data-i18n="sc_opt_any_risk">任何風險</option>
+        <option value="低風險" data-i18n="sc_opt_low_risk">低風險</option>
+        <option value="中等風險" data-i18n="sc_opt_medium_risk">中等風險</option>
+        <option value="高風險高回報" data-i18n="sc_opt_high_risk">高風險高回報</option>
       </select>
     </div>
   </div>
-  <button class="screen-btn" id="screenBtn" onclick="doScreen()">🔍 AI 智能篩選分析</button>
+  <button class="screen-btn" id="screenBtn" onclick="doScreen()" data-i18n="sc_run_btn">🔍 AI 智能篩選分析</button>
   <div class="result-card" id="resultCard">
-    <div class="result-title" id="resultTitle">篩選結果</div>
+    <div class="result-title" id="resultTitle" data-i18n="sc_result_title_default">篩選結果</div>
     <div class="analysis-text" id="resultContent"></div>
-    <div style="font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;">⚠️ 以上篩選結果由AI生成，僅供參考，不構成投資建議。</div>
+    <div style="font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;" data-i18n="sc_disclaimer">⚠️ 以上篩選結果由AI生成，僅供參考，不構成投資建議。</div>
   </div>
   <div id="shareBar"></div>
 </div>
@@ -152,6 +153,8 @@ function setPreset(p){
   document.getElementById('f_value').value=s.value;
   document.getElementById('f_risk').value=s.risk;
 }
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
 async function doScreen(){
   const market=document.getElementById('f_market').value;
   const sector=document.getElementById('f_sector').value;
@@ -161,8 +164,8 @@ async function doScreen(){
   const risk=document.getElementById('f_risk').value;
   document.getElementById('screenBtn').disabled=true;
   document.getElementById('resultCard').className='result-card show';
-  document.getElementById('resultTitle').textContent='AI 篩選分析中...';
-  document.getElementById('resultContent').innerHTML='<div class="loading-text"><div class="dot-ani">AI 智能篩選中<span>.</span><span>.</span><span>.</span></div></div>';
+  document.getElementById('resultTitle').textContent=t('sc_analyzing_title','AI 篩選分析中...');
+  document.getElementById('resultContent').innerHTML=`<div class="loading-text"><div class="dot-ani">${t('sc_loading','AI 智能篩選中')}<span>.</span><span>.</span><span>.</span></div></div>`;
   const query=`請根據以下條件篩選推薦股票：
 市場：${market}
 行業：${sector}
@@ -185,7 +188,7 @@ async function doScreen(){
     const res = await postApi('/api/ai-analysis', payload);
     const answer = res?.data?.conclusion || res?.data?.analysis || res?.answer || '';
     if(answer){
-      document.getElementById('resultTitle').textContent=`${market} · ${sector} · ${risk} 篩選結果`;
+      document.getElementById('resultTitle').textContent=`${market} · ${sector} · ${risk} ${t('sc_result_title_suffix','篩選結果')}`;
       document.getElementById('resultContent').innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
 
       if (typeof window.renderShareBar === 'function') {
@@ -197,7 +200,7 @@ async function doScreen(){
         });
       }
     }
-  }catch(e){document.getElementById('resultContent').innerHTML='<p style="color:var(--accent-red)">篩選出現問題，請稍後重試。</p>';}
+  }catch(e){document.getElementById('resultContent').innerHTML=`<p style="color:var(--accent-red)">${t('sc_error_msg','篩選出現問題，請稍後重試。')}</p>`;}
   document.getElementById('screenBtn').disabled=false;
 }
 function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
