@@ -117,73 +117,68 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 }
 </style>
   <div class="nav-right">
-    <a href="index.html" class="nav-link">首頁</a>
-    <select onchange="changeLang(this.value)" aria-label="語言選擇" style="padding:6px;border-radius:6px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);">
-      <option value="zh-HK" selected>中文 (繁)</option>
-      <option value="zh-CN">中文 (简)</option>
-      <option value="en">English</option>
-    </select>
-    <button class="new-chat-btn" onclick="newChat()">＋ 新對話</button>
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <button class="new-chat-btn" onclick="newChat()" data-i18n="chat_new_chat">＋ 新對話</button>
   </div>
 </nav>
 
 <div class="main">
   <div class="sidebar">
     <div class="sb-top">
-      <div class="sb-label">快速分析</div>
+      <div class="sb-label" data-i18n="chat_quick_analysis_label">快速分析</div>
       <div class="quick-prompt" onclick="sendQuick('分析騰訊700.HK現時技術走勢，包括支撐阻力位及短中期展望')">
         <div class="qp-icon">📈</div>
-        <div class="qp-text"><strong>港股技術分析</strong>輸入代號即時分析走勢</div>
+        <div class="qp-text"><strong data-i18n="chat_qp1_title">港股技術分析</strong><span data-i18n="chat_qp1_desc">輸入代號即時分析走勢</span></div>
       </div>
       <div class="quick-prompt" onclick="sendQuick('比較蘋果AAPL和微軟MSFT的毛利率、增長率、現金流及潛在風險，用表格列出並給出投資邏輯')">
         <div class="qp-icon">⚖️</div>
-        <div class="qp-text"><strong>AB公司對比</strong>毛利率、增長率、風險分析</div>
+        <div class="qp-text"><strong data-i18n="chat_qp2_title">AB公司對比</strong><span data-i18n="chat_qp2_desc">毛利率、增長率、風險分析</span></div>
       </div>
       <div class="quick-prompt" onclick="sendQuick('分析標普500 SPX現時技術走勢及市場情緒，VIX指數現況如何？')">
         <div class="qp-icon">🌍</div>
-        <div class="qp-text"><strong>大市情緒分析</strong>VIX、標普500走勢</div>
+        <div class="qp-text"><strong data-i18n="chat_qp3_title">大市情緒分析</strong><span data-i18n="chat_qp3_desc">VIX、標普500走勢</span></div>
       </div>
       <div class="quick-prompt" onclick="sendQuick('根據過去4季現金流分析騰訊的財務健康狀況，評估其續航能力及增長機率')">
         <div class="qp-icon">💰</div>
-        <div class="qp-text"><strong>現金流評估</strong>4季財務健康分析</div>
+        <div class="qp-text"><strong data-i18n="chat_qp4_title">現金流評估</strong><span data-i18n="chat_qp4_desc">4季財務健康分析</span></div>
       </div>
       <div class="quick-prompt" onclick="sendQuick('分析Bitcoin BTC/USD現時技術走勢，關鍵支撐阻力位及0.618黃金比例回調位')">
         <div class="qp-icon">🪙</div>
-        <div class="qp-text"><strong>加密貨幣分析</strong>BTC技術走勢</div>
+        <div class="qp-text"><strong data-i18n="chat_qp5_title">加密貨幣分析</strong><span data-i18n="chat_qp5_desc">BTC技術走勢</span></div>
       </div>
     </div>
     <div class="divider"></div>
-    <div class="sb-label" style="padding:0 1rem;">最近對話</div>
+    <div class="sb-label" style="padding:0 1rem;" data-i18n="chat_recent_label">最近對話</div>
     <div class="history-list" id="historyList"></div>
     <div class="sb-bottom">
-      <div class="sb-tip">💡 上傳K線截圖，AI即時識別支撐阻力、圖形形態及技術指標</div>
+      <div class="sb-tip" data-i18n="chat_tip">💡 上傳K線截圖，AI即時識別支撐阻力、圖形形態及技術指標</div>
     </div>
   </div>
 
   <div class="chat-area" id="chatArea">
     <div class="welcome" id="welcome">
       <div class="welcome-logo">X<em>FIN</em>LAB</div>
-      <p class="welcome-sub">機構級AI金融分析，輸入股票代號或上傳K線圖，即時獲取深度分析報告</p>
+      <p class="welcome-sub" data-i18n="chat_welcome_sub">機構級AI金融分析，輸入股票代號或上傳K線圖，即時獲取深度分析報告</p>
       <div class="welcome-grid">
         <div class="wcard" onclick="sendQuick('上傳K線圖後，請分析支撐阻力位、圖形形態及技術指標，給出短中期展望')">
           <div class="wcard-icon">📊</div>
-          <div class="wcard-title">上傳圖表分析</div>
-          <div class="wcard-desc">截圖上傳K線圖，AI識別形態、支撐阻力、技術指標</div>
+          <div class="wcard-title" data-i18n="chat_wc1_title">上傳圖表分析</div>
+          <div class="wcard-desc" data-i18n="chat_wc1_desc">截圖上傳K線圖，AI識別形態、支撐阻力、技術指標</div>
         </div>
         <div class="wcard" onclick="sendQuick('比較兩間公司的基本面，請告訴我你想比較哪兩間公司？')">
           <div class="wcard-icon">⚖️</div>
-          <div class="wcard-title">AB公司比較</div>
-          <div class="wcard-desc">毛利率、增長率、現金流對比，附邏輯推理及風險評估</div>
+          <div class="wcard-title" data-i18n="chat_wc2_title">AB公司比較</div>
+          <div class="wcard-desc" data-i18n="chat_wc2_desc">毛利率、增長率、現金流對比，附邏輯推理及風險評估</div>
         </div>
         <div class="wcard" onclick="sendQuick('分析現時全球市場情緒：VIX恐慌指數、標普500技術走勢、主要風險因素')">
           <div class="wcard-icon">🌐</div>
-          <div class="wcard-title">市場情緒分析</div>
-          <div class="wcard-desc">VIX指數、大市走勢、地緣政治風險評估</div>
+          <div class="wcard-title" data-i18n="chat_wc3_title">市場情緒分析</div>
+          <div class="wcard-desc" data-i18n="chat_wc3_desc">VIX指數、大市走勢、地緣政治風險評估</div>
         </div>
         <div class="wcard" onclick="sendQuick('請輸入一間公司名稱，我為你分析過去4季現金流健康狀況及續航能力評分')">
           <div class="wcard-icon">💰</div>
-          <div class="wcard-title">現金流評估</div>
-          <div class="wcard-desc">過去4季現金流分析，財務健康評分及增長機率</div>
+          <div class="wcard-title" data-i18n="chat_wc4_title">現金流評估</div>
+          <div class="wcard-desc" data-i18n="chat_wc4_desc">過去4季現金流分析，財務健康評分及增長機率</div>
         </div>
       </div>
     </div>
@@ -193,17 +188,17 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 
     <div class="input-area">
       <div class="input-tools">
-        <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📎 上傳圖表</button>
-        <button class="tool-btn" onclick="sendQuick('分析港股市場今日走勢及主要板塊表現')">🇭🇰 港股</button>
-        <button class="tool-btn" onclick="sendQuick('分析美股市場今日走勢，標普500、納指、道指表現')">🇺🇸 美股</button>
-        <button class="tool-btn" onclick="sendQuick('分析加密貨幣市場今日走勢，BTC及ETH技術面')">🪙 加密</button>
+        <button class="tool-btn" onclick="document.getElementById('fileInput').click()" data-i18n="chat_tool_upload">📎 上傳圖表</button>
+        <button class="tool-btn" onclick="sendQuick('分析港股市場今日走勢及主要板塊表現')" data-i18n="chat_tool_hk">🇭🇰 港股</button>
+        <button class="tool-btn" onclick="sendQuick('分析美股市場今日走勢，標普500、納指、道指表現')" data-i18n="chat_tool_us">🇺🇸 美股</button>
+        <button class="tool-btn" onclick="sendQuick('分析加密貨幣市場今日走勢，BTC及ETH技術面')" data-i18n="chat_tool_crypto">🪙 加密</button>
       </div>
       <div class="input-row">
         <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱，或上傳K線圖截圖…" rows="1"
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          onkeydown="handleKey(event)" oninput="autoResize(this)" data-i18n-placeholder="chat_input_placeholder"></textarea>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
       </div>
-      <div class="input-hint">⚠️ 分析僅供參考，不構成投資建議</div>
+      <div class="input-hint" data-i18n="chat_disclaimer">⚠️ 分析僅供參考，不構成投資建議</div>
     </div>
   </div>
 </div>
@@ -211,9 +206,12 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
 
 <script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/ai-loading.js"></script>
 <script src="js/mvp-api.js"></script>
 <script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
 let conversationId = '';
 let pendingImages = [];
 let isLoading = false;
@@ -244,7 +242,7 @@ function addMessage(role, content, imageUrl) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
   const time = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit',minute:'2-digit'});
-  const avatarText = role === 'bot' ? 'XFL' : '我';
+  const avatarText = role === 'bot' ? 'XFL' : t('chat_avatar_me','我');
   let imgHtml = imageUrl ? `<img src="${imageUrl}" style="max-width:200px;border-radius:4px;margin-bottom:0.5rem;display:block;">` : '';
   div.innerHTML = `
     <div class="msg-avatar">${avatarText}</div>
@@ -324,7 +322,7 @@ async function sendMessage() {
   const imageUrl = pendingImages.length > 0 ? pendingImages[0].dataUrl : null;
   const imageFile = pendingImages.length > 0 ? pendingImages[0].file : null;
 
-  addMessage('user', text || '（圖表分析）', imageUrl);
+  addMessage('user', text || t('chat_image_analysis_label','（圖表分析）'), imageUrl);
   input.value = '';
   input.style.height = 'auto';
   pendingImages = [];
@@ -349,13 +347,13 @@ async function sendMessage() {
     if (answer) {
       conversationId = res.conversation_id || res?.data?.conversation_id || conversationId;
       addMessage('bot', answer);
-      addToHistory(text || '圖表分析');
+      addToHistory(text || t('chat_chart_analysis','圖表分析'));
     } else {
-      addMessage('bot', '⚠️ 分析時出現問題，請稍後重試。');
+      addMessage('bot', t('chat_error_analysis','⚠️ 分析時出現問題，請稍後重試。'));
     }
   } catch (err) {
     removeTyping();
-    addMessage('bot', '⚠️ 連接出現問題，請檢查網絡後重試。');
+    addMessage('bot', t('chat_error_connection','⚠️ 連接出現問題，請檢查網絡後重試。'));
   }
 
   isLoading = false;
@@ -381,9 +379,6 @@ function newChat() {
   document.getElementById('inputBox').value = '';
 }
 
-function changeLang(value){
-  document.documentElement.lang = value;
-}
 </script>
 </body>
 </html>
