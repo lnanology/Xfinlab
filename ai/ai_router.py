@@ -14,7 +14,6 @@ def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
         groq     → Groq (free, fast)
         deepseek → DeepSeek (cheap)
         claude   → Anthropic Claude (best quality)
-        zhipu    → Zhipu AI / GLM (bigmodel.cn, cheap + strong Chinese support)
 
     Args:
         prompt: The prompt to send
@@ -31,10 +30,8 @@ def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
         return _deepseek(prompt, max_tokens)
     elif provider == "claude":
         return _claude(prompt, max_tokens)
-    elif provider == "zhipu":
-        return _zhipu(prompt, max_tokens)
     else:
-        raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude / zhipu")
+        raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude")
 
 
 VISION_PROVIDER = os.getenv("VISION_PROVIDER", "gemini")
@@ -170,22 +167,3 @@ def _claude(prompt: str, max_tokens: int) -> str:
         messages=[{"role": "user", "content": prompt}]
     )
     return message.content[0].text.strip()
-
-
-def _zhipu(prompt: str, max_tokens: int) -> str:
-    # Zhipu AI (bigmodel.cn) — OpenAI-compatible chat completions endpoint.
-    import requests
-    headers = {
-        "Authorization": f"Bearer {os.getenv('ZHIPU_API_KEY')}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "glm-4-flash",
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
-        "temperature": 0.3
-    }
-    res = requests.post("https://open.bigmodel.cn/api/paas/v4/chat/completions",
-                        json=payload, headers=headers, timeout=30)
-    res.raise_for_status()
-    return res.json()["choices"][0]["message"]["content"].strip()
