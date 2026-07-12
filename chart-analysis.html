@@ -32,6 +32,7 @@
 @media(max-width:520px){.upload-area{padding:1rem}.uploader{flex-direction:column}.preview-area{width:100%}}
 </style>
 <script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
 </head>
 <body>
 
@@ -39,45 +40,45 @@
   <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
   <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
   <div class="nav-links" id="navLinks">
-    <a href="index.html" class="nav-link">首頁</a>
-    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
-    <a href="company-compare.html" class="nav-link">公司比較</a>
-    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
-    <a href="stress-lab.html" class="nav-link">壓力測試實驗室</a>
-    <a href="probability-scan.html" class="nav-link">機率掃描</a>
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試實驗室</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
   </div>
 </nav>
 
 <div class="container">
   <div class="page-tag">Chart Engine™</div>
-  <h1 class="page-title">AI K線圖分析</h1>
-  <p class="page-sub">上傳你的 K 線截圖（支援 JPG / PNG / WebP），AI 將分析型態辨識、支撐阻力與風險提示。</p>
+  <h1 class="page-title" data-i18n="ca_title">AI K線圖分析</h1>
+  <p class="page-sub" data-i18n="ca_sub">上傳你的 K 線截圖（支援 JPG / PNG / WebP），AI 將分析型態辨識、支撐阻力與風險提示。</p>
 
   <div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
       <div style="flex:1;min-width:240px">
-        <label class="input-label">圖片上傳</label>
+        <label class="input-label" data-i18n="ca_upload_label">圖片上傳</label>
         <div class="uploader">
           <div id="uploadArea" class="upload-area" tabindex="0">
-            <div style="font-size:1.4rem;color:var(--text3)">📷 拖放或點擊上傳</div>
-            <div class="upload-hint">支援：手機截圖 / TradingView / 券商截圖（JPG, PNG, WebP）</div>
+            <div style="font-size:1.4rem;color:var(--text3)" data-i18n="ca_upload_cta">📷 拖放或點擊上傳</div>
+            <div class="upload-hint" data-i18n="ca_upload_hint">支援：手機截圖 / TradingView / 券商截圖（JPG, PNG, WebP）</div>
             <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none">
           </div>
           <div class="preview-area" id="previewArea">
-            <div style="text-align:center;color:var(--text3);font-size:0.9rem">尚未上傳圖片</div>
+            <div style="text-align:center;color:var(--text3);font-size:0.9rem" data-i18n="ca_no_image">尚未上傳圖片</div>
           </div>
         </div>
       </div>
 
       <div style="width:260px;min-width:200px">
-        <label class="input-label" for="symbolInput">股票代號（選填）</label>
-        <input id="symbolInput" type="text" placeholder="例如 AAPL、0700.HK" style="width:100%;padding:0.5rem 0.6rem;border-radius:6px;border:1px solid var(--border2);background:var(--navy3);color:var(--text);margin-bottom:0.6rem">
-        <div class="upload-hint" style="margin-top:-0.4rem;margin-bottom:0.6rem">填咗代號，支撐/阻力/RSI/MACD將用真實歷史數據計算，AI只負責型態辨識</div>
+        <label class="input-label" for="symbolInput" data-i18n="ca_symbol_label">股票代號（選填）</label>
+        <input id="symbolInput" type="text" data-i18n-placeholder="ca_symbol_placeholder" placeholder="例如 AAPL、0700.HK" style="width:100%;padding:0.5rem 0.6rem;border-radius:6px;border:1px solid var(--border2);background:var(--navy3);color:var(--text);margin-bottom:0.6rem">
+        <div class="upload-hint" style="margin-top:-0.4rem;margin-bottom:0.6rem" data-i18n="ca_symbol_hint">填咗代號，支撐/阻力/RSI/MACD將用真實歷史數據計算，AI只負責型態辨識</div>
         <div class="panel" style="padding:0.8rem;background:var(--navy2);border:1px solid var(--border);border-radius:6px">
-          <div class="meta-line" id="uploadName">檔案：-</div>
-          <div class="meta-line" id="uploadTime">時間：-</div>
+          <div class="meta-line" id="uploadName" data-i18n="ca_file_label">檔案：-</div>
+          <div class="meta-line" id="uploadTime" data-i18n="ca_time_label">時間：-</div>
           <div style="margin-top:0.8rem">
-            <button class="primary-btn" id="analyzeBtn" onclick="runImageAnalysis()" disabled>🔍 執行 AI 分析</button>
+            <button class="primary-btn" id="analyzeBtn" onclick="runImageAnalysis()" disabled data-i18n="ca_run_btn">🔍 執行 AI 分析</button>
           </div>
         </div>
       </div>
@@ -87,36 +88,36 @@
   <div class="analysis-section">
     <div class="analysis-main">
       <div id="resultContent">
-      <h3 style="margin-top:0">AI 分析結果 <span class="meta-line" id="dataSourceTag" style="display:inline;margin-left:0.4rem"></span></h3>
+      <h3 style="margin-top:0" data-i18n="ca_result_title">AI 分析結果 <span class="meta-line" id="dataSourceTag" style="display:inline;margin-left:0.4rem"></span></h3>
 
-      <div class="result-row"><div class="result-label">趨勢方向</div><div class="result-value" id="trendValue">-</div></div>
-      <div class="result-row"><div class="result-label">支撐位</div><div class="result-value" id="supportValue">-</div></div>
-      <div class="result-row"><div class="result-label">阻力位</div><div class="result-value" id="resistanceValue">-</div></div>
-      <div class="result-row"><div class="result-label">0.618 回調位</div><div class="result-value" id="fibValue">-</div></div>
-      <div class="result-row"><div class="result-label">綜合訊號（Confluence）</div><div class="result-value" id="confluenceValue">-</div></div>
-      <div class="result-row"><div class="result-label">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_trend">趨勢方向</div><div class="result-value" id="trendValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_support">支撐位</div><div class="result-value" id="supportValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_resistance">阻力位</div><div class="result-value" id="resistanceValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_fib">0.618 回調位</div><div class="result-value" id="fibValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_confluence">綜合訊號（Confluence）</div><div class="result-value" id="confluenceValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_volume_zone">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
       <div class="result-row"><div class="result-label">RSI</div><div class="result-value" id="rsiValue">-</div></div>
       <div class="result-row"><div class="result-label">MACD</div><div class="result-value" id="macdValue">-</div></div>
-      <div class="result-row"><div class="result-label">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
-      <div class="result-row"><div class="result-label">風險提示</div><div class="result-value" id="riskTips">-</div></div>
-      <div class="result-row"><div class="result-label">建議</div><div class="result-value" id="recommendationValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_pattern_summary">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_risk_tips">風險提示</div><div class="result-value" id="riskTips">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_recommendation">建議</div><div class="result-value" id="recommendationValue">-</div></div>
 
-      <h4 style="margin-top:0.8rem">型態詳情</h4>
+      <h4 style="margin-top:0.8rem" data-i18n="ca_pattern_detail_title">型態詳情</h4>
       <div class="pattern-list" id="patternList">
-        <div class="pattern-item">雙頂：<span id="p_double_top">-</span></div>
-        <div class="pattern-item">雙底：<span id="p_double_bottom">-</span></div>
-        <div class="pattern-item">頭肩頂：<span id="p_head_shoulder_top">-</span></div>
-        <div class="pattern-item">頭肩底：<span id="p_head_shoulder_bottom">-</span></div>
-        <div class="pattern-item">三角收斂：<span id="p_triangle">-</span></div>
-        <div class="pattern-item">突破回測：<span id="p_breakback">-</span></div>
-        <div class="pattern-item">0.618 回調：<span id="p_0618">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_double_top">雙頂：</span><span id="p_double_top">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_double_bottom">雙底：</span><span id="p_double_bottom">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_head_top">頭肩頂：</span><span id="p_head_shoulder_top">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_head_bottom">頭肩底：</span><span id="p_head_shoulder_bottom">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_triangle">三角收斂：</span><span id="p_triangle">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_breakback">突破回測：</span><span id="p_breakback">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_0618">0.618 回調：</span><span id="p_0618">-</span></div>
       </div>
 
       <div class="education">
-        <h4>AI 教育：指標說明</h4>
-        <p><strong>支撐位</strong>：價格下跌時多方可能出現買盤的位置，若跌破可能轉為賣壓。</p>
-        <p><strong>阻力位</strong>：價格上漲時空方可能出現的賣壓位置，若突破可能帶來延續上漲。</p>
-        <p><strong>型態失效條件</strong>：當價格反向穿越關鍵頸線或支撐/阻力，原先型態將被視為失效。</p>
+        <h4 data-i18n="ca_edu_title">AI 教育：指標說明</h4>
+        <p><strong data-i18n="ca_edu_support_term">支撐位</strong><span data-i18n="ca_edu_support_desc">：價格下跌時多方可能出現買盤的位置，若跌破可能轉為賣壓。</span></p>
+        <p><strong data-i18n="ca_edu_resistance_term">阻力位</strong><span data-i18n="ca_edu_resistance_desc">：價格上漲時空方可能出現的賣壓位置，若突破可能帶來延續上漲。</span></p>
+        <p><strong data-i18n="ca_edu_invalid_term">型態失效條件</strong><span data-i18n="ca_edu_invalid_desc">：當價格反向穿越關鍵頸線或支撐/阻力，原先型態將被視為失效。</span></p>
       </div>
 
       <div id="decisionFooter"></div>
@@ -127,19 +128,19 @@
     </div>
 
     <aside class="analysis-side">
-      <h4 style="margin-top:0">原始圖片</h4>
+      <h4 style="margin-top:0" data-i18n="ca_side_original_img">原始圖片</h4>
       <div id="sidePreview" style="background:var(--navy3);border-radius:6px;padding:0.6rem;text-align:center">
-        <div style="color:var(--text3)" id="sidePreviewText">尚未上傳</div>
+        <div style="color:var(--text3)" id="sidePreviewText" data-i18n="ca_side_not_uploaded">尚未上傳</div>
         <img id="sideImg" src="" alt="preview" style="max-width:100%;display:none;margin-top:0.6rem;border-radius:4px">
       </div>
 
       <div style="margin-top:0.8rem">
-        <h4 style="margin:0.2rem 0">上傳時間</h4>
+        <h4 style="margin:0.2rem 0" data-i18n="ca_side_upload_time_title">上傳時間</h4>
         <div class="meta-line" id="sideUploadTime">-</div>
       </div>
 
       <div style="margin-top:0.8rem">
-        <button class="btn-secondary" id="downloadBtn" style="width:100%;display:none">⬇ 下載圖片</button>
+        <button class="btn-secondary" id="downloadBtn" style="width:100%;display:none" data-i18n="ca_download_btn">⬇ 下載圖片</button>
       </div>
     </aside>
   </div>
@@ -147,7 +148,7 @@
 </div>
 
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · AI K線圖分析 · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="ca_footer_note">AI K線圖分析</span> · <a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a></div>
 </footer>
 
 <script>
@@ -178,12 +179,15 @@ uploadArea.addEventListener('drop', (e)=>{
 
 fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
 
+function t(key, fallback){
+  return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback;
+}
 function handleFiles(files){
   if(!files || files.length===0) return;
   const f = files[0];
   const allowed = ['image/jpeg','image/png','image/webp'];
   if(!allowed.includes(f.type)){
-    alert('僅支援 JPG / PNG / WebP 格式');
+    alert(t('ca_alert_bad_format', '僅支援 JPG / PNG / WebP 格式'));
     return;
   }
   const reader = new FileReader();
@@ -202,10 +206,10 @@ function handleFiles(files){
     }
 
     // meta
-    document.getElementById('uploadName').textContent = '檔案：' + (f.name || 'image');
+    document.getElementById('uploadName').textContent = t('ca_file_label','檔案：-').replace('-', '') + (f.name || 'image');
     const now = new Date();
     const timestr = now.toLocaleString();
-    document.getElementById('uploadTime').textContent = '時間：' + timestr;
+    document.getElementById('uploadTime').textContent = t('ca_time_label','時間：-').replace('-', '') + timestr;
     document.getElementById('sideUploadTime').textContent = timestr;
 
     // enable analyze
@@ -247,11 +251,11 @@ trackEvent('page_view', {page: 'chart-analysis'});
 async function runImageAnalysis(){
   const dataUrl = window.__uploadedImageDataUrl;
   if(!dataUrl){
-    alert('請先上傳圖片');
+    alert(t('ca_alert_no_image','請先上傳圖片'));
     return;
   }
 
-  analyzeBtn.disabled = true; analyzeBtn.textContent='分析中...';
+  analyzeBtn.disabled = true; analyzeBtn.textContent=t('ca_analyzing','分析中...');
   if (typeof window.startAiLoading === 'function') window.startAiLoading();
 
   try {
@@ -282,35 +286,37 @@ async function runImageAnalysis(){
     if (symbol) trackEvent('search', {ticker: symbol.toUpperCase()});
     const usedRealData = res.data_source === 'real_market_data+ai_vision_patterns';
     document.getElementById('dataSourceTag').textContent = usedRealData
-      ? '（支撐/阻力/RSI/MACD 來自真實歷史數據，型態辨識來自AI視覺）'
-      : '（未填代號 — 全部由AI視覺估算，準確度較低）';
+      ? t('ca_data_source_real','（支撐/阻力/RSI/MACD 來自真實歷史數據，型態辨識來自AI視覺）')
+      : t('ca_data_source_ai_only','（未填代號 — 全部由AI視覺估算，準確度較低）');
 
+    const noRealData = t('ca_no_real_data','未有真實數據');
     document.getElementById('trendValue').textContent = res.trend || '-';
     document.getElementById('supportValue').textContent = res.support || '-';
     document.getElementById('resistanceValue').textContent = res.resistance || '-';
-    document.getElementById('fibValue').textContent = res.fibonacci_0618 != null ? res.fibonacci_0618 : '未有真實數據';
+    document.getElementById('fibValue').textContent = res.fibonacci_0618 != null ? res.fibonacci_0618 : noRealData;
     if(res.confluence){
       const c = res.confluence;
       document.getElementById('confluenceValue').textContent = `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`;
     } else {
-      document.getElementById('confluenceValue').textContent = '未有真實數據';
+      document.getElementById('confluenceValue').textContent = noRealData;
     }
     document.getElementById('volumeZone').textContent = res.volume || '-';
     document.getElementById('rsiValue').textContent = res.rsi || '-';
     document.getElementById('macdValue').textContent = res.macd || '-';
     const patterns = res.patterns || {};
     document.getElementById('patternSummary').textContent =
-      Object.values(patterns).filter(p => p === '可能').length > 0 ? '偵測到若干型態' : '未偵測到明顯型態';
-    document.getElementById('riskTips').textContent = res.risk || '無顯著風險提示';
+      Object.values(patterns).filter(p => p === '可能').length > 0 ? t('ca_pattern_detected','偵測到若干型態') : t('ca_pattern_not_detected','未偵測到明顯型態');
+    document.getElementById('riskTips').textContent = res.risk || t('ca_no_risk','無顯著風險提示');
     document.getElementById('recommendationValue').textContent = res.recommendation || '-';
 
-    document.getElementById('p_double_top').textContent = patterns.p_double_top || '不明';
-    document.getElementById('p_double_bottom').textContent = patterns.p_double_bottom || '不明';
-    document.getElementById('p_head_shoulder_top').textContent = patterns.p_head_shoulder_top || '不明';
-    document.getElementById('p_head_shoulder_bottom').textContent = patterns.p_head_shoulder_bottom || '不明';
-    document.getElementById('p_triangle').textContent = patterns.p_triangle || '不明';
-    document.getElementById('p_breakback').textContent = patterns.p_breakback || '不明';
-    document.getElementById('p_0618').textContent = patterns.p_0618 || '不明';
+    const unclear = t('ca_unclear','不明');
+    document.getElementById('p_double_top').textContent = patterns.p_double_top || unclear;
+    document.getElementById('p_double_bottom').textContent = patterns.p_double_bottom || unclear;
+    document.getElementById('p_head_shoulder_top').textContent = patterns.p_head_shoulder_top || unclear;
+    document.getElementById('p_head_shoulder_bottom').textContent = patterns.p_head_shoulder_bottom || unclear;
+    document.getElementById('p_triangle').textContent = patterns.p_triangle || unclear;
+    document.getElementById('p_breakback').textContent = patterns.p_breakback || unclear;
+    document.getElementById('p_0618').textContent = patterns.p_0618 || unclear;
 
     // Decision Report™ footer -- only when we have the real confluence
     // engine output (i.e. a symbol was supplied and technical_analysis_
@@ -354,9 +360,9 @@ async function runImageAnalysis(){
     }
 
   } catch (err) {
-    alert('分析失敗，請重試：' + err.message);
+    alert(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
   } finally {
-    analyzeBtn.disabled = false; analyzeBtn.textContent='🔍 執行 AI 分析';
+    analyzeBtn.disabled = false; analyzeBtn.textContent=t('ca_run_btn','🔍 執行 AI 分析');
     if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
   }
 }
