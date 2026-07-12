@@ -151,6 +151,19 @@
   .pulse-disclaimer { font-size: 0.72rem; color: #475569; margin-top: 14px; text-align: center; }
   @media (max-width: 640px) { .pulse-grid { grid-template-columns: repeat(2, 1fr); } }
 
+  /* Daily Experience: personalized AI Watchlist / Risk Radar, nested
+     inside the same Today's AI Outlook box (not a new section -- keeps
+     the mandated homepage flow order intact). */
+  .pulse-personal { margin-top: 18px; padding-top: 18px; border-top: 1px solid #1e2d45; display: none; }
+  .pulse-personal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pulse-personal-title { font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .pulse-personal-item { font-size: 0.8rem; color: #94a3b8; padding: 6px 0; border-bottom: 1px dashed #1e2d45; display: flex; justify-content: space-between; }
+  .pulse-personal-item:last-child { border-bottom: none; }
+  .pulse-personal-empty { font-size: 0.78rem; color: #475569; padding: 6px 0; }
+  .pulse-personal-cta { margin-top: 18px; padding-top: 18px; border-top: 1px solid #1e2d45; text-align: center; font-size: 0.82rem; }
+  .pulse-personal-cta a { color: #00d4ff; text-decoration: none; font-weight: 500; }
+  @media (max-width: 640px) { .pulse-personal-grid { grid-template-columns: 1fr; } }
+
   /* Problem -> Relief */
   .pr-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; }
   .pr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
@@ -304,6 +317,23 @@
       <div class="pulse-card"><div class="pulse-card-label">加密貨幣</div><div class="pulse-card-price">--</div></div>
     </div>
     <div class="pulse-disclaimer">數據來自真實技術分析（非AI猜測），僅供參考，唔係投資建議 · 每90秒自動更新</div>
+
+    <!-- Daily Experience: 你嘅自選股每日都會計出唔同結果，帶你返嚟睇 -->
+    <div class="pulse-personal" id="pulsePersonal">
+      <div class="pulse-personal-grid">
+        <div>
+          <div class="pulse-personal-title">📋 AI Watchlist</div>
+          <div id="watchlistMini"><div class="pulse-personal-empty">載入緊...</div></div>
+        </div>
+        <div>
+          <div class="pulse-personal-title">🚨 Risk Radar</div>
+          <div id="riskRadarMini"><div class="pulse-personal-empty">載入緊...</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pulse-personal-cta" id="pulsePersonalCta" style="display:none">
+      <a href="login.html">登入解鎖你嘅AI Watchlist同Risk Radar，每日自動更新 →</a>
+    </div>
   </div>
 </div>
 
@@ -689,6 +719,57 @@ async function loadMarketPulse() {
 }
 loadMarketPulse();
 setInterval(loadMarketPulse, 90000);
+
+// Daily Experience: personalized AI Watchlist / Risk Radar nested inside
+// the same Today's AI Outlook box. Reuses /api/screener and /api/anomaly
+// (built earlier this session -- real per-user watchlist scoring/anomaly
+// detection, already live on dashboard.html). Anonymous visitors get an
+// honest sign-in nudge instead of a fabricated preview.
+async function loadDailyExperience() {
+  const token = localStorage.getItem('xfinlab_token');
+  const personalBox = document.getElementById('pulsePersonal');
+  const ctaBox = document.getElementById('pulsePersonalCta');
+  const watchlistEl = document.getElementById('watchlistMini');
+  const radarEl = document.getElementById('riskRadarMini');
+  if (!token) {
+    if (personalBox) personalBox.style.display = 'none';
+    if (ctaBox) ctaBox.style.display = 'block';
+    return;
+  }
+  if (personalBox) personalBox.style.display = 'block';
+  if (ctaBox) ctaBox.style.display = 'none';
+
+  try {
+    const [screenerRes, anomalyRes] = await Promise.all([
+      fetch(`${API}/screener?token=${encodeURIComponent(token)}`),
+      fetch(`${API}/anomaly?token=${encodeURIComponent(token)}`)
+    ]);
+    const screenerData = await screenerRes.json();
+    const anomalyData = await anomalyRes.json();
+
+    if (watchlistEl) {
+      const results = screenerData.results || [];
+      watchlistEl.innerHTML = results.length
+        ? results.slice(0, 4).map(r =>
+            `<div class="pulse-personal-item"><span>${r.ticker}</span><span>Score ${r.final_score}</span></div>`
+          ).join('')
+        : '<div class="pulse-personal-empty">你嘅自選股暫時未有符合篩選門檻嘅標的（或者未加自選股）</div>';
+    }
+    if (radarEl) {
+      const items = anomalyData.items || [];
+      radarEl.innerHTML = items.length
+        ? items.slice(0, 4).map(it => {
+            const types = (it.anomalies || []).map(a => a.type).join('、') || '異常訊號';
+            return `<div class="pulse-personal-item"><span>${it.ticker}</span><span>${it.severity} · ${types}</span></div>`;
+          }).join('')
+        : '<div class="pulse-personal-empty">你嘅自選股暫時未偵測到異常波動</div>';
+    }
+  } catch (e) {
+    if (watchlistEl) watchlistEl.innerHTML = '<div class="pulse-personal-empty">暫時無法載入</div>';
+    if (radarEl) radarEl.innerHTML = '<div class="pulse-personal-empty">暫時無法載入</div>';
+  }
+}
+loadDailyExperience();
 
 // 免登入AI Demo -- 每個IP有30分鐘免費試用時段，時段完結後要login，
 // 4小時後先可以再開新時段。見api/public_demo.py
