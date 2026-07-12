@@ -38,6 +38,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 @media(max-width:768px){.form-row{flex-direction:column;align-items:stretch}.input{width:100%}}
 </style>
 <script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
 </head>
 <body>
 
@@ -45,51 +46,51 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
   <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
   <div class="nav-links" id="navLinks">
-    <a href="index.html" class="nav-link">首頁</a>
-    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
-    <a href="company-compare.html" class="nav-link">AB公司比較</a>
-    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
-    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
-    <a href="chart-analysis.html" class="nav-link">K線分析</a>
-    <a href="probability-scan.html" class="nav-link">機率掃描</a>
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
   </div>
 
 </nav>
 
 <div class="container">
   <div class="page-tag">Risk Engine™</div>
-  <h1 class="page-title">烏鴉嘴壓力測試實驗室</h1>
-  <p class="page-sub">幫助投資人理解策略在歷史黑天鵝事件中的最大風險與心理壓力。數字為根據歷史事件跌幅估算，並非完整歷史價格回測。</p>
+  <h1 class="page-title" data-i18n="sl_title">烏鴉嘴壓力測試實驗室</h1>
+  <p class="page-sub" data-i18n="sl_subtitle">幫助投資人理解策略在歷史黑天鵝事件中的最大風險與心理壓力。數字為根據歷史事件跌幅估算，並非完整歷史價格回測。</p>
 
   <div class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem">
       <div style="flex:1;min-width:240px">
-        <label style="display:block;color:var(--text2);margin-bottom:0.4rem">策略選擇</label>
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem" data-i18n="sl_strategy_label">策略選擇</label>
         <select id="strategySelect" class="select">
-          <option value="60-40">股債 60/40</option>
-          <option value="all-weather">全天候策略</option>
-          <option value="tech-momentum">科技動能策略</option>
-          <option value="high-dividend">高股息策略</option>
-          <option value="defensive">防禦型策略</option>
+          <option value="60-40" data-i18n="sl_opt_6040">股債 60/40</option>
+          <option value="all-weather" data-i18n="sl_opt_allweather">全天候策略</option>
+          <option value="tech-momentum" data-i18n="sl_opt_techmomentum">科技動能策略</option>
+          <option value="high-dividend" data-i18n="sl_opt_highdividend">高股息策略</option>
+          <option value="defensive" data-i18n="sl_opt_defensive">防禦型策略</option>
         </select>
       </div>
 
       <div>
-        <label style="display:block;color:var(--text2);margin-bottom:0.4rem">投入金額 (USD)</label>
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem" data-i18n="sl_amount_label">投入金額 (USD)</label>
         <input id="amountInput" class="input" type="number" value="100000" min="1000" step="1000">
       </div>
 
       <div style="align-self:flex-end">
-        <button class="primary-btn" onclick="runStressTest()">開始模擬</button>
+        <button class="primary-btn" onclick="runStressTest()" data-i18n="sl_run_btn">開始模擬</button>
       </div>
     </div>
   </div>
 
   <div id="resultContent" class="grid">
     <div class="panel">
-      <div class="result-title">情境 A：2008 金融海嘯</div>
+      <div class="result-title" data-i18n="sl_scenario_a">情境 A：2008 金融海嘯</div>
       <div class="metric">
-        <div class="label">最大跌幅</div>
+        <div class="label" data-i18n="sl_max_drawdown">最大跌幅</div>
         <div class="value" id="dd2008">-</div>
         <div class="sub" id="sub2008">帳面剩餘：-</div>
         <div class="sub" id="rec2008">回本時間：-</div>
@@ -97,9 +98,9 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </div>
 
     <div class="panel">
-      <div class="result-title">情境 B：2020 疫情熔斷</div>
+      <div class="result-title" data-i18n="sl_scenario_b">情境 B：2020 疫情熔斷</div>
       <div class="metric">
-        <div class="label">最大跌幅</div>
+        <div class="label" data-i18n="sl_max_drawdown">最大跌幅</div>
         <div class="value" id="dd2020">-</div>
         <div class="sub" id="sub2020">帳面剩餘：-</div>
         <div class="sub" id="rec2020">回本時間：-</div>
@@ -107,9 +108,9 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </div>
 
     <div class="panel">
-      <div class="result-title">情境 C：2022 升息熊市</div>
+      <div class="result-title" data-i18n="sl_scenario_c">情境 C：2022 升息熊市</div>
       <div class="metric">
-        <div class="label">最大跌幅</div>
+        <div class="label" data-i18n="sl_max_drawdown">最大跌幅</div>
         <div class="value" id="dd2022">-</div>
         <div class="sub" id="sub2022">帳面剩餘：-</div>
         <div class="sub" id="rec2022">回本時間：-</div>
@@ -120,38 +121,38 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <div id="shareBar"></div>
 
   <div class="panel">
-    <div class="result-title">心理測驗區</div>
+    <div class="result-title" data-i18n="sl_psych_title">心理測驗區</div>
     <div class="psych">
-      <div style="color:var(--text2);margin-bottom:0.6rem">如果明天帳面虧損 30%，你會：</div>
+      <div style="color:var(--text2);margin-bottom:0.6rem" data-i18n="sl_psych_question">如果明天帳面虧損 30%，你會：</div>
       <div class="choice-row">
-        <div class="choice" data-choice="A" onclick="selectChoice(this)">A 繼續持有</div>
-        <div class="choice" data-choice="B" onclick="selectChoice(this)">B 減碼</div>
-        <div class="choice" data-choice="C" onclick="selectChoice(this)">C 全部賣出</div>
+        <div class="choice" data-choice="A" onclick="selectChoice(this)" data-i18n="sl_choice_a">A 繼續持有</div>
+        <div class="choice" data-choice="B" onclick="selectChoice(this)" data-i18n="sl_choice_b">B 減碼</div>
+        <div class="choice" data-choice="C" onclick="selectChoice(this)" data-i18n="sl_choice_c">C 全部賣出</div>
       </div>
-      <div class="result-box" id="psychResult">尚未作答</div>
+      <div class="result-box" id="psychResult" data-i18n="sl_psych_no_answer">尚未作答</div>
     </div>
   </div>
 
   <div class="panel">
-    <div class="result-title">AI 教育解說</div>
+    <div class="result-title" data-i18n="sl_edu_title">AI 教育解說</div>
     <div class="edu">
-      <h3>最大回撤 (Max Drawdown)</h3>
-      <p>最大回撤表示在一段期間內投資組合從峰值到谷底的最大資本損失，通常用百分比表示。</p>
+      <h3 data-i18n="sl_edu_h1">最大回撤 (Max Drawdown)</h3>
+      <p data-i18n="sl_edu_p1">最大回撤表示在一段期間內投資組合從峰值到谷底的最大資本損失，通常用百分比表示。</p>
 
-      <h3>回本期</h3>
-      <p>回本期是指在假設固定年化報酬下，從當前帳面價值回到投入本金所需的大致年數（示範用估算）。</p>
+      <h3 data-i18n="sl_edu_h2">回本期</h3>
+      <p data-i18n="sl_edu_p2">回本期是指在假設固定年化報酬下，從當前帳面價值回到投入本金所需的大致年數（示範用估算）。</p>
 
-      <h3>資產配置原理</h3>
-      <p>不同策略在黑天鴉事件中表現不同：股債配置能降低波動，動能策略往往在劇烈震盪中承受更大跌幅，但若抓到反彈可快速回本。</p>
+      <h3 data-i18n="sl_edu_h3">資產配置原理</h3>
+      <p data-i18n="sl_edu_p3">不同策略在黑天鴉事件中表現不同：股債配置能降低波動，動能策略往往在劇烈震盪中承受更大跌幅，但若抓到反彈可快速回本。</p>
 
-      <p style="color:var(--text3);margin-top:0.6rem">（跌幅同回本年數為根據歷史事件嘅估算假設值計算，並非完整歷史價格序列回測，僅供教育參考。）</p>
+      <p style="color:var(--text3);margin-top:0.6rem" data-i18n="sl_edu_disclaimer">（跌幅同回本年數為根據歷史事件嘅估算假設值計算，並非完整歷史價格序列回測，僅供教育參考。）</p>
     </div>
   </div>
 
 </div>
 
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · 烏鴉嘴壓力測試實驗室 · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+  <div class="footer-note"><span data-i18n="sl_footer_note">XFINLAB © 2026 · 烏鴉嘴壓力測試實驗室 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a></div>
 </footer>
 
 <script src="js/ai-loading.js"></script>
@@ -171,6 +172,8 @@ const strategyProfiles = {
 };
 
 function formatCurrency(n){return '$'+n.toLocaleString();}
+
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
 // 2026-07-11 fix: 呢個function之前call緊 /api/stress-lab，但backend
 // 個endpoint返嘅shape係 {analysis, conclusion, scenario}（一段AI文字），
@@ -194,8 +197,8 @@ function runStressTest(){
     const recoveryYears = Math.log(1 / (1 + drawdown)) / Math.log(1 + profile.annualReturn);
 
     document.getElementById('dd'+key).textContent = (drawdown * 100).toFixed(0) + '%';
-    document.getElementById('sub'+key).textContent = '帳面剩餘：' + formatCurrency(Math.round(remaining));
-    document.getElementById('rec'+key).textContent = '回本時間：' + recoveryYears.toFixed(1) + ' 年';
+    document.getElementById('sub'+key).textContent = t('sl_remaining_label','帳面剩餘：') + formatCurrency(Math.round(remaining));
+    document.getElementById('rec'+key).textContent = t('sl_recovery_label','回本時間：') + recoveryYears.toFixed(1) + t('sl_years_suffix',' 年');
   });
 
   if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'stress-lab', strategy: stratKey});
@@ -241,12 +244,12 @@ function selectChoice(el){
 
 function showPsychResult(){
   const box=document.getElementById('psychResult');
-  if(!selectedChoice){box.textContent='尚未作答';return}
+  if(!selectedChoice){box.textContent=t('sl_psych_no_answer','尚未作答');return}
   let score,desc;
-  if(selectedChoice==='A'){score=80;desc='高風險承受度 — 你傾向長期持有並耐受短期波動。'}
-  else if(selectedChoice==='B'){score=50;desc='中等風險承受度 — 你傾向在壓力下減碼以保留部分部位。'}
-  else {score=20;desc='低風險承受度 — 你傾向在遭遇重大損失時完全退出市場。'}
-  box.innerHTML=`風險承受能力：<strong>${score}/100</strong><br><span style="color:var(--text2)">${desc}</span>`;
+  if(selectedChoice==='A'){score=80;desc=t('sl_psych_desc_a','高風險承受度 — 你傾向長期持有並耐受短期波動。')}
+  else if(selectedChoice==='B'){score=50;desc=t('sl_psych_desc_b','中等風險承受度 — 你傾向在壓力下減碼以保留部分部位。')}
+  else {score=20;desc=t('sl_psych_desc_c','低風險承受度 — 你傾向在遭遇重大損失時完全退出市場。')}
+  box.innerHTML=`${t('sl_psych_score_label','風險承受能力：')}<strong>${score}/100</strong><br><span style="color:var(--text2)">${desc}</span>`;
 }
 
 // initial mock fill
