@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/ai-loading.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
@@ -40,62 +41,62 @@ nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-
 <nav>
   <a href="index.html" class="logo">X<em>FIN</em>LAB</a>
   <div class="nav-links">
-    <a href="chart-analysis.html" class="nav-link">K線分析</a>
-    <a href="screener.html" class="nav-link">篩選器</a>
-    <a href="dashboard.html" class="nav-link">儀表板</a>
-    <a href="chat.html" class="nav-cta">AI 分析</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="dashboard.html" class="nav-link" data-i18n="nav_dashboard">儀表板</a>
+    <a href="chat.html" class="nav-cta" data-i18n="ps_nav_ai">AI 分析</a>
   </div>
 </nav>
 
 <div class="container">
   <div class="page-tag">Decision Engine™</div>
-  <h1 class="page-title">機率掃描</h1>
-  <p class="page-sub">綜合真實市場數據、技術指標同新聞情緒，計算睇多/睇淡機率——唔係買賣建議。</p>
+  <h1 class="page-title" data-i18n="ps_title">機率掃描</h1>
+  <p class="page-sub" data-i18n="ps_subtitle">綜合真實市場數據、技術指標同新聞情緒，計算睇多/睇淡機率——唔係買賣建議。</p>
 
   <div class="disclaimer-box">
-    ⚠️ 呢個功能用緊嘅內部評分公式（風險/因子/新聞情緒）暫時未經歷史回測校準，
-    純粹將真實數據代入公式計算出嚟嘅參考機率，<strong>唔構成任何投資建議</strong>，
-    請自行判斷同承擔風險。
+    <span data-i18n="ps_disclaimer_1">⚠️ 呢個功能用緊嘅內部評分公式（風險/因子/新聞情緒）暫時未經歷史回測校準，
+    純粹將真實數據代入公式計算出嚟嘅參考機率，</span><strong data-i18n="ps_disclaimer_strong">唔構成任何投資建議</strong><span data-i18n="ps_disclaimer_2">，
+    請自行判斷同承擔風險。</span>
   </div>
 
   <div class="scan-bar">
-    <input id="tickerInput" class="scan-input" type="text" placeholder="輸入股票代號，例如 AAPL、TSLA、0700.HK">
-    <button id="scanBtn" class="scan-btn" onclick="runScan()">🔍 掃描</button>
+    <input id="tickerInput" class="scan-input" type="text" placeholder="輸入股票代號，例如 AAPL、TSLA、0700.HK" data-i18n-placeholder="ps_input_placeholder">
+    <button id="scanBtn" class="scan-btn" onclick="runScan()" data-i18n="ps_scan_btn">🔍 掃描</button>
   </div>
 
   <div id="resultPanel" class="prob-panel">
     <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1.2rem;" id="resultTicker">-</div>
 
     <div class="prob-bar-row">
-      <div class="prob-bar-label">睇多機率</div>
+      <div class="prob-bar-label" data-i18n="ps_bull_label">睇多機率</div>
       <div class="prob-bar-track"><div class="prob-bar-fill bull" id="bullBar" style="width:0%"></div></div>
       <div class="prob-bar-pct" id="bullPct">-</div>
     </div>
     <div class="prob-bar-row">
-      <div class="prob-bar-label">睇淡機率</div>
+      <div class="prob-bar-label" data-i18n="ps_bear_label">睇淡機率</div>
       <div class="prob-bar-track"><div class="prob-bar-fill bear" id="bearBar" style="width:0%"></div></div>
       <div class="prob-bar-pct" id="bearPct">-</div>
     </div>
 
     <div class="sub-grid">
       <div class="sub-card">
-        <div class="sub-card-label">市況</div>
+        <div class="sub-card-label" data-i18n="ps_regime_label">市況</div>
         <div class="sub-card-value" id="regimeValue">-</div>
       </div>
       <div class="sub-card">
-        <div class="sub-card-label">風險分數</div>
+        <div class="sub-card-label" data-i18n="ps_risk_label">風險分數</div>
         <div class="sub-card-value" id="riskValue">-</div>
       </div>
       <div class="sub-card">
-        <div class="sub-card-label">因子分數</div>
+        <div class="sub-card-label" data-i18n="ps_factor_label">因子分數</div>
         <div class="sub-card-value" id="factorValue">-</div>
       </div>
       <div class="sub-card">
-        <div class="sub-card-label">新聞情緒</div>
+        <div class="sub-card-label" data-i18n="ps_news_label">新聞情緒</div>
         <div class="sub-card-value" id="newsValue">-</div>
       </div>
       <div class="sub-card">
-        <div class="sub-card-label">大盤相關性</div>
+        <div class="sub-card-label" data-i18n="ps_corr_label">大盤相關性</div>
         <div class="sub-card-value" id="corrValue">-</div>
       </div>
     </div>
@@ -105,25 +106,27 @@ nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-
 
   <div id="shareBar"></div>
 
-  <div id="loadingBox" class="loading-text" style="display:none">計算緊…</div>
+  <div id="loadingBox" class="loading-text" style="display:none" data-i18n="ps_loading">計算緊…</div>
   <div id="errorBox" style="display:none;color:#e06868;font-size:0.85rem;padding:1rem 0;"></div>
 </div>
 
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · 機率掃描（實驗性）· <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+  <div class="footer-note"><span data-i18n="ps_footer_note">XFINLAB © 2026 · 機率掃描（實驗性）· </span><a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a></div>
 </footer>
 
 <script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
 async function runScan(){
   const ticker = (document.getElementById('tickerInput').value || '').trim().toUpperCase();
-  if(!ticker){ alert('請輸入股票代號'); return; }
+  if(!ticker){ alert(t('ps_alert_no_ticker','請輸入股票代號')); return; }
 
   const btn = document.getElementById('scanBtn');
   const panel = document.getElementById('resultPanel');
   const loading = document.getElementById('loadingBox');
   const errorBox = document.getElementById('errorBox');
 
-  btn.disabled = true; btn.textContent = '掃描中...';
+  btn.disabled = true; btn.textContent = t('ps_scanning_btn','掃描中...');
   panel.classList.remove('show');
   errorBox.style.display = 'none';
   loading.style.display = 'block';
@@ -141,15 +144,16 @@ async function runScan(){
     document.getElementById('bullPct').textContent = bullPct + '%';
     document.getElementById('bearPct').textContent = bearPct + '%';
 
-    document.getElementById('regimeValue').textContent = d.market_regime || '未知';
+    document.getElementById('regimeValue').textContent = d.market_regime || t('ps_regime_unknown','未知');
     document.getElementById('riskValue').textContent = (d.risk_score != null ? d.risk_score : '-') + (d.risk_level ? ` (${d.risk_level})` : '');
     document.getElementById('factorValue').textContent = d.factor_score != null ? d.factor_score : '-';
     document.getElementById('newsValue').textContent = d.news_sentiment_score != null ? d.news_sentiment_score : '-';
     document.getElementById('corrValue').textContent = d.market_correlation != null ? d.market_correlation : '-';
 
     const dq = d.data_quality || {};
+    const dqFallback = t('ps_dq_fallback','⚠️退回預設值');
     document.getElementById('dataQualityTag').textContent =
-      `數據來源：技術分析${dq.tech_ok ? '✅' : '⚠️退回預設值'} · 即時報價${dq.snapshot_ok ? '✅' : '⚠️退回預設值'}`;
+      `${t('ps_dq_tech','數據來源：技術分析')}${dq.tech_ok ? '✅' : dqFallback} · ${t('ps_dq_snapshot','即時報價')}${dq.snapshot_ok ? '✅' : dqFallback}`;
 
     panel.classList.add('show');
 
@@ -167,11 +171,11 @@ async function runScan(){
       });
     }
   } catch(err) {
-    errorBox.textContent = '掃描失敗：' + err.message;
+    errorBox.textContent = t('ps_error_prefix','掃描失敗：') + err.message;
     errorBox.style.display = 'block';
   } finally {
     loading.style.display = 'none';
-    btn.disabled = false; btn.textContent = '🔍 掃描';
+    btn.disabled = false; btn.textContent = t('ps_scan_btn','🔍 掃描');
   }
 }
 
