@@ -269,11 +269,11 @@
     </div>
 
     <div class="search-bar">
-      <div style="position:relative"><input class="search-input" id="heroTicker" placeholder="輸入股票代號 AAPL" maxlength="6"
+      <div style="position:relative"><input class="search-input" id="heroTicker" data-i18n-placeholder="hero_search" placeholder="輸入股票代號 AAPL" maxlength="6"
         onkeydown="if(event.key==='Enter') goAnalyze()">
       <div id="heroDropdown"></div>
     </div>
-      <button class="search-btn" onclick="goAnalyze()">分析 →</button>
+      <button class="search-btn" onclick="goAnalyze()"><span data-i18n="hero_btn">分析 →</span></button>
     </div>
   </div>
 
@@ -572,10 +572,10 @@
 <footer>
   © 2026 XFINLAB — AI Investment Intelligence Platform
   <br><br>
-  <a href="ai-analysis.html">AI 分析</a>
-  <a href="screener.html">篩選器</a>
-  <a href="news.html">新聞</a>
-  <a href="pricing.html">Pricing</a>
+  <a href="ai-analysis.html" data-i18n="nav_analysis">AI 分析</a>
+  <a href="screener.html" data-i18n="nav_screener">篩選器</a>
+  <a href="news.html" data-i18n="nav_news">新聞</a>
+  <a href="pricing.html" data-i18n="nav_pricing">Pricing</a>
   <a href="terms.html">Terms</a>
   <a href="privacy.html">Privacy</a>
 </footer>
@@ -887,7 +887,7 @@ document.getElementById('demoTicker').addEventListener('keydown', function(e){
     <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:#1e2d45;color:#e2e8f0;text-align:center;padding:9px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
   </div>
   <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#00d4ff;color:#000;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,212,255,0.3)">
-    ✈️ Free Signals
+    ✈️ <span data-i18n="free_signals">Free Signals</span>
   </button>
 </div>
 
@@ -908,7 +908,7 @@ document.getElementById('demoTicker').addEventListener('keydown', function(e){
     <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
   </div>
   <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
-    💬 Feedback
+    💬 <span data-i18n="feedback">Feedback</span>
   </button>
 </div>
 <script>
