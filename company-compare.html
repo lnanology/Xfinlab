@@ -93,6 +93,7 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 }
 </style>
 <script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
 </head>
 <body>
 
@@ -100,67 +101,67 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
   <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
   <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
   <div class="nav-links" id="navLinks">
-    <a href="index.html" class="nav-link">首頁</a>
-    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
-    <a href="company-compare.html" class="nav-link">AB公司比較</a>
-    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
-    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
-    <a href="chart-analysis.html" class="nav-link">K線分析</a>
-    <a href="probability-scan.html" class="nav-link">機率掃描</a>
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
   </div>
 
 </nav>
 
 <div class="container">
   <div class="page-tag">Portfolio Engine™</div>
-  <h1 class="page-title">多公司對標分析</h1>
-  <p class="page-sub">同時比較最多5家公司嘅即時市場數據，並由AI提供優劣勢、風險及投資角度嘅文字對比</p>
+  <h1 class="page-title" data-i18n="cc_title">多公司對標分析</h1>
+  <p class="page-sub" data-i18n="cc_subtitle">同時比較最多5家公司嘅即時市場數據，並由AI提供優劣勢、風險及投資角度嘅文字對比</p>
 
   <!-- INPUT SECTION -->
   <div class="input-section">
-    <label class="input-label">📈 公司代號輸入</label>
+    <label class="input-label" data-i18n="cc_input_label">📈 公司代號輸入</label>
     <div class="companies-grid" id="companiesGrid">
       <div class="input-group">
-        <label>公司 1</label>
-        <input type="text" class="input-field company-input" placeholder="例：AAPL" maxlength="10">
+        <label><span data-i18n="cc_company_word">公司</span> 1</label>
+        <input type="text" class="input-field company-input" placeholder="例：AAPL" maxlength="10" data-i18n-placeholder="cc_placeholder_aapl">
       </div>
       <div class="input-group">
-        <label>公司 2</label>
-        <input type="text" class="input-field company-input" placeholder="例：MSFT" maxlength="10">
+        <label><span data-i18n="cc_company_word">公司</span> 2</label>
+        <input type="text" class="input-field company-input" placeholder="例：MSFT" maxlength="10" data-i18n-placeholder="cc_placeholder_msft">
       </div>
       <div class="input-group">
-        <label>公司 3</label>
-        <input type="text" class="input-field company-input" placeholder="例：700.HK" maxlength="10">
+        <label><span data-i18n="cc_company_word">公司</span> 3</label>
+        <input type="text" class="input-field company-input" placeholder="例：700.HK" maxlength="10" data-i18n-placeholder="cc_placeholder_hk">
       </div>
       <div class="input-group">
-        <label>公司 4</label>
-        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10">
+        <label><span data-i18n="cc_company_word">公司</span> 4</label>
+        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10" data-i18n-placeholder="cc_placeholder_optional">
       </div>
       <div class="input-group">
-        <label>公司 5</label>
-        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10">
+        <label><span data-i18n="cc_company_word">公司</span> 5</label>
+        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10" data-i18n-placeholder="cc_placeholder_optional">
       </div>
     </div>
     <div class="company-count" id="companyCount">已輸入：0 家</div>
     <div class="btn-group">
-      <button class="compare-btn" id="analyzeBtn" onclick="doCompare()">⚖️ 開始對標分析</button>
-      <button class="clear-btn" onclick="clearInputs()">清除</button>
+      <button class="compare-btn" id="analyzeBtn" onclick="doCompare()" data-i18n="cc_run_btn">⚖️ 開始對標分析</button>
+      <button class="clear-btn" onclick="clearInputs()" data-i18n="cc_clear_btn">清除</button>
     </div>
   </div>
 
   <div id="resultContent">
     <!-- COMPARISON TABLE -->
     <div class="table-section" id="tableSection">
-      <div class="result-title">📊 即時市場數據對比表</div>
+      <div class="result-title" data-i18n="cc_table_title">📊 即時市場數據對比表</div>
       <div class="table-wrapper">
         <table class="compare-table" id="comparisonTable">
           <thead>
             <tr>
-              <th>市場指標</th>
-              <th colspan="5">公司比較</th>
+              <th data-i18n="cc_th_market_metric">市場指標</th>
+              <th colspan="5" data-i18n="cc_th_company_compare">公司比較</th>
             </tr>
             <tr id="headerRow">
-              <th style="background:var(--navy4);">指標</th>
+              <th style="background:var(--navy4);" data-i18n="cc_th_metric">指標</th>
             </tr>
           </thead>
           <tbody id="tableBody">
@@ -171,9 +172,9 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 
     <!-- AI ANALYSIS SECTION -->
     <div class="analysis-section" id="analysisSection">
-      <div class="result-title">🤖 AI 對標分析結果</div>
+      <div class="result-title" data-i18n="cc_analysis_title">🤖 AI 對標分析結果</div>
       <div class="analysis-content" id="analysisContent"></div>
-      <div class="disclaimer">⚠️ 以上分析由AI根據即時市場數據生成，屬於文字對比與觀點整理，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
+      <div class="disclaimer" data-i18n="cc_disclaimer">⚠️ 以上分析由AI根據即時市場數據生成，屬於文字對比與觀點整理，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
     </div>
   </div>
 
@@ -181,23 +182,26 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 </div>
 
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · 智能金融分析平台 · <a href="privacy.html" style="color:var(--blue);text-decoration:none;">私隱政策</a></div>
+  <div class="footer-note"><span data-i18n="cc_footer_note">XFINLAB © 2026 · 智能金融分析平台 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none;" data-i18n="nav_privacy">私隱政策</a></div>
 </footer>
 
 <script src="js/ai-loading.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
 <script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
 function updateCompanyCount(){
   const inputs=document.querySelectorAll('.company-input');
   let count=0;
   inputs.forEach(i=>{if(i.value.trim())count++;});
-  document.getElementById('companyCount').textContent=`已輸入：${count} 家`;
+  document.getElementById('companyCount').textContent=`${t('cc_company_count_prefix','已輸入：')}${count}${t('cc_company_count_suffix',' 家')}`;
 }
 
 document.querySelectorAll('.company-input').forEach(input=>{
   input.addEventListener('input',updateCompanyCount);
 });
+window.addEventListener('DOMContentLoaded', updateCompanyCount);
 
 function clearInputs(){
   document.querySelectorAll('.company-input').forEach(i=>i.value='');
@@ -215,12 +219,12 @@ async function doCompare(){
   });
 
   if(companies.length<2){
-    alert('請至少輸入2家公司');
+    alert(t('cc_alert_min2','請至少輸入2家公司'));
     return;
   }
 
   if(companies.length>5){
-    alert('最多只能輸入5家公司');
+    alert(t('cc_alert_max5','最多只能輸入5家公司'));
     return;
   }
 
@@ -229,16 +233,16 @@ async function doCompare(){
   document.getElementById('analysisSection').classList.add('show');
 
   // Show loading state
-  document.getElementById('tableBody').innerHTML='<tr><td colspan="99" style="text-align:center;padding:2rem;"><div class="loading-state"><div class="dot-ani">讀取市場數據中<span>.</span><span>.</span><span>.</span></div></div></td></tr>';
-  document.getElementById('analysisContent').innerHTML='<div class="loading-state"><div class="dot-ani">生成對標分析<span>.</span><span>.</span><span>.</span></div></div>';
+  document.getElementById('tableBody').innerHTML=`<tr><td colspan="99" style="text-align:center;padding:2rem;"><div class="loading-state"><div class="dot-ani">${t('cc_loading_market','讀取市場數據中')}<span>.</span><span>.</span><span>.</span></div></div></td></tr>`;
+  document.getElementById('analysisContent').innerHTML=`<div class="loading-state"><div class="dot-ani">${t('cc_loading_analysis','生成對標分析')}<span>.</span><span>.</span><span>.</span></div></div>`;
 
   try {
     const response = await postApi('/api/company-compare', { symbols: companies });
     displayResults(response.data);
   } catch (error) {
     console.error(error);
-    document.getElementById('tableBody').innerHTML='<tr><td colspan="99" style="text-align:center;padding:2rem;color:var(--text3)">⚠️ 分析失敗，請稍後重試</td></tr>';
-    document.getElementById('analysisContent').innerHTML='<p>⚠️ 分析失敗，請稍後重試。</p>';
+    document.getElementById('tableBody').innerHTML=`<tr><td colspan="99" style="text-align:center;padding:2rem;color:var(--text3)">${t('cc_analysis_fail','⚠️ 分析失敗，請稍後重試')}</td></tr>`;
+    document.getElementById('analysisContent').innerHTML=`<p>${t('cc_analysis_fail','⚠️ 分析失敗，請稍後重試')}。</p>`;
   }
 
   document.getElementById('analyzeBtn').disabled=false;
@@ -248,7 +252,7 @@ function displayResults(data){
   const marketData = data.market_data || {};
   const symbols = Object.keys(marketData);
 
-  let headerHtml='<tr id="headerRow"><th style="background:var(--navy4);">指標</th>';
+  let headerHtml=`<tr id="headerRow"><th style="background:var(--navy4);">${t('cc_th_metric','指標')}</th>`;
   symbols.forEach(s=>{ headerHtml+=`<th>${s}</th>`; });
   headerHtml+='</tr>';
   document.getElementById('headerRow').innerHTML=headerHtml;
@@ -262,12 +266,12 @@ function displayResults(data){
     return `$${v}`;
   };
   const rows=[
-    {label:'現價', fn:c=>fmtPrice(c.price)},
-    {label:'市值', fn:c=>fmtCap(c.market_cap)},
-    {label:'成交量比 (今日/平均)', fn:c=>c.volume_ratio!=null?c.volume_ratio:'N/A'},
-    {label:'趨勢 (相對50日均線)', fn:c=>c.trend==='bullish'?'📈 偏多':c.trend==='bearish'?'📉 偏空':'N/A'},
-    {label:'接近52週高位', fn:c=>c.breakout?'✅ 是':'—'},
-    {label:'分析師評級傾向', fn:c=>c.sentiment==='bullish'?'看好':c.sentiment==='bearish'?'看淡':'N/A'},
+    {label:t('cc_row_price','現價'), fn:c=>fmtPrice(c.price)},
+    {label:t('cc_row_marketcap','市值'), fn:c=>fmtCap(c.market_cap)},
+    {label:t('cc_row_volume_ratio','成交量比 (今日/平均)'), fn:c=>c.volume_ratio!=null?c.volume_ratio:'N/A'},
+    {label:t('cc_row_trend','趨勢 (相對50日均線)'), fn:c=>c.trend==='bullish'?t('cc_trend_bullish','📈 偏多'):c.trend==='bearish'?t('cc_trend_bearish','📉 偏空'):'N/A'},
+    {label:t('cc_row_52w_high','接近52週高位'), fn:c=>c.breakout?t('cc_yes','✅ 是'):'—'},
+    {label:t('cc_row_analyst_rating','分析師評級傾向'), fn:c=>c.sentiment==='bullish'?t('cc_sentiment_bullish','看好'):c.sentiment==='bearish'?t('cc_sentiment_bearish','看淡'):'N/A'},
   ];
 
   let tableHtml='';
@@ -275,15 +279,15 @@ function displayResults(data){
     tableHtml+=`<tr><td class="metric-name">${row.label}</td>`;
     symbols.forEach(s=>{
       const company = marketData[s] || {};
-      const cellVal = company.error ? '取數失敗' : row.fn(company);
+      const cellVal = company.error ? t('cc_fetch_fail','取數失敗') : row.fn(company);
       tableHtml+=`<td class="value-cell neutral-value">${cellVal}</td>`;
     });
     tableHtml+='</tr>';
   });
-  document.getElementById('tableBody').innerHTML=tableHtml || '<tr><td colspan="99" style="text-align:center;padding:2rem;">暫時未能取得市場數據</td></tr>';
+  document.getElementById('tableBody').innerHTML=tableHtml || `<tr><td colspan="99" style="text-align:center;padding:2rem;">${t('cc_no_market_data','暫時未能取得市場數據')}</td></tr>`;
 
   const analysisText = data.analysis || data.conclusion || '';
-  document.getElementById('analysisContent').innerHTML = analysisText ? formatAnalysis(analysisText) : '<p>暫時未能取得分析內容，請稍後重試。</p>';
+  document.getElementById('analysisContent').innerHTML = analysisText ? formatAnalysis(analysisText) : `<p>${t('cc_no_analysis_content','暫時未能取得分析內容，請稍後重試。')}</p>`;
 
   if (symbols.length && typeof window.renderShareBar === 'function') {
     const shareUrl = `${location.origin}${location.pathname}?companies=${encodeURIComponent(symbols.join(','))}`;
