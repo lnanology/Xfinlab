@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/ai-loading.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
@@ -65,48 +66,50 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
   <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
   <div class="nav-links" id="navLinks">
-    <a href="index.html" class="nav-link">首頁</a>
-    <a href="ai-analysis.html" class="nav-link">AI市場分析</a>
-    <a href="company-compare.html" class="nav-link">AB公司比較</a>
-    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
-    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
-    <a href="chart-analysis.html" class="nav-link">K線分析</a>
-    <a href="probability-scan.html" class="nav-link">機率掃描</a>
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
   </div>
 </nav>
 
 <div class="container">
   <div class="page-tag">News Engine™</div>
-  <h1 class="page-title">新聞去噪分析</h1>
-  <p class="page-sub">輸入股票代號或市場主題，AI 會整理最新新聞重點並過濾情感化炒作字眼，給你一份簡潔摘要。</p>
+  <h1 class="page-title" data-i18n="nd_title">新聞去噪分析</h1>
+  <p class="page-sub" data-i18n="nd_subtitle">輸入股票代號或市場主題，AI 會整理最新新聞重點並過濾情感化炒作字眼，給你一份簡潔摘要。</p>
 
   <div class="input-section">
-    <label class="input-label">股票代號或主題</label>
+    <label class="input-label" data-i18n="nd_input_label">股票代號或主題</label>
     <div class="input-row">
-      <input type="text" id="difySymbolInput" class="input" placeholder="例如：AAPL、0700.HK、Fed 議息、大盤走勢">
-      <button class="analyze-btn" id="difyAnalyzeBtn" onclick="simulateDifyApi()">開始分析</button>
+      <input type="text" id="difySymbolInput" class="input" placeholder="例如：AAPL、0700.HK、Fed 議息、大盤走勢" data-i18n-placeholder="nd_input_placeholder">
+      <button class="analyze-btn" id="difyAnalyzeBtn" onclick="simulateDifyApi()" data-i18n="nd_run_btn">開始分析</button>
     </div>
-    <div class="api-hint">💡 由 AI 即時生成，非結構化新聞資料庫統計。</div>
+    <div class="api-hint" data-i18n="nd_api_hint">💡 由 AI 即時生成，非結構化新聞資料庫統計。</div>
   </div>
 
   <div class="api-response-section">
-    <div class="api-response-title" onclick="document.getElementById('apiResponseBox').classList.toggle('show')">🔍 查看原始 API 回應（除錯用）</div>
+    <div class="api-response-title" onclick="document.getElementById('apiResponseBox').classList.toggle('show')" data-i18n="nd_api_response_title">🔍 查看原始 API 回應（除錯用）</div>
     <div class="api-response" id="apiResponseBox">
-      <div class="api-response-json" id="apiResponseJson">尚未查詢。</div>
+      <div class="api-response-json" id="apiResponseJson" data-i18n="nd_not_queried">尚未查詢。</div>
     </div>
   </div>
 
   <div class="result-section" id="denoisedSection">
     <div id="resultContent">
-      <div class="result-title">📰 News Engine™ 分析報告</div>
+      <div class="result-title" data-i18n="nd_result_title">📰 News Engine™ 分析報告</div>
       <div class="result-content" id="denoisedContent"></div>
-      <div class="disclaimer">💡 以上內容由 AI 模型根據你提供的主題即時生成，屬於摘要與觀點整理，並非結構化新聞資料庫的統計結果，僅供參考，不構成投資建議。</div>
+      <div class="disclaimer" data-i18n="nd_disclaimer">💡 以上內容由 AI 模型根據你提供的主題即時生成，屬於摘要與觀點整理，並非結構化新聞資料庫的統計結果，僅供參考，不構成投資建議。</div>
     </div>
     <div id="shareBar"></div>
   </div>
 </div>
 
 <script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
 async function simulateDifyApi() {
   const symbol = document.getElementById('difySymbolInput').value.trim();
   const responseJson = document.getElementById('apiResponseJson');
@@ -115,15 +118,15 @@ async function simulateDifyApi() {
   const denoisedContent = document.getElementById('denoisedContent');
 
   if (!symbol) {
-    responseJson.textContent = '請先輸入股票代號或主題，例如 AAPL 或 700.HK。';
+    responseJson.textContent = t('nd_alert_no_symbol','請先輸入股票代號或主題，例如 AAPL 或 700.HK。');
     return;
   }
 
   button.disabled = true;
   denoisedSection.classList.remove('show');
-  denoisedContent.innerHTML = '<div class="loading-state"><div class="dot-ani">AI 分析中<span>.</span><span>.</span><span>.</span></div></div>';
+  denoisedContent.innerHTML = `<div class="loading-state"><div class="dot-ani">${t('nd_analyzing','AI 分析中')}<span>.</span><span>.</span><span>.</span></div></div>`;
   denoisedSection.classList.add('show');
-  responseJson.textContent = '正在呼叫 /api/news-denoise，請稍候…';
+  responseJson.textContent = t('nd_calling_api','正在呼叫 /api/news-denoise，請稍候…');
 
   try {
     const result = await postApi('/api/news-denoise', { query: symbol });
@@ -131,7 +134,7 @@ async function simulateDifyApi() {
     responseJson.textContent = JSON.stringify(result, null, 2);
 
     const text = data.analysis || data.conclusion || '';
-    denoisedContent.innerHTML = text ? formatAnalysisText(text) : '<p>暫時未能取得分析內容，請稍後重試。</p>';
+    denoisedContent.innerHTML = text ? formatAnalysisText(text) : `<p>${t('nd_no_content','暫時未能取得分析內容，請稍後重試。')}</p>`;
 
     if (text && typeof window.renderShareBar === 'function') {
       const shareUrl = `${location.origin}${location.pathname}?query=${encodeURIComponent(symbol)}`;
@@ -142,8 +145,8 @@ async function simulateDifyApi() {
     }
   } catch (error) {
     console.error(error);
-    responseJson.textContent = 'API 呼叫失敗，請稍後重試。';
-    denoisedContent.innerHTML = '<p>⚠️ 分析時出現問題，請稍後重試。</p>';
+    responseJson.textContent = t('nd_api_fail','API 呼叫失敗，請稍後重試。');
+    denoisedContent.innerHTML = `<p>${t('nd_analysis_error','⚠️ 分析時出現問題，請稍後重試。')}</p>`;
   } finally {
     button.disabled = false;
   }
@@ -173,7 +176,7 @@ function formatAnalysisText(text) {
 </script>
 
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · 智能金融分析平台 · <a href="privacy.html" style="color:var(--blue);text-decoration:none;">私隱政策</a></div>
+  <div class="footer-note"><span data-i18n="nd_footer_note">XFINLAB © 2026 · 智能金融分析平台 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none;" data-i18n="nav_privacy">私隱政策</a></div>
 </footer>
 
 <script>
