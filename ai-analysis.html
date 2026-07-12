@@ -50,54 +50,54 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <div class="nav-links" id="navLinks">
     <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
     <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
-    <a href="company-compare.html" class="nav-link">AB公司比較</a>
-    <a href="news-denoise.html" class="nav-link">新聞降噪</a>
-    <a href="stress-lab.html" class="nav-link">壓力測試室</a>
-    <a href="chart-analysis.html" class="nav-link">K線分析</a>
-    <a href="probability-scan.html" class="nav-link">機率掃描</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
   </div>
 
 </nav>
 
 <div class="container">
   <div class="page-tag">Research Engine™</div>
-  <h1 class="page-title">AI 市場快速分析</h1>
-  <p class="page-sub">輸入股票 / ETF / 加密代號（例如 NVDA、AAPL、TSLA、BTC），用真實市場數據同新聞計算多面向評分與機率參考。</p>
+  <h1 class="page-title" data-i18n="aa_title">AI 市場快速分析</h1>
+  <p class="page-sub" data-i18n="aa_sub">輸入股票 / ETF / 加密代號（例如 NVDA、AAPL、TSLA、BTC），用真實市場數據同新聞計算多面向評分與機率參考。</p>
 
   <div class="panel">
     <div class="input-row">
-      <input id="symbolInput" autocomplete="off" class="input-field" placeholder="輸入代號，支援多個以逗號分隔，例如 NVDA,AAPL,BTC">
+      <input id="symbolInput" autocomplete="off" class="input-field" data-i18n-placeholder="aa_input_placeholder" placeholder="輸入代號，支援多個以逗號分隔，例如 NVDA,AAPL,BTC">
       <select id="assetType" class="input-field">
-        <option value="auto">自動辨識（股票/ETF/加密）</option>
-        <option value="stock">股票</option>
-        <option value="etf">ETF</option>
-        <option value="crypto">加密貨幣</option>
+        <option value="auto" data-i18n="aa_asset_auto">自動辨識（股票/ETF/加密）</option>
+        <option value="stock" data-i18n="aa_asset_stock">股票</option>
+        <option value="etf" data-i18n="aa_asset_etf">ETF</option>
+        <option value="crypto" data-i18n="aa_asset_crypto">加密貨幣</option>
       </select>
-      <button class="primary-btn" onclick="runAnalysis()">🔍 執行分析</button>
+      <button class="primary-btn" onclick="runAnalysis()" data-i18n="aa_run_btn">🔍 執行分析</button>
     </div>
   </div>
 
   <div id="resultContent">
     <div class="grid">
       <div class="score-card">
-        <div class="score-label">基本面評分</div>
+        <div class="score-label" data-i18n="aa_fund_label">基本面評分</div>
         <div class="score-value" id="fundScore">-</div>
-        <div class="score-sub">衡量盈利能力與估值</div>
+        <div class="score-sub" data-i18n="aa_fund_sub">衡量盈利能力與估值</div>
       </div>
       <div class="score-card">
-        <div class="score-label">技術面評分</div>
+        <div class="score-label" data-i18n="aa_tech_label">技術面評分</div>
         <div class="score-value" id="techScore">-</div>
-        <div class="score-sub">趨勢、動能與波動</div>
+        <div class="score-sub" data-i18n="aa_tech_sub">趨勢、動能與波動</div>
       </div>
       <div class="score-card">
-        <div class="score-label">新聞面評分</div>
+        <div class="score-label" data-i18n="aa_news_label">新聞面評分</div>
         <div class="score-value" id="newsScore">-</div>
-        <div class="score-sub">媒體情緒與話題熱度</div>
+        <div class="score-sub" data-i18n="aa_news_sub">媒體情緒與話題熱度</div>
       </div>
       <div class="score-card">
-        <div class="score-label">RiskDNA™ 評分</div>
+        <div class="score-label" data-i18n="aa_risk_label">RiskDNA™ 評分</div>
         <div class="score-value" id="riskScore">-</div>
-        <div class="score-sub">短中期風險評估</div>
+        <div class="score-sub" data-i18n="aa_risk_sub">短中期風險評估</div>
       </div>
     </div>
 
@@ -106,20 +106,20 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </div>
 
     <div class="panel">
-      <div class="result-title">機率分析（未來 30 日）</div>
+      <div class="result-title" data-i18n="aa_prob_title">機率分析（未來 30 日）</div>
       <div style="margin-top:0.8rem">
         <div class="prob-section">
-          <div class="prob-label">偏多機率</div>
+          <div class="prob-label" data-i18n="aa_bull_label">偏多機率</div>
           <div class="prob-bar"><div id="bullFill" class="prob-fill bull" style="width:0%"></div></div>
           <div style="width:60px;text-align:right;color:var(--text2)" id="bullPct">-</div>
         </div>
         <div class="prob-section">
-          <div class="prob-label">盤整機率</div>
+          <div class="prob-label" data-i18n="aa_flat_label">盤整機率</div>
           <div class="prob-bar"><div id="flatFill" class="prob-fill flat" style="width:0%"></div></div>
           <div style="width:60px;text-align:right;color:var(--text2)" id="flatPct">-</div>
         </div>
         <div class="prob-section">
-          <div class="prob-label">偏空機率</div>
+          <div class="prob-label" data-i18n="aa_bear_label">偏空機率</div>
           <div class="prob-bar"><div id="bearFill" class="prob-fill bear" style="width:0%"></div></div>
           <div style="width:60px;text-align:right;color:var(--text2)" id="bearPct">-</div>
         </div>
@@ -127,22 +127,22 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </div>
 
     <div class="panel">
-      <div class="result-title">風險因素</div>
+      <div class="result-title" data-i18n="aa_risk_factors_title">風險因素</div>
       <ul class="risk-list" id="riskList">
-        <li class="risk-item">產業風險：-</li>
-        <li class="risk-item">財務風險：-</li>
-        <li class="risk-item">政策風險：-</li>
+        <li class="risk-item" data-i18n="aa_risk_industry">產業風險：-</li>
+        <li class="risk-item" data-i18n="aa_risk_financial">財務風險：-</li>
+        <li class="risk-item" data-i18n="aa_risk_policy">政策風險：-</li>
       </ul>
     </div>
 
     <div class="panel">
-      <div class="result-title">AI 結論</div>
+      <div class="result-title" data-i18n="aa_conclusion_title">AI 結論</div>
       <div class="ai-conclusion" id="aiConclusion">
-        <h4>目前優勢</h4>
+        <h4 data-i18n="aa_adv_header">目前優勢</h4>
         <p>-</p>
-        <h4>目前風險</h4>
+        <h4 data-i18n="aa_risk_header">目前風險</h4>
         <p>-</p>
-        <h4>需要持續追蹤的指標</h4>
+        <h4 data-i18n="aa_track_header">需要持續追蹤的指標</h4>
         <p>-</p>
       </div>
     </div>
@@ -155,7 +155,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 </div>
 
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · AI 市場分析 · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a></div>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="aa_footer_note">AI 市場分析</span> · <a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a></div>
 </footer>
 
 <script src="js/reusable-score-card.js"></script>
@@ -167,7 +167,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 <script>
 async function runAnalysis(){
   const input=document.getElementById('symbolInput').value.trim();
-  if(!input){alert('請輸入至少一個代號');return}
+  if(!input){alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_alert_no_symbol'])||'請輸入至少一個代號');return}
   const symbols=input.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
   const assetType=document.getElementById('assetType').value;
 
@@ -197,8 +197,9 @@ async function runAnalysis(){
       riskList.appendChild(li);
     });
 
+    const advHeader = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_adv_header'])||'目前優勢';
     document.getElementById('aiConclusion').innerHTML = `
-      <h4>目前優勢</h4>
+      <h4>${advHeader}</h4>
       <p>${data.conclusion}</p>
     `;
 
@@ -232,7 +233,7 @@ async function runAnalysis(){
     }
   } catch (error) {
     console.error(error);
-    alert('分析失敗，請稍後重試');
+    alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_alert_fail'])||'分析失敗，請稍後重試');
   }
 }
 
