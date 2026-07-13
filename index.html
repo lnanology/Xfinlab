@@ -273,25 +273,11 @@
 </head>
 <body>
 
-<!-- Ticker Bar -->
+<!-- Ticker Bar -- 內容由JS產生（見下面renderTickerBar()），涵蓋指數/股票/
+     期貨/加密貨幣，兩份完全一樣先至撞到translateX(-50%)嗰下無縫接返，
+     繼續行落去，唔會斷。 -->
 <div class="ticker-section">
-  <div class="ticker-wrap" id="tickerWrap">
-    <div class="ticker-item"><span class="ticker-symbol">AAPL</span><span class="ticker-price" id="t-AAPL">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">NVDA</span><span class="ticker-price" id="t-NVDA">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">TSLA</span><span class="ticker-price" id="t-TSLA">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">MSFT</span><span class="ticker-price" id="t-MSFT">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">META</span><span class="ticker-price" id="t-META">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">BTC</span><span class="ticker-price" id="t-BTC">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">ETH</span><span class="ticker-price" id="t-ETH">--</span></div>
-    <!-- Duplicate for seamless loop -->
-    <div class="ticker-item"><span class="ticker-symbol">AAPL</span><span class="ticker-price">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">NVDA</span><span class="ticker-price">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">TSLA</span><span class="ticker-price">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">MSFT</span><span class="ticker-price">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">META</span><span class="ticker-price">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">BTC</span><span class="ticker-price">--</span></div>
-    <div class="ticker-item"><span class="ticker-symbol">ETH</span><span class="ticker-price">--</span></div>
-  </div>
+  <div class="ticker-wrap" id="tickerWrap"></div>
 </div>
 
 <!-- Hero -->
@@ -375,6 +361,19 @@
   </div>
 </div>
 
+<!-- Top Opportunity -- 3 cards, one per asset class (股票/期貨/加密貨幣),
+     見 api/market_pulse.py 嘅 /api/top-opportunities，同Outlook basket
+     一樣用真實Confluence Engine計，唔係AI估。放喺Outlook上面，等訪客
+     一開始就見到「而家邊隻最強」。 -->
+<div class="top-opp-section">
+  <div class="section-label" data-i18n="topopp_label">🏆 Top Opportunity</div>
+  <div class="top-opp-grid" id="topOppGrid">
+    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
+    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
+    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_crypto">加密貨幣</div><div class="top-opp-ticker">--</div></div>
+  </div>
+</div>
+
 <!-- Today's AI Outlook (Live Market Pulse) -->
 <div class="pulse-section">
   <div class="pulse-box">
@@ -411,18 +410,6 @@
     <div class="pulse-personal-cta" id="pulsePersonalCta" style="display:none">
       <a href="login.html" data-i18n="daily_cta">登入解鎖你嘅AI Watchlist同Risk Radar，每日自動更新 →</a>
     </div>
-  </div>
-</div>
-
-<!-- Top Opportunity -- 3 cards, one per asset class (股票/期貨/加密貨幣),
-     見 api/market_pulse.py 嘅 /api/top-opportunities，同Outlook basket
-     一樣用真實Confluence Engine計，唔係AI估。 -->
-<div class="top-opp-section">
-  <div class="section-label" data-i18n="topopp_label">🏆 Top Opportunity</div>
-  <div class="top-opp-grid" id="topOppGrid">
-    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
-    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
-    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_crypto">加密貨幣</div><div class="top-opp-ticker">--</div></div>
   </div>
 </div>
 
@@ -755,22 +742,55 @@ document.getElementById('heroTicker').addEventListener('input', function() {
   this.value = this.value.toUpperCase();
 });
 
-// Load live prices
+// Ticker marquee -- 指數/股票/期貨/加密貨幣混合，見api/market.py嘅
+// /api/market/{symbol}（通用yfinance pass-through，乜symbol格式都食到）。
+// 個marquee本身淨係靠CSS嘅translateX(0)->(-50%)無縫loop，前提係兩份內容
+// 一模一樣 -- 所以呢度用同一個TICKER_ITEMS數組generate兩次，唔係手打兩次
+// HTML，avoid兩份唔小心打漏/打多一個造成跳格。價錢用data-ticker-symbol
+// querySelectorAll一次過update兩份，唔會重新起individual HTML所以animation
+// 唔會斷/reset。
+const TICKER_ITEMS = [
+  {label: 'SPY', api: 'SPY'},
+  {label: 'QQQ', api: 'QQQ'},
+  {label: 'DIA', api: 'DIA'},
+  {label: 'AAPL', api: 'AAPL'},
+  {label: 'NVDA', api: 'NVDA'},
+  {label: 'TSLA', api: 'TSLA'},
+  {label: 'MSFT', api: 'MSFT'},
+  {label: 'META', api: 'META'},
+  {label: 'ES', api: 'ES=F'},
+  {label: 'CL', api: 'CL=F'},
+  {label: 'GC', api: 'GC=F'},
+  {label: 'BTC', api: 'BTC-USD'},
+  {label: 'ETH', api: 'ETH-USD'},
+];
+
+function renderTickerBar() {
+  const wrap = document.getElementById('tickerWrap');
+  if (!wrap) return;
+  const itemsHtml = TICKER_ITEMS.map(function(it) {
+    return `<div class="ticker-item"><span class="ticker-symbol">${it.label}</span><span class="ticker-price" data-ticker-symbol="${it.api}">--</span></div>`;
+  }).join('');
+  wrap.innerHTML = itemsHtml + itemsHtml; // 完全一樣嘅兩份，先撞得中-50%無縫接位
+}
+
 async function loadTickers() {
-  const stocks = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'META'];
-  for (const s of stocks) {
+  for (const it of TICKER_ITEMS) {
     try {
-      const res = await fetch(`${API}/market/${s}`);
+      const res = await fetch(`${API}/market/${encodeURIComponent(it.api)}`);
       const data = await res.json();
-      const el = document.getElementById(`t-${s}`);
-      if (el && data.price) {
-        el.textContent = `$${data.price.toFixed(2)}`;
+      if (data && data.price) {
+        document.querySelectorAll(`[data-ticker-symbol="${CSS.escape(it.api)}"]`).forEach(function(el) {
+          el.textContent = `$${Number(data.price).toFixed(2)}`;
+        });
       }
     } catch(e) {}
   }
 }
 
+renderTickerBar();
 loadTickers();
+setInterval(loadTickers, 60000);
 initAutocomplete("heroTicker", "heroDropdown");
 
 // Hero "Live AI Result" card -- 見api/hero_showcase.py，真實confluence

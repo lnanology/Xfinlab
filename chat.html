@@ -116,8 +116,24 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
   .msg{max-width:95%}
 }
 </style>
-  <div class="nav-right">
+</head>
+<body>
+
+<!-- 之前呢度冇晒<nav>開頭標籤同<body>，導致成頁得返首頁連結，冇連去
+     其他工具頁 -- 而家跟返全站common nav pattern補晒返嚟。 -->
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <div class="nav-links" id="navLinks">
     <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
     <button class="new-chat-btn" onclick="newChat()" data-i18n="chat_new_chat">＋ 新對話</button>
   </div>
 </nav>
