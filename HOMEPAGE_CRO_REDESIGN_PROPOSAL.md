@@ -115,3 +115,23 @@
 ## 我嘅總結建議
 
 呢份CRO建議嘅心理學原則（Hick's Law、數字勝於形容詞、Problem→Relief、具體CTA）本身係啱嘅，亦都同而家嘅網站方向唔衝突，Phase A/B/C呢啲我建議可以盡快做。但入面有4樣嘢（免登入Demo嘅cost控制、Engine權威感嘅誠信風險、Testimonials嘅真實性、全站換色嘅範圍）唔係我可以自己拍板嘅純技術決定，需要你話事。
+
+---
+
+## Part E — 決策記錄：2026-07-13 首頁重排 + 新增2個Engine + 免費體驗改單次制
+
+**背景：** 用戶要求（1）用心理學研究重新排列首頁區塊；（2）AI Engine由7個加到9個，排3x3；（3）評估免登入「免費體驗」CTA嘅位置是否合適；（4）之後再要求將免費體驗改為每個IP限用1次（唔可以重開網頁重用），用完要登入。
+
+**1. 區塊重排（已執行，commit 9c4b05d）：**
+Trust Numbers 同 Problem→Relief 兩個section由原本較後嘅位置搬到Hero之後、Live AI Result之前。理據：Serial Position Effect（首因效應）— 社會認同（Trust Numbers嘅硬數字）應該喺fold之上盡早出現先可以提升轉換；Problem→Relief嘅情感鉤子亦應該喺Hero之後、產品機制細節之前出現。新順序：Hero → Trust Numbers → Problem/Relief → Live AI Result → Today's AI Outlook → Real AI Showcase → Core AI Engines → Decision Intelligence → How it works → 免登入AI Demo → Pricing摘要 → FAQ → Final CTA。
+
+**2. 免登入Demo位置（評估後：維持原位，唔搬）：**
+研究顯示「互動demo → 免費試用 → 產品擴展」呢個漏斗，demo section最佳位置係喺pricing附近／之前，而家已經係咁擺（How it works之後、Pricing之前），符合最佳實踐，所以冇搬動。
+
+**3. 新增2個Engine（已執行）：**
+新增Anomaly Engine™（`anomaly.html`）同真正嘅Portfolio Engine™（`portfolio.html`），兩個都係包住現有、已經上線嘅後端邏輯（`api/anomaly.py`、`api/portfolio.py`），之前呢兩個功能淨係喺dashboard.html widget入面出現過，首頁冇獨立tile。同時修正咗一個舊有命名錯誤：首頁原本掛「Portfolio Engine™」個tile其實連去`company-compare.html`（同業比較功能，唔係組合配置），而家改名做「Compare Engine™」/"Compare Agent"。Tools grid由4欄改3欄，變成3x3共9個tile；`engines_title`同Trust Numbers嘅stat由「7」改做「9」，46種語言全部更新（4種用native數字字符嘅語言 fa/bn/ne/mr 有特殊處理）。
+
+**4. 免費體驗改單次制（已執行）：**
+`api/public_demo.py`由「每IP 30分鐘無限次試用時段＋4小時cooldown先可以開新時段」改為「每IP終身限用1次，冇自動重置」，用完之後一定要登入先可以再用。呢個係因應用戶明確要求（每個IP記錄住，唔可以靠重開網頁繞過），首頁相關文案（試用提示、錯誤訊息、結果CTA、FAQ）同步更新，46種語言全部翻譯。
+
+**驗證：** 所有改動經過tag平衡檢查、`node --check`驗證inline script語法、46種語言key覆蓋率100%檢查（剩餘幾個regex false positive已確認同之前一樣係`alert(`/`trackEvent(`/`split(`呢類函數名尾段啱啱好係"t("造成，唔係真正缺key），先commit+push（commit 9c4b05d）。

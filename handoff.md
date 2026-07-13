@@ -27,11 +27,22 @@ services/i18n.py 依家每種語言個TRANSLATIONS dict已經有587個key/語言
 - home.html：確認全repo冇任何地方reference（grep過），已經同index.html內容重複，改成一個redirect去index.html（保留檔案，冇刪除，以防外部連結）。
 - 驗證階段見過2個「missing key」false positive：`search`（其實係`trackEvent('search',...)`）同`請輸入股票代號`（其實係`alert('請輸入股票代號')`）——兩個都因為regex `t\('...'\)` 錯誤匹配咗以「t(」結尾嘅函數名（trackEvent(/alert 個"aler**t(**"），唔係真正用`t()` helper，已確認唔使加key。
 
+## 第二輪插入工作：首頁重排 + 新增2個Engine + 免費體驗改單次制（已完成並push — commit 9c4b05d）
+用戶要求（1）用心理學研究重排首頁區塊；（2）AI Engine由7個加到9個排3x3，並問邊2個最重要；（3）評估免登入「免費體驗」CTA嘅位置；（4）之後再要求將免費體驗改做每個IP限用1次（記錄IP，唔可以靠重開網頁繞過），用完要登入。詳細CRO決策記錄見 `HOMEPAGE_CRO_REDESIGN_PROPOSAL.md` Part E。
+
+- **區塊重排**：Trust Numbers同Problem→Relief搬到Hero之後、Live AI Result之前（Serial Position Effect + 社會認同應盡早出現）。免登入Demo評估後維持原位（已符合「demo→試用→產品擴展」漏斗最佳實踐，冇搬）。
+- **新增2個Engine**：`anomaly.html`（Anomaly Engine™）同`portfolio.html`（真正嘅Portfolio Engine™），兩者都包住現有已上線嘅`api/anomaly.py`/`api/portfolio.py`（之前只喺dashboard.html widget出現）。順手修正咗首頁一個舊命名錯誤：原本掛「Portfolio Engine™」個tile其實連去`company-compare.html`（同業比較），已改名做「Compare Engine™」/"Compare Agent"。Tools grid改3欄x3列共9個tile；`engines_title`同Trust Numbers嘅stat由7改做9（46種語言全部更新，fa/bn/ne/mr呢4種用native數字字符嘅語言有特殊處理）。新增key：`tool10_desc`/`tool11_desc`（2個）、`anom_*`/`port_*`（34個，兩個新頁面全部UI文字）。
+- **免費體驗改單次制**：`api/public_demo.py`由「每IP 30分鐘無限次試用時段+4小時cooldown」改為「每IP終身限用1次，冇自動重置」，用完一定要登入。首頁相關文案（試用提示、錯誤訊息、結果CTA、FAQ）同步更新，新增key：`demo_trial_note_pre/login/post`、`demo_error_used`、`demo_cta_pre/signup/post`（7個）。
+
+services/i18n.py依家每種語言個TRANSLATIONS dict有637個key/語言，全部46種語言key數量一致。呢次merge一共加咗43個新key（2+34+7），每次merge後都用object-level diff同backup比對過，確認冇整壞舊翻譯（除咗刻意嘅`engines_title` 7→9同`tool5_desc` Portfolio Agent→Compare Agent呢兩個蓄意改動）。
+
+驗證：HTML tag open/close balance、`node --check`驗證所有inline script語法、46種語言key覆蓋率100%（幾個regex false positive已確認同之前一樣，係`alert(`/`trackEvent(`/`split(`呢類函數名尾段啱啱好係"t("造成，唔係真正缺key）。
+
 ## 進行緊
-（無，dashboard.html已完成並push，全站i18n project正式完結）
+（無，兩輪工作都已完成並push）
 
 ## 剩餘未做
-（無）全站所有頁面（14頁）已完成46語言i18n翻譯並push到main。
+（無）全站所有頁面已完成46語言i18n翻譯並push到main，首頁重排、新增2個Engine、免費體驗政策改動亦已完成並push。
 
 ## 標準工作流程（每頁重複）
 1. Read全頁，audit可翻譯內容，check有冇缺js/i18n.js include（已發現5/7頁都有呢個bug，好可能剩低嘅頁都有同樣問題）
