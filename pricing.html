@@ -35,7 +35,7 @@
   .hero { text-align: center; margin-bottom: 64px; }
   .hero-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
   .hero h1 { font-size: 2.8rem; font-weight: 700; margin-bottom: 16px; }
-  .hero h1 span { color: var(--accent); }
+  .hero h1 .accent-word { color: var(--accent); }
   .hero p { color: var(--muted); font-size: 1rem; max-width: 480px; margin: 0 auto 32px; line-height: 1.6; }
 
   /* Toggle */
@@ -122,17 +122,17 @@
 
   <!-- Hero -->
   <div class="hero">
-    <div class="hero-label">Simple Pricing</div>
-    <h1>Invest Smarter with <span>AI</span></h1>
-    <p>Start free, upgrade when you're ready. No hidden fees, cancel anytime.</p>
+    <div class="hero-label" data-i18n="pricing_hero_label">Simple Pricing</div>
+    <h1><span data-i18n="pricing_hero_title">Invest Smarter with </span><span class="accent-word">AI</span></h1>
+    <p data-i18n="pricing_hero_sub">Start free, upgrade when you're ready. No hidden fees, cancel anytime.</p>
   </div>
 
   <!-- Billing Toggle -->
   <div class="billing-toggle">
-    <span class="toggle-label active" id="monthlyLabel">Monthly</span>
+    <span class="toggle-label active" id="monthlyLabel" data-i18n="pricing_monthly">Monthly</span>
     <div class="toggle" id="billingToggle" onclick="toggleBilling()"></div>
-    <span class="toggle-label" id="annualLabel">Annual</span>
-    <span class="save-badge">Save 20%</span>
+    <span class="toggle-label" id="annualLabel" data-i18n="pricing_annual">Annual</span>
+    <span class="save-badge" data-i18n="pricing_save_badge">Save 20%</span>
   </div>
 
   <!-- Plans -->
@@ -140,62 +140,62 @@
 
     <!-- Free -->
     <div class="plan">
-      <div class="plan-name">Free</div>
+      <div class="plan-name" data-i18n="pricing_free_name">Free</div>
       <div class="plan-price">
         <div class="amount">$0</div>
-        <div class="period">/month</div>
+        <div class="period" data-i18n="pricing_free_period">/month</div>
       </div>
-      <div class="plan-desc">Perfect for getting started with AI stock analysis.</div>
-      <button class="btn-plan btn-free" onclick="window.location.href='login.html'">Get Started Free</button>
-      <div class="features-label">Includes</div>
-      <div class="feature"><span class="check">✓</span> 10 AI analyses per day</div>
-      <div class="feature"><span class="check">✓</span> 3 Research reports per day</div>
-      <div class="feature"><span class="check">✓</span> 1 PDF report per day</div>
-      <div class="feature"><span class="check">✓</span> Basic screener</div>
-      <div class="feature"><span class="check">✓</span> Telegram Bot access</div>
-      <div class="feature muted"><span class="cross">✕</span> Portfolio tracking</div>
-      <div class="feature muted"><span class="cross">✕</span> Anomaly alerts</div>
-      <div class="feature muted"><span class="cross">✕</span> AI Research Assistant</div>
+      <div class="plan-desc" data-i18n="pricing_free_desc">Perfect for getting started with AI stock analysis.</div>
+      <button class="btn-plan btn-free" onclick="window.location.href='login.html'" data-i18n="pricing_free_btn">Get Started Free</button>
+      <div class="features-label" data-i18n="pricing_includes_label">Includes</div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f1">10 AI analyses per day</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f2">3 Research reports per day</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f3">1 PDF report per day</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f4">Basic screener</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f5">Telegram Bot access</span></div>
+      <div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_free_f6">Portfolio tracking</span></div>
+      <div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_free_f7">Anomaly alerts</span></div>
+      <div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_free_f8">AI Research Assistant</span></div>
     </div>
 
     <!-- Pro (was Starter — internal plan key stays "starter", see handleUpgrade()) -->
     <div class="plan popular">
-      <div class="popular-badge">Most Popular</div>
-      <div class="plan-name">Pro</div>
+      <div class="popular-badge" data-i18n="pricing_popular_badge">Most Popular</div>
+      <div class="plan-name" data-i18n="pricing_pro_name">Pro</div>
       <div class="plan-price">
         <div class="amount" id="starterPrice">$19</div>
-        <div class="period">/month</div>
+        <div class="period" data-i18n="pricing_free_period">/month</div>
       </div>
-      <div class="plan-desc">For active investors who want more AI-powered insights.</div>
-      <button class="btn-plan btn-starter" onclick="handleUpgrade('starter')">Start Pro Plan</button>
-      <div class="features-label">Everything in Free, plus</div>
-      <div class="feature"><span class="check">✓</span> Unlimited AI analyses</div>
-      <div class="feature"><span class="check">✓</span> Unlimited research reports</div>
-      <div class="feature"><span class="check">✓</span> Unlimited PDF reports</div>
-      <div class="feature"><span class="check">✓</span> Portfolio tracking (10 stocks)</div>
-      <div class="feature"><span class="check">✓</span> Anomaly radar alerts</div>
-      <div class="feature"><span class="check">✓</span> Advanced screener</div>
-      <div class="feature muted"><span class="cross">✕</span> AI Research Assistant</div>
-      <div class="feature muted"><span class="cross">✕</span> API access</div>
+      <div class="plan-desc" data-i18n="pricing_pro_desc">For active investors who want more AI-powered insights.</div>
+      <button class="btn-plan btn-starter" onclick="handleUpgrade('starter')" data-i18n="pricing_pro_btn">Start Pro Plan</button>
+      <div class="features-label" data-i18n="pricing_everything_free_plus">Everything in Free, plus</div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f1">Unlimited AI analyses</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f2">Unlimited research reports</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f3">Unlimited PDF reports</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f4">Portfolio tracking (10 stocks)</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f5">Anomaly radar alerts</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f6">Advanced screener</span></div>
+      <div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_free_f8">AI Research Assistant</span></div>
+      <div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_pro_f8">API access</span></div>
     </div>
 
     <!-- Professional (was Pro — internal plan key stays "pro", see handleUpgrade()) -->
     <div class="plan">
-      <div class="plan-name">Professional</div>
+      <div class="plan-name" data-i18n="pricing_professional_name">Professional</div>
       <div class="plan-price">
         <div class="amount" id="proPrice">$49</div>
-        <div class="period">/month</div>
+        <div class="period" data-i18n="pricing_free_period">/month</div>
       </div>
-      <div class="plan-desc">For serious investors and professionals who need everything.</div>
-      <button class="btn-plan btn-pro" onclick="handleUpgrade('pro')">Go Professional</button>
-      <div class="features-label">Everything in Pro, plus</div>
-      <div class="feature"><span class="check">✓</span> AI Research Assistant</div>
-      <div class="feature"><span class="check">✓</span> Unlimited portfolio tracking</div>
-      <div class="feature"><span class="check">✓</span> Priority AI processing</div>
-      <div class="feature"><span class="check">✓</span> API access</div>
-      <div class="feature"><span class="check">✓</span> Early access to new features</div>
-      <div class="feature"><span class="check">✓</span> Email support</div>
-      <div class="feature"><span class="check">✓</span> Custom strategy builder</div>
+      <div class="plan-desc" data-i18n="pricing_professional_desc">For serious investors and professionals who need everything.</div>
+      <button class="btn-plan btn-pro" onclick="handleUpgrade('pro')" data-i18n="pricing_professional_btn">Go Professional</button>
+      <div class="features-label" data-i18n="pricing_everything_pro_plus">Everything in Pro, plus</div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f8">AI Research Assistant</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f2">Unlimited portfolio tracking</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f3">Priority AI processing</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f8">API access</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f5">Early access to new features</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f6">Email support</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f7">Custom strategy builder</span></div>
     </div>
 
     <!-- Enterprise: honest "contact us" tier -- no self-serve backend
@@ -203,60 +203,62 @@
          to a real human conversation (email) rather than pretending
          there's an automated signup flow. -->
     <div class="plan">
-      <div class="plan-name">Enterprise</div>
+      <div class="plan-name" data-i18n="pricing_enterprise_name">Enterprise</div>
       <div class="plan-price">
-        <div class="amount" style="font-size:1.7rem">Custom</div>
+        <div class="amount" style="font-size:1.7rem" data-i18n="pricing_enterprise_price">Custom</div>
       </div>
-      <div class="plan-desc">For teams and institutions that need volume, support, and custom terms.</div>
-      <button class="btn-plan btn-enterprise" onclick="window.location.href='mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry'">Contact Sales</button>
-      <div class="features-label">Everything in Professional, plus</div>
-      <div class="feature"><span class="check">✓</span> Multiple team seats</div>
-      <div class="feature"><span class="check">✓</span> Custom API rate limits</div>
-      <div class="feature"><span class="check">✓</span> Invoice billing</div>
-      <div class="feature"><span class="check">✓</span> Dedicated onboarding support</div>
-      <div class="feature muted"><span class="cross">✕</span> Self-serve signup (talk to us first)</div>
+      <div class="plan-desc" data-i18n="pricing_enterprise_desc">For teams and institutions that need volume, support, and custom terms.</div>
+      <button class="btn-plan btn-enterprise" onclick="window.location.href='mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry'" data-i18n="pricing_enterprise_btn">Contact Sales</button>
+      <div class="features-label" data-i18n="pricing_everything_professional_plus">Everything in Professional, plus</div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f1">Multiple team seats</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f2">Custom API rate limits</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f3">Invoice billing</span></div>
+      <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f4">Dedicated onboarding support</span></div>
+      <div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_enterprise_f5">Self-serve signup (talk to us first)</span></div>
     </div>
 
   </div>
 
   <!-- FAQ -->
   <div class="faq">
-    <h2>Frequently Asked Questions</h2>
+    <h2 data-i18n="pricing_faq_title">Frequently Asked Questions</h2>
 
     <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">Can I cancel anytime? <span class="arrow">▾</span></div>
-      <div class="faq-a">Yes! You can cancel your subscription at any time. Your plan remains active until the end of the billing period.</div>
+      <div class="faq-q"><span data-i18n="pricing_faq_q1">Can I cancel anytime?</span> <span class="arrow">▾</span></div>
+      <div class="faq-a" data-i18n="pricing_faq_a1">Yes! You can cancel your subscription at any time. Your plan remains active until the end of the billing period.</div>
     </div>
     <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">Is there a free trial? <span class="arrow">▾</span></div>
-      <div class="faq-a">Yes! The Free plan lets you experience XFINLAB with 10 analyses per day — no credit card required.</div>
+      <div class="faq-q"><span data-i18n="pricing_faq_q2">Is there a free trial?</span> <span class="arrow">▾</span></div>
+      <div class="faq-a" data-i18n="pricing_faq_a2">Yes! The Free plan lets you experience XFINLAB with 10 analyses per day — no credit card required.</div>
     </div>
     <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">What payment methods do you accept? <span class="arrow">▾</span></div>
-      <div class="faq-a">We accept all major credit cards, PayPal, and local payment methods through our payment provider.</div>
+      <div class="faq-q"><span data-i18n="pricing_faq_q3">What payment methods do you accept?</span> <span class="arrow">▾</span></div>
+      <div class="faq-a" data-i18n="pricing_faq_a3">We accept all major credit cards, PayPal, and local payment methods through our payment provider.</div>
     </div>
     <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">Is XFINLAB financial advice? <span class="arrow">▾</span></div>
-      <div class="faq-a">No. XFINLAB provides AI-powered data analysis and research tools for informational purposes only. Always consult a qualified financial advisor before making investment decisions.</div>
+      <div class="faq-q"><span data-i18n="pricing_faq_q4">Is XFINLAB financial advice?</span> <span class="arrow">▾</span></div>
+      <div class="faq-a" data-i18n="pricing_faq_a4">No. XFINLAB provides AI-powered data analysis and research tools for informational purposes only. Always consult a qualified financial advisor before making investment decisions.</div>
     </div>
     <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">Do you offer refunds? <span class="arrow">▾</span></div>
-      <div class="faq-a">Yes! We offer a 14-day money-back guarantee. Contact support@xfinlab.com within 14 days of purchase.</div>
+      <div class="faq-q"><span data-i18n="pricing_faq_q5">Do you offer refunds?</span> <span class="arrow">▾</span></div>
+      <div class="faq-a" data-i18n="pricing_faq_a5">Yes! We offer a 14-day money-back guarantee. Contact support@xfinlab.com within 14 days of purchase.</div>
     </div>
   </div>
 
   <!-- CTA -->
   <div class="cta-section">
-    <h2>Start Analyzing Smarter Today</h2>
-    <p>Join thousands of investors using AI to make better decisions.</p>
-    <a href="login.html" class="btn-cta">Get Started Free →</a>
+    <h2 data-i18n="pricing_cta_title">Start Analyzing Smarter Today</h2>
+    <p data-i18n="pricing_cta_sub">Join thousands of investors using AI to make better decisions.</p>
+    <a href="login.html" class="btn-cta" data-i18n="pricing_cta_btn">Get Started Free →</a>
   </div>
 
 </main>
 
-<footer>© 2026 XFINLAB — AI Investment Intelligence Platform · <a href="terms.html" style="color:var(--muted)">Terms</a> · <a href="privacy.html" style="color:var(--muted)">Privacy</a> · <a href="refund.html" style="color:var(--muted)">Refund</a></footer>
+<footer><span data-i18n="pricing_footer">© 2026 XFINLAB — AI Investment Intelligence Platform · </span><a href="terms.html" style="color:var(--muted)" data-i18n="pricing_footer_terms">Terms</a> · <a href="privacy.html" style="color:var(--muted)" data-i18n="pricing_footer_privacy">Privacy</a> · <a href="refund.html" style="color:var(--muted)" data-i18n="pricing_footer_refund">Refund</a></footer>
 
 <script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
 let isAnnual = false;
 
 function toggleBilling() {
@@ -280,7 +282,8 @@ function handleUpgrade(plan) {
     return;
   }
   // 之後接 Paddle
-  alert(`Upgrading to ${plan.toUpperCase()} plan coming soon! We'll notify you when payment is available.`);
+  const msgTemplate = t('pricing_alert_upgrade_soon', "Upgrading to {plan} plan coming soon! We'll notify you when payment is available.");
+  alert(msgTemplate.replace('{plan}', plan.toUpperCase()));
 }
 
 function toggleFaq(el) {
