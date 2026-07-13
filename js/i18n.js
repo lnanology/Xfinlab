@@ -28,6 +28,10 @@ const I18N = {
       const key = el.getAttribute('data-i18n-placeholder');
       if (this.translations[key]) el.placeholder = this.translations[key];
     });
+    // Lets pages react to translations becoming available for content that
+    // isn't a static [data-i18n] node (e.g. JS-templated strings like
+    // pricing.html's per-tier token-quota lines).
+    document.dispatchEvent(new CustomEvent('i18nApplied'));
   },
 
   setLang(lang) {
