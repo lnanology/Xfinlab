@@ -1,32 +1,39 @@
-/* Design system tokens: professional financial platform */
+/* Design system tokens: professional financial platform
+   Theme model (added 2026-07-13): default theme is DARK, matching the
+   site's established brand palette (same hex values already used in
+   index.html/dashboard.html/login.html's own hardcoded/independent :root
+   blocks) so that all pages sharing this stylesheet render consistently
+   with the rest of the site instead of the previous accidental white
+   default. [data-theme="light"] on <html> overrides back to the original
+   light palette for pages/users that opt into light mode via
+   js/theme-toggle.js. */
 :root {
   /* Backgrounds */
-  --bg-primary: #FFFFFF; /* page background */
-  --bg-card: #FFFFFF;    /* card background */
-  --bg-secondary: #F8FAFC; /* subtle surfaces */
+  --bg-primary: #080c14; /* page background */
+  --bg-card: #0d1525;    /* card background */
+  --bg-secondary: #111d30; /* subtle surfaces */
 
   /* Typography (strict palette) */
-  --text-primary: #111111; /* main text */
-  --text-secondary: #333333; /* secondary text */
-  --text-muted: #666666; /* auxiliary text */
+  --text-primary: #e2e8f0; /* main text */
+  --text-secondary: #94a3b8; /* secondary text */
+  --text-muted: #64748b; /* auxiliary text */
 
   /* Borders / UI */
-  --border-color: #E5E7EB; /* light neutral for table/grid borders */
+  --border-color: #1e2d45; /* dark neutral for table/grid borders */
 
   /* Accents */
-  --accent-blue: #2563EB;
-  --accent-blue-strong: #1D4ED8;
-  --accent-orange: #F59E0B;
-  --accent-red: #DC2626;
-  --accent-green: #16A34A;
+  --accent-blue: #00d4ff;
+  --accent-blue-strong: #00a8cc;
+  --accent-orange: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-green: #10b981;
 
   /* compatibility aliases (used across pages) */
   --blue: var(--accent-blue);
   --blue2: var(--accent-blue-strong);
   --gold: var(--accent-orange);
 
-  --soft-shadow: 0 6px 18px rgba(16,24,40,0.06);
-  /* Legacy aliases for backwards compatibility (map dark tokens to light equivalents) */
+  --soft-shadow: 0 6px 18px rgba(0,0,0,0.3);
   --navy: var(--bg-primary);
   --navy2: var(--bg-card);
   --navy3: var(--bg-secondary);
@@ -35,9 +42,33 @@
   --text2: var(--text-secondary);
   --text3: var(--text-muted);
   --border: var(--border-color);
-  --border2: rgba(37,99,235,0.06);
+  --border2: rgba(0,212,255,0.12);
   --green: var(--accent-green);
   --red: var(--accent-red);
+}
+
+/* Light theme override -- opt-in via data-theme="light" on <html>,
+   toggled by js/theme-toggle.js. These are the site's original light
+   values, preserved here rather than deleted. */
+[data-theme="light"] {
+  --bg-primary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+
+  --text-primary: #111111;
+  --text-secondary: #333333;
+  --text-muted: #666666;
+
+  --border-color: #E5E7EB;
+
+  --accent-blue: #2563EB;
+  --accent-blue-strong: #1D4ED8;
+  --accent-orange: #F59E0B;
+  --accent-red: #DC2626;
+  --accent-green: #16A34A;
+
+  --soft-shadow: 0 6px 18px rgba(16,24,40,0.06);
+  --border2: rgba(37,99,235,0.06);
 }
 
 /* Base resets */

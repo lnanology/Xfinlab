@@ -6,6 +6,7 @@
 <title>XFINLAB — Compare Engine™ 多公司對標分析</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script src="js/theme-toggle.js"></script>
 
 <style>
 body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary);}
@@ -349,16 +350,16 @@ window.addEventListener('DOMContentLoaded', ()=> {
 
 <!-- Feedback Widget -->
 <div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
-  <div id="fbPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
-    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">💬 Feedback</div>
-    <div style="font-size:0.78rem;color:#64748b;margin-bottom:12px">Bug report, feature request or suggestions</div>
-    <select id="fbType" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
       <option value="bug">🐛 Bug Report</option>
       <option value="feature">💡 Feature Request</option>
       <option value="general">💬 General Feedback</option>
     </select>
-    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
-    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
     <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
     <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
   </div>

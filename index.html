@@ -114,9 +114,10 @@
   .feature-link { display: inline-block; margin-top: 16px; font-size: 0.8rem; color: #00d4ff; text-decoration: none; font-weight: 500; }
 
   /* Guided nav fork (Notion-style question -> Wealthfront-style contextual filter) */
-  .guide-fork { display: flex; gap: 12px; justify-content: center; margin: 0 auto 28px; flex-wrap: wrap; }
-  .guide-btn { background: #0d1525; border: 1px solid #1e2d45; color: #e2e8f0; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-  .guide-btn:hover { border-color: #00d4ff; color: #00d4ff; }
+  .guide-fork { display: flex; gap: 28px; justify-content: center; margin: 0 auto 56px; flex-wrap: wrap; }
+  .guide-btn { background: #0d1525; border: 2px solid #1e2d45; color: #e2e8f0; padding: 36px 72px; border-radius: 18px; font-weight: 700; font-size: 2.4rem; cursor: pointer; transition: border-color 0.2s, color 0.2s, transform 0.15s; }
+  .guide-btn:hover { border-color: #00d4ff; color: #00d4ff; transform: translateY(-2px); }
+  @media (max-width: 768px) { .guide-btn { padding: 20px 32px; font-size: 1.4rem; } }
   .guide-question { max-width: 640px; margin: 0 auto 28px; text-align: center; }
   .guide-question-text { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; }
   .guide-options { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
@@ -445,49 +446,49 @@
   </div>
 
   <div class="tools-grid" id="toolsGrid">
-    <a href="ai-analysis.html" class="tool-pill" data-tool-group="opt1">
+    <a href="login.html" class="tool-pill" data-tool-group="opt1">
       <span class="tool-pill-icon">📊</span>
-      <span><span class="tool-pill-name">Research Engine™</span><br><span class="tool-pill-desc" data-i18n="tool1_desc">評分／評級／風險 · Research Agent</span></span>
+      <span class="tool-pill-name">Research Engine™</span>
     </a>
-    <a href="chart-analysis.html" class="tool-pill" data-tool-group="opt1">
+    <a href="login.html" class="tool-pill" data-tool-group="opt1">
       <span class="tool-pill-icon">📈</span>
-      <span><span class="tool-pill-name">Chart Engine™</span><br><span class="tool-pill-desc" data-i18n="tool2_desc">型態辨識＋真實技術指標 · Chart Agent</span></span>
+      <span class="tool-pill-name">Chart Engine™</span>
     </a>
-    <a href="screener.html" class="tool-pill" data-tool-group="opt2">
+    <a href="login.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">🔍</span>
-      <span><span class="tool-pill-name">Screener Engine™</span><br><span class="tool-pill-desc" data-i18n="tool3_desc">按條件篩選</span></span>
+      <span class="tool-pill-name">Screener Engine™</span>
     </a>
-    <a href="probability-scan.html" class="tool-pill" data-tool-group="opt3">
+    <a href="login.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🎯</span>
-      <span><span class="tool-pill-name">Decision Engine™</span><br><span class="tool-pill-desc" data-i18n="tool4_desc">偏多／偏空機率</span></span>
+      <span class="tool-pill-name">Decision Engine™</span>
     </a>
-    <a href="company-compare.html" class="tool-pill" data-tool-group="opt2">
+    <a href="login.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">⚖️</span>
-      <span><span class="tool-pill-name">Compare Engine™</span><br><span class="tool-pill-desc" data-i18n="tool5_desc">同業比較 · Compare Agent</span></span>
+      <span class="tool-pill-name">Compare Engine™</span>
     </a>
-    <a href="news-denoise.html" class="tool-pill" data-tool-group="opt4">
+    <a href="login.html" class="tool-pill" data-tool-group="opt4">
       <span class="tool-pill-icon">📰</span>
-      <span><span class="tool-pill-name">News Engine™</span><br><span class="tool-pill-desc" data-i18n="tool6_desc">情緒分析＋重點整合 · News Agent</span></span>
+      <span class="tool-pill-name">News Engine™</span>
     </a>
-    <a href="stress-lab.html" class="tool-pill" data-tool-group="opt3">
+    <a href="login.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🧪</span>
-      <span><span class="tool-pill-name">Risk Engine™</span><br><span class="tool-pill-desc" data-i18n="tool7_desc">情境模擬 · Risk Agent</span></span>
+      <span class="tool-pill-name">Risk Engine™</span>
     </a>
-    <a href="chat.html" class="tool-pill" data-tool-group="opt4">
+    <a href="login.html" class="tool-pill" data-tool-group="opt4">
       <span class="tool-pill-icon">💬</span>
-      <span><span class="tool-pill-name">Research Agent</span><br><span class="tool-pill-desc" data-i18n="tool8_desc">對話式查詢</span></span>
+      <span class="tool-pill-name">Research Agent</span>
     </a>
-    <a href="dashboard.html" class="tool-pill" data-tool-group="none">
+    <a href="login.html" class="tool-pill" data-tool-group="none">
       <span class="tool-pill-icon">🖥️</span>
-      <span><span class="tool-pill-name">Market Agent</span><br><span class="tool-pill-desc" data-i18n="tool9_desc">你嘅自選股即時儀表板</span></span>
+      <span class="tool-pill-name">Market Agent</span>
     </a>
-    <a href="anomaly.html" class="tool-pill" data-tool-group="opt3">
+    <a href="login.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🚨</span>
-      <span><span class="tool-pill-name">Anomaly Engine™</span><br><span class="tool-pill-desc" data-i18n="tool10_desc">異常成交量／價格偵測 · Anomaly Agent</span></span>
+      <span class="tool-pill-name">Anomaly Engine™</span>
     </a>
-    <a href="portfolio.html" class="tool-pill" data-tool-group="opt2">
+    <a href="login.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">📐</span>
-      <span><span class="tool-pill-name">Portfolio Engine™</span><br><span class="tool-pill-desc" data-i18n="tool11_desc">你嘅持倉配置與分散程度分析 · Portfolio Agent</span></span>
+      <span class="tool-pill-name">Portfolio Engine™</span>
     </a>
   </div>
 </div>
@@ -531,7 +532,7 @@
       <button id="demoBtn" onclick="runDemo()" data-i18n="demo_btn">立即體驗</button>
     </div>
     <div id="demoTrialInfo" style="display:none;margin-top:12px;font-size:0.8rem;color:#64748b;background:#080c14;border:1px solid #1e2d45;border-radius:8px;padding:10px 14px">
-      ⏱️ <span data-i18n="demo_trial_note_pre">每個IP只可以免費體驗1次，用咗之後請</span><a href="login.html" style="color:#00d4ff" data-i18n="demo_trial_note_login">登入</a><span data-i18n="demo_trial_note_post">先可以繼續使用。</span>
+      ⏱️ <span data-i18n="demo_trial_note_pre">每個IP只有1個15分鐘免費體驗時段（時段內可以任意查詢），時段完結後請</span><a href="login.html" style="color:#00d4ff" data-i18n="demo_trial_note_login">登入</a><span data-i18n="demo_trial_note_post">先可以繼續使用。</span>
     </div>
     <div id="demoResult" class="demo-result" style="display:none"></div>
     <div id="demoError" class="demo-error" style="display:none"></div>
@@ -597,7 +598,7 @@
   </div>
   <div class="faq-item">
     <div class="faq-q" data-i18n="faq7_q">唔登入可唔可以試用？</div>
-    <div class="faq-a" data-i18n="faq7_a">可以，首頁「免費體驗」每個IP可以免費試用1次（伺服器記錄IP，唔會因為重開網頁而重置），用完之後登入即可繼續使用。</div>
+    <div class="faq-a" data-i18n="faq7_a">可以，首頁「免費體驗」每個IP有1個15分鐘免費體驗時段（時段內可以任意查詢，伺服器記錄IP，唔會因為重開網頁而重置），時段完結後登入即可繼續使用。</div>
   </div>
 </div>
 
@@ -689,7 +690,7 @@ initAutocomplete("heroTicker", "heroDropdown");
 
 // Hero "Live AI Result" card -- 見api/hero_showcase.py，真實confluence
 // engine計出嚟嘅Decision Score/Confidence/RiskDNA/支撐阻力，5分鐘後端
-// 快取，唔會消耗訪客自己嗰1次免費體驗機會（嗰個係另一個獨立endpoint）。
+// 快取，唔會消耗訪客自己嗰15分鐘免費體驗時段（嗰個係另一個獨立endpoint）。
 // 而家會自動輪流show basket入面10隻Top股票嘅真實結果，每10秒轉一隻。
 let heroItems = [];
 let heroIndex = 0;
@@ -912,8 +913,9 @@ async function loadDailyExperience() {
 }
 loadDailyExperience();
 
-// 免登入AI Demo -- 每個IP只可以免費體驗1次（伺服器記錄IP，唔會因為
-// 重開網頁/清cache而重置），用咗之後要login先可以繼續使用。見api/public_demo.py
+// 免登入AI Demo -- 每個IP終身只有1個15分鐘免費體驗時段（伺服器記錄IP，
+// 唔會因為重開網頁/清cache而重置，時段內可以任意查詢），時段完結之後
+// 要login先可以繼續使用，冇cooldown會重開新時段。見api/public_demo.py
 async function runDemo() {
   const ticker = (document.getElementById('demoTicker').value || '').trim().toUpperCase();
   const btn = document.getElementById('demoBtn');
@@ -933,7 +935,7 @@ async function runDemo() {
     const res = await fetch(`${API}/demo/analyze/${encodeURIComponent(ticker)}`);
     const data = await res.json();
     if (!res.ok) {
-      errorBox.textContent = data.detail || t('demo_error_used','你已經用咗呢個IP嘅免費體驗機會，請登入繼續使用');
+      errorBox.textContent = data.detail || t('demo_error_used','你嘅15分鐘免費體驗時段已經完結，請登入繼續使用');
       errorBox.style.display = 'block';
       return;
     }
@@ -943,7 +945,7 @@ async function runDemo() {
       <div class="demo-result-row"><span>趨勢</span><strong>${data.trend}</strong></div>
       <div class="demo-result-row"><span>RSI</span><strong>${data.rsi}</strong></div>
       <div class="demo-result-row"><span>綜合訊號</span><strong>${data.confluence_direction}（信心${data.confluence_confidence}）</strong></div>
-      <div class="demo-cta">${t('demo_cta_pre','呢個係精簡版 —— ')}<a href="login.html" style="color:#00d4ff">${t('demo_cta_signup','免費註冊')}</a>${t('demo_cta_post','解鎖支撐/阻力/Fibonacci/型態辨識完整報告，每個IP只限免費體驗1次')}</div>
+      <div class="demo-cta">${t('demo_cta_pre','呢個係精簡版 —— ')}<a href="login.html" style="color:#00d4ff">${t('demo_cta_signup','免費註冊')}</a>${t('demo_cta_post','解鎖支撐/阻力/Fibonacci/型態辨識完整報告')} · ${t('demo_cta_remaining','試用時段剩餘約')}${data.trial_window_minutes_remaining}${t('demo_cta_minutes','分鐘')}</div>
     `;
     resultBox.style.display = 'block';
     if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'demo', ticker});
