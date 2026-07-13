@@ -288,7 +288,7 @@
     <p data-i18n="hero_subtitle">Analyze Stocks, ETFs &amp; Crypto in under 60 seconds — real market data, real technical indicators, AI-powered Decision Score™.</p>
 
     <div class="hero-btns">
-      <a href="login.html" class="btn-primary">Start Free</a>
+      <a href="login.html" data-real-href="dashboard.html" class="btn-primary">Start Free</a>
       <a href="chart-analysis.html" class="btn-secondary">Upload Chart</a>
     </div>
 
@@ -467,47 +467,47 @@
   </div>
 
   <div class="tools-grid" id="toolsGrid">
-    <a href="login.html" class="tool-pill" data-tool-group="opt1">
+    <a href="login.html" data-real-href="ai-analysis.html" class="tool-pill" data-tool-group="opt1">
       <span class="tool-pill-icon">📊</span>
       <span class="tool-pill-name">Research Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt1">
+    <a href="login.html" data-real-href="chart-analysis.html" class="tool-pill" data-tool-group="opt1">
       <span class="tool-pill-icon">📈</span>
       <span class="tool-pill-name">Chart Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt2">
+    <a href="login.html" data-real-href="screener.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">🔍</span>
       <span class="tool-pill-name">Screener Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt3">
+    <a href="login.html" data-real-href="probability-scan.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🎯</span>
       <span class="tool-pill-name">Decision Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt2">
+    <a href="login.html" data-real-href="company-compare.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">⚖️</span>
       <span class="tool-pill-name">Compare Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt4">
+    <a href="login.html" data-real-href="news.html" class="tool-pill" data-tool-group="opt4">
       <span class="tool-pill-icon">📰</span>
       <span class="tool-pill-name">News Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt3">
+    <a href="login.html" data-real-href="stress-lab.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🧪</span>
       <span class="tool-pill-name">Risk Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt4">
+    <a href="login.html" data-real-href="chat.html" class="tool-pill" data-tool-group="opt4">
       <span class="tool-pill-icon">💬</span>
       <span class="tool-pill-name">Research Agent</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="none">
+    <a href="login.html" data-real-href="dashboard.html" class="tool-pill" data-tool-group="none">
       <span class="tool-pill-icon">🖥️</span>
       <span class="tool-pill-name">Market Agent</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt3">
+    <a href="login.html" data-real-href="anomaly.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🚨</span>
       <span class="tool-pill-name">Anomaly Engine™</span>
     </a>
-    <a href="login.html" class="tool-pill" data-tool-group="opt2">
+    <a href="login.html" data-real-href="portfolio.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">📐</span>
       <span class="tool-pill-name">Portfolio Engine™</span>
     </a>
@@ -629,7 +629,7 @@
     <h2 data-i18n="cta_title">Start Your First AI Research</h2>
     <p data-i18n="cta_subtitle">Free · 免費帳號每日 10 次分析，無需信用卡</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <a href="login.html" class="btn-primary" data-i18n="cta_start">Start Free</a>
+      <a href="login.html" data-real-href="dashboard.html" class="btn-primary" data-i18n="cta_start">Start Free</a>
       <a href="ai-analysis.html" class="btn-secondary" data-i18n="cta_try">立即試用</a>
     </div>
   </div>
@@ -681,8 +681,17 @@ function normalizeGlobalTicker(raw) {
 // 一律直接帶去login.html，唔會再顯示內容。用localStorage記錄，唔會因為
 // 重開網頁而重置（同免費demo嗰個IP-based時段係獨立機制，唔會互相影響）。
 const HOMEPAGE_PREVIEW_KEY = 'xfinlab_homepage_preview_used';
+function isLoggedIn() {
+  return !!localStorage.getItem('xfinlab_token');
+}
 function homepagePreviewNavigate(url, evt) {
   if (evt) evt.preventDefault();
+  // 已登入用戶唔使theirs受呢個「一次性preview」閘限制 -- 呢個閘淨係為
+  // 匿名訪客而設，登入咗就應該每次都直接去返嗰個工具頁。
+  if (isLoggedIn()) {
+    window.location.href = url;
+    return false;
+  }
   if (localStorage.getItem(HOMEPAGE_PREVIEW_KEY)) {
     window.location.href = 'login.html';
     return false;
@@ -691,6 +700,18 @@ function homepagePreviewNavigate(url, evt) {
   window.location.href = url;
   return false;
 }
+
+// 已登入用戶撳落11粒Engine tile／Start Free掣，唔應該再帶去login.html
+// 叫佢哋重新登入一次 -- 呢度將所有[data-real-href]元素嘅href換做真正
+// 工具頁（前提係已經有xfinlab_token）。匿名訪客保持原本href="login.html"
+// 唔變。
+function applyAuthAwareLinks() {
+  if (!isLoggedIn()) return;
+  document.querySelectorAll('[data-real-href]').forEach(function(el) {
+    el.href = el.dataset.realHref;
+  });
+}
+applyAuthAwareLinks();
 
 // 由痛點到解決方案 6個項目撳落去，帶去下面「不需註冊，即刻試用」個demo box，
 // 順手focus個ticker input，等訪客即刻可以打字試用。
