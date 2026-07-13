@@ -530,7 +530,7 @@
   <a href="/index.html" class="nav-brand" style="text-decoration:none;color:var(--accent)">X<span style="color:var(--text)">FIN</span>LAB</a>
   <div class="nav-status">
     <div class="dot"></div>
-    Intelligence Core v2.0
+    <span data-i18n="dash_nav_status">Intelligence Core v2.0</span>
   </div>
   <div id="userMenu" style="display:flex;align-items:center;gap:12px">
     <div id="userInfo" style="font-size:0.8rem;color:var(--muted)"></div>
@@ -539,18 +539,18 @@
     </div>
     <div id="accountBtn" style="position:relative">
       <button onclick="toggleDropdown()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:6px">
-        <span id="userName">Account</span> ▾
+        <span id="userName" data-i18n="dash_account_default">Account</span> ▾
       </button>
       <div id="dropdown" style="display:none;position:absolute;right:0;top:40px;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:160px;z-index:100;overflow:hidden">
         <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
-          <div style="font-size:0.75rem;color:var(--muted)">Signed in as</div>
+          <div style="font-size:0.75rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
           <div id="dropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
           <div id="dropdownPlan" style="font-size:0.7rem;color:var(--accent);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
         </div>
-        <a href="index.html" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🏠 Home</a>
-        <a href="#" onclick="copyReferral()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🔗 Copy Referral Link</a>
-        <a href="#" onclick="showShareMenu()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">📤 Share XFINLAB</a>
-        <a href="#" onclick="logout()" style="display:block;padding:10px 16px;color:var(--red);font-size:0.82rem;text-decoration:none">↩ Sign Out</a>
+        <a href="index.html" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🏠 <span data-i18n="dash_menu_home">Home</span></a>
+        <a href="#" onclick="copyReferral()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
+        <a href="#" onclick="showShareMenu()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">📤 <span data-i18n="dash_menu_share">Share XFINLAB</span></a>
+        <a href="#" onclick="logout()" style="display:block;padding:10px 16px;color:var(--red);font-size:0.82rem;text-decoration:none">↩ <span data-i18n="dash_menu_signout">Sign Out</span></a>
       </div>
     </div>
   </div>
@@ -614,7 +614,7 @@
       </button>
       <button onclick="copyShareText()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
         <div style="font-size:1.4rem">📋</div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Copy</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px" data-i18n="dash_share_copy">Copy</div>
       </button>
     </div>
   </div>
@@ -624,35 +624,35 @@
 
   <!-- SEARCH -->
   <div class="search-section">
-    <div class="search-label">Stock Analysis</div>
+    <div class="search-label" data-i18n="dash_search_label">Stock Analysis</div>
     <div class="search-row">
-      <input class="ticker-input" id="ticker" value="AAPL" maxlength="6" placeholder="TICKER">
-      <button class="btn-primary" id="analyzeBtn" onclick="runFullAnalysis()">Analyze</button>
-      <button class="btn-secondary" onclick="loadScreener()">Screener</button>
-      <button class="btn-secondary" onclick="loadPortfolio()">Portfolio</button>
-      <button class="btn-secondary" onclick="loadAnomaly()">Anomaly</button>
+      <input class="ticker-input" id="ticker" value="AAPL" maxlength="6" placeholder="TICKER" data-i18n-placeholder="dash_ticker_placeholder">
+      <button class="btn-primary" id="analyzeBtn" onclick="runFullAnalysis()" data-i18n="dash_btn_analyze">Analyze</button>
+      <button class="btn-secondary" onclick="loadScreener()" data-i18n="dash_btn_screener">Screener</button>
+      <button class="btn-secondary" onclick="loadPortfolio()" data-i18n="dash_btn_portfolio">Portfolio</button>
+      <button class="btn-secondary" onclick="loadAnomaly()" data-i18n="dash_btn_anomaly">Anomaly</button>
     </div>
   </div>
 
   <!-- SCORE HERO -->
   <div class="hero-grid" id="heroGrid">
     <div class="score-card">
-      <div class="label">Final Score</div>
+      <div class="label" data-i18n="dash_label_final_score">Final Score</div>
       <div class="value c-accent" id="finalScore">—</div>
-      <div class="sub">out of 100</div>
+      <div class="sub" data-i18n="dash_out_of_100">out of 100</div>
     </div>
     <div class="score-card">
-      <div class="label">Price</div>
+      <div class="label" data-i18n="dash_label_price">Price</div>
       <div class="value c-green" id="price">—</div>
-      <div class="sub" id="tickerLabel">Enter ticker to analyze</div>
+      <div class="sub" id="tickerLabel" data-i18n="dash_ticker_label_default">Enter ticker to analyze</div>
     </div>
     <div class="score-card">
-      <div class="label">Risk Level</div>
+      <div class="label" data-i18n="dash_label_risk_level">Risk Level</div>
       <div class="value" id="riskLevel">—</div>
       <div class="sub" id="riskScore">—</div>
     </div>
     <div class="score-card">
-      <div class="label">AI Rating</div>
+      <div class="label" data-i18n="dash_label_ai_rating">AI Rating</div>
       <div class="value" id="rating">—</div>
       <div id="ratingBadge"></div>
     </div>
@@ -663,17 +663,17 @@
 
     <!-- Score Breakdown -->
     <div class="panel">
-      <div class="panel-title">Score Breakdown</div>
+      <div class="panel-title" data-i18n="dash_panel_score_breakdown">Score Breakdown</div>
       <div class="scores-list" id="scoresList">
-        <div class="empty">Run an analysis to see scores</div>
+        <div class="empty" data-i18n="dash_empty_run_analysis">Run an analysis to see scores</div>
       </div>
     </div>
 
     <!-- AI Research -->
     <div class="panel">
-      <div class="panel-title">AI Research Report</div>
+      <div class="panel-title" data-i18n="dash_panel_ai_research">AI Research Report</div>
       <div id="researchContent">
-        <div class="empty">AI research will appear here</div>
+        <div class="empty" data-i18n="dash_empty_ai_research">AI research will appear here</div>
       </div>
     </div>
 
@@ -682,10 +682,10 @@
 
   <!-- Watchlist -->
   <div class="panel" style="margin-bottom:24px">
-    <div class="panel-title">我的自選股</div>
+    <div class="panel-title" data-i18n="dash_watchlist_title">我的自選股</div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <input id="watchlistTicker" placeholder="輸入代號加入" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:0.82rem;text-transform:uppercase">
-      <button onclick="addToWatchlist()" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">加入</button>
+      <input id="watchlistTicker" placeholder="輸入代號加入" data-i18n-placeholder="dash_watchlist_placeholder" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:0.82rem;text-transform:uppercase">
+      <button onclick="addToWatchlist()" data-i18n="dash_watchlist_add_btn" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">加入</button>
     </div>
     <div id="watchlistContent"><div class="empty">登入後查看你的自選股</div></div>
   </div>
@@ -695,25 +695,25 @@
 
     <!-- Screener -->
     <div class="panel">
-      <div class="panel-title">Screener</div>
+      <div class="panel-title" data-i18n="dash_btn_screener">Screener</div>
       <div id="screenerContent">
-        <div class="empty">Click Screener to load</div>
+        <div class="empty" data-i18n="dash_screener_empty">Click Screener to load</div>
       </div>
     </div>
 
     <!-- Portfolio -->
     <div class="panel">
-      <div class="panel-title">Portfolio Allocation</div>
+      <div class="panel-title" data-i18n="dash_panel_portfolio">Portfolio Allocation</div>
       <div id="portfolioContent">
-        <div class="empty">Click Portfolio to load</div>
+        <div class="empty" data-i18n="dash_portfolio_empty">Click Portfolio to load</div>
       </div>
     </div>
 
     <!-- Anomaly -->
     <div class="panel">
-      <div class="panel-title">Anomaly Radar</div>
+      <div class="panel-title" data-i18n="dash_panel_anomaly">Anomaly Radar</div>
       <div id="anomalyContent">
-        <div class="empty">Click Anomaly to scan</div>
+        <div class="empty" data-i18n="dash_anomaly_empty">Click Anomaly to scan</div>
       </div>
     </div>
 
@@ -724,6 +724,8 @@
 <script>
 const API = "https://api.xfinlab.com/api";
 const ALLOC_COLORS = ["#00d4ff","#7c3aed","#10b981","#f59e0b","#ef4444"];
+
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
 function loading(html = '') {
   return html || '<div class="loading"><div class="spinner"></div>Loading...</div>';
@@ -758,7 +760,7 @@ async function runFullAnalysis() {
 
   const btn = document.getElementById('analyzeBtn');
   btn.disabled = true;
-  btn.textContent = 'Analyzing...';
+  btn.textContent = t('dash_analyzing', 'Analyzing...');
 
   // Reset hero
   ['finalScore','price','riskLevel','rating'].forEach(id => {
@@ -785,8 +787,8 @@ async function runFullAnalysis() {
 
     if (analysisRes.status === 429) {
       const quotaErr = await analysisRes.json();
-      const msg = quotaErr?.detail?.message || '今日免費分析額度已用完，請升級Pro繼續使用';
-      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#00d4ff">查看方案</a></div>`;
+      const msg = quotaErr?.detail?.message || t('dash_quota_exceeded', '今日免費分析額度已用完，請升級Pro繼續使用');
+      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#00d4ff">${t('dash_view_plans','查看方案')}</a></div>`;
       document.getElementById('researchContent').innerHTML = '';
       return;
     }
@@ -811,11 +813,11 @@ async function runFullAnalysis() {
 
     // Score breakdown
     const scores = [
-      { label: 'Market Score', value: analysis.market_score },
-      { label: 'News Score', value: analysis.news_score },
-      { label: 'Strategy Score', value: analysis.strategy_score },
-      { label: 'Risk (inverse)', value: 100 - (analysis.risk_score ?? 0) },
-      { label: 'Final Score', value: analysis.final_score },
+      { label: t('dash_score_market','Market Score'), value: analysis.market_score },
+      { label: t('dash_score_news','News Score'), value: analysis.news_score },
+      { label: t('dash_score_strategy','Strategy Score'), value: analysis.strategy_score },
+      { label: t('dash_score_risk_inverse','Risk (inverse)'), value: 100 - (analysis.risk_score ?? 0) },
+      { label: t('dash_label_final_score','Final Score'), value: analysis.final_score },
     ];
 
     document.getElementById('scoresList').innerHTML = scores.map(s => {
@@ -833,14 +835,14 @@ async function runFullAnalysis() {
 
     // AI Research
     if (research.error) {
-      document.getElementById('researchContent').innerHTML = `<div class="empty">Research unavailable: ${research.error}</div>`;
+      document.getElementById('researchContent').innerHTML = `<div class="empty">${t('dash_research_unavailable','Research unavailable: {error}').replace('{error}', research.error)}</div>`;
     } else {
       const sections = [
-        { key: 'company_overview', label: 'Company Overview' },
-        { key: 'financial_analysis', label: 'Financial Analysis' },
-        { key: 'competitive_advantage', label: 'Competitive Advantage' },
-        { key: 'risk_factors', label: 'Risk Factors' },
-        { key: 'valuation', label: 'Valuation' },
+        { key: 'company_overview', label: t('dash_sec_company_overview','Company Overview') },
+        { key: 'financial_analysis', label: t('dash_sec_financial_analysis','Financial Analysis') },
+        { key: 'competitive_advantage', label: t('dash_sec_competitive_advantage','Competitive Advantage') },
+        { key: 'risk_factors', label: t('dash_sec_risk_factors','Risk Factors') },
+        { key: 'valuation', label: t('dash_sec_valuation','Valuation') },
       ];
 
       const researchHTML = sections.map(s => {
@@ -860,7 +862,7 @@ async function runFullAnalysis() {
 
       document.getElementById('researchContent').innerHTML = researchHTML + `
         <div class="ai-summary">
-          <strong>AI Verdict — ${confidence}% confidence · Target ${targetPrice}</strong>
+          <strong>${t('dash_ai_verdict','AI Verdict — {confidence}% confidence · Target {target}').replace('{confidence}', confidence).replace('{target}', targetPrice)}</strong>
           ${summary}
         </div>`;
     }
@@ -871,7 +873,7 @@ async function runFullAnalysis() {
   }
 
   btn.disabled = false;
-  btn.textContent = 'Analyze';
+  btn.textContent = t('dash_btn_analyze', 'Analyze');
 }
 
 async function loadScreener() {
@@ -889,11 +891,11 @@ async function loadScreener() {
       </tr>`).join('');
     document.getElementById('screenerContent').innerHTML = `
       <table class="screener-table">
-        <thead><tr><th>Ticker</th><th>Market</th><th>News</th><th>Score</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="4" style="color:var(--muted)">No results</td></tr>'}</tbody>
+        <thead><tr><th>${t('dash_th_ticker','Ticker')}</th><th>${t('dash_th_market','Market')}</th><th>${t('dash_th_news','News')}</th><th>${t('dash_th_score','Score')}</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="4" style="color:var(--muted)">${t('dash_no_results','No results')}</td></tr>`}</tbody>
       </table>`;
   } catch(e) {
-    document.getElementById('screenerContent').innerHTML = `<div class="empty">Error loading screener</div>`;
+    document.getElementById('screenerContent').innerHTML = `<div class="empty">${t('dash_err_screener','Error loading screener')}</div>`;
   }
 }
 
@@ -914,7 +916,7 @@ async function loadPortfolio() {
       </div>`).join('');
     document.getElementById('portfolioContent').innerHTML = `<div class="alloc-list">${rows}</div>`;
   } catch(e) {
-    document.getElementById('portfolioContent').innerHTML = `<div class="empty">Error loading portfolio</div>`;
+    document.getElementById('portfolioContent').innerHTML = `<div class="empty">${t('dash_err_portfolio','Error loading portfolio')}</div>`;
   }
 }
 
@@ -940,12 +942,12 @@ async function loadAnomaly() {
 
     document.getElementById('anomalyContent').innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Severity</span>
+        <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">${t('dash_severity_label','Severity')}</span>
         <span class="rating-badge severity-${severity}">${severity}</span>
       </div>
-      <div class="anomaly-list">${items || '<div class="empty">No anomalies detected</div>'}</div>`;
+      <div class="anomaly-list">${items || `<div class="empty">${t('dash_no_anomalies','No anomalies detected')}</div>`}</div>`;
   } catch(e) {
-    document.getElementById('anomalyContent').innerHTML = `<div class="empty">Error scanning</div>`;
+    document.getElementById('anomalyContent').innerHTML = `<div class="empty">${t('dash_err_anomaly_scan','Error scanning')}</div>`;
   }
 }
 
@@ -1002,7 +1004,8 @@ async function showShareMenu() {
     } catch(e) {}
   }
 
-  const shareText = `📊 ${ticker} Analysis by XFINLAB AI\n\nScore: ${score}/100\nRating: ${rating}\n\nGet free AI stock analysis:\n${refLink}`;
+  const shareText = t('dash_share_text_template', '📊 {ticker} Analysis by XFINLAB AI\n\nScore: {score}/100\nRating: {rating}\n\nGet free AI stock analysis:\n{reflink}')
+    .replace('{ticker}', ticker).replace('{score}', score).replace('{rating}', rating).replace('{reflink}', refLink);
   document.getElementById('shareText').textContent = shareText;
   currentShareData = { text: shareText, url: refLink, ticker };
   document.getElementById('shareModal').style.display = 'flex';
@@ -1032,17 +1035,17 @@ function shareTo(platform) {
 
   if (platform === 'wechat') {
     copyShareText();
-    alert('WeChat: Link copied! Paste it in WeChat 💚');
+    alert(t('dash_alert_wechat', 'WeChat: Link copied! Paste it in WeChat 💚'));
     return;
   }
   if (platform === 'instagram') {
     copyShareText();
-    alert('Instagram: Link copied! Paste it in your bio or story 📸');
+    alert(t('dash_alert_instagram', 'Instagram: Link copied! Paste it in your bio or story 📸'));
     return;
   }
   if (platform === 'tiktok') {
     copyShareText();
-    alert('TikTok: Link copied! Add it to your bio 🎵');
+    alert(t('dash_alert_tiktok', 'TikTok: Link copied! Add it to your bio 🎵'));
     return;
   }
 
@@ -1051,7 +1054,7 @@ function shareTo(platform) {
 
 function copyShareText() {
   navigator.clipboard.writeText(currentShareData.text);
-  alert('Copied to clipboard! 📋');
+  alert(t('dash_alert_copied', 'Copied to clipboard! 📋'));
 }
 
 // User menu
@@ -1060,7 +1063,7 @@ function loadUserInfo() {
   if (user.name) {
     document.getElementById('userName').textContent = user.name.split(' ')[0];
     document.getElementById('dropdownEmail').textContent = user.email || '';
-    document.getElementById('dropdownPlan').textContent = (user.plan || 'free').toUpperCase() + ' PLAN';
+    document.getElementById('dropdownPlan').textContent = (user.plan || 'free').toUpperCase() + ' ' + t('dash_plan_suffix', 'PLAN');
     document.getElementById('accountBtn').style.display = 'block';
     document.getElementById('loginBtn').style.display = 'none';
   } else {
@@ -1089,14 +1092,14 @@ function logout() {
 
 async function copyReferral() {
   const token = localStorage.getItem('xfinlab_token');
-  if (!token) { alert('Please login first'); return; }
+  if (!token) { alert(t('dash_alert_login_first', 'Please login first')); return; }
   try {
     const res = await fetch(`${API}/referral/code?token=${token}`);
     const data = await res.json();
     navigator.clipboard.writeText(data.referral_link);
-    alert('Referral link copied: ' + data.referral_link);
+    alert(t('dash_alert_referral_copied', 'Referral link copied: {link}').replace('{link}', data.referral_link));
   } catch(e) {
-    alert('Error getting referral link');
+    alert(t('dash_err_referral', 'Error getting referral link'));
   }
 }
 
@@ -1105,7 +1108,7 @@ loadUserInfo();
 async function loadWatchlist() {
   const token = localStorage.getItem('xfinlab_token');
   if (!token) {
-    document.getElementById('watchlistContent').innerHTML = '<div class="empty"><a href="login.html" style="color:var(--accent)">登入</a>後查看你的自選股</div>';
+    document.getElementById('watchlistContent').innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','登入')}</a>${t('dash_watchlist_login_suffix','後查看你的自選股')}</div>`;
     return;
   }
   try {
@@ -1113,7 +1116,7 @@ async function loadWatchlist() {
     const data = await res.json();
     const items = data.watchlist || [];
     if (items.length === 0) {
-      document.getElementById('watchlistContent').innerHTML = '<div class="empty">未有自選股，輸入代號加入</div>';
+      document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_empty','未有自選股，輸入代號加入')}</div>`;
       return;
     }
     document.getElementById('watchlistContent').innerHTML = items.map(item => {
@@ -1130,7 +1133,7 @@ async function loadWatchlist() {
       </div>`;
     }).join('');
   } catch(e) {
-    document.getElementById('watchlistContent').innerHTML = '<div class="empty">載入失敗</div>';
+    document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_load_error','載入失敗')}</div>`;
   }
 }
 
@@ -1162,14 +1165,14 @@ loadWatchlist();
 <!-- Telegram Subscribe Widget -->
 <div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
   <div id="tgPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
-    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">📡 XFINLAB Daily Signals</div>
-    <div style="font-size:0.78rem;color:#64748b;margin-bottom:14px">Free daily AI stock analysis on Telegram</div>
+    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">📡 <span data-i18n="dash_tg_title">XFINLAB Daily Signals</span></div>
+    <div style="font-size:0.78rem;color:#64748b;margin-bottom:14px" data-i18n="dash_tg_subtitle">Free daily AI stock analysis on Telegram</div>
     <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#00d4ff;color:#000;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
     <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:#1e2d45;color:#e2e8f0;text-align:center;padding:9px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
     <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:#1e2d45;color:#e2e8f0;text-align:center;padding:9px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
   </div>
   <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#00d4ff;color:#000;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,212,255,0.3)">
-    ✈️ Free Signals
+    ✈️ <span data-i18n="dash_tg_btn">Free Signals</span>
   </button>
 </div>
 
@@ -1177,20 +1180,20 @@ loadWatchlist();
 <!-- Feedback Widget -->
 <div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
   <div id="fbPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
-    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">💬 Feedback</div>
-    <div style="font-size:0.78rem;color:#64748b;margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">💬 <span data-i18n="dash_fb_title">Feedback</span></div>
+    <div style="font-size:0.78rem;color:#64748b;margin-bottom:12px" data-i18n="dash_fb_subtitle">Bug report, feature request or suggestions</div>
     <select id="fbType" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
-      <option value="bug">🐛 Bug Report</option>
-      <option value="feature">💡 Feature Request</option>
-      <option value="general">💬 General Feedback</option>
+      <option value="bug" data-i18n="dash_fb_opt_bug">🐛 Bug Report</option>
+      <option value="feature" data-i18n="dash_fb_opt_feature">💡 Feature Request</option>
+      <option value="general" data-i18n="dash_fb_opt_general">💬 General Feedback</option>
     </select>
-    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
-    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
-    <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." data-i18n-placeholder="dash_fb_placeholder_message" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" data-i18n-placeholder="dash_fb_placeholder_email" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" data-i18n="dash_fb_send_btn" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
     <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
   </div>
   <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
-    💬 Feedback
+    💬 <span data-i18n="dash_fb_title">Feedback</span>
   </button>
 </div>
 <script>
@@ -1201,7 +1204,7 @@ async function submitFeedback() {
   const status = document.getElementById('fbStatus');
   const token = localStorage.getItem('xfinlab_token');
 
-  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+  if (!message) { status.textContent = t('dash_fb_err_empty', 'Please enter a message'); status.style.color = '#ef4444'; return; }
 
   try {
     const res = await fetch('https://api.xfinlab.com/api/feedback', {
@@ -1216,7 +1219,7 @@ async function submitFeedback() {
     document.getElementById('fbEmail').value = '';
     setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
   } catch(e) {
-    status.textContent = '❌ Error sending feedback';
+    status.textContent = '❌ ' + t('dash_fb_err_send', 'Error sending feedback');
     status.style.color = '#ef4444';
   }
 }
