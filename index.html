@@ -113,6 +113,20 @@
   @media (max-width: 768px) { .tools-grid { grid-template-columns: repeat(2, 1fr); } }
   .feature-link { display: inline-block; margin-top: 16px; font-size: 0.8rem; color: #00d4ff; text-decoration: none; font-weight: 500; }
 
+  /* Guided nav fork (Notion-style question -> Wealthfront-style contextual filter) */
+  .guide-fork { display: flex; gap: 12px; justify-content: center; margin: 0 auto 28px; flex-wrap: wrap; }
+  .guide-btn { background: #0d1525; border: 1px solid #1e2d45; color: #e2e8f0; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  .guide-btn:hover { border-color: #00d4ff; color: #00d4ff; }
+  .guide-question { max-width: 640px; margin: 0 auto 28px; text-align: center; }
+  .guide-question-text { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; }
+  .guide-options { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .guide-option-btn { background: #0d1525; border: 1px solid #1e2d45; color: #e2e8f0; padding: 10px 18px; border-radius: 8px; font-size: 0.82rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+  .guide-option-btn:hover { border-color: #00d4ff; color: #00d4ff; }
+  .guide-result { text-align: center; margin: 0 auto 20px; }
+  .guide-result-label { font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
+  .guide-show-all { font-size: 0.8rem; color: #00d4ff; text-decoration: none; cursor: pointer; }
+  .tool-pill.tool-hidden { display: none; }
+
   /* Live ticker */
   .ticker-section { background: #0d1525; border-top: 1px solid #1e2d45; border-bottom: 1px solid #1e2d45; padding: 16px 0; overflow: hidden; margin-bottom: 0; }
   .ticker-wrap { display: flex; gap: 48px; animation: scroll 30s linear infinite; white-space: nowrap; }
@@ -395,40 +409,59 @@
   <div class="section-label" data-i18n="engines_label">Core AI Engines</div>
   <div class="section-title" data-i18n="engines_title">7 個獨立 AI Engine™</div>
   <div class="tools-sub" data-i18n="engines_sub">每個Engine™各自處理唔同任務，用真實市場數據運算，AI 負責型態辨識同文字整理，數值指標唔靠AI估算。大部分Engine™都有對應嘅AI Agent可以直接查詢。</div>
-  <div class="tools-grid">
-    <a href="ai-analysis.html" class="tool-pill">
+
+  <div class="guide-fork" id="guideFork">
+    <button class="guide-btn" onclick="startGuide()" data-i18n="guide_btn_start">智能導覽</button>
+    <button class="guide-btn" onclick="skipGuide()" data-i18n="guide_btn_skip">跳過，睇晒全部</button>
+  </div>
+  <div class="guide-question" id="guideQuestion" style="display:none">
+    <p class="guide-question-text" data-i18n="guide_question">你想由邊度開始？</p>
+    <div class="guide-options">
+      <button class="guide-option-btn" onclick="pickGuideOption('opt1')" data-i18n="guide_opt1">睇一隻股票點樣</button>
+      <button class="guide-option-btn" onclick="pickGuideOption('opt2')" data-i18n="guide_opt2">喺幾隻之間揀</button>
+      <button class="guide-option-btn" onclick="pickGuideOption('opt3')" data-i18n="guide_opt3">評估風險／未來情境</button>
+      <button class="guide-option-btn" onclick="pickGuideOption('opt4')" data-i18n="guide_opt4">同AI自由傾偈</button>
+    </div>
+  </div>
+  <div class="guide-result" id="guideResult" style="display:none">
+    <p class="guide-result-label" data-i18n="guide_result_label">根據你嘅答案，啱你用嘅工具：</p>
+    <span class="guide-show-all" onclick="showAllTools()" data-i18n="guide_show_all">顯示返全部工具</span>
+  </div>
+
+  <div class="tools-grid" id="toolsGrid">
+    <a href="ai-analysis.html" class="tool-pill" data-tool-group="opt1">
       <span class="tool-pill-icon">📊</span>
       <span><span class="tool-pill-name">Research Engine™</span><br><span class="tool-pill-desc" data-i18n="tool1_desc">評分／評級／風險 · Research Agent</span></span>
     </a>
-    <a href="chart-analysis.html" class="tool-pill">
+    <a href="chart-analysis.html" class="tool-pill" data-tool-group="opt1">
       <span class="tool-pill-icon">📈</span>
       <span><span class="tool-pill-name">Chart Engine™</span><br><span class="tool-pill-desc" data-i18n="tool2_desc">型態辨識＋真實技術指標 · Chart Agent</span></span>
     </a>
-    <a href="screener.html" class="tool-pill">
+    <a href="screener.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">🔍</span>
       <span><span class="tool-pill-name">Screener Engine™</span><br><span class="tool-pill-desc" data-i18n="tool3_desc">按條件篩選</span></span>
     </a>
-    <a href="probability-scan.html" class="tool-pill">
+    <a href="probability-scan.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🎯</span>
       <span><span class="tool-pill-name">Decision Engine™</span><br><span class="tool-pill-desc" data-i18n="tool4_desc">偏多／偏空機率</span></span>
     </a>
-    <a href="company-compare.html" class="tool-pill">
+    <a href="company-compare.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">⚖️</span>
       <span><span class="tool-pill-name">Portfolio Engine™</span><br><span class="tool-pill-desc" data-i18n="tool5_desc">同業比較 · Portfolio Agent</span></span>
     </a>
-    <a href="news-denoise.html" class="tool-pill">
+    <a href="news-denoise.html" class="tool-pill" data-tool-group="opt4">
       <span class="tool-pill-icon">📰</span>
       <span><span class="tool-pill-name">News Engine™</span><br><span class="tool-pill-desc" data-i18n="tool6_desc">情緒分析＋重點整合 · News Agent</span></span>
     </a>
-    <a href="stress-lab.html" class="tool-pill">
+    <a href="stress-lab.html" class="tool-pill" data-tool-group="opt3">
       <span class="tool-pill-icon">🧪</span>
       <span><span class="tool-pill-name">Risk Engine™</span><br><span class="tool-pill-desc" data-i18n="tool7_desc">情境模擬 · Risk Agent</span></span>
     </a>
-    <a href="chat.html" class="tool-pill">
+    <a href="chat.html" class="tool-pill" data-tool-group="opt4">
       <span class="tool-pill-icon">💬</span>
       <span><span class="tool-pill-name">Research Agent</span><br><span class="tool-pill-desc" data-i18n="tool8_desc">對話式查詢</span></span>
     </a>
-    <a href="dashboard.html" class="tool-pill">
+    <a href="dashboard.html" class="tool-pill" data-tool-group="none">
       <span class="tool-pill-icon">🖥️</span>
       <span><span class="tool-pill-name">Market Agent</span><br><span class="tool-pill-desc" data-i18n="tool9_desc">你嘅自選股即時儀表板</span></span>
     </a>
@@ -582,6 +615,38 @@
 
 <script>
 const API = "https://api.xfinlab.com/api";
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+function startGuide() {
+  document.getElementById('guideFork').style.display = 'none';
+  document.getElementById('guideQuestion').style.display = 'block';
+}
+
+function skipGuide() {
+  document.getElementById('guideFork').style.display = 'none';
+}
+
+function pickGuideOption(opt) {
+  document.getElementById('guideQuestion').style.display = 'none';
+  document.getElementById('guideResult').style.display = 'block';
+  document.querySelectorAll('#toolsGrid .tool-pill').forEach(function(pill) {
+    if (pill.dataset.toolGroup === opt) {
+      pill.classList.remove('tool-hidden');
+    } else {
+      pill.classList.add('tool-hidden');
+    }
+  });
+  const grid = document.getElementById('toolsGrid');
+  if (grid) grid.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function showAllTools() {
+  document.querySelectorAll('#toolsGrid .tool-pill').forEach(function(pill) {
+    pill.classList.remove('tool-hidden');
+  });
+  document.getElementById('guideResult').style.display = 'none';
+  document.getElementById('guideFork').style.display = 'flex';
+}
 
 function goAnalyze() {
   const ticker = document.getElementById('heroTicker').value.trim().toUpperCase();
