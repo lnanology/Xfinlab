@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — Portfolio Engine™ 組合配置分析</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+.primary-btn{background:var(--accent-blue);color:#fff;border:none;padding:0 14px;border-radius:8px;cursor:pointer;height:44px}
+.primary-btn:hover{background:#1D4ED8}
+.primary-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+.alloc-list{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.alloc-row{display:flex;align-items:center;gap:12px}
+.alloc-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.alloc-ticker{font-family:'DM Serif Display',serif;font-size:0.95rem;font-weight:700;width:60px}
+.alloc-bar-wrap{flex:1;height:6px;background:var(--bg-secondary);border-radius:99px;overflow:hidden}
+.alloc-bar{height:100%;border-radius:99px}
+.alloc-pct{font-size:0.85rem;color:var(--text-secondary);width:50px;text-align:right}
+.empty-box{color:var(--text-muted);font-size:0.9rem;padding:24px 0;text-align:center}
+
+.edu{line-height:1.7}
+.edu h3{color:var(--accent-blue);margin-top:0.6rem}
+.edu p{color:var(--text-secondary);margin-bottom:0.6rem}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="port_nav_anomaly">異常偵測</a>
+    <a href="dashboard.html" class="nav-link" data-i18n="nav_dashboard">Dashboard</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">Portfolio Engine™</div>
+  <h1 class="page-title" data-i18n="port_title">組合配置分析</h1>
+  <p class="page-sub" data-i18n="port_subtitle">用你自選股每隻嘅真實市場評分（未登入就用預設一籃子股票），計算合理配置比重，幫你睇清楚組合分散程度。</p>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem">
+      <div style="color:var(--text2);font-size:0.9rem" data-i18n="port_hint">按你自選股嘅市場評分計算配置比重</div>
+      <button class="primary-btn" id="loadBtn" onclick="loadPortfolioAllocation()" data-i18n="port_load_btn">計算配置</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title" data-i18n="port_alloc_title">配置比重</div>
+    <div id="portfolioContent">
+      <div class="empty-box" data-i18n="port_empty">按「計算配置」以查看你嘅組合配置</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title" data-i18n="port_edu_title">AI 教育解說</div>
+    <div class="edu">
+      <h3 data-i18n="port_edu_h1">點解要睇配置比重？</h3>
+      <p data-i18n="port_edu_p1">配置比重反映你嘅資金喺唔同標的之間嘅分佈，過度集中喺少數股票會提升組合風險，適度分散有助降低波動。</p>
+      <h3 data-i18n="port_edu_h2">Portfolio Engine™ 點樣計算？</h3>
+      <p data-i18n="port_edu_p2">每隻自選股會根據真實市場數據計算出一個評分，Portfolio Engine™ 再按呢啲評分嘅相對高低，分配合理嘅權重建議 —— 純粹係參考性配置模型，唔係實際持倉紀錄。</p>
+      <p style="color:var(--text3);margin-top:0.6rem" data-i18n="port_edu_disclaimer">（配置比重僅供參考，唔構成投資建議，實際持倉請以你自己嘅券商紀錄為準。）</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-note"><span data-i18n="port_footer_note">XFINLAB © 2026 · Portfolio Engine™ 組合配置分析 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a></div>
+</footer>
+
+<script src="js/ai-loading.js"></script>
+<script>
+const API = "https://api.xfinlab.com/api";
+const ALLOC_COLORS = ["#00d4ff","#7c3aed","#10b981","#f59e0b","#ef4444"];
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+async function loadPortfolioAllocation() {
+  const btn = document.getElementById('loadBtn');
+  const content = document.getElementById('portfolioContent');
+  btn.disabled = true;
+  btn.textContent = t('port_loading', '計算緊...');
+  content.innerHTML = `<div class="empty-box">${t('port_loading', '計算緊...')}</div>`;
+
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/portfolio${token ? '?token=' + token : ''}`);
+    const data = await res.json();
+    const rows = (data.portfolio || []).map((p, i) => `
+      <div class="alloc-row">
+        <div class="alloc-dot" style="background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
+        <div class="alloc-ticker">${p.ticker}</div>
+        <div class="alloc-bar-wrap">
+          <div class="alloc-bar" style="width:${p.allocation}%;background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
+        </div>
+        <div class="alloc-pct">${p.allocation}%</div>
+      </div>`).join('');
+    content.innerHTML = rows ? `<div class="alloc-list">${rows}</div>` : `<div class="empty-box">${t('port_empty','按「計算配置」以查看你嘅組合配置')}</div>`;
+    if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'portfolio'});
+  } catch (e) {
+    content.innerHTML = `<div class="empty-box">${t('port_load_error','載入失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('port_load_btn', '計算配置');
+  }
+}
+
+// auto-run once on load, same behaviour as dashboard.html's Portfolio Allocation panel
+loadPortfolioAllocation();
+</script>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:#64748b;margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+</body>
+</html>

@@ -104,7 +104,7 @@
   /* Tools overview strip (restrained -- see HOMEPAGE_CRO_REDESIGN_PROPOSAL.md Phase G) */
   .tools-section { max-width: 1100px; margin: 0 auto; padding: 20px 24px 60px; }
   .tools-sub { text-align: center; color: #64748b; font-size: 0.85rem; margin: -32px auto 32px; max-width: 560px; line-height: 1.6; }
-  .tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .tool-pill { display: flex; align-items: center; gap: 10px; background: #0d1525; border: 1px solid #1e2d45; border-radius: 10px; padding: 12px 14px; text-decoration: none; color: #e2e8f0; transition: border-color 0.2s; }
   .tool-pill:hover { border-color: rgba(0,212,255,0.3); }
   .tool-pill-icon { font-size: 1.1rem; }
@@ -303,6 +303,40 @@
   </div>
 </div>
 
+<!-- Trust Numbers (moved up right after Hero -- social proof should land
+     early, before feature depth, per CRO research: see
+     HOMEPAGE_CRO_REDESIGN_PROPOSAL.md reorder decision record) -->
+<div class="trust-section">
+  <div class="section-label" data-i18n="trust_label">Trust</div>
+  <div class="section-title" data-i18n="trust_title">平台實力</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">9</div><div class="stat-label">AI Engines</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Asset Classes</div></div>
+    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">AI Analysis</div></div>
+    <div class="stat"><div class="stat-num">60s</div><div class="stat-label">Avg. Research Time</div></div>
+    <div class="stat"><div class="stat-num">$0</div><div class="stat-label">Free to Start</div></div>
+  </div>
+</div>
+
+<!-- Problem -> Relief (moved up right after Trust Numbers -- emotional
+     hook should follow Hero closely, before showing product mechanics) -->
+<div class="pr-section">
+  <div class="section-label" data-i18n="problem_label">你嘅困擾</div>
+  <div class="section-title" data-i18n="problem_title">由痛點到解決方案</div>
+  <div class="pr-row">
+    <div class="pr-bad" data-i18n="pr1_bad">❌ 每日睇幾十篇新聞先搵到重點</div>
+    <div class="pr-good" data-i18n="pr1_good">✅ AI幾秒內幫你整合新聞情緒</div>
+  </div>
+  <div class="pr-row">
+    <div class="pr-bad" data-i18n="pr2_bad">❌ 唔知支撐位、阻力位喺邊</div>
+    <div class="pr-good" data-i18n="pr2_good">✅ 用真實歷史數據自動計算</div>
+  </div>
+  <div class="pr-row">
+    <div class="pr-bad" data-i18n="pr3_bad">❌ 唔知而家市場風險有幾大</div>
+    <div class="pr-good" data-i18n="pr3_good">✅ Risk Score + 壓力測試一目了然</div>
+  </div>
+</div>
+
 <!-- Live AI Result -- "AI is working" showcase -->
 <div class="live-section">
   <div class="live-box">
@@ -357,24 +391,6 @@
   </div>
 </div>
 
-<!-- Problem -> Relief -->
-<div class="pr-section">
-  <div class="section-label" data-i18n="problem_label">你嘅困擾</div>
-  <div class="section-title" data-i18n="problem_title">由痛點到解決方案</div>
-  <div class="pr-row">
-    <div class="pr-bad" data-i18n="pr1_bad">❌ 每日睇幾十篇新聞先搵到重點</div>
-    <div class="pr-good" data-i18n="pr1_good">✅ AI幾秒內幫你整合新聞情緒</div>
-  </div>
-  <div class="pr-row">
-    <div class="pr-bad" data-i18n="pr2_bad">❌ 唔知支撐位、阻力位喺邊</div>
-    <div class="pr-good" data-i18n="pr2_good">✅ 用真實歷史數據自動計算</div>
-  </div>
-  <div class="pr-row">
-    <div class="pr-bad" data-i18n="pr3_bad">❌ 唔知而家市場風險有幾大</div>
-    <div class="pr-good" data-i18n="pr3_good">✅ Risk Score + 壓力測試一目了然</div>
-  </div>
-</div>
-
 <!-- Real AI Showcase -- 真實screenshot，唔係mockup -->
 <div class="showcase-section">
   <div class="section-label" data-i18n="showcase_label">Real AI Showcase</div>
@@ -407,7 +423,7 @@
 <!-- Core AI Engines -->
 <div class="tools-section">
   <div class="section-label" data-i18n="engines_label">Core AI Engines</div>
-  <div class="section-title" data-i18n="engines_title">7 個獨立 AI Engine™</div>
+  <div class="section-title" data-i18n="engines_title">9 個獨立 AI Engine™</div>
   <div class="tools-sub" data-i18n="engines_sub">每個Engine™各自處理唔同任務，用真實市場數據運算，AI 負責型態辨識同文字整理，數值指標唔靠AI估算。大部分Engine™都有對應嘅AI Agent可以直接查詢。</div>
 
   <div class="guide-fork" id="guideFork">
@@ -447,7 +463,7 @@
     </a>
     <a href="company-compare.html" class="tool-pill" data-tool-group="opt2">
       <span class="tool-pill-icon">⚖️</span>
-      <span><span class="tool-pill-name">Portfolio Engine™</span><br><span class="tool-pill-desc" data-i18n="tool5_desc">同業比較 · Portfolio Agent</span></span>
+      <span><span class="tool-pill-name">Compare Engine™</span><br><span class="tool-pill-desc" data-i18n="tool5_desc">同業比較 · Compare Agent</span></span>
     </a>
     <a href="news-denoise.html" class="tool-pill" data-tool-group="opt4">
       <span class="tool-pill-icon">📰</span>
@@ -465,6 +481,14 @@
       <span class="tool-pill-icon">🖥️</span>
       <span><span class="tool-pill-name">Market Agent</span><br><span class="tool-pill-desc" data-i18n="tool9_desc">你嘅自選股即時儀表板</span></span>
     </a>
+    <a href="anomaly.html" class="tool-pill" data-tool-group="opt3">
+      <span class="tool-pill-icon">🚨</span>
+      <span><span class="tool-pill-name">Anomaly Engine™</span><br><span class="tool-pill-desc" data-i18n="tool10_desc">異常成交量／價格偵測 · Anomaly Agent</span></span>
+    </a>
+    <a href="portfolio.html" class="tool-pill" data-tool-group="opt2">
+      <span class="tool-pill-icon">📐</span>
+      <span><span class="tool-pill-name">Portfolio Engine™</span><br><span class="tool-pill-desc" data-i18n="tool11_desc">你嘅持倉配置與分散程度分析 · Portfolio Agent</span></span>
+    </a>
   </div>
 </div>
 
@@ -480,19 +504,6 @@
       <div><div class="decision-stat-num">High</div><div class="decision-stat-label">Reward</div></div>
     </div>
     <p style="color:#64748b;font-size:0.82rem;margin-top:20px" data-i18n="decision_disclaimer">範例數值，實際結果因股票同即時市場數據而異</p>
-  </div>
-</div>
-
-<!-- Trust Numbers -->
-<div class="trust-section">
-  <div class="section-label" data-i18n="trust_label">Trust</div>
-  <div class="section-title" data-i18n="trust_title">平台實力</div>
-  <div class="stats">
-    <div class="stat"><div class="stat-num">7</div><div class="stat-label">AI Engines</div></div>
-    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Asset Classes</div></div>
-    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">AI Analysis</div></div>
-    <div class="stat"><div class="stat-num">60s</div><div class="stat-label">Avg. Research Time</div></div>
-    <div class="stat"><div class="stat-num">$0</div><div class="stat-label">Free to Start</div></div>
   </div>
 </div>
 
@@ -520,7 +531,7 @@
       <button id="demoBtn" onclick="runDemo()" data-i18n="demo_btn">立即體驗</button>
     </div>
     <div id="demoTrialInfo" style="display:none;margin-top:12px;font-size:0.8rem;color:#64748b;background:#080c14;border:1px solid #1e2d45;border-radius:8px;padding:10px 14px">
-      ⏱️ 免費試用時段為30分鐘（期間可任意查詢）。時段完結後請<a href="login.html" style="color:#00d4ff">登入</a>繼續使用，或者4小時後可以再次免費試用。
+      ⏱️ <span data-i18n="demo_trial_note_pre">每個IP只可以免費體驗1次，用咗之後請</span><a href="login.html" style="color:#00d4ff" data-i18n="demo_trial_note_login">登入</a><span data-i18n="demo_trial_note_post">先可以繼續使用。</span>
     </div>
     <div id="demoResult" class="demo-result" style="display:none"></div>
     <div id="demoError" class="demo-error" style="display:none"></div>
@@ -586,7 +597,7 @@
   </div>
   <div class="faq-item">
     <div class="faq-q">唔登入可唔可以試用？</div>
-    <div class="faq-a">可以，首頁「免費體驗」每個IP有30分鐘免費試用時段（期間可任意查詢），時段完結後登入即可繼續使用，或者等4小時後可以再次免費試用。</div>
+    <div class="faq-a">可以，首頁「免費體驗」每個IP可以免費試用1次（伺服器記錄IP，唔會因為重開網頁而重置），用完之後登入即可繼續使用。</div>
   </div>
 </div>
 
@@ -678,7 +689,7 @@ initAutocomplete("heroTicker", "heroDropdown");
 
 // Hero "Live AI Result" card -- 見api/hero_showcase.py，真實confluence
 // engine計出嚟嘅Decision Score/Confidence/RiskDNA/支撐阻力，5分鐘後端
-// 快取，唔會消耗訪客自己嗰30分鐘免費試用時段（嗰個係另一個獨立endpoint）。
+// 快取，唔會消耗訪客自己嗰1次免費體驗機會（嗰個係另一個獨立endpoint）。
 // 而家會自動輪流show basket入面10隻Top股票嘅真實結果，每10秒轉一隻。
 let heroItems = [];
 let heroIndex = 0;
@@ -901,8 +912,8 @@ async function loadDailyExperience() {
 }
 loadDailyExperience();
 
-// 免登入AI Demo -- 每個IP有30分鐘免費試用時段，時段完結後要login，
-// 4小時後先可以再開新時段。見api/public_demo.py
+// 免登入AI Demo -- 每個IP只可以免費體驗1次（伺服器記錄IP，唔會因為
+// 重開網頁/清cache而重置），用咗之後要login先可以繼續使用。見api/public_demo.py
 async function runDemo() {
   const ticker = (document.getElementById('demoTicker').value || '').trim().toUpperCase();
   const btn = document.getElementById('demoBtn');
@@ -922,7 +933,7 @@ async function runDemo() {
     const res = await fetch(`${API}/demo/analyze/${encodeURIComponent(ticker)}`);
     const data = await res.json();
     if (!res.ok) {
-      errorBox.textContent = data.detail || '免費試用時段已用完，請登入繼續使用';
+      errorBox.textContent = data.detail || t('demo_error_used','你已經用咗呢個IP嘅免費體驗機會，請登入繼續使用');
       errorBox.style.display = 'block';
       return;
     }
@@ -932,7 +943,7 @@ async function runDemo() {
       <div class="demo-result-row"><span>趨勢</span><strong>${data.trend}</strong></div>
       <div class="demo-result-row"><span>RSI</span><strong>${data.rsi}</strong></div>
       <div class="demo-result-row"><span>綜合訊號</span><strong>${data.confluence_direction}（信心${data.confluence_confidence}）</strong></div>
-      <div class="demo-cta">呢個係精簡版 —— <a href="login.html" style="color:#00d4ff">免費註冊</a>解鎖支撐/阻力/Fibonacci/型態辨識完整報告 · 試用時段剩餘約${data.trial_window_minutes_remaining}分鐘</div>
+      <div class="demo-cta">${t('demo_cta_pre','呢個係精簡版 —— ')}<a href="login.html" style="color:#00d4ff">${t('demo_cta_signup','免費註冊')}</a>${t('demo_cta_post','解鎖支撐/阻力/Fibonacci/型態辨識完整報告，每個IP只限免費體驗1次')}</div>
     `;
     resultBox.style.display = 'block';
     if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'demo', ticker});

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — Anomaly Engine™ 異常偵測</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+.primary-btn{background:var(--accent-blue);color:#fff;border:none;padding:0 14px;border-radius:8px;cursor:pointer;height:44px}
+.primary-btn:hover{background:#1D4ED8}
+.primary-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+.anomaly-list{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.anomaly-item{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
+.anomaly-icon{font-size:1.2rem;flex-shrink:0}
+.anomaly-type{font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
+.anomaly-detail{font-size:0.85rem;color:var(--text-secondary)}
+.severity-HIGH{color:#ef4444}
+.severity-MEDIUM{color:#f59e0b}
+.severity-NONE{color:#10b981}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em}
+.badge-HIGH{background:rgba(239,68,68,0.12);color:#ef4444}
+.badge-MEDIUM{background:rgba(245,158,11,0.12);color:#f59e0b}
+.badge-NONE{background:rgba(16,185,129,0.12);color:#10b981}
+.empty-box{color:var(--text-muted);font-size:0.9rem;padding:24px 0;text-align:center}
+
+.edu{line-height:1.7}
+.edu h3{color:var(--accent-blue);margin-top:0.6rem}
+.edu p{color:var(--text-secondary);margin-bottom:0.6rem}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="anom_nav_portfolio">組合配置</a>
+    <a href="dashboard.html" class="nav-link" data-i18n="nav_dashboard">Dashboard</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">Anomaly Engine™</div>
+  <h1 class="page-title" data-i18n="anom_title">異常偵測雷達</h1>
+  <p class="page-sub" data-i18n="anom_subtitle">用真實成交量同價格數據，掃描你嘅自選股（未登入就用預設一籃子股票），揪出唔尋常嘅波動 —— 唔靠AI估算，數值指標100%來自真實市場數據。</p>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem">
+      <div style="color:var(--text2);font-size:0.9rem" data-i18n="anom_scan_hint">掃描你自選股嘅成交量同價格變化，偵測異常訊號</div>
+      <button class="primary-btn" id="scanBtn" onclick="runAnomalyScan()" data-i18n="anom_scan_btn">開始掃描</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted)" data-i18n="anom_severity_label">整體嚴重程度</span>
+      <span class="badge badge-NONE" id="overallSeverityBadge" data-i18n="anom_not_scanned">未掃描</span>
+    </div>
+    <div id="anomalyContent">
+      <div class="empty-box" data-i18n="anom_empty">按「開始掃描」以查看異常訊號</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title" data-i18n="anom_edu_title">AI 教育解說</div>
+    <div class="edu">
+      <h3 data-i18n="anom_edu_h1">咩係異常訊號？</h3>
+      <p data-i18n="anom_edu_p1">當某隻股票嘅成交量遠高於平均值，或者短時間內價格出現異常大幅變動，往往代表市場有重大消息或資金流向轉變，值得留意。</p>
+      <h3 data-i18n="anom_edu_h2">點解要留意呢啲訊號？</h3>
+      <p data-i18n="anom_edu_p2">異常成交量／價格波動可以係機會（例如突破訊號），亦可以係風險（例如負面消息引發拋售）。Anomaly Engine™ 淨係負責偵測同標記，唔會直接判斷好壞，最終判斷需要你自己結合新聞同基本面分析。</p>
+      <p style="color:var(--text3);margin-top:0.6rem" data-i18n="anom_edu_disclaimer">（數值指標基於真實市場數據計算，僅供參考，唔構成投資建議。）</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-note"><span data-i18n="anom_footer_note">XFINLAB © 2026 · Anomaly Engine™ 異常偵測雷達 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a></div>
+</footer>
+
+<script src="js/ai-loading.js"></script>
+<script>
+const API = "https://api.xfinlab.com/api";
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+async function runAnomalyScan() {
+  const btn = document.getElementById('scanBtn');
+  const content = document.getElementById('anomalyContent');
+  const badge = document.getElementById('overallSeverityBadge');
+  btn.disabled = true;
+  btn.textContent = t('anom_scanning', '掃描緊...');
+  content.innerHTML = `<div class="empty-box">${t('anom_scanning', '掃描緊...')}</div>`;
+
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/anomaly${token ? '?token=' + token : ''}`);
+    const data = await res.json();
+    const severity = data.severity || 'NONE';
+    badge.className = `badge badge-${severity}`;
+    badge.textContent = severity;
+
+    const items = (data.items || []).flatMap(tickerItem =>
+      (tickerItem.anomalies || []).map(a => `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">⚡</div>
+        <div>
+          <div class="anomaly-type severity-${tickerItem.severity || 'NONE'}">${tickerItem.ticker} · ${a.type.replace(/_/g,' ')}</div>
+          <div class="anomaly-detail">${a.detail}</div>
+        </div>
+      </div>`)
+    ).join('');
+
+    content.innerHTML = items || `<div class="empty-box">${t('anom_no_anomalies','未偵測到異常波動')}</div>`;
+    if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'anomaly'});
+  } catch (e) {
+    content.innerHTML = `<div class="empty-box">${t('anom_scan_error','掃描失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('anom_scan_btn', '開始掃描');
+  }
+}
+
+// auto-run once on load, same behaviour as dashboard.html's Anomaly Radar
+runAnomalyScan();
+</script>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:#64748b;margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+</body>
+</html>
