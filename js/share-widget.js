@@ -30,14 +30,25 @@
     }
   }
 
+  // 用返每個平台自己嘅正式brand icon（Font Awesome brand set），唔再用
+  // emoji將就。FA CSS用CDN動態加載一次，唔使逐個HTML檔案自己加<link>。
   var PLATFORMS = [
-    {key: 'whatsapp', icon: '💬', label: 'WhatsApp'},
-    {key: 'telegram', icon: '✈️', label: 'Telegram'},
-    {key: 'facebook', icon: '📘', label: 'Facebook'},
-    {key: 'twitter', icon: '✖️', label: 'X (Twitter)'},
-    {key: 'linkedin', icon: '💼', label: 'LinkedIn'},
-    {key: 'line', icon: '🟢', label: 'LINE'}
+    {key: 'whatsapp', icon: 'fa-brands fa-whatsapp', color: '#25D366', label: 'WhatsApp'},
+    {key: 'telegram', icon: 'fa-brands fa-telegram', color: '#26A5E4', label: 'Telegram'},
+    {key: 'facebook', icon: 'fa-brands fa-facebook', color: '#1877F2', label: 'Facebook'},
+    {key: 'twitter', icon: 'fa-brands fa-x-twitter', color: '#e2e8f0', label: 'X (Twitter)'},
+    {key: 'linkedin', icon: 'fa-brands fa-linkedin', color: '#0A66C2', label: 'LinkedIn'},
+    {key: 'line', icon: 'fa-brands fa-line', color: '#00B900', label: 'LINE'}
   ];
+
+  function ensureFontAwesome() {
+    if (document.getElementById('shareWidgetFA')) return;
+    var link = document.createElement('link');
+    link.id = 'shareWidgetFA';
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css';
+    document.head.appendChild(link);
+  }
 
   function copyLink(itemEl) {
     var done = function () {
@@ -75,6 +86,7 @@
 
   function buildWidget() {
     if (document.getElementById('shareWidgetBtn')) return;
+    ensureFontAwesome();
 
     var wrap = document.createElement('div');
     wrap.id = 'shareWidget';
@@ -92,7 +104,7 @@
 
     PLATFORMS.forEach(function (p) {
       panel.appendChild(buildItem(
-        '<span>' + p.icon + '</span><span class="share-item-label">' + p.label + '</span>',
+        '<i class="' + p.icon + '" style="color:' + p.color + ';width:16px;text-align:center;font-size:0.95rem;"></i><span class="share-item-label">' + p.label + '</span>',
         null,
         platformUrl(p.key)
       ));
