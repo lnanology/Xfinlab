@@ -13,15 +13,16 @@ worst case is extra Alpaca/yfinance calls (free tier, and still capped by
 the blanket 100/min-per-IP limiter in backend/main.py), never a
 Groq/Gemini bill.
 
-Quota model updated 2026-07-13, revised again same day (product decision):
-each IP gets exactly ONE 15-minute trial window, ever -- unlimited queries
-inside that single window, tracked server-side so it can't be reset by
-reloading/reopening the page (no cookie or localStorage state involved,
-purely IP-keyed in demo_usage). Once the 15 minutes elapse, that IP is
-permanently locked out of this endpoint -- there is no cooldown that
-reopens a new window later (unlike the original 2026-07-11 design, which
-allowed a fresh 30-minute window every 4 hours). The visitor must log in
-to continue using the product after their one window closes.
+Quota model updated 2026-07-13, revised twice more the same day (product
+decision): each IP gets exactly ONE 5-minute trial window, ever --
+unlimited queries inside that single window, tracked server-side so it
+can't be reset by reloading/reopening the page (no cookie or localStorage
+state involved, purely IP-keyed in demo_usage). Once the 5 minutes
+elapse, that IP is permanently locked out of this endpoint -- there is no
+cooldown that reopens a new window later (unlike the original 2026-07-11
+design, which allowed a fresh 30-minute window every 4 hours). The
+frontend redirects the visitor straight to login.html on the 429 this
+endpoint raises once the window has closed (see index.html's runDemo()).
 
 Explicitly NOT the same as the full /api/chart-analysis or
 /api/full-analysis endpoints -- this returns a deliberately smaller
@@ -38,7 +39,7 @@ from services.technical_analysis_service import get_technical_analysis
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 
-TRIAL_WINDOW_MINUTES = 15
+TRIAL_WINDOW_MINUTES = 5
 
 
 def _get_db():
@@ -50,7 +51,7 @@ def _get_db():
 def init_demo_usage_table():
     conn = _get_db()
 
-    # Schema changed again same day (strict-single-use -> single 15-min
+    # Schema changed again same day (strict-single-use -> single 5-min
     # window). The previous table shape was (ip PRIMARY KEY, used_at); the
     # new one needs (ip PRIMARY KEY, window_started_at) so we can tell
     # whether the visitor is still inside their one-time window. This data
@@ -92,7 +93,7 @@ def demo_analyze(ticker: str, request: Request):
             conn.close()
             raise HTTPException(
                 status_code=429,
-                detail="你嘅15分鐘免費體驗時段已經完結，請登入繼續使用。",
+                detail="你嘅免費體驗時段已經完結，請登入繼續使用。",
             )
         # Still inside the one-time window -- unlimited queries allowed,
         # don't touch window_started_at (it must not extend the window).

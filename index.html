@@ -524,15 +524,15 @@
 <!-- Anonymous AI Demo -->
 <div class="demo-section">
   <div class="section-label" data-i18n="demo_label">免費體驗</div>
-  <div class="section-title" data-i18n="demo_title">唔使註冊，即刻試用</div>
-  <p style="color:#64748b;font-size:0.88rem" data-i18n="demo_subtitle">真實技術分析（唔係mockup），即刻試用</p>
+  <div class="section-title" data-i18n="demo_title">不需註冊，即刻試用</div>
+  <p style="color:#64748b;font-size:0.88rem" data-i18n="demo_subtitle">真實技術分析，即刻試用</p>
   <div class="demo-box">
     <div class="demo-input-row">
       <input id="demoTicker" data-i18n-placeholder="demo_placeholder" placeholder="輸入股票代號 例如 AAPL" maxlength="10">
       <button id="demoBtn" onclick="runDemo()" data-i18n="demo_btn">立即體驗</button>
     </div>
     <div id="demoTrialInfo" style="display:none;margin-top:12px;font-size:0.8rem;color:#64748b;background:#080c14;border:1px solid #1e2d45;border-radius:8px;padding:10px 14px">
-      ⏱️ <span data-i18n="demo_trial_note_pre">每個IP只有1個15分鐘免費體驗時段（時段內可以任意查詢），時段完結後請</span><a href="login.html" style="color:#00d4ff" data-i18n="demo_trial_note_login">登入</a><span data-i18n="demo_trial_note_post">先可以繼續使用。</span>
+      ⏱️ <span data-i18n="demo_trial_note_pre">每個IP可限時享用免費體驗，使用之後請</span><a href="login.html" style="color:#00d4ff" data-i18n="demo_trial_note_login">登入</a><span data-i18n="demo_trial_note_post">享受更多功能。</span>
     </div>
     <div id="demoResult" class="demo-result" style="display:none"></div>
     <div id="demoError" class="demo-error" style="display:none"></div>
@@ -598,7 +598,7 @@
   </div>
   <div class="faq-item">
     <div class="faq-q" data-i18n="faq7_q">唔登入可唔可以試用？</div>
-    <div class="faq-a" data-i18n="faq7_a">可以，首頁「免費體驗」每個IP有1個15分鐘免費體驗時段（時段內可以任意查詢，伺服器記錄IP，唔會因為重開網頁而重置），時段完結後登入即可繼續使用。</div>
+    <div class="faq-a" data-i18n="faq7_a">可以，首頁「免費體驗」每個IP有1個限時免費體驗時段（時段內可以任意查詢，伺服器記錄IP，唔會因為重開網頁而重置），時段完結後會直接帶你去登入頁面繼續使用。</div>
   </div>
 </div>
 
@@ -690,7 +690,7 @@ initAutocomplete("heroTicker", "heroDropdown");
 
 // Hero "Live AI Result" card -- 見api/hero_showcase.py，真實confluence
 // engine計出嚟嘅Decision Score/Confidence/RiskDNA/支撐阻力，5分鐘後端
-// 快取，唔會消耗訪客自己嗰15分鐘免費體驗時段（嗰個係另一個獨立endpoint）。
+// 快取，唔會消耗訪客自己嗰免費體驗時段（嗰個係另一個獨立endpoint）。
 // 而家會自動輪流show basket入面10隻Top股票嘅真實結果，每10秒轉一隻。
 let heroItems = [];
 let heroIndex = 0;
@@ -913,9 +913,9 @@ async function loadDailyExperience() {
 }
 loadDailyExperience();
 
-// 免登入AI Demo -- 每個IP終身只有1個15分鐘免費體驗時段（伺服器記錄IP，
+// 免登入AI Demo -- 每個IP終身只有1個5分鐘免費體驗時段（伺服器記錄IP，
 // 唔會因為重開網頁/清cache而重置，時段內可以任意查詢），時段完結之後
-// 要login先可以繼續使用，冇cooldown會重開新時段。見api/public_demo.py
+// 會直接帶去login.html，冇cooldown會重開新時段。見api/public_demo.py
 async function runDemo() {
   const ticker = (document.getElementById('demoTicker').value || '').trim().toUpperCase();
   const btn = document.getElementById('demoBtn');
@@ -933,9 +933,14 @@ async function runDemo() {
 
   try {
     const res = await fetch(`${API}/demo/analyze/${encodeURIComponent(ticker)}`);
+    if (res.status === 429) {
+      // 免費體驗時段完結 -- 直接去登入頁，唔再喺呢度顯示錯誤文字
+      window.location.href = 'login.html';
+      return;
+    }
     const data = await res.json();
     if (!res.ok) {
-      errorBox.textContent = data.detail || t('demo_error_used','你嘅15分鐘免費體驗時段已經完結，請登入繼續使用');
+      errorBox.textContent = data.detail || t('demo_error_used','你嘅免費體驗時段已經完結，請登入繼續使用');
       errorBox.style.display = 'block';
       return;
     }
@@ -945,7 +950,7 @@ async function runDemo() {
       <div class="demo-result-row"><span>趨勢</span><strong>${data.trend}</strong></div>
       <div class="demo-result-row"><span>RSI</span><strong>${data.rsi}</strong></div>
       <div class="demo-result-row"><span>綜合訊號</span><strong>${data.confluence_direction}（信心${data.confluence_confidence}）</strong></div>
-      <div class="demo-cta">${t('demo_cta_pre','呢個係精簡版 —— ')}<a href="login.html" style="color:#00d4ff">${t('demo_cta_signup','免費註冊')}</a>${t('demo_cta_post','解鎖支撐/阻力/Fibonacci/型態辨識完整報告')} · ${t('demo_cta_remaining','試用時段剩餘約')}${data.trial_window_minutes_remaining}${t('demo_cta_minutes','分鐘')}</div>
+      <div class="demo-cta">${t('demo_cta_pre','這是精簡版 —— ')}<a href="login.html" style="color:#00d4ff">${t('demo_cta_signup','免費註冊')}</a>${t('demo_cta_post','解鎖辨識完整報告')}</div>
     `;
     resultBox.style.display = 'block';
     if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'demo', ticker});
