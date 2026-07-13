@@ -3,7 +3,7 @@
 ## 背景
 用戶要求：語言切換功能支援全部45/46種語言，並且整個網站頁面及所有導航功能頁都要一致翻譯，同時保留IP自動偵測語言顯示功能。標準指令：「你測試過無問題就可繼續做落去，不用問，不要停」。用中文回覆。
 
-## 已完成頁面（9頁，全部已push到GitHub main）
+## 已完成頁面（10頁，全部已push到GitHub main）
 1. index.html — commit 435ebb3
 2. ai-analysis.html — commit 6eb5ead
 3. chart-analysis.html — commit c1b922c（順手修咗呢頁原本冇include js/i18n.js嘅bug）
@@ -17,8 +17,9 @@
 11. privacy.html — commit 3e254a1（同terms.html一齊做，同樣係英文authored；新key prefix `privacy_*`，11個key；support@xfinlab.com email地址keep原文冇翻譯）
 12. login.html — commit 278d545（同樣修咗冇i18n.js嘅bug；新key prefix `login_*`，21個key；英文authored（除咗「忘記密碼？」呢句原本已經係zh-HK）；"you@example.com" placeholder keep唔翻譯，因為淨係format example唔係natural language）
 13. pricing.html — commit 7fc0a83（本身已有js/i18n.js同3個nav-level tag（nav_dashboard/nav_pricing/nav_login），呢次補晒hero、billing toggle、4個方案卡（Free/Pro/Professional/Enterprise）連features list、5條FAQ、CTA、footer；新key prefix `pricing_*`，69個key；英文authored；順手修咗個CSS bug——原本`.hero h1 span`會將h1入面所有span都變成accent色，加咗data-i18n span包住標題文字後會連累"AI"個span外嘅文字都變色，所以加咗個`.accent-word` class嚟取代通用`span`selector；貨幣數字（$0/$19/$49，同toggleBilling()嘅$15/$39）同內部plan key（'starter'/'pro'）keep原文冇翻譯；handleUpgrade()嘅alert改用`{plan}`placeholder嘅template）
+14. dashboard.html — commit 773ecf6（原本得1個data-i18n tag，係全站最大一頁；新key prefix `dash_*`，82個key，覆蓋nav、share modal、search bar、score hero、score breakdown/AI research panel、watchlist、screener/portfolio/anomaly panel、Telegram widget、feedback widget；加咗個t(key, fallback) helper處理所有動態JS字串（quota/error訊息、score labels、research section labels、share text template、wechat/instagram/tiktok分享alert、referral alert、feedback表單訊息）；驗證階段見過5個「missing key」false positive（' '、page_view、search、${item.ticker}、#userMenu）——全部因為regex `t\('...'\)` 錯誤匹配咗以「t(」結尾嘅函數名（trackEvent(/closest(/removeFromWatchlist(），已grep確認源頭、唔使加key。至此原本嘅i18n project全部頁面已完成）
 
-services/i18n.py 依家每種語言個TRANSLATIONS dict已經有505個key/語言，全部46種語言key數量完全一致（每次merge後都verify過0 missing，同埋每次merge都同backup比對過冇整壞舊翻譯）。
+services/i18n.py 依家每種語言個TRANSLATIONS dict已經有587個key/語言，全部46種語言key數量完全一致（每次merge後都verify過0 missing，同埋每次merge都同backup比對過冇整壞舊翻譯）。
 
 ## 中途插入咗嘅工作（導航/首頁改版，已完成並push — commit e3bc418）
 用戶問咗成個網站導航結構，之後討論咗一輪UX/心理學設計（Hick's Law、progressive disclosure、Notion/Wealthfront/Robinhood三種模式），最後拍板：首頁工具區加一個「智能導覽」/「跳過睇晒全部」嘅fork，揀「智能導覽」會問一條問題（單一股票分析／幾隻之間揀／風險情境／自由傾偈），根據答案用`data-tool-group`篩選現有9張tool card（Wealthfront式contextual filter，冇duplicate DOM）。
@@ -27,10 +28,10 @@ services/i18n.py 依家每種語言個TRANSLATIONS dict已經有505個key/語言
 - 驗證階段見過2個「missing key」false positive：`search`（其實係`trackEvent('search',...)`）同`請輸入股票代號`（其實係`alert('請輸入股票代號')`）——兩個都因為regex `t\('...'\)` 錯誤匹配咗以「t(」結尾嘅函數名（trackEvent(/alert 個"aler**t(**"），唔係真正用`t()` helper，已確認唔使加key。
 
 ## 進行緊
-（無，導航改版已完成並push）
+（無，dashboard.html已完成並push，全站i18n project正式完結）
 
-## 剩餘未做（1頁）
-dashboard.html（最大一頁，1226行，暫時得1個data-i18n tag，需要由頭做大部分）。目前進度：`dash_*` key prefix已定義（82個key），outputs資料夾有`dash_translations_1.py`（12/46語言），仲差`dash_translations_2/3/4.py`（餘低34種語言）、`merge_dashboard.py`、merge+verify、編輯dashboard.html本身、驗證、commit+push。
+## 剩餘未做
+（無）全站所有頁面（14頁）已完成46語言i18n翻譯並push到main。
 
 ## 標準工作流程（每頁重複）
 1. Read全頁，audit可翻譯內容，check有冇缺js/i18n.js include（已發現5/7頁都有呢個bug，好可能剩低嘅頁都有同樣問題）
