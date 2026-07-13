@@ -46,6 +46,7 @@
   .switch-text a { color: var(--accent); text-decoration: none; font-weight: 500; }
   footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); }
 </style>
+<script src="js/i18n.js"></script>
 </head>
 <body>
 <nav>
@@ -53,12 +54,12 @@
 </nav>
 <main>
   <div class="auth-box">
-    <div class="auth-title">Welcome Back</div>
-    <div class="auth-sub">Sign in to your XFINLAB account</div>
+    <div class="auth-title" data-i18n="login_title">Welcome Back</div>
+    <div class="auth-sub" data-i18n="login_subtitle">Sign in to your XFINLAB account</div>
 
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('login')">Sign In</button>
-      <button class="tab" onclick="switchTab('register')">Register</button>
+      <button class="tab active" onclick="switchTab('login')" data-i18n="login_tab_signin">Sign In</button>
+      <button class="tab" onclick="switchTab('register')" data-i18n="login_tab_register">Register</button>
     </div>
 
     <div id="errorMsg" class="error"></div>
@@ -67,39 +68,40 @@
     <!-- Login Form -->
     <div id="loginForm">
       <div class="form-group">
-        <label>Email</label>
+        <label data-i18n="login_label_email">Email</label>
         <input type="email" id="loginEmail" placeholder="you@example.com">
       </div>
       <div class="form-group">
-        <label>Password</label>
+        <label data-i18n="login_label_password">Password</label>
         <input type="password" id="loginPassword" placeholder="••••••••">
-        <div style="text-align:right;margin-top:6px"><a href="forgot-password.html" style="color:var(--accent);font-size:0.78rem;text-decoration:none">忘記密碼？</a></div>
+        <div style="text-align:right;margin-top:6px"><a href="forgot-password.html" style="color:var(--accent);font-size:0.78rem;text-decoration:none" data-i18n="login_forgot_password">忘記密碼？</a></div>
       </div>
-      <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Sign In</button>
+      <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()" data-i18n="login_tab_signin">Sign In</button>
     </div>
 
     <!-- Register Form -->
     <div id="registerForm" style="display:none">
       <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="regName" placeholder="Your name">
+        <label data-i18n="login_label_name">Full Name</label>
+        <input type="text" id="regName" placeholder="Your name" data-i18n-placeholder="login_placeholder_name">
       </div>
       <div class="form-group">
-        <label>Email</label>
+        <label data-i18n="login_label_email">Email</label>
         <input type="email" id="regEmail" placeholder="you@example.com">
       </div>
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="regPassword" placeholder="Min 6 characters">
+        <label data-i18n="login_label_password">Password</label>
+        <input type="password" id="regPassword" placeholder="Min 6 characters" data-i18n-placeholder="login_placeholder_minchars">
       </div>
-      <button class="btn btn-primary" id="registerBtn" onclick="handleRegister()">Create Account</button>
+      <button class="btn btn-primary" id="registerBtn" onclick="handleRegister()" data-i18n="login_btn_create">Create Account</button>
     </div>
   </div>
 </main>
-<footer>© 2026 XFINLAB — AI Investment Intelligence</footer>
+<footer data-i18n="login_footer">© 2026 XFINLAB — AI Investment Intelligence</footer>
 
 <script>
 const API = "https://api.xfinlab.com/api";
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -131,11 +133,11 @@ function hideMessages() {
 async function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  if (!email || !password) { showError('Please fill in all fields'); return; }
+  if (!email || !password) { showError(t('login_err_fill_fields','Please fill in all fields')); return; }
 
   const btn = document.getElementById('loginBtn');
   btn.disabled = true;
-  btn.textContent = 'Signing in...';
+  btn.textContent = t('login_signing_in','Signing in...');
 
   try {
     const res = await fetch(`${API}/auth/login`, {
@@ -144,17 +146,17 @@ async function handleLogin() {
       body: JSON.stringify({email, password})
     });
     const data = await res.json();
-    if (!res.ok) { showError(data.detail || 'Login failed'); return; }
+    if (!res.ok) { showError(data.detail || t('login_err_login_failed','Login failed')); return; }
 
     localStorage.setItem('xfinlab_token', data.token);
     localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
-    showSuccess('Login successful! Redirecting...');
+    showSuccess(t('login_success_login','Login successful! Redirecting...'));
     setTimeout(() => window.location.href = 'dashboard.html', 1000);
   } catch(e) {
-    showError('Connection error. Make sure API is running.');
+    showError(t('login_err_connection','Connection error. Make sure API is running.'));
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Sign In';
+    btn.textContent = t('login_tab_signin','Sign In');
   }
 }
 
@@ -162,12 +164,12 @@ async function handleRegister() {
   const name = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
-  if (!name || !email || !password) { showError('Please fill in all fields'); return; }
-  if (password.length < 6) { showError('Password must be at least 6 characters'); return; }
+  if (!name || !email || !password) { showError(t('login_err_fill_fields','Please fill in all fields')); return; }
+  if (password.length < 6) { showError(t('login_err_password_length','Password must be at least 6 characters')); return; }
 
   const btn = document.getElementById('registerBtn');
   btn.disabled = true;
-  btn.textContent = 'Creating account...';
+  btn.textContent = t('login_creating_account','Creating account...');
 
   try {
     const res = await fetch(`${API}/auth/register`, {
@@ -176,17 +178,17 @@ async function handleRegister() {
       body: JSON.stringify({name, email, password})
     });
     const data = await res.json();
-    if (!res.ok) { showError(data.detail || 'Registration failed'); return; }
+    if (!res.ok) { showError(data.detail || t('login_err_register_failed','Registration failed')); return; }
 
     localStorage.setItem('xfinlab_token', data.token);
     localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
-    showSuccess('Account created! Redirecting...');
+    showSuccess(t('login_success_register','Account created! Redirecting...'));
     setTimeout(() => window.location.href = 'dashboard.html', 1000);
   } catch(e) {
-    showError('Connection error. Make sure API is running.');
+    showError(t('login_err_connection','Connection error. Make sure API is running.'));
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Create Account';
+    btn.textContent = t('login_btn_create','Create Account');
   }
 }
 
