@@ -539,12 +539,12 @@
     </div>
     <div class="price-mini featured">
       <div class="price-mini-name">Pro</div>
-      <div class="price-mini-amount">$19/月</div>
+      <div class="price-mini-amount">$19<span data-i18n="idx_per_month">/月</span></div>
       <div class="price-mini-desc" data-i18n="price2_desc">無限分析＋組合追蹤</div>
     </div>
     <div class="price-mini">
       <div class="price-mini-name">Professional</div>
-      <div class="price-mini-amount">$49/月</div>
+      <div class="price-mini-amount">$49<span data-i18n="idx_per_month">/月</span></div>
       <div class="price-mini-desc" data-i18n="price3_desc">AI研究助手＋API</div>
     </div>
     <div class="price-mini">
@@ -796,12 +796,12 @@ async function loadMarketPulse() {
     const data = await res.json();
     const overallEl = document.getElementById('pulseOverall');
     if (overallEl) {
-      overallEl.innerHTML = `整體：<strong>${data.overall_sentiment}</strong> · Confidence ${data.confidence_pct != null ? data.confidence_pct + '%' : '--'} · ${data.volatility_desc}`;
+      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${data.overall_sentiment}</strong> · Confidence ${data.confidence_pct != null ? data.confidence_pct + '%' : '--'} · ${data.volatility_desc}`;
     }
     const topEl = document.getElementById('pulseTop');
     if (topEl) {
       if (data.top_sector) {
-        topEl.innerHTML = `🏆 Top Opportunity：<strong>${data.top_sector.label}（${data.top_sector.ticker}）</strong> · ${data.top_sector.confluence_direction}`;
+        topEl.innerHTML = `🏆 ${t('idx_pulse_top_opportunity','Top Opportunity')}：<strong>${data.top_sector.label}（${data.top_sector.ticker}）</strong> · ${data.top_sector.confluence_direction}`;
         topEl.style.display = 'block';
       } else {
         topEl.style.display = 'none';
@@ -810,7 +810,7 @@ async function loadMarketPulse() {
     const bottomEl = document.getElementById('pulseBottom');
     if (bottomEl) {
       if (data.bottom_sector) {
-        bottomEl.innerHTML = `⚠️ Top Risk：<strong>${data.bottom_sector.label}（${data.bottom_sector.ticker}）</strong> · ${data.bottom_sector.confluence_direction}`;
+        bottomEl.innerHTML = `⚠️ ${t('idx_pulse_top_risk','Top Risk')}：<strong>${data.bottom_sector.label}（${data.bottom_sector.ticker}）</strong> · ${data.bottom_sector.confluence_direction}`;
         bottomEl.style.display = 'block';
       } else {
         bottomEl.style.display = 'none';
@@ -844,7 +844,7 @@ async function loadMarketPulse() {
     }
   } catch(e) {
     const overallEl = document.getElementById('pulseOverall');
-    if (overallEl) overallEl.textContent = '暫時無法載入';
+    if (overallEl) overallEl.textContent = t('idx_pulse_load_fail','暫時無法載入');
   }
 }
 loadMarketPulse();
@@ -883,7 +883,7 @@ async function loadDailyExperience() {
         ? results.slice(0, 4).map(r =>
             `<div class="pulse-personal-item"><span>${r.ticker}</span><span>Score ${r.final_score}</span></div>`
           ).join('')
-        : '<div class="pulse-personal-empty">你嘅自選股暫時未有符合篩選門檻嘅標的（或者未加自選股）</div>';
+        : `<div class="pulse-personal-empty">${t('idx_watchlist_empty','你嘅自選股暫時未有符合篩選門檻嘅標的（或者未加自選股）')}</div>`;
     }
     if (radarEl) {
       const items = anomalyData.items || [];
@@ -892,11 +892,11 @@ async function loadDailyExperience() {
             const types = (it.anomalies || []).map(a => a.type).join('、') || '異常訊號';
             return `<div class="pulse-personal-item"><span>${it.ticker}</span><span>${it.severity} · ${types}</span></div>`;
           }).join('')
-        : '<div class="pulse-personal-empty">你嘅自選股暫時未偵測到異常波動</div>';
+        : `<div class="pulse-personal-empty">${t('idx_riskradar_empty','你嘅自選股暫時未偵測到異常波動')}</div>`;
     }
   } catch (e) {
-    if (watchlistEl) watchlistEl.innerHTML = '<div class="pulse-personal-empty">暫時無法載入</div>';
-    if (radarEl) radarEl.innerHTML = '<div class="pulse-personal-empty">暫時無法載入</div>';
+    if (watchlistEl) watchlistEl.innerHTML = `<div class="pulse-personal-empty">${t('idx_pulse_load_fail','暫時無法載入')}</div>`;
+    if (radarEl) radarEl.innerHTML = `<div class="pulse-personal-empty">${t('idx_pulse_load_fail','暫時無法載入')}</div>`;
   }
 }
 loadDailyExperience();
