@@ -68,6 +68,8 @@
   .live-step-icon { font-size: 1.4rem; }
   .live-step-label { font-size: 0.78rem; color: #94a3b8; }
   .live-step.active .live-step-label { color: #00d4ff; font-weight: 600; }
+  .live-step-clickable { cursor: pointer; }
+  .live-step-clickable:hover { border-color: rgba(0,212,255,0.5); opacity: 1; }
   @media (max-width: 640px) { .live-steps { grid-template-columns: repeat(2, 1fr); } }
 
   /* Decision Intelligence brand core */
@@ -104,13 +106,15 @@
   /* Tools overview strip (restrained -- see HOMEPAGE_CRO_REDESIGN_PROPOSAL.md Phase G) */
   .tools-section { max-width: 1100px; margin: 0 auto; padding: 20px 24px 60px; }
   .tools-sub { text-align: center; color: #64748b; font-size: 0.85rem; margin: -32px auto 32px; max-width: 560px; line-height: 1.6; }
-  .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .tool-pill { display: flex; align-items: center; gap: 10px; background: #0d1525; border: 1px solid #1e2d45; border-radius: 10px; padding: 12px 14px; text-decoration: none; color: #e2e8f0; transition: border-color 0.2s; }
+  /* Flexbox instead of grid so an incomplete trailing row (11 tiles / 3
+     columns = 3,3,3,2) centers itself instead of hugging the left edge. */
+  .tools-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .tool-pill { display: flex; align-items: center; gap: 10px; background: #0d1525; border: 1px solid #1e2d45; border-radius: 10px; padding: 12px 14px; text-decoration: none; color: #e2e8f0; transition: border-color 0.2s; flex: 0 0 calc((100% - 20px) / 3); box-sizing: border-box; }
   .tool-pill:hover { border-color: rgba(0,212,255,0.3); }
   .tool-pill-icon { font-size: 1.1rem; }
   .tool-pill-name { font-size: 0.82rem; font-weight: 600; }
   .tool-pill-desc { font-size: 0.7rem; color: #64748b; margin-top: 1px; }
-  @media (max-width: 768px) { .tools-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) { .tool-pill { flex-basis: calc((100% - 10px) / 2); } }
   .feature-link { display: inline-block; margin-top: 16px; font-size: 0.8rem; color: #00d4ff; text-decoration: none; font-weight: 500; }
 
   /* Guided nav fork (Notion-style question -> Wealthfront-style contextual filter) */
@@ -172,6 +176,23 @@
   .pulse-disclaimer { font-size: 0.72rem; color: #475569; margin-top: 14px; text-align: center; }
   @media (max-width: 640px) { .pulse-grid { grid-template-columns: repeat(2, 1fr); } }
 
+  /* Top Opportunity -- 3 cards, one per asset class (stock/futures/crypto),
+     each a real top-pick from /api/top-opportunities (see api/market_pulse.py).
+     Replaces the old single-line "Top Opportunity" text that used to sit
+     inside the Outlook box. */
+  .top-opp-section { max-width: 1000px; margin: 32px auto 0; padding: 0 24px; }
+  .top-opp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .top-opp-card { display: block; text-decoration: none; color: inherit; background: #0d1525; border: 1px solid #1e2d45; border-radius: 14px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s, transform 0.15s; }
+  .top-opp-card:hover { border-color: rgba(0,212,255,0.4); transform: translateY(-2px); }
+  .top-opp-class { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-bottom: 10px; }
+  .top-opp-ticker { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+  .top-opp-price { font-size: 0.95rem; color: #94a3b8; margin-bottom: 6px; }
+  .top-opp-dir { font-size: 0.82rem; font-weight: 600; }
+  .top-opp-dir.bull { color: #10b981; }
+  .top-opp-dir.bear { color: #ef4444; }
+  .top-opp-dir.neutral { color: #f59e0b; }
+  @media (max-width: 768px) { .top-opp-grid { grid-template-columns: 1fr; } }
+
   /* Daily Experience: personalized AI Watchlist / Risk Radar, nested
      inside the same Today's AI Outlook box (not a new section -- keeps
      the mandated homepage flow order intact). */
@@ -191,6 +212,8 @@
   .pr-bad, .pr-good { padding: 16px 20px; border-radius: 10px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
   .pr-bad { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); color: #94a3b8; }
   .pr-good { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.25); color: #e2e8f0; font-weight: 500; }
+  .pr-clickable { cursor: pointer; transition: transform 0.15s, border-color 0.2s; }
+  .pr-clickable:hover { transform: translateY(-2px); border-color: rgba(0,212,255,0.4); }
   @media (max-width: 640px) { .pr-row { grid-template-columns: 1fr; } }
 
   /* How it works */
@@ -311,7 +334,7 @@
   <div class="section-label" data-i18n="trust_label">Trust</div>
   <div class="section-title" data-i18n="trust_title">平台實力</div>
   <div class="stats">
-    <div class="stat"><div class="stat-num">9</div><div class="stat-label">AI Engines</div></div>
+    <div class="stat"><div class="stat-num">11</div><div class="stat-label">AI Engines</div></div>
     <div class="stat"><div class="stat-num">3</div><div class="stat-label">Asset Classes</div></div>
     <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">AI Analysis</div></div>
     <div class="stat"><div class="stat-num">60s</div><div class="stat-label">Avg. Research Time</div></div>
@@ -325,16 +348,16 @@
   <div class="section-label" data-i18n="problem_label">你嘅困擾</div>
   <div class="section-title" data-i18n="problem_title">由痛點到解決方案</div>
   <div class="pr-row">
-    <div class="pr-bad" data-i18n="pr1_bad">❌ 每日睇幾十篇新聞先搵到重點</div>
-    <div class="pr-good" data-i18n="pr1_good">✅ AI幾秒內幫你整合新聞情緒</div>
+    <div class="pr-bad pr-clickable" onclick="scrollToDemo()" data-i18n="pr1_bad">❌ 每日睇幾十篇新聞先搵到重點</div>
+    <div class="pr-good pr-clickable" onclick="scrollToDemo()" data-i18n="pr1_good">✅ AI幾秒內幫你整合新聞情緒</div>
   </div>
   <div class="pr-row">
-    <div class="pr-bad" data-i18n="pr2_bad">❌ 唔知支撐位、阻力位喺邊</div>
-    <div class="pr-good" data-i18n="pr2_good">✅ 用真實歷史數據自動計算</div>
+    <div class="pr-bad pr-clickable" onclick="scrollToDemo()" data-i18n="pr2_bad">❌ 唔知支撐位、阻力位喺邊</div>
+    <div class="pr-good pr-clickable" onclick="scrollToDemo()" data-i18n="pr2_good">✅ 用真實歷史數據自動計算</div>
   </div>
   <div class="pr-row">
-    <div class="pr-bad" data-i18n="pr3_bad">❌ 唔知而家市場風險有幾大</div>
-    <div class="pr-good" data-i18n="pr3_good">✅ Risk Score + 壓力測試一目了然</div>
+    <div class="pr-bad pr-clickable" onclick="scrollToDemo()" data-i18n="pr3_bad">❌ 唔知而家市場風險有幾大</div>
+    <div class="pr-good pr-clickable" onclick="scrollToDemo()" data-i18n="pr3_good">✅ Risk Score + 壓力測試一目了然</div>
   </div>
 </div>
 
@@ -344,10 +367,10 @@
     <div class="section-label" style="margin-bottom:6px" data-i18n="live_label">Live AI Result</div>
     <div class="section-title" style="margin-bottom:4px;font-size:1.4rem" data-i18n="live_title">AI 正在分析緊真實市場數據</div>
     <div class="live-steps" id="liveSteps">
-      <div class="live-step" id="liveStep1"><div class="live-step-icon">📰</div><div class="live-step-label" data-i18n="live_step1">Reading News...</div></div>
-      <div class="live-step" id="liveStep2"><div class="live-step-icon">📈</div><div class="live-step-label" data-i18n="live_step2">Scanning Charts...</div></div>
-      <div class="live-step" id="liveStep3"><div class="live-step-icon">⚠️</div><div class="live-step-label" data-i18n="live_step3">Calculating Risk...</div></div>
-      <div class="live-step" id="liveStep4"><div class="live-step-icon">🧠</div><div class="live-step-label" data-i18n="live_step4">Generating Research...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep1" onclick="homepagePreviewNavigate('news.html')"><div class="live-step-icon">📰</div><div class="live-step-label" data-i18n="live_step1">Reading News...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep2" onclick="homepagePreviewNavigate('chart-analysis.html')"><div class="live-step-icon">📈</div><div class="live-step-label" data-i18n="live_step2">Scanning Charts...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep3" onclick="homepagePreviewNavigate('stress-lab.html')"><div class="live-step-icon">⚠️</div><div class="live-step-label" data-i18n="live_step3">Calculating Risk...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep4" onclick="homepagePreviewNavigate('ai-analysis.html')"><div class="live-step-icon">🧠</div><div class="live-step-label" data-i18n="live_step4">Generating Research...</div></div>
     </div>
   </div>
 </div>
@@ -359,7 +382,6 @@
       <div class="pulse-title"><span class="pulse-dot"></span><span data-i18n="outlook_title">Today's AI Outlook</span></div>
       <div class="pulse-overall" id="pulseOverall" data-i18n="outlook_loading">載入緊...</div>
     </div>
-    <div class="pulse-top" id="pulseTop"></div>
     <div class="pulse-top" id="pulseBottom" style="display:none"></div>
     <div class="pulse-grid" id="pulseGrid">
       <div class="pulse-card"><div class="pulse-card-label" data-i18n="pulse1">美股大盤</div><div class="pulse-card-price">--</div></div>
@@ -389,6 +411,18 @@
     <div class="pulse-personal-cta" id="pulsePersonalCta" style="display:none">
       <a href="login.html" data-i18n="daily_cta">登入解鎖你嘅AI Watchlist同Risk Radar，每日自動更新 →</a>
     </div>
+  </div>
+</div>
+
+<!-- Top Opportunity -- 3 cards, one per asset class (股票/期貨/加密貨幣),
+     見 api/market_pulse.py 嘅 /api/top-opportunities，同Outlook basket
+     一樣用真實Confluence Engine計，唔係AI估。 -->
+<div class="top-opp-section">
+  <div class="section-label" data-i18n="topopp_label">🏆 Top Opportunity</div>
+  <div class="top-opp-grid" id="topOppGrid">
+    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
+    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
+    <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_crypto">加密貨幣</div><div class="top-opp-ticker">--</div></div>
   </div>
 </div>
 
@@ -522,7 +556,7 @@
 </div>
 
 <!-- Anonymous AI Demo -->
-<div class="demo-section">
+<div class="demo-section" id="demoSection">
   <div class="section-label" data-i18n="demo_label">免費體驗</div>
   <div class="section-title" data-i18n="demo_title">不需註冊，即刻試用</div>
   <p style="color:#64748b;font-size:0.88rem" data-i18n="demo_subtitle">真實技術分析，即刻試用</p>
@@ -629,6 +663,57 @@
 const API = "https://api.xfinlab.com/api";
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
+// 自動識別全球代號：純數字自動加返啱嘅交易所後綴，常見加密貨幣代號自動加
+// -USD，已經有後綴（.HK/.SS/.SZ/-USD/期貨=F等）或者其他格式就原樣使用 --
+// 等訪客唔使記硬性格式，打「0700」就自動變「0700.HK」，打「600519」就自動
+// 變「600519.SS」，打「BTC」就自動變「BTC-USD」。
+const GLOBAL_TICKER_CRYPTO_SYMBOLS = ['BTC','ETH','SOL','BNB','XRP','DOGE','ADA','DOT','AVAX','LTC','LINK','MATIC','SHIB','TRX','ATOM'];
+function normalizeGlobalTicker(raw) {
+  let s = (raw || '').trim().toUpperCase();
+  if (!s) return s;
+  if (s.includes('.') || s.includes('-') || s.includes('=')) return s;
+
+  if (/^\d+$/.test(s)) {
+    if (s.length === 4 || s.length === 5) return s.padStart(4, '0') + '.HK';
+    if (s.length === 6) {
+      const first = s[0];
+      if (first === '6') return s + '.SS';
+      if (first === '0' || first === '3') return s + '.SZ';
+    }
+    return s;
+  }
+
+  if (/^[A-Z]+$/.test(s) && GLOBAL_TICKER_CRYPTO_SYMBOLS.includes(s)) return s + '-USD';
+  return s;
+}
+
+// 全站共用「一次過」preview閘：Live AI Result 4個步驟／Today's AI Outlook
+// 8張板塊卡／Top Opportunity 3張卡，一共15個入口，共用同一個flag（唔係
+// 3組各自計一次）。訪客第一次撳呢15個入面任何一個，會真係導航去嗰個
+// 卡片對應嘅工具頁面；用咗嗰一次之後，之後再撳呢15個入面任何一個，
+// 一律直接帶去login.html，唔會再顯示內容。用localStorage記錄，唔會因為
+// 重開網頁而重置（同免費demo嗰個IP-based時段係獨立機制，唔會互相影響）。
+const HOMEPAGE_PREVIEW_KEY = 'xfinlab_homepage_preview_used';
+function homepagePreviewNavigate(url, evt) {
+  if (evt) evt.preventDefault();
+  if (localStorage.getItem(HOMEPAGE_PREVIEW_KEY)) {
+    window.location.href = 'login.html';
+    return false;
+  }
+  localStorage.setItem(HOMEPAGE_PREVIEW_KEY, '1');
+  window.location.href = url;
+  return false;
+}
+
+// 由痛點到解決方案 6個項目撳落去，帶去下面「不需註冊，即刻試用」個demo box，
+// 順手focus個ticker input，等訪客即刻可以打字試用。
+function scrollToDemo() {
+  const section = document.getElementById('demoSection');
+  if (section) section.scrollIntoView({behavior: 'smooth', block: 'start'});
+  const input = document.getElementById('demoTicker');
+  if (input) setTimeout(() => input.focus(), 400);
+}
+
 function startGuide() {
   document.getElementById('guideFork').style.display = 'none';
   document.getElementById('guideQuestion').style.display = 'block';
@@ -661,7 +746,7 @@ function showAllTools() {
 }
 
 function goAnalyze() {
-  const ticker = document.getElementById('heroTicker').value.trim().toUpperCase();
+  const ticker = normalizeGlobalTicker(document.getElementById('heroTicker').value);
   if (!ticker) { alert('請輸入股票代號'); return; }
   window.location.href = `ai-analysis.html?ticker=${ticker}`;
 }
@@ -810,15 +895,6 @@ async function loadMarketPulse() {
     if (overallEl) {
       overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${data.overall_sentiment}</strong> · Confidence ${data.confidence_pct != null ? data.confidence_pct + '%' : '--'} · ${data.volatility_desc}`;
     }
-    const topEl = document.getElementById('pulseTop');
-    if (topEl) {
-      if (data.top_sector) {
-        topEl.innerHTML = `🏆 ${t('idx_pulse_top_opportunity','Top Opportunity')}：<strong>${data.top_sector.label}（${data.top_sector.ticker}）</strong> · ${data.top_sector.confluence_direction}`;
-        topEl.style.display = 'block';
-      } else {
-        topEl.style.display = 'none';
-      }
-    }
     const bottomEl = document.getElementById('pulseBottom');
     if (bottomEl) {
       if (data.bottom_sector) {
@@ -844,8 +920,9 @@ async function loadMarketPulse() {
         }
         const dirClass = b.confluence_direction === '偏多' ? 'bull' : (b.confluence_direction === '偏空' ? 'bear' : 'neutral');
         const topClass = i === 0 ? ' top-pick' : '';
+        const href = `ai-analysis.html?symbols=${encodeURIComponent(b.ticker)}&assetType=auto`;
         return `<div class="pulse-card${topClass}">
-          <a class="pulse-card-main" href="ai-analysis.html?symbols=${encodeURIComponent(b.ticker)}&assetType=auto">
+          <a class="pulse-card-main" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
             <div class="pulse-card-label">${trPulseLabel(b.label)}</div>
             <div class="pulse-card-price">$${b.price}</div>
             <div class="pulse-card-dir ${dirClass}">${b.confluence_direction}</div>
@@ -861,6 +938,40 @@ async function loadMarketPulse() {
 }
 loadMarketPulse();
 setInterval(loadMarketPulse, 90000);
+
+// Top Opportunity -- 3 cards, 一個asset class一個真實top pick，見
+// api/market_pulse.py 嘅 /api/top-opportunities（5分鐘後端快取）。
+// 每張卡撳落去經過homepagePreviewNavigate()嘅全站一次性preview閘。
+const TOPOPP_ORDER = ['stock', 'futures', 'crypto'];
+const TOPOPP_CLASS_KEYS = {'stock': 'topopp_class_stock', 'futures': 'topopp_class_futures', 'crypto': 'topopp_class_crypto'};
+async function loadTopOpportunities() {
+  const grid = document.getElementById('topOppGrid');
+  if (!grid) return;
+  try {
+    const res = await fetch(`${API}/top-opportunities`);
+    const data = await res.json();
+    const items = data.items || {};
+    grid.innerHTML = TOPOPP_ORDER.map(function(cls) {
+      const classLabel = t(TOPOPP_CLASS_KEYS[cls], items[cls] ? items[cls].asset_class_label : cls);
+      const item = items[cls];
+      if (!item || !item.available) {
+        return `<div class="top-opp-card"><div class="top-opp-class">${classLabel}</div><div class="top-opp-ticker">--</div></div>`;
+      }
+      const dirClass = item.confluence_direction === '偏多' ? 'bull' : (item.confluence_direction === '偏空' ? 'bear' : 'neutral');
+      const href = `ai-analysis.html?symbols=${encodeURIComponent(item.ticker)}&assetType=auto`;
+      return `<a class="top-opp-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
+        <div class="top-opp-class">${classLabel}</div>
+        <div class="top-opp-ticker">${item.label}（${item.ticker}）</div>
+        <div class="top-opp-price">$${item.price}</div>
+        <div class="top-opp-dir ${dirClass}">${item.confluence_direction}</div>
+      </a>`;
+    }).join('');
+  } catch(e) {
+    // 保持返 -- 佔位卡，唔會遮蓋成個homepage
+  }
+}
+loadTopOpportunities();
+setInterval(loadTopOpportunities, 300000);
 
 // Daily Experience: personalized AI Watchlist / Risk Radar nested inside
 // the same Today's AI Outlook box. Reuses /api/screener and /api/anomaly
@@ -917,7 +1028,7 @@ loadDailyExperience();
 // 唔會因為重開網頁/清cache而重置，時段內可以任意查詢），時段完結之後
 // 會直接帶去login.html，冇cooldown會重開新時段。見api/public_demo.py
 async function runDemo() {
-  const ticker = (document.getElementById('demoTicker').value || '').trim().toUpperCase();
+  const ticker = normalizeGlobalTicker(document.getElementById('demoTicker').value);
   const btn = document.getElementById('demoBtn');
   const resultBox = document.getElementById('demoResult');
   const errorBox = document.getElementById('demoError');

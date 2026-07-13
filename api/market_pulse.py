@@ -165,3 +165,100 @@ def market_pulse():
     _cache = result
     _cache_time = now
     return {**result, "cached": False}
+
+
+# ---------------------------------------------------------------------------
+# Top Opportunity (per-asset-class) -- homepage "Top Opportunity" section
+# (product decision 2026-07-13): instead of one global top pick across a
+# mixed basket, show a top pick PER asset class (stock/futures/crypto) so
+# visitors can see "what's strongest right now" in the asset class they
+# actually care about. Reuses the exact same Confluence Engine + caching
+# pattern as _compute_pulse() above -- zero new external dependencies,
+# same real price-action math, same "no AI-provider cost" property.
+#
+# Futures use yfinance's continuous-contract front-month symbols (ES=F/
+# CL=F/GC=F); crypto adds ETH-USD alongside the existing BTC-USD. Alpaca
+# doesn't cover futures/crypto so these fall through to yfinance inside
+# get_technical_analysis(), same fallback path already exercised by
+# BTC-USD in the main pulse basket above.
+# ---------------------------------------------------------------------------
+
+_ASSET_CLASS_BASKETS = {
+    "stock": ["SPY", "QQQ", "DIA", "IWM", "XLK", "XLF", "XLE"],
+    "futures": ["ES=F", "CL=F", "GC=F"],
+    "crypto": ["BTC-USD", "ETH-USD"],
+}
+_ASSET_CLASS_LABELS = {"stock": "股票", "futures": "期貨", "crypto": "加密貨幣"}
+_TICKER_LABELS = {
+    "SPY": "標普500", "QQQ": "納指100", "DIA": "道瓊工業", "IWM": "羅素2000小型股",
+    "XLK": "科技板塊", "XLF": "金融板塊", "XLE": "能源板塊",
+    "ES=F": "標普500期貨", "CL=F": "原油期貨", "GC=F": "黃金期貨",
+    "BTC-USD": "比特幣", "ETH-USD": "以太幣",
+}
+
+_TOP_OPP_CACHE_TTL_SECONDS = 300
+_top_opp_cache: Optional[Dict] = None
+_top_opp_cache_time: float = 0.0
+
+
+def _compute_top_opportunities() -> Dict:
+    items: Dict[str, Dict] = {}
+
+    for asset_class, basket in _ASSET_CLASS_BASKETS.items():
+        best: Optional[Dict] = None
+        for ticker in basket:
+            try:
+                tech = get_technical_analysis(ticker, period="3mo")
+            except Exception:
+                tech = None
+            if not tech or "error" in tech:
+                continue
+
+            confluence = tech.get("confluence", {})
+            score = confluence.get("score", 0.0)
+            candidate = {
+                "ticker": ticker,
+                "label": _TICKER_LABELS.get(ticker, ticker),
+                "price": tech.get("last_close"),
+                "confluence_direction": confluence.get("direction"),
+                "_score": score,
+            }
+            if best is None or score > best["_score"]:
+                best = candidate
+
+        if best:
+            items[asset_class] = {
+                "asset_class": asset_class,
+                "asset_class_label": _ASSET_CLASS_LABELS[asset_class],
+                "available": True,
+                "ticker": best["ticker"],
+                "label": best["label"],
+                "price": best["price"],
+                "confluence_direction": best["confluence_direction"],
+            }
+        else:
+            items[asset_class] = {
+                "asset_class": asset_class,
+                "asset_class_label": _ASSET_CLASS_LABELS[asset_class],
+                "available": False,
+            }
+
+    return {
+        "items": items,
+        "data_source": "即市技術分析（真實價格數據，非AI猜測）",
+        "disclaimer": "呢個係整體市場技術面參考，唔係投資建議。",
+    }
+
+
+@router.get("/top-opportunities")
+def top_opportunities():
+    global _top_opp_cache, _top_opp_cache_time
+
+    now = time.time()
+    if _top_opp_cache is not None and (now - _top_opp_cache_time) < _TOP_OPP_CACHE_TTL_SECONDS:
+        return {**_top_opp_cache, "cached": True}
+
+    result = _compute_top_opportunities()
+    _top_opp_cache = result
+    _top_opp_cache_time = now
+    return {**result, "cached": False}
