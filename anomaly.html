@@ -64,7 +64,17 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <p class="page-sub" data-i18n="anom_subtitle">用真實成交量同價格數據，掃描你嘅自選股（未登入就用預設一籃子股票），揪出唔尋常嘅波動 —— 唔靠AI估算，數值指標100%來自真實市場數據。</p>
 
   <div class="panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem">
+    <label class="input-label" for="anomSearchInput" data-i18n="anom_search_label">搜尋單一代號</label>
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+      <input id="anomSearchInput" type="text" data-i18n-placeholder="anom_search_placeholder" placeholder="例如 AAPL、0700.HK、BTC" style="flex:1;min-width:200px;padding:0.5rem 0.6rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary)">
+      <button class="primary-btn" id="anomSearchBtn" onclick="runAnomalySearch()" data-i18n="anom_search_btn">🔍 檢查</button>
+    </div>
+    <div class="upload-hint" style="margin-top:0.5rem;color:var(--text-muted);font-size:0.82rem" data-i18n="anom_search_hint">呢個只查你打嘅單一代號，同下面嘅自選股批量掃描分開</div>
+    <div id="anomSearchResult" style="margin-top:14px"></div>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-bottom:6px">
       <div style="color:var(--text2);font-size:0.9rem" data-i18n="anom_scan_hint">掃描你自選股嘅成交量同價格變化，偵測異常訊號</div>
       <button class="primary-btn" id="scanBtn" onclick="runAnomalyScan()" data-i18n="anom_scan_btn">開始掃描</button>
     </div>
@@ -138,6 +148,88 @@ async function runAnomalyScan() {
     btn.textContent = t('anom_scan_btn', '開始掃描');
   }
 }
+
+// ---- Single-ticker search (separate from the batch watchlist scan above) ----
+// Same normalizeGlobalTicker() rules used on the homepage demo ticker and
+// chart-analysis.html's search box, copied here so this page works
+// standalone.
+const GLOBAL_TICKER_CRYPTO_SYMBOLS = ['BTC','ETH','SOL','BNB','XRP','DOGE','ADA','DOT','AVAX','LTC','LINK','MATIC','SHIB','TRX','ATOM'];
+function normalizeGlobalTicker(raw) {
+  let s = (raw || '').trim().toUpperCase();
+  if (!s) return s;
+  if (s.includes('.') || s.includes('-') || s.includes('=')) return s;
+  if (/^\d+$/.test(s)) {
+    if (s.length === 4 || s.length === 5) return s.padStart(4, '0') + '.HK';
+    if (s.length === 6) {
+      const first = s[0];
+      if (first === '6') return s + '.SS';
+      if (first === '0' || first === '3') return s + '.SZ';
+    }
+    return s;
+  }
+  if (/^[A-Z]+$/.test(s) && GLOBAL_TICKER_CRYPTO_SYMBOLS.includes(s)) return s + '-USD';
+  return s;
+}
+
+function renderAnomalyResult(ticker, result) {
+  const severity = result.severity || 'NONE';
+  const anomalies = result.anomalies || [];
+  const items = anomalies.length
+    ? anomalies.map(a => `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">⚡</div>
+        <div>
+          <div class="anomaly-type severity-${severity}">${ticker} · ${a.type.replace(/_/g,' ')}</div>
+          <div class="anomaly-detail">${a.detail}</div>
+        </div>
+      </div>`).join('')
+    : `<div class="anomaly-item">
+        <div class="anomaly-icon">✅</div>
+        <div>
+          <div class="anomaly-type severity-NONE">${ticker} · ${t('anom_no_anomaly_ticker','未偵測到異常')}</div>
+          <div class="anomaly-detail">${t('anom_no_anomaly_ticker_detail','成交量同價格變化屬於正常範圍')}</div>
+        </div>
+      </div>`;
+  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted)">${t('anom_severity_label','整體嚴重程度')}</span>
+      <span class="badge badge-${severity}">${severity}</span>
+    </div>${items}`;
+}
+
+async function runAnomalySearch(symbolOverride) {
+  const input = document.getElementById('anomSearchInput');
+  const ticker = normalizeGlobalTicker(symbolOverride || input.value);
+  if (!ticker) {
+    alert(t('anom_search_alert_empty', '請輸入股票代號'));
+    return;
+  }
+  input.value = ticker;
+
+  const btn = document.getElementById('anomSearchBtn');
+  const resultBox = document.getElementById('anomSearchResult');
+  btn.disabled = true;
+  btn.textContent = t('anom_search_checking', '檢查緊...');
+  resultBox.innerHTML = `<div class="empty-box">${t('anom_search_checking', '檢查緊...')}</div>`;
+
+  try {
+    const res = await fetch(`${API}/anomaly/search/${encodeURIComponent(ticker)}`);
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      throw new Error(data.message || t('anom_search_error', '檢查失敗，請重試'));
+    }
+    resultBox.innerHTML = renderAnomalyResult(data.ticker || ticker, data);
+    if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'anomaly_search', ticker});
+  } catch (e) {
+    resultBox.innerHTML = `<div class="empty-box">${e.message || t('anom_search_error', '檢查失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('anom_search_btn', '🔍 檢查');
+  }
+}
+
+document.getElementById('anomSearchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runAnomalySearch();
+});
 
 // auto-run once on load, same behaviour as dashboard.html's Anomaly Radar
 runAnomalyScan();

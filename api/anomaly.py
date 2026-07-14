@@ -1,8 +1,14 @@
+import re
+
 from fastapi import APIRouter
 from engines.anomaly_engine import AnomalyEngine
 from services.dashboard_snapshot_service import get_dashboard_tickers, compute_snapshots
 
 router = APIRouter()
+
+# Same ticker-format guard used by api/chart_analysis.py -- reject junk
+# input cheaply before it ever reaches market_data_service.
+_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=]{1,12}$")
 
 
 @router.get("/anomaly")
@@ -42,4 +48,40 @@ def anomaly(token: str = None):
         "scanned": len(snapshots),
         "severity": overall_severity,
         "items": items,
+    }
+
+
+@router.get("/anomaly/search/{ticker}")
+def anomaly_search(ticker: str):
+    """
+    Single-ticker anomaly check -- lets a user check ANY global ticker,
+    separate from the batch watchlist scan above. Same AnomalyEngine
+    math, same real volume/price data, just scoped to one symbol instead
+    of the whole watchlist.
+
+    Unlike the batch endpoint above (which only lists tickers that
+    actually have an anomaly, since it's a "what needs my attention"
+    radar), this ALWAYS returns a result even when severity is NONE --
+    someone explicitly searching one ticker wants an honest "no anomaly
+    detected" answer, not silence.
+    """
+    ticker = (ticker or "").strip().upper()
+    if not ticker or not _SYMBOL_RE.match(ticker):
+        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+
+    snapshots = compute_snapshots([ticker])
+    if not snapshots:
+        return {"status": "error", "message": f"攞唔到 {ticker} 嘅市場數據，請確認代號正確。"}
+
+    s = snapshots[0]
+    result = AnomalyEngine.detect(
+        current_volume=s.get("volume", 0),
+        average_volume=s.get("avg_volume", 1),
+        price_change_pct=s.get("price_change_pct", 0.0),
+    )
+
+    return {
+        "status": "ok",
+        "ticker": s["ticker"],
+        **result,
     }
