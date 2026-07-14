@@ -181,7 +181,9 @@ async def chart_analysis(body: dict):
             f"  睇多訊號：{'、'.join(tech['confluence']['bullish_signals']) or '無'}\n"
             f"  睇淡訊號：{'、'.join(tech['confluence']['bearish_signals']) or '無'}\n\n"
             "你嘅任務淨係兩樣：\n"
-            "1. 純粹用眼睇圖，辨識圖表入面嘅視覺型態（雙頂/雙底/頭肩頂/頭肩底/三角收斂/突破回測/0.618回調結構）。\n"
+            "1. 純粹用眼睇圖，辨識圖表入面嘅視覺型態（雙頂/雙底/頭肩頂/頭肩底/三角收斂/突破回測/"
+            "0.618回調結構/旗形/尖旗形/通道/矩形整理/杯柄形/菱形/擴散形/ABC修正浪/缺口/島型反轉）。"
+            "如果張圖睇唔清楚某個型態，誠實答「不可能」或者「不明」，唔好靠估。\n"
             "2. 結合上面提供嘅真實數據 + Confluence評分 + 你睇到嘅視覺型態，畀出簡短風險提示同建議，"
             "如果你睇到嘅型態同Confluence評分方向一致，要喺建議入面講明「型態同數據訊號一致」；"
             "如果矛盾，要講明邊樣同邊樣有衝突，唔好扮冇睇到。\n"
@@ -196,13 +198,23 @@ async def chart_analysis(body: dict):
             '    "p_head_shoulder_bottom": "可能/不可能",\n'
             '    "p_triangle": "可能/不可能",\n'
             '    "p_breakback": "可能/不可能",\n'
-            '    "p_0618": "可能/不可能"\n'
+            '    "p_0618": "可能/不可能",\n'
+            '    "p_flag": "可能/不可能",\n'
+            '    "p_pennant": "可能/不可能",\n'
+            '    "p_channel": "可能/不可能",\n'
+            '    "p_rectangle": "可能/不可能",\n'
+            '    "p_cup_handle": "可能/不可能",\n'
+            '    "p_diamond": "可能/不可能",\n'
+            '    "p_broadening": "可能/不可能",\n'
+            '    "p_abc": "可能/不可能",\n'
+            '    "p_gap": "可能/不可能",\n'
+            '    "p_island": "可能/不可能"\n'
             '  },\n'
             '  "risk": "簡短風險提示，15隻字內",\n'
             '  "recommendation": "簡短建議，15隻字內"\n'
             "}"
         )
-        max_tokens = 1500
+        max_tokens = 1800
     else:
         prompt = (
             "你是專業技術分析師，正在觀察一張真實嘅K線圖截圖。"
@@ -231,13 +243,23 @@ async def chart_analysis(body: dict):
             '    "p_head_shoulder_bottom": "可能/不可能",\n'
             '    "p_triangle": "可能/不可能",\n'
             '    "p_breakback": "可能/不可能",\n'
-            '    "p_0618": "可能/不可能"\n'
+            '    "p_0618": "可能/不可能",\n'
+            '    "p_flag": "可能/不可能",\n'
+            '    "p_pennant": "可能/不可能",\n'
+            '    "p_channel": "可能/不可能",\n'
+            '    "p_rectangle": "可能/不可能",\n'
+            '    "p_cup_handle": "可能/不可能",\n'
+            '    "p_diamond": "可能/不可能",\n'
+            '    "p_broadening": "可能/不可能",\n'
+            '    "p_abc": "可能/不可能",\n'
+            '    "p_gap": "可能/不可能",\n'
+            '    "p_island": "可能/不可能"\n'
             '  },\n'
             '  "risk": "簡短風險提示，15隻字內",\n'
             '  "recommendation": "簡短建議，15隻字內"\n'
             "}"
         )
-        max_tokens = 3000
+        max_tokens = 3500
 
     try:
         raw_answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=max_tokens)

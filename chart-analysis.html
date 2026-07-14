@@ -138,6 +138,16 @@
         <div class="pattern-item"><span data-i18n="ca_p_triangle">三角收斂：</span><span id="p_triangle">-</span></div>
         <div class="pattern-item"><span data-i18n="ca_p_breakback">突破回測：</span><span id="p_breakback">-</span></div>
         <div class="pattern-item"><span data-i18n="ca_p_0618">0.618 回調：</span><span id="p_0618">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_flag">旗形：</span><span id="p_flag">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_pennant">尖旗形：</span><span id="p_pennant">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_channel">通道：</span><span id="p_channel">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_rectangle">矩形整理：</span><span id="p_rectangle">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_cup_handle">杯柄形：</span><span id="p_cup_handle">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_diamond">菱形：</span><span id="p_diamond">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_broadening">擴散形：</span><span id="p_broadening">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_abc">ABC修正浪：</span><span id="p_abc">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_gap">缺口：</span><span id="p_gap">-</span></div>
+        <div class="pattern-item"><span data-i18n="ca_p_island">島型反轉：</span><span id="p_island">-</span></div>
       </div>
       </div>
 
@@ -569,13 +579,16 @@ async function runImageAnalysis(){
     document.getElementById('recommendationValue').textContent = res.recommendation || '-';
 
     const unclear = t('ca_unclear','不明');
-    document.getElementById('p_double_top').textContent = patterns.p_double_top || unclear;
-    document.getElementById('p_double_bottom').textContent = patterns.p_double_bottom || unclear;
-    document.getElementById('p_head_shoulder_top').textContent = patterns.p_head_shoulder_top || unclear;
-    document.getElementById('p_head_shoulder_bottom').textContent = patterns.p_head_shoulder_bottom || unclear;
-    document.getElementById('p_triangle').textContent = patterns.p_triangle || unclear;
-    document.getElementById('p_breakback').textContent = patterns.p_breakback || unclear;
-    document.getElementById('p_0618').textContent = patterns.p_0618 || unclear;
+    // Phase 1 Pattern Intelligence expansion: 7 -> 17 patterns (image-
+    // upload flow only -- search mode has no image, so patternSummary
+    // there already points users at the AI commentary button instead).
+    ['p_double_top','p_double_bottom','p_head_shoulder_top','p_head_shoulder_bottom',
+     'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
+     'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island'
+    ].forEach(key => {
+      const el = document.getElementById(key);
+      if (el) el.textContent = patterns[key] || unclear;
+    });
 
     // Decision Report™ footer -- only when we have the real confluence
     // engine output (i.e. a symbol was supplied and technical_analysis_
