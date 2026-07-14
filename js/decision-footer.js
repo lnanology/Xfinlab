@@ -31,6 +31,18 @@
  *   riskLabel       "Low" | "Medium" | "High" or null
  *   keyReasons      string[] or null
  *   suggestedAction string or null
+ *
+ *   -- Phase 1 Decision Engine upgrade (additive, all optional) --
+ *   entryPrice      number or null (real last close, not a fabricated one)
+ *   stopLoss        number or null
+ *   takeProfits     number[] (TP1/TP2/TP3) or null
+ *   riskReward      number or null (e.g. 1.45 -> rendered as "1:1.45")
+ *   riskPct         number or null (distance to stop as % of entry)
+ *   Only ever passed when services/technical_analysis_service.py's
+ *   _decision_levels() actually produced real numbers from support/
+ *   resistance/ATR -- never a guessed price. Absolute position sizing is
+ *   deliberately not part of this footer at all (needs the user's account
+ *   size/risk tolerance, which no page here has).
  */
 (function () {
   var _styled = false;
@@ -89,8 +101,27 @@
           opts.riskLabel + '</div><div class="xfl-df-label">RiskDNA™</div></div>');
       }
 
+      // Phase 1 additions -- Entry/Stop/Risk-Reward/Risk% (all optional,
+      // same omit-if-absent rule as everything else in this file).
+      if (opts.entryPrice !== null && opts.entryPrice !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' +
+          opts.entryPrice + '</div><div class="xfl-df-label">Entry</div></div>');
+      }
+      if (opts.stopLoss !== null && opts.stopLoss !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' +
+          opts.stopLoss + '</div><div class="xfl-df-label">Stop Loss</div></div>');
+      }
+      if (opts.riskReward !== null && opts.riskReward !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">1:' +
+          opts.riskReward + '</div><div class="xfl-df-label">Risk/Reward</div></div>');
+      }
+      if (opts.riskPct !== null && opts.riskPct !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' +
+          opts.riskPct + '%</div><div class="xfl-df-label">Risk %</div></div>');
+      }
+
       // If there's nothing real to show, don't render an empty shell.
-      if (stats.length === 0 && !opts.keyReasons && !opts.suggestedAction) {
+      if (stats.length === 0 && !opts.keyReasons && !opts.suggestedAction && !(opts.takeProfits && opts.takeProfits.length)) {
         el.innerHTML = '';
         return;
       }
@@ -98,6 +129,11 @@
       var html = '<div class="xfl-df">';
       html += '<div class="xfl-df-head">📋 Decision Report™</div>';
       if (stats.length) html += '<div class="xfl-df-grid">' + stats.join('') + '</div>';
+      if (opts.takeProfits && opts.takeProfits.length) {
+        html += '<div class="xfl-df-section"><strong>Take Profit Targets</strong><ul>' +
+          opts.takeProfits.map(function (tp, i) { return '<li>TP' + (i + 1) + ': ' + tp + '</li>'; }).join('') +
+          '</ul></div>';
+      }
       if (opts.keyReasons && opts.keyReasons.length) {
         html += '<div class="xfl-df-section"><strong>Key Reasons</strong><ul>' +
           opts.keyReasons.map(function (r) { return '<li>' + r + '</li>'; }).join('') +

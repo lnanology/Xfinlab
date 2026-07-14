@@ -30,10 +30,14 @@
 .education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
 @media(max-width:980px){.analysis-section{grid-template-columns:1fr}.preview-area{width:100%}.analysis-side{order:2}}
 @media(max-width:520px){.upload-area{padding:1rem}.uploader{flex-direction:column}.preview-area{width:100%}}
+.mode-tab{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.5rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.85rem;font-family:inherit}
+.mode-tab.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
+.btn-secondary:disabled{opacity:0.5;cursor:not-allowed}
 </style>
 <script src="js/nav.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
 
@@ -55,9 +59,23 @@
 <div class="container">
   <div class="page-tag">Chart Engine™</div>
   <h1 class="page-title" data-i18n="ca_title">AI K線圖分析</h1>
-  <p class="page-sub" data-i18n="ca_sub">上傳你的 K 線截圖（支援 JPG / PNG / WebP），AI 將分析型態辨識、支撐阻力與風險提示。</p>
+  <p class="page-sub" data-i18n="ca_sub_search">打入任何全球代號，AI 即刻用真實歷史數據畫出K線圖同技術分析，唔使上傳截圖；或者你都可以照舊上傳自己嘅K線截圖。</p>
 
-  <div class="panel">
+  <div class="mode-tabs" style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
+    <button type="button" class="mode-tab" id="tabSearch" onclick="switchMode('search')" data-i18n="ca_mode_search">🔍 搜尋代號（免上傳）</button>
+    <button type="button" class="mode-tab" id="tabUpload" onclick="switchMode('upload')" data-i18n="ca_mode_upload">📷 上傳截圖</button>
+  </div>
+
+  <div class="panel" id="searchPanel">
+    <label class="input-label" for="tickerSearchInput" data-i18n="ca_search_label">股票代號</label>
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+      <input id="tickerSearchInput" type="text" data-i18n-placeholder="ca_search_placeholder" placeholder="例如 AAPL、0700.HK、BTC" style="flex:1;min-width:200px;padding:0.5rem 0.6rem;border-radius:6px;border:1px solid var(--border2);background:var(--navy3);color:var(--text)">
+      <button class="primary-btn" id="searchBtn" onclick="runTickerSearch()" data-i18n="ca_search_btn">🔍 分析</button>
+    </div>
+    <div class="upload-hint" style="margin-top:0.5rem" data-i18n="ca_search_hint">支援全球代號：美股（AAPL）、港股（0700 或 0700.HK）、A股（600519）、加密貨幣（BTC）</div>
+  </div>
+
+  <div class="panel" id="uploadPanel" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
       <div style="flex:1;min-width:240px">
         <label class="input-label" data-i18n="ca_upload_label">圖片上傳</label>
@@ -88,6 +106,10 @@
     </div>
   </div>
 
+  <div class="panel" id="chartPanel" style="display:none">
+    <div id="klineChart" style="height:320px"></div>
+  </div>
+
   <div class="analysis-section">
     <div class="analysis-main">
       <div id="resultContent">
@@ -105,6 +127,7 @@
       <div class="result-row"><div class="result-label" data-i18n="ca_risk_tips">風險提示</div><div class="result-value" id="riskTips">-</div></div>
       <div class="result-row"><div class="result-label" data-i18n="ca_recommendation">建議</div><div class="result-value" id="recommendationValue">-</div></div>
 
+      <div id="patternBlock">
       <h4 style="margin-top:0.8rem" data-i18n="ca_pattern_detail_title">型態詳情</h4>
       <div class="pattern-list" id="patternList">
         <div class="pattern-item"><span data-i18n="ca_p_double_top">雙頂：</span><span id="p_double_top">-</span></div>
@@ -114,6 +137,14 @@
         <div class="pattern-item"><span data-i18n="ca_p_triangle">三角收斂：</span><span id="p_triangle">-</span></div>
         <div class="pattern-item"><span data-i18n="ca_p_breakback">突破回測：</span><span id="p_breakback">-</span></div>
         <div class="pattern-item"><span data-i18n="ca_p_0618">0.618 回調：</span><span id="p_0618">-</span></div>
+      </div>
+      </div>
+
+      <div id="aiCommentaryBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_ai_commentary_title">AI 文字解讀（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_ai_commentary_hint">型態辨識需要截圖先做到；呢度可以叫AI將上面嘅真實數據寫成一段易讀總結（非必需，主動按先會叫AI）</p>
+        <button class="btn-secondary" id="commentaryBtn" onclick="requestAiCommentary()" data-i18n="ca_ai_commentary_btn">🤖 產生AI文字解讀</button>
+        <p class="meta-line" id="commentaryResult" style="margin-top:0.6rem"></p>
       </div>
 
       <div class="education">
@@ -251,6 +282,206 @@ async function trackEvent(event_type, event_data = null) {
 
 trackEvent('page_view', {page: 'chart-analysis'});
 
+// ---- Global ticker search mode: real OHLC + indicators, no screenshot ----
+// needed. Same normalizeGlobalTicker() rules used on the homepage's demo
+// ticker input, copied here so this page works standalone.
+const GLOBAL_TICKER_CRYPTO_SYMBOLS = ['BTC','ETH','SOL','BNB','XRP','DOGE','ADA','DOT','AVAX','LTC','LINK','MATIC','SHIB','TRX','ATOM'];
+function normalizeGlobalTicker(raw) {
+  let s = (raw || '').trim().toUpperCase();
+  if (!s) return s;
+  if (s.includes('.') || s.includes('-') || s.includes('=')) return s;
+  if (/^\d+$/.test(s)) {
+    if (s.length === 4 || s.length === 5) return s.padStart(4, '0') + '.HK';
+    if (s.length === 6) {
+      const first = s[0];
+      if (first === '6') return s + '.SS';
+      if (first === '0' || first === '3') return s + '.SZ';
+    }
+    return s;
+  }
+  if (/^[A-Z]+$/.test(s) && GLOBAL_TICKER_CRYPTO_SYMBOLS.includes(s)) return s + '-USD';
+  return s;
+}
+
+let klineChart = null;
+let klineSeries = null;
+let currentSearchSymbol = null;
+
+function switchMode(mode) {
+  const isSearch = mode === 'search';
+  document.getElementById('searchPanel').style.display = isSearch ? 'block' : 'none';
+  document.getElementById('uploadPanel').style.display = isSearch ? 'none' : 'block';
+  document.getElementById('tabSearch').classList.toggle('active', isSearch);
+  document.getElementById('tabUpload').classList.toggle('active', !isSearch);
+  if (!isSearch) {
+    document.getElementById('chartPanel').style.display = 'none';
+    document.getElementById('patternBlock').style.display = 'block';
+    document.getElementById('aiCommentaryBlock').style.display = 'none';
+  }
+}
+
+document.getElementById('tickerSearchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runTickerSearch();
+});
+
+function ensureKlineChart() {
+  if (klineChart) return;
+  const container = document.getElementById('klineChart');
+  klineChart = LightweightCharts.createChart(container, {
+    layout: { background: { color: 'transparent' }, textColor: '#94a3b8' },
+    grid: { vertLines: { color: 'rgba(148,163,184,0.08)' }, horzLines: { color: 'rgba(148,163,184,0.08)' } },
+    timeScale: { borderVisible: false },
+    rightPriceScale: { borderVisible: false },
+    autoSize: true,
+  });
+  klineSeries = klineChart.addCandlestickSeries({
+    upColor: '#10b981', downColor: '#ef4444', borderVisible: false,
+    wickUpColor: '#10b981', wickDownColor: '#ef4444',
+  });
+}
+
+async function runTickerSearch(symbolOverride){
+  const input = document.getElementById('tickerSearchInput');
+  const symbol = normalizeGlobalTicker(symbolOverride || input.value);
+  if(!symbol){
+    alert(t('ca_search_alert_empty','請輸入股票代號'));
+    return;
+  }
+  input.value = symbol;
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = t('ca_search_analyzing','分析中...');
+  if (typeof window.startAiLoading === 'function') window.startAiLoading();
+
+  document.getElementById('patternBlock').style.display = 'none';
+  document.getElementById('aiCommentaryBlock').style.display = 'block';
+  document.getElementById('commentaryResult').textContent = '';
+  document.getElementById('commentaryBtn').disabled = false;
+  document.getElementById('commentaryBtn').textContent = t('ca_ai_commentary_btn','🤖 產生AI文字解讀');
+
+  try {
+    const response = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}`);
+    const json = await response.json();
+    if(json.status !== 'ok'){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+
+    const res = json.data;
+    currentSearchSymbol = symbol;
+    trackEvent('search', {ticker: symbol, mode: 'chart_search'});
+
+    document.getElementById('chartPanel').style.display = 'block';
+    ensureKlineChart();
+    if(res.ohlc && res.ohlc.length){
+      klineSeries.setData(res.ohlc.map(b => ({time: b.time, open: b.open, high: b.high, low: b.low, close: b.close})));
+      klineChart.timeScale().fitContent();
+    }
+
+    document.getElementById('dataSourceTag').textContent = t('ca_data_source_search','（支撐/阻力/RSI/MACD 來自真實歷史數據）');
+    const noRealData = t('ca_no_real_data','未有真實數據');
+    document.getElementById('trendValue').textContent = res.trend || '-';
+    document.getElementById('supportValue').textContent = res.support ? res.support.level : noRealData;
+    document.getElementById('resistanceValue').textContent = res.resistance ? res.resistance.level : noRealData;
+    document.getElementById('fibValue').textContent = res.fibonacci_0618 ? res.fibonacci_0618.level_0618 : noRealData;
+    if(res.confluence){
+      const c = res.confluence;
+      document.getElementById('confluenceValue').textContent = `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`;
+    } else {
+      document.getElementById('confluenceValue').textContent = noRealData;
+    }
+    document.getElementById('volumeZone').textContent = res.volume_desc || '-';
+    document.getElementById('rsiValue').textContent = res.rsi != null ? res.rsi : '-';
+    document.getElementById('macdValue').textContent = res.macd ? res.macd.trend : '-';
+    document.getElementById('patternSummary').textContent = t('ca_pattern_search_mode_note','需上傳截圖先做型態辨識');
+    const useCommentaryNote = t('ca_search_use_commentary','按「產生AI文字解讀」查看');
+    document.getElementById('riskTips').textContent = useCommentaryNote;
+    document.getElementById('recommendationValue').textContent = useCommentaryNote;
+
+    if (typeof window.renderDecisionFooter === 'function') {
+      if (res.confluence) {
+        const c = res.confluence;
+        const decisionScore = Math.round(((c.score + 100) / 2) * 10) / 10;
+        let riskLabel = null;
+        if (res.volume_ratio != null) {
+          const volatility = res.volume_ratio * 15;
+          riskLabel = volatility < 20 ? 'Low' : volatility <= 40 ? 'Medium' : 'High';
+        }
+        const reasons = [].concat(c.bullish_signals || [], c.bearish_signals || []);
+        const dl = res.decision_levels;
+        window.renderDecisionFooter('decisionFooter', {
+          decisionScore: decisionScore,
+          confidencePct: c.confidence_pct,
+          riskLabel: riskLabel,
+          keyReasons: reasons.length ? reasons : null,
+          suggestedAction: null,
+          entryPrice: dl ? dl.entry : null,
+          stopLoss: dl ? dl.stop_loss : null,
+          takeProfits: dl ? dl.take_profits : null,
+          riskReward: dl ? dl.risk_reward : null,
+          riskPct: dl ? dl.risk_pct : null
+        });
+      } else {
+        window.renderDecisionFooter('decisionFooter', {});
+      }
+    }
+
+    // Share System -- Link IS honestly possible here (unlike the image-
+    // upload flow) since the whole analysis is reconstructable from a
+    // symbol query param.
+    if (typeof window.renderShareBar === 'function') {
+      const shareUrl = `${location.origin}${location.pathname}?symbol=${encodeURIComponent(symbol)}&mode=search`;
+      window.renderShareBar('shareBar', 'resultContent', {
+        filename: `xfinlab-chart-search-${symbol}`,
+        shareUrl: shareUrl
+      });
+    }
+  } catch (err) {
+    alert(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = t('ca_search_btn','🔍 分析');
+    if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
+  }
+}
+
+async function requestAiCommentary(){
+  if(!currentSearchSymbol) return;
+  const btn = document.getElementById('commentaryBtn');
+  const out = document.getElementById('commentaryResult');
+  btn.disabled = true;
+  btn.textContent = t('ca_ai_commentary_loading','產生緊...');
+  try {
+    const response = await fetch(`${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/commentary`);
+    const json = await response.json();
+    if(json.status !== 'ok'){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+    out.textContent = json.data.commentary;
+  } catch (err) {
+    out.textContent = t('ca_ai_commentary_fail','AI解讀生成失敗，請重試');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('ca_ai_commentary_btn','🤖 產生AI文字解讀');
+  }
+}
+
+// Prefill from a shared Chart Search link (?symbol=...&mode=search) so
+// sharing genuinely re-runs the same real analysis rather than showing a
+// frozen screenshot of it.
+(function initChartAnalysisMode(){
+  const params = new URLSearchParams(location.search);
+  const urlSymbol = params.get('symbol');
+  const urlMode = params.get('mode');
+  if (urlMode === 'upload') {
+    switchMode('upload');
+  } else {
+    switchMode('search');
+    if (urlSymbol) {
+      document.getElementById('tickerSearchInput').value = urlSymbol;
+      runTickerSearch(urlSymbol);
+    }
+  }
+})();
+
 async function runImageAnalysis(){
   const dataUrl = window.__uploadedImageDataUrl;
   if(!dataUrl){
@@ -336,12 +567,18 @@ async function runImageAnalysis(){
           riskLabel = volatility < 20 ? 'Low' : volatility <= 40 ? 'Medium' : 'High';
         }
         const reasons = [].concat(c.bullish_signals || [], c.bearish_signals || []);
+        const dl = res.decision_levels;
         window.renderDecisionFooter('decisionFooter', {
           decisionScore: decisionScore,
           confidencePct: c.confidence_pct,
           riskLabel: riskLabel,
           keyReasons: reasons.length ? reasons : null,
-          suggestedAction: res.recommendation || null
+          suggestedAction: res.recommendation || null,
+          entryPrice: dl ? dl.entry : null,
+          stopLoss: dl ? dl.stop_loss : null,
+          takeProfits: dl ? dl.take_profits : null,
+          riskReward: dl ? dl.risk_reward : null,
+          riskPct: dl ? dl.risk_pct : null
         });
       } else {
         // AI-vision-only fallback (no symbol supplied) -- no real numeric

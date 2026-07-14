@@ -95,6 +95,50 @@ class TechnicalAnalysisService:
         rsi_last = round(float(rsi.iloc[-1]), 2) if not rsi.empty else None
         macd_hist_last = round(float(hist.iloc[-1]), 4)
 
+        # ---- Phase 1 Indicator Intelligence Engine: additive indicators ----
+        # New block, computed from the SAME already-fetched real df -- no
+        # extra network calls needed. Kept as a separate "indicators"
+        # sub-dict rather than flattened into the top level so this stays
+        # 100% additive: nothing existing gets renamed or removed, so the
+        # 5 other modules already calling get_technical_analysis() (market
+        # _pulse, hero_showcase, pipeline_api, public_demo, chart_analysis)
+        # keep working unchanged whether or not they read this new key.
+        atr14_series = self._atr(highs, lows, closes, 14)
+        atr14 = round(float(atr14_series.iloc[-1]), 4) if not atr14_series.empty else None
+        bb_upper, bb_mid, bb_lower = self._bollinger(closes, 20, 2)
+        bb_last = (
+            {
+                "upper": round(float(bb_upper.iloc[-1]), 2),
+                "mid": round(float(bb_mid.iloc[-1]), 2),
+                "lower": round(float(bb_lower.iloc[-1]), 2),
+            }
+            if not bb_upper.empty
+            else None
+        )
+        obv_series = self._obv(closes, volume)
+        obv_window = min(10, len(obv_series))
+        obv_trend = None
+        if len(obv_series) > obv_window:
+            obv_trend = (
+                "上升" if obv_series.iloc[-1] > obv_series.iloc[-obv_window] else "下降"
+            )
+        vwap_series = self._vwap(highs, lows, closes, volume)
+
+        indicators = {
+            "ema20": round(float(self._ema(closes, 20).iloc[-1]), 2),
+            "ema50": round(float(self._ema(closes, 50).iloc[-1]), 2) if len(closes) >= 2 else None,
+            "sma20": round(float(self._sma(closes, 20).iloc[-1]), 2),
+            "sma50": round(ma50, 2),
+            "atr14": atr14,
+            "bollinger": bb_last,
+            "obv": round(float(obv_series.iloc[-1]), 0) if not obv_series.empty else None,
+            "obv_trend": obv_trend,
+            # Cumulative-since-fetch-window VWAP, not a true intraday
+            # session VWAP (that needs tick-level same-day data we don't
+            # fetch) -- labelled honestly so it isn't mistaken for one.
+            "vwap": round(float(vwap_series.iloc[-1]), 2) if not vwap_series.empty else None,
+        }
+
         confluence = self._confluence(
             trend=trend,
             rsi=rsi_last,
@@ -103,10 +147,21 @@ class TechnicalAnalysisService:
             support=support,
             resistance=resistance,
             fib=fib,
+            bollinger=bb_last,
+            obv_trend=obv_trend,
+        )
+
+        decision_levels = self._decision_levels(
+            direction=confluence["direction"],
+            last_close=last_close,
+            support=support,
+            resistance=resistance,
+            atr14=atr14,
         )
 
         return {
             "symbol": symbol.upper(),
+            "ohlc": self._ohlc_series(df),
             "last_close": last_close,
             "trend": trend,
             "rsi": rsi_last,
@@ -123,7 +178,9 @@ class TechnicalAnalysisService:
             "volume_desc": volume_desc,
             "swing_highs": [round(float(x), 2) for x in swing_highs[-5:]],
             "swing_lows": [round(float(x), 2) for x in swing_lows[-5:]],
+            "indicators": indicators,
             "confluence": confluence,
+            "decision_levels": decision_levels,
             "data_points": len(df),
             "period": period,
             "interval": interval,
@@ -218,6 +275,29 @@ class TechnicalAnalysisService:
         )
         return df[["Open", "High", "Low", "Close", "Volume"]]
 
+    # ---- charting ----
+
+    @staticmethod
+    def _ohlc_series(df: pd.DataFrame, max_bars: int = 120) -> List[Dict]:
+        """
+        Real OHLC bars (most recent `max_bars`) for client-side candlestick
+        rendering (search-by-ticker flow, no screenshot needed). Capped at
+        120 bars to keep the payload small and the chart fast to draw --
+        plenty for visual pattern context without shipping the whole
+        history over the wire.
+        """
+        tail = df.tail(max_bars)
+        out = []
+        for idx, row in tail.iterrows():
+            out.append({
+                "time": idx.strftime("%Y-%m-%d"),
+                "open": round(float(row["Open"]), 4),
+                "high": round(float(row["High"]), 4),
+                "low": round(float(row["Low"]), 4),
+                "close": round(float(row["Close"]), 4),
+            })
+        return out
+
     # ---- indicators ----
 
     @staticmethod
@@ -239,6 +319,54 @@ class TechnicalAnalysisService:
         signal_line = macd_line.ewm(span=signal, adjust=False).mean()
         hist = macd_line - signal_line
         return macd_line, signal_line, hist
+
+    # ---- Phase 1 additions: EMA/SMA/ATR/Bollinger/OBV/VWAP ----
+    # All deterministic price-action math on the same real df already
+    # fetched above -- same "no AI guessing involved" principle as the
+    # existing RSI/MACD/swing-point methods.
+
+    @staticmethod
+    def _ema(closes: pd.Series, span: int) -> pd.Series:
+        return closes.ewm(span=span, adjust=False).mean()
+
+    @staticmethod
+    def _sma(closes: pd.Series, window: int) -> pd.Series:
+        return closes.rolling(min(window, len(closes))).mean()
+
+    @staticmethod
+    def _atr(highs: pd.Series, lows: pd.Series, closes: pd.Series, period: int = 14) -> pd.Series:
+        """
+        Average True Range -- standard volatility measure, used below both
+        as an extra confluence signal and (more importantly) to size real
+        stop-loss/take-profit distances in _decision_levels() instead of
+        picking an arbitrary %.
+        """
+        prev_close = closes.shift(1)
+        tr = pd.concat([
+            highs - lows,
+            (highs - prev_close).abs(),
+            (lows - prev_close).abs(),
+        ], axis=1).max(axis=1)
+        return tr.ewm(alpha=1 / period, min_periods=period, adjust=False).mean()
+
+    @staticmethod
+    def _bollinger(closes: pd.Series, period: int = 20, num_std: float = 2.0):
+        mid = closes.rolling(min(period, len(closes))).mean()
+        std = closes.rolling(min(period, len(closes))).std()
+        upper = mid + num_std * std
+        lower = mid - num_std * std
+        return upper, mid, lower
+
+    @staticmethod
+    def _obv(closes: pd.Series, volume: pd.Series) -> pd.Series:
+        direction = np.sign(closes.diff().fillna(0))
+        return (direction * volume).cumsum()
+
+    @staticmethod
+    def _vwap(highs: pd.Series, lows: pd.Series, closes: pd.Series, volume: pd.Series) -> pd.Series:
+        typical_price = (highs + lows + closes) / 3
+        cum_vol = volume.cumsum().replace(0, np.nan)
+        return (typical_price * volume).cumsum() / cum_vol
 
     @staticmethod
     def _swing_points(highs: pd.Series, lows: pd.Series, window: int = 5):
@@ -338,8 +466,28 @@ class TechnicalAnalysisService:
         }
 
 
-    @staticmethod
+    # Phase 1 Confluence Engine upgrade: each signal type now carries a
+    # weight instead of counting equally. Weights reflect how much a signal
+    # type is generally trusted in price-action analysis (proximity to a
+    # real support/resistance zone is weighted higher than a single
+    # oscillator reading, for example). Output shape (score/direction/
+    # confidence/confidence_pct/signals_counted/bullish_signals/
+    # bearish_signals) is unchanged so every existing consumer keeps
+    # working -- only the math behind `score`/`confidence_pct` changed.
+    _CONFLUENCE_WEIGHTS = {
+        "trend": 1.2,
+        "rsi": 1.0,
+        "macd": 1.0,
+        "support": 1.3,
+        "resistance": 1.3,
+        "fib": 0.8,
+        "bollinger": 0.9,
+        "obv": 0.9,
+    }
+
+    @classmethod
     def _confluence(
+        cls,
         trend: str,
         rsi: Optional[float],
         macd_hist: float,
@@ -347,64 +495,82 @@ class TechnicalAnalysisService:
         support: Optional[Dict],
         resistance: Optional[Dict],
         fib: Optional[Dict],
+        bollinger: Optional[Dict] = None,
+        obv_trend: Optional[str] = None,
         proximity_tolerance: float = 0.03,
     ) -> Dict:
         """
         Confluence scoring — cross-checks the independent numeric signals
         against each other instead of reporting them as an unrelated list.
         This is what "AI Chart Intelligence Core" calls a Confluence Engine:
-        the more independent signals agree, the higher the confidence.
+        the more independent signals agree (weighted by how much each
+        signal type is generally trusted), the higher the confidence.
 
-        Each signal contributes +1 (bullish), -1 (bearish) or is skipped
-        (neutral/not available). The final score is the net bias as a % of
-        signals actually counted, so it's comparable across tickers with
-        different numbers of available signals.
+        Each signal contributes +weight (bullish), -weight (bearish) or is
+        skipped (neutral/not available). The final score is the net
+        weighted bias as a % of total weight counted, so it's comparable
+        across tickers with different numbers of available signals.
         """
+        w = cls._CONFLUENCE_WEIGHTS
         signals: List[Dict] = []
 
         # 1. Trend (price vs MA50)
         if trend == "上升":
-            signals.append({"signal": "趨勢（高於MA50）", "bias": 1})
+            signals.append({"signal": "趨勢（高於MA50）", "bias": 1, "weight": w["trend"]})
         elif trend == "下降":
-            signals.append({"signal": "趨勢（低於MA50）", "bias": -1})
+            signals.append({"signal": "趨勢（低於MA50）", "bias": -1, "weight": w["trend"]})
 
         # 2. RSI
         if rsi is not None:
             if rsi >= 70:
-                signals.append({"signal": f"RSI過熱（{rsi}，≥70）", "bias": -1})
+                signals.append({"signal": f"RSI過熱（{rsi}，≥70）", "bias": -1, "weight": w["rsi"]})
             elif rsi <= 30:
-                signals.append({"signal": f"RSI超賣（{rsi}，≤30）", "bias": 1})
+                signals.append({"signal": f"RSI超賣（{rsi}，≤30）", "bias": 1, "weight": w["rsi"]})
             elif rsi > 50:
-                signals.append({"signal": f"RSI偏多（{rsi}，>50）", "bias": 1})
+                signals.append({"signal": f"RSI偏多（{rsi}，>50）", "bias": 1, "weight": w["rsi"]})
             else:
-                signals.append({"signal": f"RSI偏空（{rsi}，<50）", "bias": -1})
+                signals.append({"signal": f"RSI偏空（{rsi}，<50）", "bias": -1, "weight": w["rsi"]})
 
         # 3. MACD histogram
         if macd_hist > 0:
-            signals.append({"signal": "MACD柱狀圖轉正（金叉）", "bias": 1})
+            signals.append({"signal": "MACD柱狀圖轉正（金叉）", "bias": 1, "weight": w["macd"]})
         else:
-            signals.append({"signal": "MACD柱狀圖轉負（死叉）", "bias": -1})
+            signals.append({"signal": "MACD柱狀圖轉負（死叉）", "bias": -1, "weight": w["macd"]})
 
         # 4. Proximity to support/resistance
         if support and last_close > 0:
             dist = abs(last_close - support["level"]) / last_close
             if dist <= proximity_tolerance:
-                signals.append({"signal": "現價貼近支撐位，反彈機會", "bias": 1})
+                signals.append({"signal": "現價貼近支撐位，反彈機會", "bias": 1, "weight": w["support"]})
         if resistance and last_close > 0:
             dist = abs(resistance["level"] - last_close) / last_close
             if dist <= proximity_tolerance:
-                signals.append({"signal": "現價貼近阻力位，回落風險", "bias": -1})
+                signals.append({"signal": "現價貼近阻力位，回落風險", "bias": -1, "weight": w["resistance"]})
 
         # 5. Position relative to 0.618 Fibonacci retracement
         if fib:
             if last_close >= fib["level_0618"]:
-                signals.append({"signal": "現價企穩0.618回調位之上", "bias": 1})
+                signals.append({"signal": "現價企穩0.618回調位之上", "bias": 1, "weight": w["fib"]})
             else:
-                signals.append({"signal": "現價跌穿0.618回調位，結構轉弱", "bias": -1})
+                signals.append({"signal": "現價跌穿0.618回調位，結構轉弱", "bias": -1, "weight": w["fib"]})
+
+        # 6. Bollinger Band position (Phase 1 addition)
+        if bollinger:
+            if last_close >= bollinger["upper"]:
+                signals.append({"signal": "現價觸及布林上軌，超買風險", "bias": -1, "weight": w["bollinger"]})
+            elif last_close <= bollinger["lower"]:
+                signals.append({"signal": "現價觸及布林下軌，超賣反彈機會", "bias": 1, "weight": w["bollinger"]})
+
+        # 7. OBV (on-balance volume) trend confirmation (Phase 1 addition)
+        if obv_trend == "上升":
+            signals.append({"signal": "OBV成交量動能上升，資金流入", "bias": 1, "weight": w["obv"]})
+        elif obv_trend == "下降":
+            signals.append({"signal": "OBV成交量動能下降，資金流出", "bias": -1, "weight": w["obv"]})
 
         counted = len(signals)
-        net = sum(s["bias"] for s in signals)
-        score = round((net / counted) * 100, 1) if counted else 0.0
+        weight_total = sum(s["weight"] for s in signals)
+        net_weighted = sum(s["bias"] * s["weight"] for s in signals)
+        score = round((net_weighted / weight_total) * 100, 1) if weight_total else 0.0
 
         if counted == 0:
             direction, confidence = "數據不足", "低"
@@ -415,7 +581,7 @@ class TechnicalAnalysisService:
         else:
             direction = "訊號分歧，中性"
 
-        agree_ratio = abs(net) / counted if counted else 0
+        agree_ratio = abs(net_weighted) / weight_total if weight_total else 0
         if counted == 0:
             confidence = "低"
         elif agree_ratio >= 0.6:
@@ -437,6 +603,68 @@ class TechnicalAnalysisService:
             "signals_counted": counted,
             "bullish_signals": [s["signal"] for s in signals if s["bias"] > 0],
             "bearish_signals": [s["signal"] for s in signals if s["bias"] < 0],
+        }
+
+    @staticmethod
+    def _decision_levels(
+        direction: str,
+        last_close: float,
+        support: Optional[Dict],
+        resistance: Optional[Dict],
+        atr14: Optional[float],
+    ) -> Optional[Dict]:
+        """
+        Phase 1 Decision Engine upgrade: real Entry/Stop-Loss/Take-Profit/
+        Risk-Reward levels derived from actual support/resistance/ATR,
+        instead of a plain "Bullish/Bearish" label. Deliberately returns
+        None (rendered as nothing, not a fabricated number) when:
+          - the Confluence Engine itself has no clear directional bias
+            ("訊號分歧，中性" / "數據不足"), or
+          - there isn't a real structural level OR ATR to anchor a stop on.
+
+        Absolute position sizing (e.g. "buy 40 shares") is intentionally
+        NOT computed here — that needs the user's account size/risk
+        tolerance, which this service has no access to, and guessing one
+        would violate this codebase's no-fabrication rule. Risk% (distance
+        to stop as a % of entry) is included instead, since that's fully
+        derivable from real price data alone.
+        """
+        if direction not in ("偏多", "偏空"):
+            return None
+
+        entry = last_close
+        atr_buffer = atr14 * 1.5 if atr14 else None
+
+        if direction == "偏多":  # long bias
+            stop = support["level"] if support else (entry - atr_buffer if atr_buffer else None)
+            if stop is None or stop >= entry:
+                return None
+            risk = entry - stop
+            tp1 = resistance["level"] if resistance and resistance["level"] > entry else entry + risk
+            tp2 = entry + risk * 2
+            tp3 = entry + risk * 3
+            bias_label = "long"
+        else:  # short bias
+            stop = resistance["level"] if resistance else (entry + atr_buffer if atr_buffer else None)
+            if stop is None or stop <= entry:
+                return None
+            risk = stop - entry
+            tp1 = support["level"] if support and support["level"] < entry else entry - risk
+            tp2 = entry - risk * 2
+            tp3 = entry - risk * 3
+            bias_label = "short"
+
+        if risk <= 0:
+            return None
+
+        reward1 = abs(tp1 - entry)
+        return {
+            "bias": bias_label,
+            "entry": round(entry, 2),
+            "stop_loss": round(stop, 2),
+            "take_profits": [round(tp1, 2), round(tp2, 2), round(tp3, 2)],
+            "risk_reward": round(reward1 / risk, 2),
+            "risk_pct": round(risk / entry * 100, 2),
         }
 
 
