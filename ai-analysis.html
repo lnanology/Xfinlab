@@ -215,12 +215,22 @@ async function runAnalysis(){
     if (typeof window.renderDecisionFooter === 'function') {
       const riskOut = scores.risk; // 0-100, higher = safer (100 - overall_risk)
       const riskLabel = riskOut > 65 ? 'Low' : riskOut > 35 ? 'Medium' : 'High';
+      // Phase 1: decision_levels (Entry/Stop/TP/Risk-Reward) now comes
+      // from the shared technical_analysis_service via api/ai_analysis.py
+      // -- real support/resistance/ATR-derived numbers, not part of this
+      // page's own rule/score engine above. Only rendered when present.
+      const dl = data.decision_levels;
       window.renderDecisionFooter('decisionFooter', {
         decisionScore: scores.tech,
         confidencePct: Math.max(probs.bull, probs.flat, probs.bear),
         riskLabel: riskLabel,
         keyReasons: data.risks.map(r => r.title),
-        suggestedAction: data.conclusion
+        suggestedAction: data.conclusion,
+        entryPrice: dl ? dl.entry : null,
+        stopLoss: dl ? dl.stop_loss : null,
+        takeProfits: dl ? dl.take_profits : null,
+        riskReward: dl ? dl.risk_reward : null,
+        riskPct: dl ? dl.risk_pct : null
       });
     }
 

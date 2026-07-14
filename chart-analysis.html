@@ -72,7 +72,8 @@
       <input id="tickerSearchInput" type="text" data-i18n-placeholder="ca_search_placeholder" placeholder="例如 AAPL、0700.HK、BTC" style="flex:1;min-width:200px;padding:0.5rem 0.6rem;border-radius:6px;border:1px solid var(--border2);background:var(--navy3);color:var(--text)">
       <button class="primary-btn" id="searchBtn" onclick="runTickerSearch()" data-i18n="ca_search_btn">🔍 分析</button>
     </div>
-    <div class="upload-hint" style="margin-top:0.5rem" data-i18n="ca_search_hint">支援全球代號：美股（AAPL）、港股（0700 或 0700.HK）、A股（600519）、加密貨幣（BTC）</div>
+    <div class="upload-hint" id="tickerTypeHint" style="margin-top:0.4rem;min-height:1.1em"></div>
+    <div class="upload-hint" style="margin-top:0.2rem" data-i18n="ca_search_hint">支援全球代號：美股（AAPL）、港股（0700 或 0700.HK）、A股（600519）、加密貨幣（BTC）</div>
   </div>
 
   <div class="panel" id="uploadPanel" style="display:none">
@@ -322,6 +323,30 @@ function switchMode(mode) {
 
 document.getElementById('tickerSearchInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') runTickerSearch();
+});
+
+// Live asset-type auto-detect: as the user types, preview what
+// normalizeGlobalTicker() would resolve the input to and which asset
+// class it falls into, WITHOUT mutating the actual input value (that
+// only happens on submit). Reuses the already-translated topopp_class_*
+// labels (stock/futures/crypto) from the homepage's Top Opportunity
+// section instead of adding new i18n keys for the same three concepts.
+function detectAssetPreview(raw){
+  const s = (raw || '').trim();
+  if (!s) return null;
+  const normalized = normalizeGlobalTicker(s);
+  let classKey;
+  if (normalized.includes('=')) classKey = 'topopp_class_futures';
+  else if (normalized.includes('-')) classKey = 'topopp_class_crypto';
+  else classKey = 'topopp_class_stock';
+  const classLabel = t(classKey, {topopp_class_futures:'Futures', topopp_class_crypto:'Crypto', topopp_class_stock:'Stocks'}[classKey]);
+  return `→ ${normalized} · ${classLabel}`;
+}
+
+document.getElementById('tickerSearchInput').addEventListener('input', (e) => {
+  const hintEl = document.getElementById('tickerTypeHint');
+  const preview = detectAssetPreview(e.target.value);
+  hintEl.textContent = preview || '';
 });
 
 function ensureKlineChart() {

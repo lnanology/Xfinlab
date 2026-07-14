@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from services.market_data_service import MarketDataService
 from services.news_service import NewsService
+from services.technical_analysis_service import get_technical_analysis
 from engines.rule_engine import RuleEngine
 from engines.score_engine import ScoreEngine
 from engines.risk_engine import RiskEngine
@@ -104,6 +105,25 @@ async def ai_analysis(body: dict):
     else:
         conclusion = f"{symbol} 整體評分{total_score:.0f}/100，技術面偏弱，建議謹慎操作。"
 
+    # Phase 1 wiring: this endpoint has always used its own lightweight
+    # rule/score engine (volume_ratio/trend/breakout/sentiment above) for
+    # the fund/tech/news/risk scores and bull/flat/bear split -- that part
+    # is unchanged. Real Entry/Stop/TP/Risk-Reward levels need actual
+    # support/resistance/ATR from historical price data, which this
+    # endpoint never computed, so they're pulled in here from the SAME
+    # shared technical_analysis_service used by chart-analysis.html,
+    # market_pulse.py, hero_showcase.py etc. Purely additive: if the
+    # symbol isn't tradeable/has insufficient history, decision_levels is
+    # simply None and the frontend renders nothing extra (never a
+    # fabricated level).
+    decision_levels = None
+    try:
+        tech = get_technical_analysis(symbol)
+        if tech and "error" not in tech:
+            decision_levels = tech.get("decision_levels")
+    except Exception:
+        decision_levels = None
+
     return {
         "data": {
             "scores": {
@@ -120,6 +140,7 @@ async def ai_analysis(body: dict):
             "risks": risks,
             "conclusion": conclusion,
             "symbol": symbol,
-            "price": market.get("price", 0)
+            "price": market.get("price", 0),
+            "decision_levels": decision_levels
         }
     }
