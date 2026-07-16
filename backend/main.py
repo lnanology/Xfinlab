@@ -20,6 +20,7 @@ from api.research import router as research_router
 from api.report import router as report_router
 from auth.auth import router as auth_router
 from api.quota import router as quota_router
+from api.points import router as points_router
 from api.referral import router as referral_router
 from api.analytics import router as analytics_router
 from api.ai_analysis import router as ai_analysis_router
@@ -126,6 +127,7 @@ app.include_router(research_router, prefix="/api", tags=["Research"])
 app.include_router(report_router, prefix="/api", tags=["Report"])
 app.include_router(auth_router, prefix="/api", tags=["Auth"])
 app.include_router(quota_router, prefix="/api", tags=["Quota"])
+app.include_router(points_router, prefix="/api", tags=["Points"])
 app.include_router(referral_router, prefix="/api", tags=["Referral"])
 app.include_router(analytics_router, prefix="/api", tags=["Analytics"])
 app.include_router(ai_analysis_router, prefix="/api", tags=["AI Analysis"])

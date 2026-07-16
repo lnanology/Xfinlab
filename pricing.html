@@ -183,7 +183,6 @@
       <button class="btn-plan btn-starter" onclick="handleUpgrade('basic')" data-i18n="pricing_basic_btn">Start Basic</button>
       <div class="features-label" data-i18n="pricing_everything_free_plus">Everything in Free, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">All feature modules unlocked</span></div>
-      <div class="feature"><span class="check">✓</span> <span id="tokenLineBasic">AI token quota: 30% of full usage</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">Unlimited watchlist</span></div>
     </div>
 
@@ -199,7 +198,6 @@
       <button class="btn-plan btn-starter" onclick="handleUpgrade('pro')" data-i18n="pricing_pro_btn">Start Pro Plan</button>
       <div class="features-label" data-i18n="pricing_everything_basic_plus">Everything in Basic, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">All feature modules unlocked</span></div>
-      <div class="feature"><span class="check">✓</span> <span id="tokenLinePro">AI token quota: 50% of full usage</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">Unlimited watchlist</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f5">Anomaly radar alerts</span></div>
     </div>
@@ -215,7 +213,6 @@
       <button class="btn-plan btn-pro" onclick="handleUpgrade('proplus')" data-i18n="pricing_proplus_btn">Start Pro+ Plan</button>
       <div class="features-label" data-i18n="pricing_everything_pro_plus">Everything in Pro, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">All feature modules unlocked</span></div>
-      <div class="feature"><span class="check">✓</span> <span id="tokenLineProplus">AI token quota: 70% of full usage</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f8">AI Research Assistant</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f3">Priority AI processing</span></div>
     </div>
@@ -230,7 +227,6 @@
       <div class="plan-desc" data-i18n="pricing_professional_desc">Full-power AI research for professionals who need everything.</div>
       <button class="btn-plan btn-pro" onclick="handleUpgrade('professional')" data-i18n="pricing_professional_btn">Go Professional</button>
       <div class="features-label" data-i18n="pricing_everything_proplus_plus">Everything in Pro+, plus</div>
-      <div class="feature"><span class="check">✓</span> <span id="tokenLineProfessional">AI token quota: 90% of full usage</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f8">API access</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f5">Early access to new features</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f6">Email support</span></div>
@@ -368,16 +364,6 @@ function toggleBilling() {
     if (periodEl) periodEl.textContent = periodText;
   });
 }
-
-function renderTokenLines() {
-  const tmpl = t('pricing_token_quota_template', 'AI token quota: {pct}% of full usage');
-  Object.keys(TOKEN_PCTS).forEach(function (key) {
-    const el = document.getElementById('tokenLine' + key);
-    if (el) el.textContent = tmpl.replace('{pct}', TOKEN_PCTS[key]);
-  });
-}
-document.addEventListener('i18nApplied', renderTokenLines);
-renderTokenLines();
 
 function handleUpgrade(plan) {
   const token = localStorage.getItem('xfinlab_token');

@@ -524,6 +524,7 @@
 <script src="js/quota.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
 </head>
 <body>
 
@@ -547,6 +548,7 @@
           <div style="font-size:0.75rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
           <div id="dropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
           <div id="dropdownPlan" style="font-size:0.7rem;color:var(--accent);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
+          <div id="dropdownPoints" style="font-size:0.72rem;color:var(--muted);margin-top:6px;display:none"></div>
         </div>
         <a href="index.html" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🏠 <span data-i18n="dash_menu_home">Home</span></a>
         <a href="#" onclick="copyReferral()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
@@ -1067,6 +1069,7 @@ function loadUserInfo() {
     document.getElementById('dropdownPlan').textContent = (user.plan || 'free').toUpperCase() + ' ' + t('dash_plan_suffix', 'PLAN');
     document.getElementById('accountBtn').style.display = 'block';
     document.getElementById('loginBtn').style.display = 'none';
+    loadPointsStatus();
   } else {
     document.getElementById('accountBtn').style.display = 'none';
     document.getElementById('loginBtn').style.display = 'block';
@@ -1076,6 +1079,29 @@ function loadUserInfo() {
 function toggleDropdown() {
   const d = document.getElementById('dropdown');
   d.style.display = d.style.display === 'none' ? 'block' : 'none';
+}
+
+// Points system (services/points_service.py): every basic-feature use
+// by a logged-in FREE-plan user earns 1 point; 500 points within a
+// rolling 7-day cycle earns a temporary 7-day Basic upgrade. Shown
+// here in the account dropdown (only meaningful for free-plan users --
+// paying users simply won't have accumulated any).
+async function loadPointsStatus() {
+  const token = localStorage.getItem('xfinlab_token');
+  const el = document.getElementById('dropdownPoints');
+  if (!token || !el) return;
+  try {
+    const res = await fetch(`https://api.xfinlab.com/api/points/status?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (data.temp_plan) {
+      const until = (data.temp_expires_at || '').split(' ')[0];
+      el.textContent = `⭐ ${t('dash_points_boosted', 'Basic 升級中，直到')} ${until}`;
+      el.style.display = 'block';
+    } else if (data.points != null) {
+      el.textContent = `🏅 ${data.points}/${data.target} ${t('dash_points_label', '積分（儲夠500分獲7日Basic升級）')}`;
+      el.style.display = 'block';
+    }
+  } catch (e) {}
 }
 
 document.addEventListener('click', e => {
