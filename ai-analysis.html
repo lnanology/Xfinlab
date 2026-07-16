@@ -180,6 +180,7 @@ async function runAnalysis(){
     const result = await postApi('/api/ai-analysis', { symbols, assetType });
     const data = result.data;
     const scores = data.scores;
+    const probs = data.probabilities;
     document.getElementById('fundScore').textContent = scores.fund + '/100';
     document.getElementById('techScore').textContent = scores.tech + '/100';
     document.getElementById('newsScore').textContent = scores.news + '/100';
