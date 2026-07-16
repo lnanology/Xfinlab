@@ -86,7 +86,7 @@ class EmailService:
                 <div style="font-size:2rem;font-weight:bold;color:#00d4ff;">${price}</div>
                 <div style="color:#64748b;">{change}</div>
             </div>
-            <a href="https://xfinlab.com/ai-analysis.html?ticker={ticker}" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">查看完整分析</a>
+            <a href="https://xfinlab.com/ai-analysis.html?symbols={ticker}" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">查看完整分析</a>
         </div>
         """
         return EmailService.send(to_email, f"{ticker} 市場異動提醒 - XFINLAB", html)
