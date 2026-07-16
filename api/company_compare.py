@@ -8,6 +8,7 @@ market_svc = MarketDataService()
 @router.post("/company-compare")
 async def company_compare(body: dict):
     symbols = body.get("symbols", [])
+    token = body.get("token")
     if not symbols:
         return {"status": "ok", "data": {"analysis": "請輸入公司代號"}}
 
@@ -27,8 +28,12 @@ async def company_compare(body: dict):
         "請用繁體中文提供：1) 各公司優劣勢 2) 財務比較 3) 投資建議 4) 風險提示。"
         "格式清晰，使用 ## 標題。"
     )
+    from services.quota_middleware import check_token_budget, record_ai_token_usage
+    user_id = check_token_budget(token)
+
     try:
         answer = get_ai_response(prompt, max_tokens=1000)
+        record_ai_token_usage(user_id)
     except:
         answer = "比較分析服務暫時不可用，請稍後再試。"
 

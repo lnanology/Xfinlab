@@ -5,6 +5,25 @@ load_dotenv()
 
 AI_PROVIDER = os.getenv("AI_PROVIDER", "groq")
 
+# Best-effort token-usage capture for the monthly AI-token quota
+# (services/token_quota_service.py). FastAPI/Starlette runs each request
+# in its own async task on a single event loop thread and every call site
+# here awaits the provider call synchronously before reading this value
+# back out (see api/*.py: get_ai_response(...) followed immediately by
+# record_ai_token_usage()) -- there's no `await` in between that could
+# let another request's call interleave and overwrite it first. This is
+# NOT safe if these functions were ever called from multiple OS threads
+# concurrently for the same slot, so it's approximate metering, not
+# billing-grade precision.
+_LAST_USAGE_TOKENS = {"value": 0}
+
+
+def get_last_usage_tokens() -> int:
+    """Token count (prompt+completion) from the most recent
+    get_ai_response()/get_vision_response() call. 0 if the provider's
+    response didn't include usage data (e.g. DeepSeek error responses)."""
+    return _LAST_USAGE_TOKENS["value"]
+
 
 def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
     """
@@ -23,6 +42,7 @@ def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
         str: AI response text
     """
     provider = AI_PROVIDER.lower()
+    _LAST_USAGE_TOKENS["value"] = 0
 
     if provider == "groq":
         return _groq(prompt, max_tokens)
@@ -56,6 +76,7 @@ def get_vision_response(prompt: str, image_base64: str, mime_type: str = "image/
         str: AI response text
     """
     provider = VISION_PROVIDER.lower()
+    _LAST_USAGE_TOKENS["value"] = 0
 
     if provider == "gemini":
         return _gemini_vision(prompt, image_base64, mime_type, max_tokens)
@@ -99,6 +120,9 @@ def _gemini_vision(prompt: str, image_base64: str, mime_type: str, max_tokens: i
     res = requests.post(url, json=payload, timeout=60)
     res.raise_for_status()
     data = res.json()
+    usage = data.get("usageMetadata", {}).get("totalTokenCount")
+    if usage:
+        _LAST_USAGE_TOKENS["value"] = usage
     return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 
@@ -124,6 +148,8 @@ def _groq_vision(prompt: str, image_base64: str, mime_type: str, max_tokens: int
         temperature=0.3,
         max_tokens=max_tokens,
     )
+    if getattr(response, "usage", None) and response.usage.total_tokens:
+        _LAST_USAGE_TOKENS["value"] = response.usage.total_tokens
     return response.choices[0].message.content.strip()
 
 
@@ -138,6 +164,8 @@ def _groq(prompt: str, max_tokens: int) -> str:
         temperature=0.3,
         max_tokens=max_tokens
     )
+    if getattr(response, "usage", None) and response.usage.total_tokens:
+        _LAST_USAGE_TOKENS["value"] = response.usage.total_tokens
     return response.choices[0].message.content.strip()
 
 
@@ -155,7 +183,11 @@ def _deepseek(prompt: str, max_tokens: int) -> str:
     }
     res = requests.post("https://api.deepseek.com/v1/chat/completions",
                         json=payload, headers=headers, timeout=30)
-    return res.json()["choices"][0]["message"]["content"].strip()
+    data = res.json()
+    usage = data.get("usage", {}).get("total_tokens")
+    if usage:
+        _LAST_USAGE_TOKENS["value"] = usage
+    return data["choices"][0]["message"]["content"].strip()
 
 
 def _claude(prompt: str, max_tokens: int) -> str:
@@ -166,4 +198,6 @@ def _claude(prompt: str, max_tokens: int) -> str:
         max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}]
     )
+    if getattr(message, "usage", None):
+        _LAST_USAGE_TOKENS["value"] = (message.usage.input_tokens or 0) + (message.usage.output_tokens or 0)
     return message.content[0].text.strip()

@@ -15,6 +15,7 @@ SCENARIOS = {
 async def stress_lab(body: dict):
     strategy = body.get("strategy", "crash2008")
     amount = body.get("amount", 100000)
+    token = body.get("token")
     scenario = SCENARIOS.get(strategy, SCENARIOS["crash2008"])
 
     prompt = (
@@ -26,8 +27,12 @@ async def stress_lab(body: dict):
         "## 🛡 風險緩解建議\n（3-5個具體建議）\n"
         "## 💡 歷史啟示\n（從歷史事件學到的教訓）"
     )
+    from services.quota_middleware import check_token_budget, record_ai_token_usage
+    user_id = check_token_budget(token)
+
     try:
         answer = get_ai_response(prompt, max_tokens=800)
+        record_ai_token_usage(user_id)
     except:
         answer = "壓力測試服務暫時不可用，請稍後再試。"
 

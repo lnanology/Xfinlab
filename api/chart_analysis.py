@@ -108,6 +108,7 @@ async def chart_analysis(body: dict):
     """
     image_base64 = body.get("image")
     symbol = body.get("symbol", "")
+    token = body.get("token")
 
     if not image_base64:
         return {
@@ -261,8 +262,12 @@ async def chart_analysis(body: dict):
         )
         max_tokens = 3500
 
+    from services.quota_middleware import check_token_budget, record_ai_token_usage
+    user_id = check_token_budget(token)
+
     try:
         raw_answer = get_vision_response(prompt, image_base64, real_mime_type, max_tokens=max_tokens)
+        record_ai_token_usage(user_id)
         answer = raw_answer.replace("```json", "").replace("```", "").strip()
         start = answer.find("{")
         end = answer.rfind("}") + 1
@@ -389,7 +394,7 @@ def chart_search(symbol: str, period: str = "6mo", interval: str = "1d"):
 
 
 @router.get("/chart-search/{symbol}/commentary")
-def chart_search_commentary(symbol: str, period: str = "6mo", interval: str = "1d"):
+def chart_search_commentary(symbol: str, period: str = "6mo", interval: str = "1d", token: str = None):
     """
     Optional, user-triggered plain-text AI summary of the real numeric
     data above. Deliberately a separate, lazy endpoint rather than being
@@ -431,8 +436,12 @@ def chart_search_commentary(symbol: str, period: str = "6mo", interval: str = "1
         "需要包含關鍵風險提示，唔好自己估任何新數字，一律以上面提供嘅真實數據為準。"
         "只回覆純文字，唔好加JSON、唔好加markdown、唔好加任何其他文字。"
     )
+    from services.quota_middleware import check_token_budget, record_ai_token_usage
+    user_id = check_token_budget(token)
+
     try:
         commentary = get_ai_response(prompt, max_tokens=400).strip()
+        record_ai_token_usage(user_id)
     except Exception as e:
         return {"status": "error", "message": f"AI解讀生成失敗，請重試：{str(e)}"}
 

@@ -15,13 +15,25 @@ function _trackApiCall(path, payload) {
 }
 
 async function postApi(path, payload) {
-  _trackApiCall(path, payload);
+  // Auto-attach the logged-in user's JWT so backend AI endpoints can
+  // enforce the per-plan monthly token quota (services/token_quota_service.py).
+  // Anonymous calls (no token in localStorage) are unaffected -- the
+  // backend treats a missing token as "not metered here", same as before.
+  let body = payload;
+  try {
+    const authToken = localStorage.getItem('xfinlab_token');
+    if (authToken && payload && !payload.token) {
+      body = { ...payload, token: authToken };
+    }
+  } catch (e) {}
+
+  _trackApiCall(path, body);
   if (typeof window.startAiLoading === 'function') window.startAiLoading();
   try {
     const response = await fetch(API_BASE + path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     });
     if (!response.ok) {
       const text = await response.text();

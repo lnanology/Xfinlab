@@ -79,6 +79,11 @@ def _compute_pulse() -> Dict:
             "rsi": tech.get("rsi"),
             "confluence_direction": confluence.get("direction"),
             "confluence_score": score,
+            # Added alongside the frontend's Volume/Probability display on
+            # the Today's AI Outlook cards -- both come straight from the
+            # same real Confluence Engine call above, nothing new fetched.
+            "confluence_confidence_pct": confluence.get("confidence_pct"),
+            "volume_desc": tech.get("volume_desc"),
         })
 
     if scores:
@@ -141,11 +146,15 @@ def _compute_pulse() -> Dict:
             "label": top_sector["label"],
             "ticker": top_sector["ticker"],
             "confluence_direction": top_sector["confluence_direction"],
+            "confluence_confidence_pct": top_sector.get("confluence_confidence_pct"),
+            "volume_desc": top_sector.get("volume_desc"),
         } if top_sector else None,
         "bottom_sector": {
             "label": bottom_sector["label"],
             "ticker": bottom_sector["ticker"],
             "confluence_direction": bottom_sector["confluence_direction"],
+            "confluence_confidence_pct": bottom_sector.get("confluence_confidence_pct"),
+            "volume_desc": bottom_sector.get("volume_desc"),
         } if bottom_sector else None,
         "basket": sorted_breakdown,
         "data_source": "即市技術分析（真實價格數據，非AI猜測）",
@@ -221,6 +230,8 @@ def _compute_top_opportunities() -> Dict:
                 "label": _TICKER_LABELS.get(ticker, ticker),
                 "price": tech.get("last_close"),
                 "confluence_direction": confluence.get("direction"),
+                "confluence_confidence_pct": confluence.get("confidence_pct"),
+                "volume_desc": tech.get("volume_desc"),
                 "_score": score,
             }
             if best is None or score > best["_score"]:
@@ -235,6 +246,8 @@ def _compute_top_opportunities() -> Dict:
                 "label": best["label"],
                 "price": best["price"],
                 "confluence_direction": best["confluence_direction"],
+                "confluence_confidence_pct": best.get("confluence_confidence_pct"),
+                "volume_desc": best.get("volume_desc"),
             }
         else:
             items[asset_class] = {

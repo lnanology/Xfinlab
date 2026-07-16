@@ -208,6 +208,7 @@
   .pulse-card-dir.bull { color: var(--green); }
   .pulse-card-dir.bear { color: var(--red); }
   .pulse-card-dir.neutral { color: var(--amber); }
+  .pulse-card-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 4px; font-size: 0.68rem; color: var(--muted); }
   .pulse-card-main { display: block; text-decoration: none; color: inherit; }
   .pulse-card-related { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
   .pulse-card-related-note { font-size: 0.64rem; color: var(--muted2); line-height: 1.4; margin-bottom: 6px; }
@@ -232,6 +233,7 @@
   .top-opp-dir.bull { color: var(--green); }
   .top-opp-dir.bear { color: var(--red); }
   .top-opp-dir.neutral { color: var(--amber); }
+  .top-opp-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; font-size: 0.72rem; color: var(--muted); }
   @media (max-width: 768px) { .top-opp-grid { grid-template-columns: 1fr; } }
 
   /* Daily Experience: personalized AI Watchlist / Risk Radar, nested
@@ -461,35 +463,6 @@
     <div class="pulse-personal-cta" id="pulsePersonalCta" style="display:none">
       <a href="login.html" data-i18n="daily_cta">登入解鎖你嘅AI Watchlist同Risk Radar，每日自動更新 →</a>
     </div>
-  </div>
-</div>
-
-<!-- Real AI Showcase -- 真實screenshot，唔係mockup -->
-<div class="showcase-section">
-  <div class="section-label" data-i18n="showcase_label">Real AI Showcase</div>
-  <div class="section-title" data-i18n="showcase_title">真實AI Result，唔係mockup</div>
-  <div class="showcase-grid">
-    <a href="chart-analysis.html" class="showcase-card">
-      <div class="showcase-img-wrap"><img src="img/chart-analysis-demo.jpg" alt="AI K線圖分析真實結果" loading="lazy"></div>
-      <div class="showcase-body">
-        <div class="showcase-title" data-i18n="showcase1_title">📈 AI K線圖分析</div>
-        <div class="showcase-desc" data-i18n="showcase1_desc">支撐/阻力/RSI/MACD 全部來自真實歷史數據計算，型態辨識先至用AI視覺</div>
-      </div>
-    </a>
-    <a href="probability-scan.html" class="showcase-card">
-      <div class="showcase-img-wrap"><img src="img/probability-scan-demo.jpg" alt="機率掃描真實結果" loading="lazy"></div>
-      <div class="showcase-body">
-        <div class="showcase-title" data-i18n="showcase2_title">🎯 機率掃描</div>
-        <div class="showcase-desc" data-i18n="showcase2_desc">綜合真實市場數據、技術指標同新聞情緒，計算偏多/偏空機率</div>
-      </div>
-    </a>
-    <a href="news.html" class="showcase-card">
-      <div class="showcase-img-wrap"><img src="img/news-demo.jpg" alt="市場新聞追蹤真實結果" loading="lazy"></div>
-      <div class="showcase-body">
-        <div class="showcase-title" data-i18n="showcase3_title">📰 市場新聞追蹤</div>
-        <div class="showcase-desc" data-i18n="showcase3_desc">AI即時搜尋相關新聞，整合重點同市場影響分析</div>
-      </div>
-    </a>
   </div>
 </div>
 
@@ -1001,18 +974,34 @@ function trPulseLabel(label) {
   if (key && typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) return I18N.translations[key];
   return label;
 }
+
+// Shared translation for the Confluence Engine's raw Chinese direction
+// strings (services/technical_analysis_service.py's _confluence(), same
+// 4 possible values everywhere on the site) -- used by both Top
+// Opportunity and Today's AI Outlook so "偏多/偏空" etc. actually follow
+// the visitor's chosen language instead of always showing Chinese.
+const DIRECTION_KEYS = {
+  '偏多': 'idx_dir_bull',
+  '偏空': 'idx_dir_bear',
+  '訊號分歧，中性': 'idx_dir_neutral',
+  '數據不足': 'idx_dir_insufficient',
+};
+function trDirection(raw) {
+  const key = DIRECTION_KEYS[raw];
+  return key ? t(key, raw) : raw;
+}
 async function loadMarketPulse() {
   try {
     const res = await fetch(`${API}/market-pulse`);
     const data = await res.json();
     const overallEl = document.getElementById('pulseOverall');
     if (overallEl) {
-      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${data.overall_sentiment}</strong> · Confidence ${data.confidence_pct != null ? data.confidence_pct + '%' : '--'} · ${data.volatility_desc}`;
+      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · Confidence ${data.confidence_pct != null ? data.confidence_pct + '%' : '--'} · ${data.volatility_desc}`;
     }
     const bottomEl = document.getElementById('pulseBottom');
     if (bottomEl) {
       if (data.bottom_sector) {
-        bottomEl.innerHTML = `⚠️ ${t('idx_pulse_top_risk','Top Risk')}：<strong>${data.bottom_sector.label}（${data.bottom_sector.ticker}）</strong> · ${data.bottom_sector.confluence_direction}`;
+        bottomEl.innerHTML = `⚠️ ${t('idx_pulse_top_risk','Top Risk')}：<strong>${data.bottom_sector.label}（${data.bottom_sector.ticker}）</strong> · ${trDirection(data.bottom_sector.confluence_direction)}`;
         bottomEl.style.display = 'block';
       } else {
         bottomEl.style.display = 'none';
@@ -1035,11 +1024,17 @@ async function loadMarketPulse() {
         const dirClass = b.confluence_direction === '偏多' ? 'bull' : (b.confluence_direction === '偏空' ? 'bear' : 'neutral');
         const topClass = i === 0 ? ' top-pick' : '';
         const href = `ai-analysis.html?symbols=${encodeURIComponent(b.ticker)}&assetType=auto`;
+        const metaHtml = (b.volume_desc || b.confluence_confidence_pct != null) ? `
+            <div class="pulse-card-meta">
+              ${b.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${b.volume_desc}</span>` : ''}
+              ${b.confluence_confidence_pct != null ? `<span>${t('idx_prob_label','機率')}: ${b.confluence_confidence_pct}%</span>` : ''}
+            </div>` : '';
         return `<div class="pulse-card${topClass}">
           <a class="pulse-card-main" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
             <div class="pulse-card-label">${trPulseLabel(b.label)}</div>
             <div class="pulse-card-price">$${b.price}</div>
-            <div class="pulse-card-dir ${dirClass}">${b.confluence_direction}</div>
+            <div class="pulse-card-dir ${dirClass}">${trDirection(b.confluence_direction)}</div>
+            ${metaHtml}
           </a>
           ${relatedHtml}
         </div>`;
@@ -1073,11 +1068,17 @@ async function loadTopOpportunities() {
       }
       const dirClass = item.confluence_direction === '偏多' ? 'bull' : (item.confluence_direction === '偏空' ? 'bear' : 'neutral');
       const href = `ai-analysis.html?symbols=${encodeURIComponent(item.ticker)}&assetType=auto`;
+      const metaHtml = (item.volume_desc || item.confluence_confidence_pct != null) ? `
+        <div class="top-opp-meta">
+          ${item.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${item.volume_desc}</span>` : ''}
+          ${item.confluence_confidence_pct != null ? `<span>${t('idx_prob_label','機率')}: ${item.confluence_confidence_pct}%</span>` : ''}
+        </div>` : '';
       return `<a class="top-opp-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
         <div class="top-opp-class">${classLabel}</div>
         <div class="top-opp-ticker">${item.label}（${item.ticker}）</div>
         <div class="top-opp-price">$${item.price}</div>
-        <div class="top-opp-dir ${dirClass}">${item.confluence_direction}</div>
+        <div class="top-opp-dir ${dirClass}">${trDirection(item.confluence_direction)}</div>
+        ${metaHtml}
       </a>`;
     }).join('');
   } catch(e) {

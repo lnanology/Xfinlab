@@ -525,7 +525,10 @@ async function requestAiCommentary(){
   btn.disabled = true;
   btn.textContent = t('ca_ai_commentary_loading','產生緊...');
   try {
-    const response = await fetch(`${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/commentary`);
+    const _authToken = localStorage.getItem('xfinlab_token');
+    const _commentaryUrl = `${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/commentary`
+      + (_authToken ? `?token=${encodeURIComponent(_authToken)}` : '');
+    const response = await fetch(_commentaryUrl);
     const json = await response.json();
     if(json.status !== 'ok'){
       throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
@@ -606,7 +609,8 @@ async function runImageAnalysis(){
       body: JSON.stringify({
         image: base64Data,
         mime_type: meta || 'image/jpeg',
-        symbol: symbol
+        symbol: symbol,
+        token: localStorage.getItem('xfinlab_token') || undefined
       })
     });
 

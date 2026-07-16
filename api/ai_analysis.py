@@ -14,13 +14,17 @@ news_svc = NewsService()
 
 @router.post("/ai-analysis")
 async def ai_analysis(body: dict):
+    from services.quota_middleware import check_token_budget, record_ai_token_usage
+
     symbols = body.get("symbols", [])
     filters = body.get("filters", {})
     query = body.get("query", "")
+    token = body.get("token")
 
     # Screener mode
     if filters and not symbols:
         from ai.ai_router import get_ai_response
+        user_id = check_token_budget(token)
         prompt = (
             f"You are a stock screener AI. Based on these filters: {filters}. "
             f"Recommend 5-8 stocks with ticker, company name, reason (2 sentences), risk. "
@@ -28,6 +32,7 @@ async def ai_analysis(body: dict):
         )
         try:
             answer = get_ai_response(prompt, max_tokens=800)
+            record_ai_token_usage(user_id)
         except:
             answer = "篩選服務暫時不可用，請稍後再試。"
         return {"status": "ok", "data": {"conclusion": answer, "analysis": answer}}

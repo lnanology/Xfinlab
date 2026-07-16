@@ -20,6 +20,7 @@ async def chat(body: dict):
     """
     query = body.get("query", "")
     conversation_id = body.get("conversation_id", "default")
+    token = body.get("token")
 
     if not query:
         return {"status": "ok", "answer": "請輸入問題", "conversation_id": conversation_id}
@@ -44,8 +45,12 @@ async def chat(body: dict):
         f"{history_text}\n\n用戶問題：{query}"
     )
 
+    from services.quota_middleware import check_token_budget, record_ai_token_usage
+    user_id = check_token_budget(token)
+
     try:
         answer = get_ai_response(prompt, max_tokens=800)
+        record_ai_token_usage(user_id)
         history.append({"query": query, "answer": answer})
         conversation_store[conversation_id] = history[-MAX_HISTORY_TURNS:]
         return {
