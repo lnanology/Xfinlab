@@ -151,6 +151,19 @@
       </div>
       </div>
 
+      <div id="marketStructureBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_ms_title">市場結構（Market Structure）</h4>
+        <div class="result-row"><div class="result-label" data-i18n="ca_ms_prior">先前結構</div><div class="result-value" id="msPriorStructure">-</div></div>
+        <div id="msEvents" style="margin-top:0.4rem"></div>
+      </div>
+
+      <div id="mtfBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_mtf_title">跨時間框架（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_mtf_hint">比較週線/日線/1小時嘅趨勢是否一致（非必需，主動按先會查）</p>
+        <button class="btn-secondary" id="mtfBtn" onclick="requestMultiTimeframe()" data-i18n="ca_mtf_btn">📊 查看跨時間框架</button>
+        <div id="mtfResult" style="margin-top:0.6rem"></div>
+      </div>
+
       <div id="aiCommentaryBlock" style="display:none">
         <h4 style="margin-top:0.8rem" data-i18n="ca_ai_commentary_title">AI 文字解讀（選填）</h4>
         <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_ai_commentary_hint">型態辨識需要截圖先做到；呢度可以叫AI將上面嘅真實數據寫成一段易讀總結（非必需，主動按先會叫AI）</p>
@@ -328,6 +341,8 @@ function switchMode(mode) {
     document.getElementById('chartPanel').style.display = 'none';
     document.getElementById('patternBlock').style.display = 'block';
     document.getElementById('aiCommentaryBlock').style.display = 'none';
+    document.getElementById('marketStructureBlock').style.display = 'none';
+    document.getElementById('mtfBlock').style.display = 'none';
   }
 }
 
@@ -432,6 +447,31 @@ async function runTickerSearch(symbolOverride){
     document.getElementById('riskTips').textContent = useCommentaryNote;
     document.getElementById('recommendationValue').textContent = useCommentaryNote;
 
+    // Phase 2 Market Structure Engine -- always shown when present, since
+    // it's computed for free from the same data already fetched above
+    // (no extra network call).
+    const ms = res.market_structure;
+    const msBlock = document.getElementById('marketStructureBlock');
+    if (ms) {
+      msBlock.style.display = 'block';
+      const structureLabel = {uptrend: t('ca_ms_uptrend','上升結構'), downtrend: t('ca_ms_downtrend','下降結構'), mixed: t('ca_ms_mixed','結構混合/盤整')}[ms.prior_structure] || ms.prior_structure;
+      document.getElementById('msPriorStructure').textContent = structureLabel;
+      const eventsEl = document.getElementById('msEvents');
+      if (ms.events && ms.events.length) {
+        eventsEl.innerHTML = ms.events.map(e => `<div class="result-row"><div class="result-label">${e.type}</div><div class="result-value">${e.detail}</div></div>`).join('');
+      } else {
+        eventsEl.innerHTML = `<div class="upload-hint">${t('ca_ms_no_event','未偵測到BOS/CHOCH/流動性掃蕩事件')}</div>`;
+      }
+    } else {
+      msBlock.style.display = 'none';
+    }
+
+    // Phase 2 Multi-Timeframe Engine -- lazy button, reset per search.
+    document.getElementById('mtfBlock').style.display = 'block';
+    document.getElementById('mtfResult').innerHTML = '';
+    document.getElementById('mtfBtn').disabled = false;
+    document.getElementById('mtfBtn').textContent = t('ca_mtf_btn','📊 查看跨時間框架');
+
     if (typeof window.renderDecisionFooter === 'function') {
       if (res.confluence) {
         const c = res.confluence;
@@ -496,6 +536,31 @@ async function requestAiCommentary(){
   } finally {
     btn.disabled = false;
     btn.textContent = t('ca_ai_commentary_btn','🤖 產生AI文字解讀');
+  }
+}
+
+async function requestMultiTimeframe(){
+  if(!currentSearchSymbol) return;
+  const btn = document.getElementById('mtfBtn');
+  const out = document.getElementById('mtfResult');
+  btn.disabled = true;
+  btn.textContent = t('ca_mtf_loading','查詢緊...');
+  try {
+    const response = await fetch(`${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/multi-timeframe`);
+    const json = await response.json();
+    if(json.status !== 'ok'){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+    const data = json.data;
+    const rows = (data.timeframes || []).map(tf =>
+      `<div class="result-row"><div class="result-label">${tf.label}</div><div class="result-value">${tf.trend} · ${tf.confluence_direction}（${tf.confluence_score}）</div></div>`
+    ).join('');
+    out.innerHTML = rows + `<div class="upload-hint" style="margin-top:0.4rem">${data.alignment || ''}</div>`;
+  } catch (err) {
+    out.innerHTML = `<div class="upload-hint">${t('ca_mtf_fail','跨時間框架查詢失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('ca_mtf_btn','📊 查看跨時間框架');
   }
 }
 

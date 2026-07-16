@@ -7,7 +7,7 @@ import time
 from fastapi import APIRouter
 
 from ai.ai_router import get_ai_response, get_vision_response
-from services.technical_analysis_service import get_technical_analysis
+from services.technical_analysis_service import get_technical_analysis, get_multi_timeframe_analysis
 
 router = APIRouter()
 
@@ -438,3 +438,36 @@ def chart_search_commentary(symbol: str, period: str = "6mo", interval: str = "1
 
     _ttl_cache_set(_COMMENTARY_CACHE, cache_key, commentary, _COMMENTARY_CACHE_MAX_ENTRIES)
     return {"status": "ok", "data": {"commentary": commentary, "cached": False}}
+
+
+# --- Phase 2 Multi-Timeframe Engine endpoint ---
+# Separate cache from the main chart-search one -- this call fetches 3x
+# the historical data (Weekly/Daily/1-Hour), so it's deliberately its own
+# lazy, user-triggered endpoint rather than bundled into every search.
+_MTF_CACHE: dict[str, tuple[float, dict]] = {}
+_MTF_CACHE_TTL_SECONDS = 600  # 10 minutes
+_MTF_CACHE_MAX_ENTRIES = 200
+
+
+@router.get("/chart-search/{symbol}/multi-timeframe")
+def chart_search_multi_timeframe(symbol: str):
+    """
+    Optional, user-triggered multi-timeframe alignment check -- compares
+    Weekly/Daily/1-Hour trend + confluence direction for the same symbol.
+    Not called automatically on every search since it costs 3x the
+    historical-data fetches of a normal /chart-search call.
+    """
+    symbol = (symbol or "").strip().upper()
+    if not symbol or not _SYMBOL_RE.match(symbol):
+        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+
+    cached = _ttl_cache_get(_MTF_CACHE, symbol, _MTF_CACHE_TTL_SECONDS)
+    if cached is not None:
+        return {"status": "ok", "data": {**cached, "cached": True}}
+
+    result = get_multi_timeframe_analysis(symbol)
+    if not result:
+        return {"status": "error", "message": f"攞唔到 {symbol} 嘅多時間框架數據"}
+
+    _ttl_cache_set(_MTF_CACHE, symbol, result, _MTF_CACHE_MAX_ENTRIES)
+    return {"status": "ok", "data": {**result, "cached": False}}

@@ -159,6 +159,14 @@ class TechnicalAnalysisService:
             atr14=atr14,
         )
 
+        # ---- Phase 2 Market Structure Engine: additive, no extra data ----
+        # fetch needed -- reuses the same chronologically-ordered swing_
+        # highs/swing_lows already computed above for support/resistance.
+        market_structure = self._market_structure(
+            closes=closes, highs=highs, lows=lows,
+            swing_highs=swing_highs, swing_lows=swing_lows,
+        )
+
         return {
             "symbol": symbol.upper(),
             "ohlc": self._ohlc_series(df),
@@ -181,6 +189,7 @@ class TechnicalAnalysisService:
             "indicators": indicators,
             "confluence": confluence,
             "decision_levels": decision_levels,
+            "market_structure": market_structure,
             "data_points": len(df),
             "period": period,
             "interval": interval,
@@ -200,7 +209,18 @@ class TechnicalAnalysisService:
         alpaca_key = os.getenv("ALPACA_API_KEY_ID")
         alpaca_secret = os.getenv("ALPACA_API_SECRET_KEY")
 
-        if alpaca_key and alpaca_secret and _US_SYMBOL_RE.match(symbol_upper):
+        # Only attempt Alpaca for intervals it actually has a real mapping
+        # for (see ALPACA_INTERVAL_TIMEFRAME). Previously this fell through
+        # to `.get(interval, "1Day")`, which for an unmapped interval (e.g.
+        # "1wk", added for the Phase 2 Multi-Timeframe Engine) would have
+        # silently fetched DAILY bars mislabelled as whatever the caller
+        # asked for. Better to skip Alpaca entirely and let yfinance
+        # (which does support "1wk") handle it correctly.
+        if (
+            alpaca_key and alpaca_secret
+            and _US_SYMBOL_RE.match(symbol_upper)
+            and interval in ALPACA_INTERVAL_TIMEFRAME
+        ):
             try:
                 df = TechnicalAnalysisService._fetch_alpaca(
                     symbol_upper, period, interval, alpaca_key, alpaca_secret
@@ -667,8 +687,153 @@ class TechnicalAnalysisService:
             "risk_pct": round(risk / entry * 100, 2),
         }
 
+    @staticmethod
+    def _market_structure(
+        closes: pd.Series,
+        highs: pd.Series,
+        lows: pd.Series,
+        swing_highs: List[float],
+        swing_lows: List[float],
+    ) -> Optional[Dict]:
+        """
+        Phase 2 Market Structure Engine -- BOS (Break of Structure), CHOCH
+        (Change of Character) and liquidity sweeps, all deterministic
+        price-action rules on the SAME chronologically-ordered swing
+        points already computed above (no new data fetch, no AI
+        guessing).
+
+        Definitions used here:
+          - "prior structure" is read off the last two swing highs/lows:
+            higher-high + higher-low = uptrend, lower-high + lower-low =
+            downtrend, anything else = mixed/consolidation.
+          - BOS: latest close breaks past the most recent swing level in
+            the SAME direction as prior structure -- confirms continuation.
+          - CHOCH: latest close breaks past the most recent swing level
+            AGAINST prior structure -- an early sign structure may be
+            changing (not a confirmed reversal, just the first character
+            change).
+          - Liquidity sweep: the latest bar's high/low pokes past a swing
+            level (a classic "stop hunt" wick) but the CLOSE comes back
+            inside -- price rejected the level rather than confirming
+            through it.
+
+        Returns None (not fabricated events) when there are fewer than 2
+        swing highs/lows to compare -- not enough structure to classify.
+        """
+        if len(swing_highs) < 2 or len(swing_lows) < 2:
+            return None
+
+        last_close = float(closes.iloc[-1])
+        last_high = float(highs.iloc[-1])
+        last_low = float(lows.iloc[-1])
+
+        recent_high, prior_high = swing_highs[-1], swing_highs[-2]
+        recent_low, prior_low = swing_lows[-1], swing_lows[-2]
+
+        if recent_high > prior_high and recent_low > prior_low:
+            prior_structure = "uptrend"
+        elif recent_high < prior_high and recent_low < prior_low:
+            prior_structure = "downtrend"
+        else:
+            prior_structure = "mixed"
+
+        events: List[Dict] = []
+
+        if prior_structure == "uptrend" and last_close > recent_high:
+            events.append({
+                "type": "BOS", "direction": "bullish",
+                "detail": f"價格企穩突破前高 {round(recent_high, 2)}，確認上升結構延續",
+            })
+        elif prior_structure == "downtrend" and last_close < recent_low:
+            events.append({
+                "type": "BOS", "direction": "bearish",
+                "detail": f"價格企穩跌穿前低 {round(recent_low, 2)}，確認下降結構延續",
+            })
+
+        if prior_structure == "downtrend" and last_close > recent_high:
+            events.append({
+                "type": "CHOCH", "direction": "bullish",
+                "detail": f"價格突破前高 {round(recent_high, 2)}，下降結構出現轉勢跡象",
+            })
+        elif prior_structure == "uptrend" and last_close < recent_low:
+            events.append({
+                "type": "CHOCH", "direction": "bearish",
+                "detail": f"價格跌穿前低 {round(recent_low, 2)}，上升結構出現轉勢跡象",
+            })
+
+        if last_high > recent_high and last_close < recent_high:
+            events.append({
+                "type": "liquidity_sweep", "direction": "bearish",
+                "detail": f"高位插針掃過前高 {round(recent_high, 2)} 後收返落嚟，疑似掃流動性",
+            })
+        if last_low < recent_low and last_close > recent_low:
+            events.append({
+                "type": "liquidity_sweep", "direction": "bullish",
+                "detail": f"低位插針穿過前低 {round(recent_low, 2)} 後收返上去，疑似掃流動性",
+            })
+
+        return {
+            "prior_structure": prior_structure,
+            "recent_swing_high": round(recent_high, 2),
+            "recent_swing_low": round(recent_low, 2),
+            "events": events,
+        }
+
 
 technical_service = TechnicalAnalysisService()
+
+
+# ---- Phase 2 Multi-Timeframe Engine ----
+# Compares trend/confluence direction across the timeframes the underlying
+# data sources actually support natively -- Weekly, Daily, 1-Hour. No fake
+# "4H" bucket: yfinance/Alpaca don't offer a native 4-hour bar, and
+# resampling 1H bars into synthetic 4H candles here would be presenting
+# derived data as if it were a real timeframe, which this codebase avoids.
+MULTI_TIMEFRAMES = [
+    {"label": "Weekly", "key": "weekly", "period": "2y", "interval": "1wk"},
+    {"label": "Daily", "key": "daily", "period": "6mo", "interval": "1d"},
+    {"label": "1-Hour", "key": "1h", "period": "5d", "interval": "1h"},
+]
+
+
+def get_multi_timeframe_analysis(symbol: str) -> Optional[Dict]:
+    """
+    Fetches the SAME real get_technical_analysis() output at 3 different
+    timeframes and summarises whether they agree. Deliberately a separate,
+    lazily-called function (see api/chart_analysis.py's dedicated
+    endpoint) rather than bundled into every search, since it triples the
+    number of historical-data calls per request.
+    """
+    results = []
+    for tf in MULTI_TIMEFRAMES:
+        r = get_technical_analysis(symbol, period=tf["period"], interval=tf["interval"])
+        if r and "error" not in r:
+            results.append({
+                "label": tf["label"],
+                "key": tf["key"],
+                "trend": r["trend"],
+                "confluence_direction": r["confluence"]["direction"],
+                "confluence_score": r["confluence"]["score"],
+            })
+
+    if not results:
+        return None
+
+    bullish = sum(1 for r in results if r["confluence_direction"] == "偏多")
+    bearish = sum(1 for r in results if r["confluence_direction"] == "偏空")
+
+    if bullish == len(results):
+        alignment = "全部時間框架一致偏多"
+    elif bearish == len(results):
+        alignment = "全部時間框架一致偏空"
+    elif bullish > bearish:
+        alignment = "多數時間框架偏多，但有分歧"
+    elif bearish > bullish:
+        alignment = "多數時間框架偏空，但有分歧"
+    else:
+        alignment = "時間框架訊號分歧，中性"
+
+    return {"timeframes": results, "alignment": alignment}
 
 
 def get_technical_analysis(
