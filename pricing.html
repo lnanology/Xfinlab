@@ -74,6 +74,20 @@
   .feature .cross { color: var(--muted); font-size: 0.9rem; flex-shrink: 0; }
   .feature.muted { color: var(--muted); }
 
+  /* Enterprise Contact Us modal */
+  .enterprise-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .enterprise-modal { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .enterprise-modal h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+  .enterprise-modal-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .enterprise-modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; }
+  #entFormFields label { display: block; font-size: 0.78rem; color: var(--label); margin: 12px 0 6px; }
+  #entFormFields input, #entFormFields select, #entFormFields textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; font-family: inherit; font-size: 0.85rem; resize: vertical; }
+  .enterprise-modal-submit { width: 100%; background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 18px; }
+  .enterprise-modal-submit:disabled { opacity: 0.6; cursor: default; }
+  .enterprise-modal-status { font-size: 0.8rem; margin-top: 10px; text-align: center; min-height: 1.2em; }
+  .enterprise-modal-fallback { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 18px; }
+  .enterprise-modal-fallback a { color: var(--accent); }
+
   /* FAQ */
   .faq { max-width: 640px; margin: 0 auto; }
   .faq h2 { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 32px; }
@@ -233,7 +247,7 @@
         <div class="amount" style="font-size:1.7rem" data-i18n="pricing_enterprise_price">Custom</div>
       </div>
       <div class="plan-desc" data-i18n="pricing_enterprise_desc">For teams and institutions that need volume, support, and custom terms.</div>
-      <button class="btn-plan btn-enterprise" onclick="window.location.href='mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry'" data-i18n="pricing_enterprise_btn">Contact Sales</button>
+      <button class="btn-plan btn-enterprise" onclick="openEnterpriseModal()" data-i18n="pricing_enterprise_btn">Contact Sales</button>
       <div class="features-label" data-i18n="pricing_everything_professional_plus">Everything in Professional, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f1">Multiple team seats</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f2">Custom API rate limits</span></div>
@@ -278,6 +292,51 @@
   </div>
 
 </main>
+
+<!-- Enterprise Contact Us: submits to the same /api/feedback pipeline
+     already used by the site's Feedback widget (stored in DB + emails
+     the admin), tagged type="enterprise_inquiry" so it's easy to filter.
+     Falls back to a plain mailto: link if the request fails, so a
+     backend hiccup never leaves an interested lead with no way to
+     reach out. -->
+<div id="enterpriseModalOverlay" class="enterprise-modal-overlay" style="display:none" onclick="if(event.target===this) closeEnterpriseModal()">
+  <div class="enterprise-modal">
+    <button class="enterprise-modal-close" onclick="closeEnterpriseModal()" aria-label="Close">✕</button>
+    <h3 data-i18n="ent_modal_title">Talk to Sales</h3>
+    <p class="enterprise-modal-sub" data-i18n="ent_modal_sub">Tell us a bit about your team and we'll get back to you shortly.</p>
+
+    <div id="entFormFields">
+      <label data-i18n="ent_field_name">Name</label>
+      <input id="entName" type="text" placeholder="" data-i18n-placeholder="ent_field_name_placeholder">
+      <label data-i18n="ent_field_company">Company</label>
+      <input id="entCompany" type="text" placeholder="" data-i18n-placeholder="ent_field_company_placeholder">
+      <label data-i18n="ent_field_email">Email</label>
+      <input id="entEmail" type="email" placeholder="" data-i18n-placeholder="ent_field_email_placeholder">
+      <label data-i18n="ent_field_team_size">Team Size</label>
+      <select id="entTeamSize">
+        <option value="1-5" data-i18n="ent_team_size_1">1–5</option>
+        <option value="6-20" data-i18n="ent_team_size_2">6–20</option>
+        <option value="21-50" data-i18n="ent_team_size_3">21–50</option>
+        <option value="50+" data-i18n="ent_team_size_4">50+</option>
+      </select>
+      <label data-i18n="ent_field_message">What do you need?</label>
+      <textarea id="entMessage" rows="3" data-i18n-placeholder="ent_field_message_placeholder"></textarea>
+
+      <button class="enterprise-modal-submit" onclick="submitEnterpriseInquiry()" data-i18n="ent_submit_btn">Send Inquiry</button>
+      <div id="entStatus" class="enterprise-modal-status"></div>
+    </div>
+
+    <div id="entSuccess" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:2.2rem;margin-bottom:12px">✅</div>
+      <p data-i18n="ent_success_msg">Thanks! We've received your inquiry and will reach out shortly.</p>
+    </div>
+
+    <p class="enterprise-modal-fallback">
+      <span data-i18n="ent_fallback_prefix">Prefer email? Reach us at</span>
+      <a href="mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry">support@xfinlab.com</a>
+    </p>
+  </div>
+</div>
 
 <footer><span data-i18n="pricing_footer">© 2026 XFINLAB — AI Investment Intelligence Platform · </span><a href="terms.html" style="color:var(--muted)" data-i18n="pricing_footer_terms">Terms</a> · <a href="privacy.html" style="color:var(--muted)" data-i18n="pricing_footer_privacy">Privacy</a> · <a href="refund.html" style="color:var(--muted)" data-i18n="pricing_footer_refund">Refund</a></footer>
 
@@ -333,6 +392,64 @@ function handleUpgrade(plan) {
 
 function toggleFaq(el) {
   el.classList.toggle('open');
+}
+
+function openEnterpriseModal() {
+  document.getElementById('entFormFields').style.display = 'block';
+  document.getElementById('entSuccess').style.display = 'none';
+  document.getElementById('entStatus').textContent = '';
+  document.getElementById('enterpriseModalOverlay').style.display = 'flex';
+}
+function closeEnterpriseModal() {
+  document.getElementById('enterpriseModalOverlay').style.display = 'none';
+}
+
+async function submitEnterpriseInquiry() {
+  const name = document.getElementById('entName').value.trim();
+  const company = document.getElementById('entCompany').value.trim();
+  const email = document.getElementById('entEmail').value.trim();
+  const teamSize = document.getElementById('entTeamSize').value;
+  const message = document.getElementById('entMessage').value.trim();
+  const status = document.getElementById('entStatus');
+  const submitBtn = document.querySelector('.enterprise-modal-submit');
+
+  if (!name || !email) {
+    status.textContent = t('ent_error_required', 'Please enter your name and email');
+    status.style.color = 'var(--red)';
+    return;
+  }
+
+  const composedMessage =
+    `Company: ${company || 'N/A'}\nTeam size: ${teamSize}\n\n${message || '(no message)'}`;
+
+  submitBtn.disabled = true;
+  status.textContent = '';
+
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'enterprise_inquiry',
+        message: `Name: ${name}\nEmail: ${email}\n${composedMessage}`,
+        email,
+        token,
+      })
+    });
+    if (!res.ok) throw new Error('request failed');
+
+    document.getElementById('entFormFields').style.display = 'none';
+    document.getElementById('entSuccess').style.display = 'block';
+  } catch (e) {
+    // Backend hiccup -- don't strand an interested lead with a dead end,
+    // fall back to the same mailto: link this button used before.
+    status.innerHTML = t('ent_error_fallback', 'Something went wrong — please email us instead:') +
+      ' <a href="mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry" style="color:var(--accent)">support@xfinlab.com</a>';
+    status.style.color = 'var(--muted)';
+  } finally {
+    submitBtn.disabled = false;
+  }
 }
 </script>
 </body>
