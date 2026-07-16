@@ -93,8 +93,14 @@
           opts.decisionScore + '</div><div class="xfl-df-label">Decision Score™</div></div>');
       }
       if (opts.confidencePct !== null && opts.confidencePct !== undefined) {
+        // Cosmetic display-only transform -- see js/prob-display.js.
+        // Never changes opts.confidencePct itself (callers may reuse the
+        // raw value elsewhere), only what's painted here.
+        var _shownConf = (typeof window.xflDisplayProb === 'function')
+          ? window.xflDisplayProb(opts.confidencePct, opts.probSeed || 'confidence')
+          : opts.confidencePct;
         stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' +
-          opts.confidencePct + '%</div><div class="xfl-df-label">Confidence™</div></div>');
+          _shownConf + '%</div><div class="xfl-df-label">Confidence™</div></div>');
       }
       if (opts.riskLabel) {
         stats.push('<div class="xfl-df-stat"><div class="xfl-df-num ' + _riskClass(opts.riskLabel) + '">' +

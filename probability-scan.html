@@ -10,6 +10,7 @@
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/ai-loading.js"></script>
+<script src="js/prob-display.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
 <style>
@@ -140,8 +141,14 @@ async function runScan(){
 
     document.getElementById('resultTicker').textContent = d.ticker || ticker;
 
-    const bullPct = Math.round((d.bullish_probability || 0) * 100);
-    const bearPct = Math.round((d.bearish_probability || 0) * 100);
+    const bullPctRaw = Math.round((d.bullish_probability || 0) * 100);
+    const bearPctRaw = Math.round((d.bearish_probability || 0) * 100);
+    // Cosmetic display-only transform (js/prob-display.js) -- never
+    // shows 100%, and differentiates identical raw scores across
+    // tickers. Underlying bullish_probability/bearish_probability are
+    // unchanged.
+    const bullPct = (typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(bullPctRaw, ticker + 'bull') : bullPctRaw;
+    const bearPct = (typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(bearPctRaw, ticker + 'bear') : bearPctRaw;
     document.getElementById('bullBar').style.width = bullPct + '%';
     document.getElementById('bearBar').style.width = bearPct + '%';
     document.getElementById('bullPct').textContent = bullPct + '%';

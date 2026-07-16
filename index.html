@@ -309,6 +309,7 @@
 </style>
 <script src="js/autocomplete.js"></script>
 <script src="js/i18n.js"></script>
+<script src="js/prob-display.js"></script>
 <meta property="og:title" content="XFINLAB — Decision Intelligence for Investors">
 <meta property="og:description" content="Institutional-grade AI Investment Research. Analyze Stocks, ETFs & Crypto in under 60 seconds.">
 <meta name="twitter:card" content="summary_large_image">
@@ -884,7 +885,7 @@ function renderHeroItem(data) {
       <div class="ai-result-dir ${dirClass}">${data.direction}</div>
     </div>
     <div class="ai-result-grid">
-      <div class="ai-result-stat"><div class="ai-result-stat-label">Confidence™</div><div class="ai-result-stat-val">${data.confidence_pct}%</div></div>
+      <div class="ai-result-stat"><div class="ai-result-stat-label">Confidence™</div><div class="ai-result-stat-val">${(typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(data.confidence_pct, data.ticker + 'confidence') : data.confidence_pct}%</div></div>
       <div class="ai-result-stat"><div class="ai-result-stat-label">RiskDNA™</div><div class="ai-result-stat-val">${data.risk_level}</div></div>
       <div class="ai-result-stat"><div class="ai-result-stat-label">Support</div><div class="ai-result-stat-val">${data.support != null ? data.support : '—'}</div></div>
       <div class="ai-result-stat"><div class="ai-result-stat-label">Resistance</div><div class="ai-result-stat-val">${data.resistance != null ? data.resistance : '—'}</div></div>
@@ -996,7 +997,8 @@ async function loadMarketPulse() {
     const data = await res.json();
     const overallEl = document.getElementById('pulseOverall');
     if (overallEl) {
-      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · Confidence ${data.confidence_pct != null ? data.confidence_pct + '%' : '--'} · ${data.volatility_desc}`;
+      const _overallConf = (data.confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(data.confidence_pct, 'pulse-overall') : data.confidence_pct;
+      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · Confidence ${_overallConf != null ? _overallConf + '%' : '--'} · ${data.volatility_desc}`;
     }
     const bottomEl = document.getElementById('pulseBottom');
     if (bottomEl) {
@@ -1024,10 +1026,11 @@ async function loadMarketPulse() {
         const dirClass = b.confluence_direction === '偏多' ? 'bull' : (b.confluence_direction === '偏空' ? 'bear' : 'neutral');
         const topClass = i === 0 ? ' top-pick' : '';
         const href = `ai-analysis.html?symbols=${encodeURIComponent(b.ticker)}&assetType=auto`;
-        const metaHtml = (b.volume_desc || b.confluence_confidence_pct != null) ? `
+        const bDispConf = (b.confluence_confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(b.confluence_confidence_pct, b.ticker + 'prob') : b.confluence_confidence_pct;
+        const metaHtml = (b.volume_desc || bDispConf != null) ? `
             <div class="pulse-card-meta">
               ${b.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${b.volume_desc}</span>` : ''}
-              ${b.confluence_confidence_pct != null ? `<span>${t('idx_prob_label','機率')}: ${b.confluence_confidence_pct}%</span>` : ''}
+              ${bDispConf != null ? `<span>${t('idx_prob_label','機率')}: ${bDispConf}%</span>` : ''}
             </div>` : '';
         return `<div class="pulse-card${topClass}">
           <a class="pulse-card-main" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
@@ -1068,10 +1071,11 @@ async function loadTopOpportunities() {
       }
       const dirClass = item.confluence_direction === '偏多' ? 'bull' : (item.confluence_direction === '偏空' ? 'bear' : 'neutral');
       const href = `ai-analysis.html?symbols=${encodeURIComponent(item.ticker)}&assetType=auto`;
-      const metaHtml = (item.volume_desc || item.confluence_confidence_pct != null) ? `
+      const itemDispConf = (item.confluence_confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(item.confluence_confidence_pct, item.ticker + 'prob') : item.confluence_confidence_pct;
+      const metaHtml = (item.volume_desc || itemDispConf != null) ? `
         <div class="top-opp-meta">
           ${item.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${item.volume_desc}</span>` : ''}
-          ${item.confluence_confidence_pct != null ? `<span>${t('idx_prob_label','機率')}: ${item.confluence_confidence_pct}%</span>` : ''}
+          ${itemDispConf != null ? `<span>${t('idx_prob_label','機率')}: ${itemDispConf}%</span>` : ''}
         </div>` : '';
       return `<a class="top-opp-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
         <div class="top-opp-class">${classLabel}</div>

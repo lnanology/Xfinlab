@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/ai-loading.js"></script>
+<script src="js/prob-display.js"></script>
 <script src="js/decision-footer.js"></script>
 <script src="js/share-tools.js"></script>
 <style>
@@ -486,6 +487,7 @@ async function runTickerSearch(symbolOverride){
         window.renderDecisionFooter('decisionFooter', {
           decisionScore: decisionScore,
           confidencePct: c.confidence_pct,
+          probSeed: (currentSearchSymbol || '') + 'confidence',
           riskLabel: riskLabel,
           keyReasons: reasons.length ? reasons : null,
           suggestedAction: null,
@@ -678,6 +680,7 @@ async function runImageAnalysis(){
         window.renderDecisionFooter('decisionFooter', {
           decisionScore: decisionScore,
           confidencePct: c.confidence_pct,
+          probSeed: (symbol || 'upload') + 'confidence',
           riskLabel: riskLabel,
           keyReasons: reasons.length ? reasons : null,
           suggestedAction: res.recommendation || null,

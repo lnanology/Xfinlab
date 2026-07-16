@@ -163,6 +163,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
 <script src="js/reusable-score-card.js"></script>
 <script src="js/ai-loading.js"></script>
+<script src="js/prob-display.js"></script>
 <script src="js/decision-footer.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
@@ -183,13 +184,20 @@ async function runAnalysis(){
     document.getElementById('newsScore').textContent = scores.news + '/100';
     document.getElementById('riskScore').textContent = scores.risk + '/100';
 
-    const probs = data.probabilities;
-    document.getElementById('bullFill').style.width = probs.bull + '%';
-    document.getElementById('flatFill').style.width = probs.flat + '%';
-    document.getElementById('bearFill').style.width = probs.bear + '%';
-    document.getElementById('bullPct').textContent = probs.bull + '%';
-    document.getElementById('flatPct').textContent = probs.flat + '%';
-    document.getElementById('bearPct').textContent = probs.bear + '%';
+    // Cosmetic display-only transform (js/prob-display.js) -- never
+    // shows 100%, and differentiates identical raw scores across
+    // symbols/searches. The underlying probs.bull/flat/bear values are
+    // used unchanged everywhere else (e.g. the Confidence™ figure below).
+    const probSeed = symbols.join(',');
+    const dispBull = (typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(probs.bull, probSeed + 'bull') : probs.bull;
+    const dispFlat = (typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(probs.flat, probSeed + 'flat') : probs.flat;
+    const dispBear = (typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(probs.bear, probSeed + 'bear') : probs.bear;
+    document.getElementById('bullFill').style.width = dispBull + '%';
+    document.getElementById('flatFill').style.width = dispFlat + '%';
+    document.getElementById('bearFill').style.width = dispBear + '%';
+    document.getElementById('bullPct').textContent = dispBull + '%';
+    document.getElementById('flatPct').textContent = dispFlat + '%';
+    document.getElementById('bearPct').textContent = dispBear + '%';
 
     const riskList=document.getElementById('riskList');
     riskList.innerHTML='';
@@ -223,6 +231,7 @@ async function runAnalysis(){
       window.renderDecisionFooter('decisionFooter', {
         decisionScore: scores.tech,
         confidencePct: Math.max(probs.bull, probs.flat, probs.bear),
+        probSeed: probSeed + 'confidence',
         riskLabel: riskLabel,
         keyReasons: data.risks.map(r => r.title),
         suggestedAction: data.conclusion,
