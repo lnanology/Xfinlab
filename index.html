@@ -788,6 +788,11 @@ renderTickerBar();
 loadTickers();
 setInterval(loadTickers, 60000);
 initAutocomplete("heroTicker", "heroDropdown");
+// 下面「免費體驗」個demoTicker之前冇wire過autocomplete，用generic嗰個
+// helper（自己整dropdown，唔使成頁提前起返個dropdown元素）。
+if (typeof autoAttachTickerAutocomplete === 'function') {
+  autoAttachTickerAutocomplete('#demoTicker');
+}
 
 // Hero "Live AI Result" card -- 見api/hero_showcase.py，真實confluence
 // engine計出嚟嘅Decision Score/Confidence/RiskDNA/支撐阻力，5分鐘後端
