@@ -53,8 +53,9 @@
 
   // 已登入用戶專屬嘅浮動Settings->Account flyout，加落所有include緊呢個
   // nav.js嘅頁面（index.html/dashboard.html已經有自己嘅版本，見下面
-  // 判斷，唔會重複加多一個）。指住/撳落「⚙️ 設定」會滑出「👤 帳戶」
-  // 呢個選項，用戶要求「所有頁面都要加」呢個功能，唔止主頁先有。
+  // 判斷，唔會重複加多一個）。掣本身就顯示「👤 帳戶」（唔再係
+  // 「⚙️ 設定」），指住/撳落佢會滑出返嗰個「帳戶」選項先真正撳得入去
+  // dashboard.html，用戶要求「所有頁面都要加」呢個功能，唔止主頁先有。
   function injectUserTopbarFlyout() {
     const user = JSON.parse(localStorage.getItem('xfinlab_user') || '{}');
     const token = localStorage.getItem('xfinlab_token');
@@ -85,7 +86,7 @@
     bar.innerHTML = `
       <span class="xfl-name">👤 ${firstName}</span>
       <div class="xfl-settings-wrap" id="xflSettingsWrap">
-        <button type="button" class="xfl-settings-btn" id="xflSettingsBtn">⚙️ 設定</button>
+        <button type="button" class="xfl-settings-btn" id="xflSettingsBtn">👤 帳戶</button>
         <div class="xfl-flyout" id="xflFlyout">
           <a href="dashboard.html" id="xflAccountLink">👤 帳戶</a>
         </div>
@@ -104,13 +105,15 @@
     });
 
     // 如果個頁面有load i18n.js，跟返用戶語言顯示；未load到嘅話就keep
-    // 住Chinese fallback（同index.html嗰個topbar一致嘅預設）。
+    // 住Chinese fallback（同index.html嗰個topbar一致嘅預設）。觸發掣同
+    // flyout入面嗰個選項而家一律顯示「帳戶/Account」，唔再顯示「設定」。
     function applyTopbarI18n() {
       if (typeof I18N === 'undefined' || !I18N.translations) return;
-      const s = I18N.translations['topbar_settings'];
       const a = I18N.translations['topbar_account'];
-      if (s) btn.textContent = s;
-      if (a) document.getElementById('xflAccountLink').innerHTML = '👤 ' + a;
+      if (a) {
+        btn.innerHTML = '👤 ' + a;
+        document.getElementById('xflAccountLink').innerHTML = '👤 ' + a;
+      }
     }
     applyTopbarI18n();
     document.addEventListener('i18nApplied', applyTopbarI18n);

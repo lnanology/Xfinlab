@@ -316,12 +316,13 @@
 <body>
 
 <!-- 已登入用戶專屬top bar -- 淨係isLoggedIn()先顯示（見下面initUserTopbar()）。
-     用戶名/設定入口/深淺色切換，刻意精簡，冇加多其他嘢。 -->
+     用戶名/帳戶入口（撳落/指住會滑出返嗰個帳戶選項）/深淺色切換，
+     刻意精簡，冇加多其他嘢。 -->
 <div class="user-topbar" id="userTopbar" style="display:none">
   <div class="user-topbar-inner">
     <span class="user-topbar-name" id="userTopbarName">👤</span>
     <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
-      <button type="button" class="user-topbar-btn" id="topbarSettingsBtn" data-i18n="topbar_settings">⚙️ 設定</button>
+      <button type="button" class="user-topbar-btn" id="topbarSettingsBtn">👤 <span data-i18n="topbar_account">帳戶</span></button>
       <div class="user-topbar-flyout" id="topbarSettingsFlyout">
         <a href="dashboard.html">👤 <span data-i18n="topbar_account">帳戶</span></a>
       </div>
