@@ -378,10 +378,36 @@ async function sendMessage() {
 }
 
 function addToHistory(text) {
-  chatHistory.unshift(text.substring(0,30)+(text.length>30?'…':''));
+  chatHistory.unshift({
+    full: text,
+    display: text.substring(0,30)+(text.length>30?'…':'')
+  });
   if (chatHistory.length > 8) chatHistory.pop();
+  renderHistory();
+}
+
+// Clicking a past-chat entry re-fills the input with that original
+// question so the user can quickly re-ask it (edit or send as-is) --
+// previously these items looked clickable (cursor:pointer, hover
+// highlight in CSS) but had no click handler at all.
+function renderHistory() {
   const list = document.getElementById('historyList');
-  list.innerHTML = chatHistory.map(h => `<div class="history-item">💬 ${h}</div>`).join('');
+  list.innerHTML = chatHistory.map((h, i) =>
+    `<div class="history-item" onclick="useHistoryItem(${i})" title="${h.full.replace(/"/g,'&quot;')}">💬 ${h.display}</div>`
+  ).join('');
+}
+
+function useHistoryItem(i) {
+  const entry = chatHistory[i];
+  if (!entry) return;
+  const input = document.getElementById('inputBox');
+  if (input) {
+    input.value = entry.full;
+    input.focus();
+    if (typeof input.dispatchEvent === 'function') {
+      input.dispatchEvent(new Event('input'));
+    }
+  }
 }
 
 function newChat() {

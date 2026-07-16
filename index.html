@@ -160,17 +160,6 @@
   .feature-link { display: inline-block; margin-top: 16px; font-size: 0.8rem; color: var(--accent); text-decoration: none; font-weight: 500; }
 
   /* Guided nav fork (Notion-style question -> Wealthfront-style contextual filter) */
-  .guide-fork { display: flex; gap: 28px; justify-content: center; margin: 0 auto 56px; flex-wrap: wrap; }
-  .guide-btn { background: var(--surface); border: 2px solid var(--border); color: var(--text); padding: 36px 72px; border-radius: 18px; font-weight: 700; font-size: 2.4rem; cursor: pointer; transition: border-color 0.2s, color 0.2s, transform 0.15s; }
-  .guide-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
-  @media (max-width: 768px) { .guide-btn { padding: 20px 32px; font-size: 1.4rem; } }
-  .guide-question { max-width: 640px; margin: 0 auto 28px; text-align: center; }
-  .guide-question-text { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; }
-  .guide-options { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-  .guide-option-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 18px; border-radius: 8px; font-size: 0.82rem; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-  .guide-option-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .guide-result { text-align: center; margin: 0 auto 20px; }
-  .guide-result-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
   .guide-show-all { font-size: 0.8rem; color: var(--accent); text-decoration: none; cursor: pointer; }
   .tool-pill.tool-hidden { display: none; }
 
@@ -485,26 +474,26 @@
   <div class="section-label" data-i18n="pricing_label">收費方案</div>
   <div class="section-title" data-i18n="pricing_title">由免費開始</div>
   <div class="pricing-cards-row">
-    <div class="price-mini">
+    <a class="price-mini" href="login.html" style="text-decoration:none;color:inherit;cursor:pointer">
       <div class="price-mini-name" data-i18n="pricing_free_name">Free</div>
       <div class="price-mini-amount">$0</div>
       <div class="price-mini-desc" data-i18n="price1_desc">每日5次AI分析</div>
-    </div>
-    <div class="price-mini">
+    </a>
+    <a class="price-mini" href="pricing.html" style="text-decoration:none;color:inherit;cursor:pointer">
       <div class="price-mini-name" data-i18n="pricing_basic_name">Basic</div>
       <div class="price-mini-amount">$10<span data-i18n="idx_per_month">/月</span></div>
-      <div class="price-mini-desc" data-i18n="price2_desc">解鎖全功能＋30% Token額度</div>
-    </div>
-    <div class="price-mini featured">
+      <div class="price-mini-desc" data-i18n="price2_desc">解鎖全功能</div>
+    </a>
+    <a class="price-mini featured" href="pricing.html" style="text-decoration:none;color:inherit;cursor:pointer">
       <div class="price-mini-name" data-i18n="pricing_pro_name">Pro</div>
       <div class="price-mini-amount">$29<span data-i18n="idx_per_month">/月</span></div>
-      <div class="price-mini-desc" data-i18n="price3_desc">全功能50%＋異常雷達</div>
-    </div>
-    <div class="price-mini">
+      <div class="price-mini-desc" data-i18n="price3_desc">全功能＋異常雷達</div>
+    </a>
+    <a class="price-mini" href="pricing.html" style="text-decoration:none;color:inherit;cursor:pointer">
       <div class="price-mini-name" data-i18n="pricing_proplus_name">Pro+</div>
       <div class="price-mini-amount">$49<span data-i18n="idx_per_month">/月</span></div>
-      <div class="price-mini-desc" data-i18n="price4_desc">全功能70%＋AI研究助手</div>
-    </div>
+      <div class="price-mini-desc" data-i18n="price4_desc">全功能＋AI研究助手</div>
+    </a>
   </div>
   <div style="margin-top:20px"><a href="pricing.html" class="feature-link" data-i18n="pricing_link">查看完整方案 →</a></div>
 </div>
@@ -662,37 +651,6 @@ function scrollToDemo() {
   if (section) section.scrollIntoView({behavior: 'smooth', block: 'start'});
   const input = document.getElementById('demoTicker');
   if (input) setTimeout(() => input.focus(), 400);
-}
-
-function startGuide() {
-  document.getElementById('guideFork').style.display = 'none';
-  document.getElementById('guideQuestion').style.display = 'block';
-}
-
-function skipGuide() {
-  document.getElementById('guideFork').style.display = 'none';
-}
-
-function pickGuideOption(opt) {
-  document.getElementById('guideQuestion').style.display = 'none';
-  document.getElementById('guideResult').style.display = 'block';
-  document.querySelectorAll('#toolsGrid .tool-pill').forEach(function(pill) {
-    if (pill.dataset.toolGroup === opt) {
-      pill.classList.remove('tool-hidden');
-    } else {
-      pill.classList.add('tool-hidden');
-    }
-  });
-  const grid = document.getElementById('toolsGrid');
-  if (grid) grid.scrollIntoView({behavior: 'smooth', block: 'start'});
-}
-
-function showAllTools() {
-  document.querySelectorAll('#toolsGrid .tool-pill').forEach(function(pill) {
-    pill.classList.remove('tool-hidden');
-  });
-  document.getElementById('guideResult').style.display = 'none';
-  document.getElementById('guideFork').style.display = 'flex';
 }
 
 function goAnalyze() {
