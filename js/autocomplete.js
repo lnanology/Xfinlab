@@ -137,20 +137,88 @@ const ALL_TICKERS = [
   {symbol: '6758', name: 'Sony Group ソニーグループ', type: 'stock', api: '6758.T'},
   {symbol: '9984', name: 'SoftBank Group ソフトバンクグループ', type: 'stock', api: '9984.T'},
   {symbol: '9432', name: 'NTT 日本電信電話', type: 'stock', api: '9432.T'},
+  // 南韓 South Korea
+  {symbol: '005930', name: 'Samsung Electronics 삼성전자', type: 'stock', api: '005930.KS'},
+  {symbol: '000660', name: 'SK Hynix SK하이닉스', type: 'stock', api: '000660.KS'},
+  // 澳洲 Australia
+  {symbol: 'BHP', name: 'BHP Group', type: 'stock', api: 'BHP.AX'},
+  {symbol: 'CBA', name: 'Commonwealth Bank of Australia', type: 'stock', api: 'CBA.AX'},
+  {symbol: 'CSL', name: 'CSL Limited', type: 'stock', api: 'CSL.AX'},
+  // 印度 India
+  {symbol: 'RELIANCE', name: 'Reliance Industries', type: 'stock', api: 'RELIANCE.NS'},
+  {symbol: 'TCS', name: 'Tata Consultancy Services', type: 'stock', api: 'TCS.NS'},
+  {symbol: 'INFY', name: 'Infosys', type: 'stock', api: 'INFY.NS'},
+  // 泰國 Thailand
+  {symbol: 'PTT', name: 'PTT Public Company', type: 'stock', api: 'PTT.BK'},
+  {symbol: 'CPALL', name: 'CP All', type: 'stock', api: 'CPALL.BK'},
+  {symbol: 'AOT', name: 'Airports of Thailand', type: 'stock', api: 'AOT.BK'},
+  // 越南 Vietnam
+  {symbol: 'VNM', name: 'Vinamilk 越南乳業', type: 'stock', api: 'VNM.VN'},
+  {symbol: 'VIC', name: 'Vingroup', type: 'stock', api: 'VIC.VN'},
+  // 印尼 Indonesia
+  {symbol: 'BBCA', name: 'Bank Central Asia', type: 'stock', api: 'BBCA.JK'},
+  {symbol: 'TLKM', name: 'Telkom Indonesia', type: 'stock', api: 'TLKM.JK'},
+  // 馬來西亞 Malaysia
+  {symbol: 'MAYBANK', name: 'Malayan Banking (Maybank)', type: 'stock', api: '1155.KL'},
+  {symbol: 'PBBANK', name: 'Public Bank Berhad', type: 'stock', api: '1295.KL'},
+  // 新加坡 Singapore
+  {symbol: 'DBS', name: 'DBS Group Holdings', type: 'stock', api: 'D05.SI'},
+  {symbol: 'OCBC', name: 'OCBC Bank', type: 'stock', api: 'O39.SI'},
+  {symbol: 'SINGTEL', name: 'Singtel', type: 'stock', api: 'Z74.SI'},
+  // 澳門 Macau（澳門博彩股主要喺港交所上市）
+  {symbol: '1928', name: 'Sands China 金沙中國', type: 'stock', api: '1928.HK'},
+  {symbol: '2282', name: 'MGM China 美高梅中國', type: 'stock', api: '2282.HK'},
   // 英國 UK
   {symbol: 'HSBA', name: 'HSBC Holdings (LSE)', type: 'stock', api: 'HSBA.L'},
   {symbol: 'BP', name: 'BP p.l.c.', type: 'stock', api: 'BP.L'},
   {symbol: 'AZN', name: 'AstraZeneca', type: 'stock', api: 'AZN.L'},
+  {symbol: 'ULVR', name: 'Unilever plc', type: 'stock', api: 'ULVR.L'},
+  // 法國 France
+  {symbol: 'MC', name: 'LVMH', type: 'stock', api: 'MC.PA'},
+  {symbol: 'OR', name: "L'Oréal", type: 'stock', api: 'OR.PA'},
+  {symbol: 'TTE', name: 'TotalEnergies', type: 'stock', api: 'TTE.PA'},
   // 德國 Germany
   {symbol: 'SAP', name: 'SAP SE', type: 'stock', api: 'SAP.DE'},
   {symbol: 'SIE', name: 'Siemens AG', type: 'stock', api: 'SIE.DE'},
   {symbol: 'VOW3', name: 'Volkswagen AG', type: 'stock', api: 'VOW3.DE'},
-  // 南韓 South Korea
-  {symbol: '005930', name: 'Samsung Electronics 삼성전자', type: 'stock', api: '005930.KS'},
-  {symbol: '000660', name: 'SK Hynix SK하이닉스', type: 'stock', api: '000660.KS'},
-  // 印度 India
-  {symbol: 'RELIANCE', name: 'Reliance Industries', type: 'stock', api: 'RELIANCE.NS'},
-  {symbol: 'TCS', name: 'Tata Consultancy Services', type: 'stock', api: 'TCS.NS'},
+  // 意大利 Italy
+  {symbol: 'ENI', name: 'Eni S.p.A.', type: 'stock', api: 'ENI.MI'},
+  {symbol: 'ISP', name: 'Intesa Sanpaolo', type: 'stock', api: 'ISP.MI'},
+  {symbol: 'STLAM', name: 'Stellantis (Milan)', type: 'stock', api: 'STLAM.MI'},
+  // 西班牙 Spain
+  {symbol: 'SAN', name: 'Banco Santander', type: 'stock', api: 'SAN.MC'},
+  {symbol: 'ITX', name: 'Inditex (Zara)', type: 'stock', api: 'ITX.MC'},
+  {symbol: 'IBE', name: 'Iberdrola', type: 'stock', api: 'IBE.MC'},
+  // 葡萄牙 Portugal
+  {symbol: 'EDP', name: 'EDP - Energias de Portugal', type: 'stock', api: 'EDP.LS'},
+  {symbol: 'GALP', name: 'Galp Energia', type: 'stock', api: 'GALP.LS'},
+  // 奧地利 Austria
+  {symbol: 'OMV', name: 'OMV AG', type: 'stock', api: 'OMV.VI'},
+  {symbol: 'EBS', name: 'Erste Group Bank', type: 'stock', api: 'EBS.VI'},
+  // 匈牙利 Hungary
+  {symbol: 'OTP', name: 'OTP Bank', type: 'stock', api: 'OTP.BD'},
+  {symbol: 'MOL', name: 'MOL Group', type: 'stock', api: 'MOL.BD'},
+  // 俄羅斯 Russia（受制裁影響，即市數據可能唔齊全）
+  {symbol: 'GAZP', name: 'Gazprom（數據可能受制裁影響）', type: 'stock', api: 'GAZP.ME'},
+  {symbol: 'SBER', name: 'Sberbank（數據可能受制裁影響）', type: 'stock', api: 'SBER.ME'},
+  // 中東 Middle East
+  {symbol: '2222', name: 'Saudi Aramco', type: 'stock', api: '2222.SR'},
+  {symbol: 'FAB', name: 'First Abu Dhabi Bank', type: 'stock', api: 'FAB.AD'},
+  {symbol: 'EMAAR', name: 'Emaar Properties (Dubai)', type: 'stock', api: 'EMAAR.DU'},
+  // 巴西 Brazil
+  {symbol: 'VALE3', name: 'Vale S.A.', type: 'stock', api: 'VALE3.SA'},
+  {symbol: 'PETR4', name: 'Petrobras', type: 'stock', api: 'PETR4.SA'},
+  {symbol: 'ITUB4', name: 'Itaú Unibanco', type: 'stock', api: 'ITUB4.SA'},
+  // 全球其他指數 More global indices
+  {symbol: 'AXJO', name: 'ASX 200 Index (Australia)', type: 'index', api: '^AXJO'},
+  {symbol: 'KS11', name: 'KOSPI Index (South Korea)', type: 'index', api: '^KS11'},
+  {symbol: 'FCHI', name: 'CAC 40 Index (France)', type: 'index', api: '^FCHI'},
+  {symbol: 'STOXX50E', name: 'Euro Stoxx 50 Index', type: 'index', api: '^STOXX50E'},
+  {symbol: 'BSESN', name: 'BSE Sensex Index (India)', type: 'index', api: '^BSESN'},
+  {symbol: 'STI', name: 'Straits Times Index (Singapore)', type: 'index', api: '^STI'},
+  {symbol: 'KLSE', name: 'FTSE Bursa Malaysia KLCI', type: 'index', api: '^KLSE'},
+  {symbol: 'JKSE', name: 'Jakarta Composite Index', type: 'index', api: '^JKSE'},
+  {symbol: 'BVSP', name: 'Bovespa Index (Brazil)', type: 'index', api: '^BVSP'},
   // 加密貨幣 Crypto
   {symbol: 'BTC', name: 'Bitcoin', type: 'crypto'},
   {symbol: 'ETH', name: 'Ethereum', type: 'crypto'},
