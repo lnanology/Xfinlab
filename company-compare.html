@@ -94,6 +94,7 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 }
 </style>
 <script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
@@ -207,6 +208,11 @@ document.querySelectorAll('.company-input').forEach(input=>{
   input.addEventListener('input',updateCompanyCount);
 });
 window.addEventListener('DOMContentLoaded', updateCompanyCount);
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('.company-input');
+  }
+});
 
 function clearInputs(){
   document.querySelectorAll('.company-input').forEach(i=>i.value='');

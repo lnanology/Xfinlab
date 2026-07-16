@@ -316,15 +316,23 @@
 <body>
 
 <!-- 已登入用戶專屬top bar -- 淨係isLoggedIn()先顯示（見下面initUserTopbar()）。
-     用戶名/帳戶入口（撳落/指住會滑出返嗰個帳戶選項）/深淺色切換，
-     刻意精簡，冇加多其他嘢。 -->
+     一個「帳戶」掣，撳落/指住會滑出返一個完整嘅帳戶選單（登入緊嘅
+     email/PLAN/複製推薦連結/分享XFINLAB/登出），內容同dashboard.html
+     個accountBtn dropdown一致，唔再淨係得一個「帳戶」連結咁重複。 -->
 <div class="user-topbar" id="userTopbar" style="display:none">
   <div class="user-topbar-inner">
     <span class="user-topbar-name" id="userTopbarName">👤</span>
     <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
       <button type="button" class="user-topbar-btn" id="topbarSettingsBtn">👤 <span data-i18n="topbar_account">帳戶</span></button>
-      <div class="user-topbar-flyout" id="topbarSettingsFlyout">
-        <a href="dashboard.html">👤 <span data-i18n="topbar_account">帳戶</span></a>
+      <div class="user-topbar-flyout" id="topbarSettingsFlyout" style="min-width:220px">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="font-size:0.72rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
+          <div id="topbarDropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
+          <div id="topbarDropdownPlan" style="font-size:0.7rem;color:var(--accent);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
+        </div>
+        <a href="#" onclick="topbarCopyReferral(); return false;">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
+        <a href="#" onclick="topbarShareXfinlab(); return false;">📤 <span data-i18n="dash_menu_share">Share XFINLAB</span></a>
+        <a href="#" onclick="topbarLogout(); return false;" style="color:var(--red)">↩ <span data-i18n="dash_menu_signout">Sign Out</span></a>
       </div>
     </div>
     <button id="themeToggleBtn" class="user-topbar-btn" type="button" onclick="toggleXfinlabTheme()">☀️ Light</button>
@@ -649,13 +657,19 @@ function initUserTopbar() {
     const user = JSON.parse(localStorage.getItem('xfinlab_user') || '{}');
     const nameEl = document.getElementById('userTopbarName');
     if (nameEl && user.name) nameEl.textContent = '👤 ' + user.name.split(' ')[0];
+    // 帳戶flyout入面嗰個email/PLAN，同dashboard.html個accountBtn dropdown
+    // 一樣直接讀返localStorage嗰份xfinlab_user，唔使多打一次API。
+    const emailEl = document.getElementById('topbarDropdownEmail');
+    const planEl = document.getElementById('topbarDropdownPlan');
+    if (emailEl) emailEl.textContent = user.email || '';
+    if (planEl) planEl.textContent = (user.plan || 'free').toUpperCase() + ' ' + (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['dash_plan_suffix'] || 'PLAN');
   } catch(e) {}
   const themeBtn = document.getElementById('themeToggleBtn');
   if (themeBtn) {
     const savedTheme = localStorage.getItem('xfinlab_theme') === 'light' ? 'light' : 'dark';
     themeBtn.textContent = savedTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
   }
-  // CSS :hover已經可以喺桌面版指住Settings就滑出「帳戶」選項，呢度加多
+  // CSS :hover已經可以喺桌面版指住「帳戶」就滑出返個dropdown，呢度加多
   // 一個click-toggle，等冇hover嘅觸控裝置（手機/平板）都撳得到。
   const settingsBtn = document.getElementById('topbarSettingsBtn');
   const flyout = document.getElementById('topbarSettingsFlyout');
@@ -670,6 +684,36 @@ function initUserTopbar() {
   }
 }
 initUserTopbar();
+
+// 帳戶dropdown入面3個action，內容/行為同dashboard.html個accountBtn
+// dropdown一致（複製推薦連結/分享XFINLAB/登出），令個「帳戶」flyout
+// 唔再淨係得一個去返dashboard.html嘅重複連結。
+async function topbarCopyReferral() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) { window.location.href = 'login.html'; return; }
+  try {
+    const res = await fetch(`${API}/referral/code?token=${token}`);
+    const data = await res.json();
+    navigator.clipboard.writeText(data.referral_link);
+    alert((typeof I18N !== 'undefined' && I18N.translations && I18N.translations['dash_alert_referral_copied'] || 'Referral link copied: {link}').replace('{link}', data.referral_link));
+  } catch(e) {
+    alert((typeof I18N !== 'undefined' && I18N.translations && I18N.translations['dash_err_referral']) || 'Error getting referral link');
+  }
+}
+
+function topbarShareXfinlab() {
+  // 重用js/share-widget.js已經起好嗰個site-wide Share面板，唔使喺呢度
+  // 重新起多一次分享UI。
+  const btn = document.getElementById('shareWidgetBtn');
+  if (btn) { btn.click(); return; }
+  navigator.clipboard.writeText('https://www.xfinlab.com/');
+}
+
+function topbarLogout() {
+  localStorage.removeItem('xfinlab_token');
+  localStorage.removeItem('xfinlab_user');
+  window.location.href = 'login.html';
+}
 
 // 由痛點到解決方案 6個項目撳落去，帶去下面「不需註冊，即刻試用」個demo box，
 // 順手focus個ticker input，等訪客即刻可以打字試用。

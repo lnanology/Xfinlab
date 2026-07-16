@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/ai-loading.js"></script>
@@ -164,6 +165,12 @@ window.addEventListener('DOMContentLoaded', () => {
   if (queryParam) {
     document.getElementById('difySymbolInput').value = queryParam;
     simulateDifyApi();
+  }
+  // 呢個輸入格除咗股票代號都食一般topic（例如"Fed 議息"），打呢啲一樣
+  // 文字autocomplete搵唔到match，dropdown自然唔會彈出嚟，唔影響原本
+  // 打字流程。
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#difySymbolInput');
   }
 });
 

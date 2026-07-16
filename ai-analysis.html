@@ -273,6 +273,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if (assetTypeParam) document.getElementById('assetType').value = assetTypeParam;
     runAnalysis();
   }
+  // 呢個輸入格支援逗號分隔多個代號，例如"NVDA,AAPL,B" -- multi:true即係
+  // autocomplete淨係對緊最後一截未打完嘅字做比對，揀咗之後淨係替換返
+  // 最後一截，前面已經打嘅代號原封不動。
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#symbolInput', {multi: true});
+  }
 });
 </script>
 

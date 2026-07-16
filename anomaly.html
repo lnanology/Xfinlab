@@ -37,6 +37,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 .footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
 </style>
 <script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
@@ -231,6 +232,10 @@ async function runAnomalySearch(symbolOverride) {
 document.getElementById('anomSearchInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') runAnomalySearch();
 });
+
+if (typeof autoAttachTickerAutocomplete === 'function') {
+  autoAttachTickerAutocomplete('#anomSearchInput');
+}
 
 // auto-run once on load, same behaviour as dashboard.html's Anomaly Radar
 runAnomalyScan();
