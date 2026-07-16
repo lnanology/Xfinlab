@@ -53,6 +53,14 @@
   .user-topbar-name { font-size: 0.82rem; color: var(--text); font-weight: 600; margin-right: auto; }
   .user-topbar-btn { background: transparent; border: 1px solid var(--border); color: var(--label); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; text-decoration: none; font-family: inherit; transition: border-color 0.2s, color 0.2s; }
   .user-topbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+  /* Settings掣加個滑出式flyout，指住/撳落去會現出「帳戶」呢個選項，
+     唔使直接撳個掣就即刻跳去dashboard.html。 */
+  .user-topbar-settings-wrap { position: relative; }
+  .user-topbar-flyout { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; min-width: 140px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 50; }
+  .user-topbar-settings-wrap:hover .user-topbar-flyout,
+  .user-topbar-flyout.open { display: block; }
+  .user-topbar-flyout a { display: block; padding: 10px 14px; color: var(--text); text-decoration: none; font-size: 0.82rem; }
+  .user-topbar-flyout a:hover { background: var(--bg); color: var(--accent); }
 
   /* Hero */
   .hero { max-width: 1160px; margin: 0 auto; padding: 90px 24px 60px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
@@ -312,7 +320,12 @@
 <div class="user-topbar" id="userTopbar" style="display:none">
   <div class="user-topbar-inner">
     <span class="user-topbar-name" id="userTopbarName">👤</span>
-    <a href="dashboard.html" class="user-topbar-btn" data-i18n="topbar_settings">⚙️ 設定</a>
+    <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
+      <button type="button" class="user-topbar-btn" id="topbarSettingsBtn" data-i18n="topbar_settings">⚙️ 設定</button>
+      <div class="user-topbar-flyout" id="topbarSettingsFlyout">
+        <a href="dashboard.html">👤 <span data-i18n="topbar_account">帳戶</span></a>
+      </div>
+    </div>
     <button id="themeToggleBtn" class="user-topbar-btn" type="button" onclick="toggleXfinlabTheme()">☀️ Light</button>
   </div>
 </div>
@@ -640,6 +653,19 @@ function initUserTopbar() {
   if (themeBtn) {
     const savedTheme = localStorage.getItem('xfinlab_theme') === 'light' ? 'light' : 'dark';
     themeBtn.textContent = savedTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
+  }
+  // CSS :hover已經可以喺桌面版指住Settings就滑出「帳戶」選項，呢度加多
+  // 一個click-toggle，等冇hover嘅觸控裝置（手機/平板）都撳得到。
+  const settingsBtn = document.getElementById('topbarSettingsBtn');
+  const flyout = document.getElementById('topbarSettingsFlyout');
+  if (settingsBtn && flyout) {
+    settingsBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      flyout.classList.toggle('open');
+    });
+    document.addEventListener('click', function() {
+      flyout.classList.remove('open');
+    });
   }
 }
 initUserTopbar();

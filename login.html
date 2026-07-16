@@ -18,11 +18,23 @@
     --muted: #64748b;
     --label: #94a3b8;
   }
-  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+  /* min-height 用返100vh做fallback，支援唔到100dvh嘅舊瀏覽器都有基本高度；
+     100dvh先至係手機/iPad嘅重點 -- iOS Safari嘅100vh係跟「layout viewport」
+     計，唔會理彈出咗嘅virtual keyboard，於是個keyboard彈出之後，用flex
+     center擺中間嘅.auth-box可能會被谷落去畫面睇唔到嘅位置，用戶填完
+     資料撳"Create Account"睇落好似「無反應」，其實個掣仲喺度，只不過
+     喺visual viewport範圍以外。100dvh會即時反映返keyboard彈出後嘅實際
+     可見高度，令個box唔會被谷出畫面。 */
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
   nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); }
   .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
   .nav-brand span { color: var(--text); }
-  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; overflow-y: auto; }
+  /* 手機/iPad（直度）：唔好強行垂直居中 -- keyboard彈出後個box仲要留喺
+     畫面上半部，唔會俾keyboard region完全遮晒，撳掣先至真係撳得到。 */
+  @media (max-width: 640px) {
+    main { align-items: flex-start; padding-top: 32px; }
+  }
   .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 100%; max-width: 420px; }
   .auth-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
   .auth-sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 32px; }
@@ -58,8 +70,8 @@
     <div class="auth-sub" data-i18n="login_subtitle">Sign in to your XFINLAB account</div>
 
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('login')" data-i18n="login_tab_signin">Sign In</button>
-      <button class="tab" onclick="switchTab('register')" data-i18n="login_tab_register">Register</button>
+      <button type="button" class="tab active" onclick="switchTab('login')" data-i18n="login_tab_signin">Sign In</button>
+      <button type="button" class="tab" onclick="switchTab('register')" data-i18n="login_tab_register">Register</button>
     </div>
 
     <div id="errorMsg" class="error"></div>
@@ -69,31 +81,31 @@
     <div id="loginForm">
       <div class="form-group">
         <label data-i18n="login_label_email">Email</label>
-        <input type="email" id="loginEmail" placeholder="you@example.com">
+        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" autocorrect="off">
       </div>
       <div class="form-group">
         <label data-i18n="login_label_password">Password</label>
-        <input type="password" id="loginPassword" placeholder="••••••••">
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
         <div style="text-align:right;margin-top:6px"><a href="forgot-password.html" style="color:var(--accent);font-size:0.78rem;text-decoration:none" data-i18n="login_forgot_password">忘記密碼？</a></div>
       </div>
-      <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()" data-i18n="login_tab_signin">Sign In</button>
+      <button type="button" class="btn btn-primary" id="loginBtn" onclick="handleLogin()" data-i18n="login_tab_signin">Sign In</button>
     </div>
 
     <!-- Register Form -->
     <div id="registerForm" style="display:none">
       <div class="form-group">
         <label data-i18n="login_label_name">Full Name</label>
-        <input type="text" id="regName" placeholder="Your name" data-i18n-placeholder="login_placeholder_name">
+        <input type="text" id="regName" placeholder="Your name" data-i18n-placeholder="login_placeholder_name" autocomplete="name">
       </div>
       <div class="form-group">
         <label data-i18n="login_label_email">Email</label>
-        <input type="email" id="regEmail" placeholder="you@example.com">
+        <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" autocorrect="off">
       </div>
       <div class="form-group">
         <label data-i18n="login_label_password">Password</label>
-        <input type="password" id="regPassword" placeholder="Min 6 characters" data-i18n-placeholder="login_placeholder_minchars">
+        <input type="password" id="regPassword" placeholder="Min 6 characters" data-i18n-placeholder="login_placeholder_minchars" autocomplete="new-password">
       </div>
-      <button class="btn btn-primary" id="registerBtn" onclick="handleRegister()" data-i18n="login_btn_create">Create Account</button>
+      <button type="button" class="btn btn-primary" id="registerBtn" onclick="handleRegister()" data-i18n="login_btn_create">Create Account</button>
     </div>
   </div>
 </main>
