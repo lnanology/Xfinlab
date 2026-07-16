@@ -104,6 +104,53 @@ const ALL_TICKERS = [
   {symbol: 'VGLT', name: 'Vanguard Long-Term Treasury ETF', type: 'bond'},
   {symbol: 'VGSH', name: 'Vanguard Short-Term Treasury ETF', type: 'bond'},
   {symbol: 'TIP', name: 'iShares TIPS Bond ETF', type: 'bond'},
+  // 港股 Hong Kong (symbol打法同normalizeGlobalTicker()一致，唔使打
+  // ".HK"，揀咗之後系統自己識轉；api先至係真正查價用嘅完整代號)
+  {symbol: '0700', name: 'Tencent Holdings 騰訊控股', type: 'stock', api: '0700.HK'},
+  {symbol: '9988', name: 'Alibaba Group HK 阿里巴巴', type: 'stock', api: '9988.HK'},
+  {symbol: '0005', name: 'HSBC Holdings 匯豐控股', type: 'stock', api: '0005.HK'},
+  {symbol: '0941', name: 'China Mobile 中國移動', type: 'stock', api: '0941.HK'},
+  {symbol: '3690', name: 'Meituan 美團', type: 'stock', api: '3690.HK'},
+  {symbol: '1299', name: 'AIA Group 友邦保險', type: 'stock', api: '1299.HK'},
+  {symbol: '0388', name: 'HKEX 香港交易所', type: 'stock', api: '0388.HK'},
+  {symbol: '2318', name: 'Ping An Insurance 中國平安', type: 'stock', api: '2318.HK'},
+  {symbol: '0016', name: 'Sun Hung Kai Properties 新鴻基地產', type: 'stock', api: '0016.HK'},
+  {symbol: '1398', name: 'ICBC 工商銀行', type: 'stock', api: '1398.HK'},
+  {symbol: '0027', name: 'Galaxy Entertainment 銀河娛樂', type: 'stock', api: '0027.HK'},
+  {symbol: '2020', name: 'ANTA Sports 安踏體育', type: 'stock', api: '2020.HK'},
+  // 台股 Taiwan
+  {symbol: '2330', name: 'TSMC 台積電', type: 'stock', api: '2330.TW'},
+  {symbol: '2317', name: 'Hon Hai (Foxconn) 鴻海', type: 'stock', api: '2317.TW'},
+  {symbol: '2454', name: 'MediaTek 聯發科', type: 'stock', api: '2454.TW'},
+  {symbol: '2412', name: 'Chunghwa Telecom 中華電信', type: 'stock', api: '2412.TW'},
+  {symbol: '1301', name: 'Formosa Plastics 台塑', type: 'stock', api: '1301.TW'},
+  {symbol: '2308', name: 'Delta Electronics 台達電', type: 'stock', api: '2308.TW'},
+  {symbol: '2882', name: 'Cathay Financial 國泰金', type: 'stock', api: '2882.TW'},
+  {symbol: '3008', name: 'LargAn Precision 大立光', type: 'stock', api: '3008.TW'},
+  // 中國A股 China A-shares
+  {symbol: '600519', name: 'Kweichow Moutai 貴州茅台', type: 'stock', api: '600519.SS'},
+  {symbol: '601318', name: 'Ping An Insurance (A股) 中國平安', type: 'stock', api: '601318.SS'},
+  {symbol: '000858', name: 'Wuliangye 五糧液', type: 'stock', api: '000858.SZ'},
+  {symbol: '300750', name: 'CATL 寧德時代', type: 'stock', api: '300750.SZ'},
+  // 日本 Japan
+  {symbol: '7203', name: 'Toyota Motor トヨタ自動車', type: 'stock', api: '7203.T'},
+  {symbol: '6758', name: 'Sony Group ソニーグループ', type: 'stock', api: '6758.T'},
+  {symbol: '9984', name: 'SoftBank Group ソフトバンクグループ', type: 'stock', api: '9984.T'},
+  {symbol: '9432', name: 'NTT 日本電信電話', type: 'stock', api: '9432.T'},
+  // 英國 UK
+  {symbol: 'HSBA', name: 'HSBC Holdings (LSE)', type: 'stock', api: 'HSBA.L'},
+  {symbol: 'BP', name: 'BP p.l.c.', type: 'stock', api: 'BP.L'},
+  {symbol: 'AZN', name: 'AstraZeneca', type: 'stock', api: 'AZN.L'},
+  // 德國 Germany
+  {symbol: 'SAP', name: 'SAP SE', type: 'stock', api: 'SAP.DE'},
+  {symbol: 'SIE', name: 'Siemens AG', type: 'stock', api: 'SIE.DE'},
+  {symbol: 'VOW3', name: 'Volkswagen AG', type: 'stock', api: 'VOW3.DE'},
+  // 南韓 South Korea
+  {symbol: '005930', name: 'Samsung Electronics 삼성전자', type: 'stock', api: '005930.KS'},
+  {symbol: '000660', name: 'SK Hynix SK하이닉스', type: 'stock', api: '000660.KS'},
+  // 印度 India
+  {symbol: 'RELIANCE', name: 'Reliance Industries', type: 'stock', api: 'RELIANCE.NS'},
+  {symbol: 'TCS', name: 'Tata Consultancy Services', type: 'stock', api: 'TCS.NS'},
   // 加密貨幣 Crypto
   {symbol: 'BTC', name: 'Bitcoin', type: 'crypto'},
   {symbol: 'ETH', name: 'Ethereum', type: 'crypto'},
@@ -154,7 +201,10 @@ function initAutocomplete(inputId, dropdownId) {
       item.onmouseenter = () => item.style.background = '#111d30';
       item.onmouseleave = () => item.style.background = 'transparent';
       item.onclick = () => {
-        input.value = s.symbol;
+        // 有啲代號（港股/台股/期貨/指數/債息）真正查價要用嘅代號同
+        // 畫面上顯示嘅唔一樣（例如"0700"顯示，但真正要查"0700.HK"），
+        // s.api就係嗰個真正查價用嘅格式，冇嘅話先fallback用返symbol。
+        input.value = s.api || s.symbol;
         dropdown.style.display = 'none';
         input.dispatchEvent(new Event('change'));
       };
@@ -231,7 +281,7 @@ function attachTickerAutocomplete(input, options) {
       item.onmouseenter = () => item.style.background = '#111d30';
       item.onmouseleave = () => item.style.background = 'transparent';
       item.onclick = () => {
-        applySelection(s.symbol);
+        applySelection(s.api || s.symbol);
         dropdown.style.display = 'none';
         input.focus();
         input.dispatchEvent(new Event('change'));

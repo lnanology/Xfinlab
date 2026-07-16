@@ -122,6 +122,7 @@
           <div class="xfl-email">${user.email || ''}</div>
           <div class="xfl-plan">${(user.plan || 'free').toUpperCase()} <span id="xflPlanSuffix">PLAN</span></div>
         </div>
+        <a href="pricing.html" style="color:#00d4ff">⭐ <span id="xflUpgradeLabel">View Plans</span></a>
         <a href="#" id="xflReferralLink">🔗 <span id="xflReferralLabel">Copy Referral Link</span></a>
         <a href="#" id="xflShareLink">📤 <span id="xflShareLabel">Share XFINLAB</span></a>
         <a href="#" id="xflLogoutLink" style="color:#ef4444">↩ <span id="xflLogoutLabel">Sign Out</span></a>
@@ -186,6 +187,7 @@
       if (tr['topbar_account']) btn.innerHTML = '👤 ' + tr['topbar_account'];
       if (tr['dash_signed_in_as']) document.getElementById('xflSignedInLabel').textContent = tr['dash_signed_in_as'];
       if (tr['dash_plan_suffix']) document.getElementById('xflPlanSuffix').textContent = tr['dash_plan_suffix'];
+      if (tr['dash_view_plans']) document.getElementById('xflUpgradeLabel').textContent = tr['dash_view_plans'];
       if (tr['dash_menu_referral']) document.getElementById('xflReferralLabel').textContent = tr['dash_menu_referral'];
       if (tr['dash_menu_share']) document.getElementById('xflShareLabel').textContent = tr['dash_menu_share'];
       if (tr['dash_menu_signout']) document.getElementById('xflLogoutLabel').textContent = tr['dash_menu_signout'];

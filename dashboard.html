@@ -521,6 +521,7 @@
   }
 </style>
 <script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
 <script src="js/quota.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
@@ -551,6 +552,7 @@
           <div id="dropdownPoints" style="font-size:0.72rem;color:var(--muted);margin-top:6px;display:none"></div>
         </div>
         <a href="index.html" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🏠 <span data-i18n="dash_menu_home">Home</span></a>
+        <a href="pricing.html" style="display:block;padding:10px 16px;color:var(--accent);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">⭐ <span data-i18n="dash_view_plans">View Plans</span></a>
         <a href="#" onclick="copyReferral()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
         <a href="#" onclick="showShareMenu()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">📤 <span data-i18n="dash_menu_share">Share XFINLAB</span></a>
         <a href="#" onclick="logout()" style="display:block;padding:10px 16px;color:var(--red);font-size:0.82rem;text-decoration:none">↩ <span data-i18n="dash_menu_signout">Sign Out</span></a>
@@ -1131,6 +1133,13 @@ async function copyReferral() {
 }
 
 loadUserInfo();
+
+// 主分析輸入格 + 自選股輸入格，兩個都要有代號autocomplete建議（覆蓋
+// 股票/期貨/加密貨幣/指數/債券，同埋港股/台股/A股/日股/歐美其他市場）。
+if (typeof autoAttachTickerAutocomplete === 'function') {
+  autoAttachTickerAutocomplete('#ticker');
+  autoAttachTickerAutocomplete('#watchlistTicker');
+}
 
 async function loadWatchlist() {
   const token = localStorage.getItem('xfinlab_token');
