@@ -84,6 +84,64 @@
     return el;
   }
 
+  // QR code image via qrserver.com's free, no-key-required API -- same
+  // approach used elsewhere on the site for on-the-fly image generation
+  // without adding a client-side QR library dependency.
+  function qrImageUrl(size) {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodeURIComponent(SITE_URL);
+  }
+
+  function buildQrModal() {
+    if (document.getElementById('shareQrModal')) return;
+
+    var overlay = document.createElement('div');
+    overlay.id = 'shareQrModal';
+    overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;';
+    overlay.onclick = function (e) { if (e.target === overlay) toggleQrModal(false); };
+
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#0d1525;border:1px solid #1e2d45;border-radius:14px;padding:24px;max-width:280px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.5);';
+
+    var title = document.createElement('div');
+    title.id = 'shareQrModalTitle';
+    title.style.cssText = 'font-size:0.85rem;font-weight:600;color:#e2e8f0;margin-bottom:14px;';
+    title.textContent = t('share_qr_scan', 'Scan to visit XFINLAB');
+    card.appendChild(title);
+
+    var img = document.createElement('img');
+    img.src = qrImageUrl(200);
+    img.alt = 'XFINLAB QR Code';
+    img.width = 200;
+    img.height = 200;
+    img.style.cssText = 'border-radius:8px;background:#fff;padding:8px;';
+    card.appendChild(img);
+
+    var urlRow = document.createElement('div');
+    urlRow.style.cssText = 'margin-top:14px;font-size:0.8rem;color:#94a3b8;word-break:break-all;';
+    urlRow.textContent = SITE_URL.replace(/\/$/, '');
+    card.appendChild(urlRow);
+
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.id = 'shareQrModalClose';
+    closeBtn.textContent = t('share_qr_close', 'Close');
+    closeBtn.style.cssText = 'margin-top:16px;background:#111d30;border:1px solid #1e2d45;color:#e2e8f0;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;';
+    closeBtn.onclick = function () { toggleQrModal(false); };
+    card.appendChild(closeBtn);
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+  }
+
+  function toggleQrModal(forceState) {
+    buildQrModal();
+    var overlay = document.getElementById('shareQrModal');
+    var show = typeof forceState === 'boolean' ? forceState : overlay.style.display !== 'flex';
+    overlay.style.display = show ? 'flex' : 'none';
+    var panel = document.getElementById('sharePanel');
+    if (show && panel) panel.style.display = 'none';
+  }
+
   function buildWidget() {
     if (document.getElementById('shareWidgetBtn')) return;
     ensureFontAwesome();
@@ -114,11 +172,17 @@
       ));
     });
 
+    var qrItem = buildItem(
+      '<i class="fa-solid fa-qrcode" style="color:#e2e8f0;width:16px;text-align:center;font-size:0.95rem;"></i><span class="share-item-label" id="shareQrLabel">' + t('share_qr_code', 'QR Code') + '</span>',
+      function () { toggleQrModal(); }
+    );
+    qrItem.style.borderTop = '1px solid #1e2d45';
+    panel.appendChild(qrItem);
+
     var copyItem = buildItem(
       '<span>🔗</span><span class="share-item-label">' + t('share_copy_link', 'Copy Link') + '</span>',
       copyLink
     );
-    copyItem.style.borderTop = '1px solid #1e2d45';
     panel.appendChild(copyItem);
 
     var btn = document.createElement('button');
@@ -148,6 +212,12 @@
     if (btn) btn.textContent = '📤 ' + t('share_btn_label', 'Share');
     var title = document.getElementById('sharePanelTitle');
     if (title) title.textContent = t('share_panel_title', 'Share XFINLAB');
+    var qrLabel = document.getElementById('shareQrLabel');
+    if (qrLabel) qrLabel.textContent = t('share_qr_code', 'QR Code');
+    var qrModalTitle = document.getElementById('shareQrModalTitle');
+    if (qrModalTitle) qrModalTitle.textContent = t('share_qr_scan', 'Scan to visit XFINLAB');
+    var qrModalClose = document.getElementById('shareQrModalClose');
+    if (qrModalClose) qrModalClose.textContent = t('share_qr_close', 'Close');
   });
 
   if (document.readyState === 'loading') {
