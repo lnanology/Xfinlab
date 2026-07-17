@@ -94,7 +94,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <div class="api-hint" data-i18n="nd_api_hint">💡 由 AI 即時生成，非結構化新聞資料庫統計。</div>
   </div>
 
-  <div class="api-response-section">
+  <div class="api-response-section" id="apiResponseSection" style="display:none">
     <div class="api-response-title" onclick="document.getElementById('apiResponseBox').classList.toggle('show')" data-i18n="nd_api_response_title">🔍 查看原始 API 回應（除錯用）</div>
     <div class="api-response" id="apiResponseBox">
       <div class="api-response-json" id="apiResponseJson" data-i18n="nd_not_queried">尚未查詢。</div>
@@ -161,6 +161,14 @@ async function simulateDifyApi() {
 // current news rather than a frozen snapshot.
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
+  // 一般用戶收埋「查看原始API回應」呢個除錯用區塊，只有喺網址加
+  // ?debug=1（或者曾經加過一次，靠localStorage記住）先顯示，方便
+  // 開發時繼續用嚟追查問題，但唔會滋擾一般訪客。
+  if (params.get('debug') === '1') localStorage.setItem('xfl_debug', '1');
+  if (localStorage.getItem('xfl_debug') === '1') {
+    const dbg = document.getElementById('apiResponseSection');
+    if (dbg) dbg.style.display = '';
+  }
   const queryParam = params.get('query');
   if (queryParam) {
     document.getElementById('difySymbolInput').value = queryParam;
