@@ -61,9 +61,9 @@
 <div class="container">
   <div class="page-tag">Chart Engine™</div>
   <h1 class="page-title" data-i18n="ca_title">AI K線圖分析</h1>
-  <p class="page-sub" data-i18n="ca_sub_search">打入任何全球代號，AI 即刻用真實歷史數據畫出K線圖同技術分析，唔使上傳截圖；或者你都可以照舊上傳自己嘅K線截圖。</p>
+  <p class="page-sub" data-i18n="ca_sub_search">打入任何全球代號，AI 即刻用真實歷史數據畫出K線圖同技術分析。</p>
 
-  <div class="mode-tabs" style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
+  <div class="mode-tabs" id="modeTabs" style="display:none;gap:0.5rem;margin-bottom:0.8rem">
     <button type="button" class="mode-tab" id="tabSearch" onclick="switchMode('search')" data-i18n="ca_mode_search">🔍 搜尋代號（免上傳）</button>
     <button type="button" class="mode-tab" id="tabUpload" onclick="switchMode('upload')" data-i18n="ca_mode_upload">📷 上傳截圖</button>
   </div>
@@ -578,6 +578,10 @@ async function requestMultiTimeframe(){
   const urlSymbol = params.get('symbol');
   const urlMode = params.get('mode');
   if (urlMode === 'upload') {
+    // 上傳截圖功能保留，但預設收埋唔顯示個tab bar；淨係加咗
+    // ?mode=upload先至顯示返個tab（等有需要嘅人／開發者可以照舊用）。
+    const modeTabs = document.getElementById('modeTabs');
+    if (modeTabs) modeTabs.style.display = 'flex';
     switchMode('upload');
   } else {
     switchMode('search');
