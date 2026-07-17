@@ -41,6 +41,7 @@ from api.public_stats import router as public_stats_router
 from api.public_demo import router as public_demo_router
 from api.market_pulse import router as market_pulse_router
 from api.hero_showcase import router as hero_showcase_router
+from api.push import router as push_router
 
 
 app = FastAPI(
@@ -148,6 +149,7 @@ app.include_router(public_stats_router, prefix="/api", tags=["Public Stats"])
 app.include_router(public_demo_router, prefix="/api", tags=["Public Demo"])
 app.include_router(market_pulse_router, prefix="/api", tags=["Market Pulse"])
 app.include_router(hero_showcase_router, prefix="/api", tags=["Hero Showcase"])
+app.include_router(push_router, prefix="/api", tags=["Push"])
 
 
 @app.get("/")

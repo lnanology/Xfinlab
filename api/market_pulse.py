@@ -378,6 +378,33 @@ def _lookup_plan(token: Optional[str]) -> str:
         return "free"
 
 
+def _notify_free_signals_ready(today: str, cache: Dict):
+    # Best-effort daily push -- fires on the first /free-signals request
+    # of a new calendar day (this endpoint is the only place the cache
+    # refreshes; there's no separate cron job). Guarded by a persisted
+    # push_send_log row so a process restart later the same day doesn't
+    # re-fire it. Any failure here must never break the actual API
+    # response, hence the broad except.
+    try:
+        from services.push_service import already_sent_today, mark_sent_today, send_push_to_all
+
+        key = "free_signals_daily"
+        if already_sent_today(key, today):
+            return
+
+        top = (cache.get("signals") or [])[:1]
+        top_ticker = top[0]["ticker"] if top else None
+        body = f"今日焦點：{top_ticker}" if top_ticker else "睇下今日邊啲資產訊號最強。"
+        send_push_to_all({
+            "title": "🎯 XFINLAB 今日免費訊號已出爐",
+            "body": body,
+            "url": "/free-signals.html",
+        })
+        mark_sent_today(key, today)
+    except Exception:
+        pass
+
+
 @router.get("/free-signals")
 def free_signals(token: Optional[str] = None):
     global _free_signals_cache, _free_signals_cache_date
@@ -386,6 +413,7 @@ def free_signals(token: Optional[str] = None):
     if _free_signals_cache is None or _free_signals_cache_date != today:
         _free_signals_cache = _compute_free_signals()
         _free_signals_cache_date = today
+        _notify_free_signals_ready(today, _free_signals_cache)
 
     result = _free_signals_cache
     plan = _lookup_plan(token)

@@ -52,6 +52,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 <script src="js/share-widget.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/points-badge.js"></script>
+<script src="js/push-subscribe.js"></script>
 </head>
 <body>
 
@@ -80,6 +81,9 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <div class="signals-meta">
     <span id="signalsDate" data-i18n="freesig_loading">載入中…</span>
     <span data-i18n="freesig_data_source">即市技術分析（真實價格數據，非AI猜測）</span>
+    <button id="pushSubscribeBtn" onclick="togglePushSubscribe()" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:6px 12px;border-radius:99px;font-size:0.78rem;cursor:pointer;font-family:inherit;white-space:nowrap">
+      🔔 <span data-i18n="freesig_push_subscribe">訂閱每日提醒</span>
+    </button>
   </div>
 
   <div class="signals-list" id="signalsList">
@@ -179,8 +183,34 @@ async function loadFreeSignals() {
   }
 }
 
+function updatePushButton() {
+  const btn = document.getElementById('pushSubscribeBtn');
+  if (!btn) return;
+  if (!window.XFLPush || !window.XFLPush.isSupported()) { btn.style.display = 'none'; return; }
+  const subscribed = window.XFLPush.isSubscribed();
+  btn.querySelector('span').textContent = subscribed
+    ? t('freesig_push_subscribed', '已訂閱提醒 ✓')
+    : t('freesig_push_subscribe', '訂閱每日提醒');
+}
+
+async function togglePushSubscribe() {
+  const btn = document.getElementById('pushSubscribeBtn');
+  try {
+    if (window.XFLPush.isSubscribed()) {
+      await window.XFLPush.unsubscribe();
+    } else {
+      await window.XFLPush.subscribe();
+    }
+  } catch (e) {
+    console.error(e);
+    alert(t('freesig_push_error', '未能開啟通知，請檢查瀏覽器權限設定。'));
+  }
+  updatePushButton();
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   loadFreeSignals();
+  updatePushButton();
 
   const currentFile = location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('.nav-link').forEach(link => {
