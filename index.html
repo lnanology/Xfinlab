@@ -11,6 +11,7 @@
 <script src="js/theme-toggle.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
 <style>
   :root {
     --bg: #080c14;
@@ -336,7 +337,6 @@
         <a href="#" onclick="topbarLogout(); return false;" style="color:var(--red)">↩ <span data-i18n="dash_menu_signout">Sign Out</span></a>
       </div>
     </div>
-    <button id="themeToggleBtn" class="user-topbar-btn" type="button" onclick="toggleXfinlabTheme()">☀️ Light</button>
   </div>
 </div>
 
@@ -573,7 +573,6 @@
   <a href="ai-analysis.html" data-i18n="nav_analysis">AI 分析</a>
   <a href="screener.html" data-i18n="nav_screener">篩選器</a>
   <a href="news.html" data-i18n="nav_news">新聞</a>
-  <a href="free-signals.html" data-i18n="nav_free_signals">免費訊號</a>
   <a href="pricing.html" data-i18n="nav_pricing">Pricing</a>
   <a href="terms.html">Terms</a>
   <a href="privacy.html">Privacy</a>
@@ -646,11 +645,9 @@ function applyAuthAwareLinks() {
 }
 applyAuthAwareLinks();
 
-// 已登入用戶專屬top bar：用戶名／設定入口／深淺色切換，刻意精簡冇加多嘢。
-// 深淺色掣個id刻意用返"themeToggleBtn"，同js/theme-toggle.js自己個
-// addThemeToggleButton()用緊嘅id一樣 -- 咁樣佢見到個button已經存在就會
-// 自動skip重複加多一個浮動掣，而佢每次toggleTheme()後都會自動update返
-// 呢個掣嘅文字，唔使自己另外維護一份邏輯。
+// 已登入用戶專屬top bar：用戶名／設定入口，刻意精簡冇加多嘢。
+// 深淺色掣而家由js/theme-toggle.js自己插喺#topbarSettingsWrap前面，
+// 唔使呢度再管。
 function initUserTopbar() {
   if (!isLoggedIn()) return;
   const bar = document.getElementById('userTopbar');
@@ -666,11 +663,6 @@ function initUserTopbar() {
     if (emailEl) emailEl.textContent = user.email || '';
     if (planEl) planEl.textContent = (user.plan || 'free').toUpperCase() + ' ' + (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['dash_plan_suffix'] || 'PLAN');
   } catch(e) {}
-  const themeBtn = document.getElementById('themeToggleBtn');
-  if (themeBtn) {
-    const savedTheme = localStorage.getItem('xfinlab_theme') === 'light' ? 'light' : 'dark';
-    themeBtn.textContent = savedTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
-  }
   // CSS :hover已經可以喺桌面版指住「帳戶」就滑出返個dropdown，呢度加多
   // 一個click-toggle，等冇hover嘅觸控裝置（手機/平板）都撳得到。
   const settingsBtn = document.getElementById('topbarSettingsBtn');
