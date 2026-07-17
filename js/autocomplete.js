@@ -455,9 +455,55 @@ function searchAssets(query, limit) {
 }
 
 // ---- 熱門搜尋 (未輸入任何嘢、focus緊個input時顯示) ----
+// 國際/預設清單 -- 冇偵測到地區、或者本地熱門股未攞到之前，用呢個頂住。
 const TRENDING_SYMBOLS = ['AAPL', 'TSLA', 'NVDA', 'BTC', 'SPX', 'XAUUSD'];
-function getTrendingAssets() {
+function getInternationalTrending() {
   return TRENDING_SYMBOLS.map(sym => ASSETS.find(a => a.symbol === sym)).filter(Boolean);
+}
+
+// 本地優先熱門股 -- 根據js/i18n.js偵測、cache落嚟嘅IP地區
+// (localStorage 'xfinlab_country')，問後端 /api/trending-stocks 攞返
+// 「呢個地區而家最多人交投嘅股票」，排先於國際清單。全session淨係
+// fetch一次；未攞到之前getTrendingAssets()淨係會返返國際清單，
+// 唔會block住個dropdown。攞到之後，如果個dropdown仲喺度顯示緊
+// trending狀態，就會即時reflow顯示返本地清單上去。
+let _localTrendingAssets = null;
+let _localTrendingFetchPromise = null;
+const _trendingRefreshCallbacks = [];
+
+function _getCachedCountry() {
+  try { return localStorage.getItem('xfinlab_country') || null; } catch (e) { return null; }
+}
+
+function _fetchLocalTrending() {
+  if (_localTrendingFetchPromise) return _localTrendingFetchPromise;
+  const country = _getCachedCountry();
+  if (!country) { _localTrendingFetchPromise = Promise.resolve(null); return _localTrendingFetchPromise; }
+
+  _localTrendingFetchPromise = fetch(`https://api.xfinlab.com/api/trending-stocks?country=${encodeURIComponent(country)}`)
+    .then(res => res.json())
+    .then(data => {
+      const stocks = (data && data.stocks) || [];
+      _localTrendingAssets = stocks.map(s => ({
+        symbol: s.symbol,
+        name: s.name,
+        type: 'stock',
+        popularity: 90
+      }));
+      _trendingRefreshCallbacks.forEach(cb => { try { cb(); } catch (e) {} });
+      return _localTrendingAssets;
+    })
+    .catch(() => null);
+  return _localTrendingFetchPromise;
+}
+
+function getTrendingAssets() {
+  if (_localTrendingAssets === null) _fetchLocalTrending(); // fire-and-forget，唔阻住即時顯示
+  const intl = getInternationalTrending();
+  if (_localTrendingAssets && _localTrendingAssets.length) {
+    return _localTrendingAssets.concat(intl);
+  }
+  return intl;
 }
 
 // ---- 最近搜尋 (localStorage，全站共用一個key，所有頁面睇到同一份) ----
@@ -488,14 +534,16 @@ const PLACEHOLDER_ROTATION = [
 
 function _renderAssetRow(a, extraAttrs) {
   const meta = getAssetMeta(a);
-  const typeLabel = TICKER_TYPE_LABEL[a.type] || '';
   const logo = getAssetLogo(a);
+  // Note: this row intentionally does NOT show a "Stock/ETF/Crypto"
+  // type badge anymore -- removed per feedback that the type label
+  // (TICKER_TYPE_LABEL) was noisy/unnecessary in the dropdown. The
+  // exchange + country columns already carry enough context.
   return `<div class="xfl-asset-row" ${extraAttrs || ''} style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e2d45;">
     <span style="font-size:1.05rem;width:22px;text-align:center;flex-shrink:0">${logo}</span>
     <span style="font-weight:600;color:#e2e8f0;font-family:monospace;min-width:64px;flex-shrink:0">${a.symbol}</span>
     <span style="font-size:0.78rem;color:#94a3b8;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</span>
     <span style="font-size:0.68rem;color:#64748b;white-space:nowrap;flex-shrink:0">${meta.exchange}</span>
-    <span style="font-size:0.68rem;color:#00d4ff;background:rgba(0,212,255,0.1);padding:1px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0">${typeLabel}</span>
     <span style="font-size:0.68rem;color:#64748b;white-space:nowrap;flex-shrink:0;min-width:44px;text-align:right">${meta.country}</span>
   </div>`;
 }
@@ -577,12 +625,27 @@ function attachTickerAutocomplete(input, options) {
   }
 
   function renderEmptyState() {
-    dropdown.innerHTML = renderSection('🔥 Trending', getTrendingAssets()) + renderSection('🕓 Recent', getRecentAssets());
-    currentResults = getTrendingAssets().concat(getRecentAssets());
+    const trending = getTrendingAssets();
+    let html;
+    if (_localTrendingAssets && _localTrendingAssets.length) {
+      const localPart = trending.slice(0, _localTrendingAssets.length);
+      const intlPart = trending.slice(_localTrendingAssets.length);
+      html = renderSection('🔥 本地熱門', localPart) + renderSection('🌍 國際市場', intlPart) + renderSection('🕓 Recent', getRecentAssets());
+    } else {
+      html = renderSection('🔥 Trending', trending) + renderSection('🕓 Recent', getRecentAssets());
+    }
+    dropdown.innerHTML = html;
+    currentResults = trending.concat(getRecentAssets());
     currentSuggestion = null;
     wireRowClicks();
     dropdown.style.display = currentResults.length ? 'block' : 'none';
   }
+
+  // 本地熱門股攞到之後 (async)，如果呢個dropdown仲focus緊、仲顯示緊
+  // trending狀態(未打字)，即時reflow一次，讓本地清單補上去。
+  _trendingRefreshCallbacks.push(function () {
+    if (document.activeElement === input && !activeSegment()) renderEmptyState();
+  });
 
   function renderResults(val) {
     const {results, suggestion} = searchAssets(val, 8);

@@ -12,6 +12,11 @@ const I18N = {
       this.currentLang = data.language;
       this.translations = data.translations;
       localStorage.setItem('xfinlab_lang', this.currentLang);
+      // /i18n/detect (first-visit-only call, see the `lang ? ... : ...`
+      // branch above) already resolves the visitor's country from IP;
+      // cache it here so js/autocomplete.js can show country-prioritized
+      // trending stocks without doing a second IP lookup of its own.
+      if (data.country) localStorage.setItem('xfinlab_country', data.country);
       this.apply();
       this.addLanguageSwitcher(data.supported_languages);
     } catch(e) {}
