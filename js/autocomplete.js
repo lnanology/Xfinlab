@@ -176,6 +176,9 @@ const ASSETS = [
   {symbol: '2308', name: 'Delta Electronics 台達電', type: 'stock', api: '2308.TW', popularity: 30},
   {symbol: '2882', name: 'Cathay Financial 國泰金', type: 'stock', api: '2882.TW', popularity: 22},
   {symbol: '3008', name: 'LargAn Precision 大立光', type: 'stock', api: '3008.TW', popularity: 25},
+  // 注意：3707係上櫃(TPEx)股票，唔係上市(TWSE)，Yahoo/yfinance代號要用
+  // ".TWO"（唔係".TW"），呢個suffix分別成日搞錯，識落嚟落個comment提提。
+  {symbol: '3707', name: 'Episil Technologies 漢磊', type: 'stock', api: '3707.TWO', country: 'Taiwan', exchange: 'TPEx', aliases: ['episil', 'hanlei'], popularity: 20},
 
   // ===== 中國A股 China A-shares =====
   {symbol: '600519', name: 'Kweichow Moutai 貴州茅台', type: 'stock', api: '600519.SS', aliases: ['moutai'], popularity: 42},
