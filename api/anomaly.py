@@ -3,6 +3,7 @@ import re
 from fastapi import APIRouter
 from engines.anomaly_engine import AnomalyEngine
 from services.dashboard_snapshot_service import get_dashboard_tickers, compute_snapshots
+from services.anomaly_history_service import scan_last_30_days
 
 router = APIRouter()
 
@@ -85,3 +86,22 @@ def anomaly_search(ticker: str):
         "ticker": s["ticker"],
         **result,
     }
+
+
+@router.get("/anomaly/history/{ticker}")
+def anomaly_history(ticker: str):
+    """
+    Past 30 days of volume/price anomalies for a single ticker, with
+    related news attached to each flagged day -- powers the "過去30日
+    成交量異常" section on anomaly.html's single-ticker search result.
+
+    Single-ticker only, by explicit design choice: extending this to the
+    batch watchlist scan (GET /anomaly above) would multiply the yfinance
+    + NewsAPI workload by the watchlist size, and was intentionally left
+    out of scope for this feature.
+    """
+    ticker = (ticker or "").strip().upper()
+    if not ticker or not _SYMBOL_RE.match(ticker):
+        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+
+    return scan_last_30_days(ticker)

@@ -74,6 +74,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </div>
     <div class="upload-hint" style="margin-top:0.5rem;color:var(--text-muted);font-size:0.82rem" data-i18n="anom_search_hint">呢個只查你打嘅單一代號，同下面嘅自選股批量掃描分開</div>
     <div id="anomSearchResult" style="margin-top:14px"></div>
+    <div id="anomHistoryResult" style="margin-top:14px"></div>
   </div>
 
   <div class="panel">
@@ -199,6 +200,56 @@ function renderAnomalyResult(ticker, result) {
     </div>${items}`;
 }
 
+function renderAnomalyHistory(ticker, data) {
+  const flagged = data.flagged || [];
+  const heading = `<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:18px 0 10px" data-i18n="anom_history_title">過去30日成交量異常</div>`;
+
+  if (!flagged.length) {
+    return `${heading}<div class="empty-box" data-i18n="anom_history_empty">過去30日未發現明顯成交量或價格異常</div>`;
+  }
+
+  const days = flagged.map(day => {
+    const anomalyLines = (day.anomalies || []).map(a =>
+      `<div class="anomaly-detail">· ${a.detail}</div>`
+    ).join('');
+
+    const newsLines = (day.news || []).length
+      ? (day.news || []).map(n => n.url
+          ? `<div class="anomaly-detail" style="margin-top:4px">📰 <a href="${n.url}" target="_blank" rel="noopener" style="color:var(--accent-blue);text-decoration:none">${n.title}</a>${n.source ? ` — ${n.source}` : ''}</div>`
+          : `<div class="anomaly-detail" style="margin-top:4px">📰 ${n.title}${n.source ? ` — ${n.source}` : ''}</div>`
+        ).join('')
+      : `<div class="anomaly-detail" style="margin-top:4px;opacity:0.7" data-i18n="anom_history_no_news">暫無相關新聞</div>`;
+
+    return `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">📅</div>
+        <div style="flex:1">
+          <div class="anomaly-type severity-${day.severity || 'NONE'}">${day.date} · ${day.time} <span class="badge badge-${day.severity || 'NONE'}" style="margin-left:6px">${day.severity || 'NONE'}</span></div>
+          <div class="anomaly-detail">成交量 ${Number(day.volume).toLocaleString()}（平均 ${Number(day.avg_volume).toLocaleString()}，${day.volume_ratio}x）· 價格變化 ${day.price_change_pct}%</div>
+          ${anomalyLines}
+          ${newsLines}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `${heading}<div class="anomaly-list">${days}</div>`;
+}
+
+async function runAnomalyHistory(ticker) {
+  const historyBox = document.getElementById('anomHistoryResult');
+  historyBox.innerHTML = `<div class="empty-box">${t('anom_history_checking', '搵緊過去30日數據...')}</div>`;
+  try {
+    const res = await fetch(`${API}/anomaly/history/${encodeURIComponent(ticker)}`);
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      throw new Error(data.message || t('anom_history_error', '暫時攞唔到歷史數據'));
+    }
+    historyBox.innerHTML = renderAnomalyHistory(ticker, data);
+  } catch (e) {
+    historyBox.innerHTML = `<div class="empty-box">${e.message || t('anom_history_error', '暫時攞唔到歷史數據')}</div>`;
+  }
+}
+
 async function runAnomalySearch(symbolOverride) {
   const input = document.getElementById('anomSearchInput');
   const ticker = normalizeGlobalTicker(symbolOverride || input.value);
@@ -210,9 +261,11 @@ async function runAnomalySearch(symbolOverride) {
 
   const btn = document.getElementById('anomSearchBtn');
   const resultBox = document.getElementById('anomSearchResult');
+  const historyBox = document.getElementById('anomHistoryResult');
   btn.disabled = true;
   btn.textContent = t('anom_search_checking', '檢查緊...');
   resultBox.innerHTML = `<div class="empty-box">${t('anom_search_checking', '檢查緊...')}</div>`;
+  historyBox.innerHTML = '';
 
   try {
     const res = await fetch(`${API}/anomaly/search/${encodeURIComponent(ticker)}`);
@@ -222,6 +275,7 @@ async function runAnomalySearch(symbolOverride) {
     }
     resultBox.innerHTML = renderAnomalyResult(data.ticker || ticker, data);
     if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'anomaly_search', ticker});
+    runAnomalyHistory(data.ticker || ticker);
   } catch (e) {
     resultBox.innerHTML = `<div class="empty-box">${e.message || t('anom_search_error', '檢查失敗，請重試')}</div>`;
   } finally {
