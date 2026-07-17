@@ -89,16 +89,16 @@
     style.textContent = `
       #xflFloatTopbar{position:fixed;top:12px;right:16px;z-index:9997;display:flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;}
       .xfl-settings-wrap{position:relative;display:inline-flex;align-items:center;flex-shrink:0;margin-left:12px;}
-      .xfl-settings-btn{background:#0d1525;border:1px solid #1e2d45;color:#94a3b8;padding:6px 12px;border-radius:8px;font-size:0.8rem;cursor:pointer;font-family:inherit;transition:border-color .2s,color .2s;white-space:nowrap;}
-      .xfl-settings-btn:hover{border-color:#00d4ff;color:#00d4ff;}
-      .xfl-flyout{display:none;position:absolute;right:0;top:calc(100% + 6px);background:#0d1525;border:1px solid #1e2d45;border-radius:8px;min-width:220px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:200;}
+      .xfl-settings-btn{background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);color:var(--text-primary,#94a3b8);padding:6px 12px;border-radius:8px;font-size:0.8rem;cursor:pointer;font-family:inherit;transition:border-color .2s,color .2s;white-space:nowrap;}
+      .xfl-settings-btn:hover{border-color:var(--accent-orange,#f59e0b);color:var(--accent-orange,#f59e0b);}
+      .xfl-flyout{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);border-radius:8px;min-width:220px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:200;}
       .xfl-settings-wrap:hover .xfl-flyout, .xfl-flyout.xfl-open{display:block;}
-      .xfl-flyout a{display:block;padding:10px 14px;color:#e2e8f0;text-decoration:none;font-size:0.82rem;}
-      .xfl-flyout a:hover{background:#131c2e;color:#00d4ff;}
-      .xfl-flyout-head{padding:12px 16px;border-bottom:1px solid #1e2d45;}
-      .xfl-flyout-head .xfl-email{font-size:0.82rem;color:#e2e8f0;margin-top:2px;word-break:break-all;}
+      .xfl-flyout a{display:block;padding:10px 14px;color:var(--text-primary,#e2e8f0);text-decoration:none;font-size:0.82rem;}
+      .xfl-flyout a:hover{background:var(--bg-primary,#131c2e);color:var(--accent-orange,#f59e0b);}
+      .xfl-flyout-head{padding:12px 16px;border-bottom:1px solid var(--border-color,#1e2d45);}
+      .xfl-flyout-head .xfl-email{font-size:0.82rem;color:var(--text-primary,#e2e8f0);margin-top:2px;word-break:break-all;}
       .xfl-flyout-head .xfl-signedin{font-size:0.72rem;color:#64748b;}
-      .xfl-flyout-head .xfl-plan{font-size:0.7rem;color:#00d4ff;margin-top:2px;text-transform:uppercase;letter-spacing:0.08em;}
+      .xfl-flyout-head .xfl-plan{font-size:0.7rem;color:var(--accent-orange,#f59e0b);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em;}
       /* 桌面版先至畀連結行自己刮，闊度唔夠嘅話 -- 手機版<=768px嗰個
          .nav-links已經變咗做position:absolute嘅落拉selu menu（見
          css/style.css嘅media query），呢度加嘅overflow-x規則對嗰個
@@ -122,7 +122,7 @@
           <div class="xfl-email">${user.email || ''}</div>
           <div class="xfl-plan">${(user.plan || 'free').toUpperCase()} <span id="xflPlanSuffix">PLAN</span></div>
         </div>
-        <a href="pricing.html" style="color:#00d4ff">⭐ <span id="xflUpgradeLabel">View Plans</span></a>
+        <a href="pricing.html" style="color:var(--accent-orange,#f59e0b)">⭐ <span id="xflUpgradeLabel">View Plans</span></a>
         <a href="#" id="xflReferralLink">🔗 <span id="xflReferralLabel">Copy Referral Link</span></a>
         <a href="#" id="xflShareLink">📤 <span id="xflShareLabel">Share XFINLAB</span></a>
         <a href="#" id="xflLogoutLink" style="color:#ef4444">↩ <span id="xflLogoutLabel">Sign Out</span></a>
