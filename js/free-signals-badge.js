@@ -1,10 +1,13 @@
-// XFINLAB Free Signals floating badge.
-// Small fixed bottom-right pill linking to free-signals.html, shown on
-// every main page except free-signals.html itself (no point promoting
-// the page you're already on). Sits at bottom:80px so it stacks ABOVE
-// the Telegram widget (#tgWidget, bottom:24px;right:24px) instead of
-// overlapping it -- mirrors the left-side stack (points-badge at
-// bottom:80px sitting above the feedback widget at bottom:24px).
+// XFINLAB "Daily Signals" floating badge (links to free-signals.html).
+// Small fixed bottom-right pill, shown on every main page except
+// free-signals.html itself (no point promoting the page you're already
+// on). Right-side floating stack (bottom-up): TG Signals widget
+// (#tgWidget, 24) -> this badge (80) -> language switcher (136,
+// js/i18n.js) -> share widget (192, js/share-widget.js). Label text
+// comes from the "nav_free_signals" i18n key, which now reads "Daily
+// Signals" (renamed to disambiguate from the older Telegram promo
+// widget, whose button used to say "Free Signals" and was renamed to
+// "TG Signals" for the same reason).
 (function () {
   if (/free-signals\.html$/i.test(location.pathname)) return;
   if (document.getElementById('freeSignalsBadge')) return;

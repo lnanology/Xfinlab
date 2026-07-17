@@ -8,12 +8,16 @@ take an arbitrary payload dict) so future alert types (price alerts,
 anomaly alerts, etc.) can reuse the same subscription table and send
 path without changes here.
 
-VAPID keypair lives in services/vapid_keys/{private_key,public_key}.pem
-(checked into the repo for now, same "fail open to a working default"
-pragmatism as backend/auth/jwt_handler.py's JWT_SECRET fallback -- this
-is an MVP; rotate to env-var-supplied keys before this matters for
-production security hardening). VAPID_PRIVATE_KEY / VAPID_PUBLIC_KEY_B64
-env vars override the checked-in files when present.
+VAPID keypair: sourced ONLY from the VAPID_PRIVATE_KEY / VAPID_PUBLIC_KEY_B64
+env vars now -- no key material is checked into the repo (an earlier
+revision of this file did commit a keypair; that key is retired/unused
+now that this reads from env vars, treat it as burned). If the env vars
+aren't set (e.g. local dev), an ephemeral matching keypair is generated
+once per process at import time -- this keeps local dev working out of
+the box, but subscriptions won't survive a restart in that mode (same
+trade-off as backend/auth/jwt_handler.py's JWT_SECRET fallback). Set
+both env vars in production so real subscriptions stay valid across
+deploys/restarts.
 """
 import os
 import sqlite3
@@ -22,25 +26,49 @@ import base64
 from pywebpush import webpush, WebPushException
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_PRIVATE_KEY_PATH = os.path.join(_HERE, "vapid_keys", "private_key.pem")
 
-# Raw uncompressed EC point (0x04 || X || Y), base64url, matching the
-# checked-in private_key.pem -- this is what the frontend passes as
-# PushManager.subscribe()'s applicationServerKey, and it's also served
-# back verbatim via GET /api/push/vapid-public-key so the frontend never
-# has to hardcode it.
-VAPID_PUBLIC_KEY_B64 = os.getenv(
-    "VAPID_PUBLIC_KEY_B64",
-    "BIUZmWx1A6AzP4yjbqPxFegxJYC5zAT0HJyK_6HsHJN2XAcIZvFjefMrttkRGAKwFLfJSerNNXWb0Pzft9KwkVc",
-)
 VAPID_CLAIMS = {"sub": "mailto:support@xfinlab.com"}
 
 
+def _derive_public_b64url(vapid_obj) -> str:
+    pub_numbers = vapid_obj.public_key.public_numbers()
+    x = pub_numbers.x.to_bytes(32, "big")
+    y = pub_numbers.y.to_bytes(32, "big")
+    raw_pub = b"\x04" + x + y
+    return base64.urlsafe_b64encode(raw_pub).rstrip(b"=").decode()
+
+
+def _load_vapid_keys():
+    env_private = os.getenv("VAPID_PRIVATE_KEY")
+    env_public = os.getenv("VAPID_PUBLIC_KEY_B64")
+    if env_private and env_public:
+        return env_private, env_public
+
+    # Dev fallback: generate a fresh, internally-consistent keypair for
+    # this process. Not persisted anywhere -- restarting the process
+    # invalidates any subscriptions made against the previous ephemeral
+    # key, which is fine for local dev but must not happen in production.
+    print(
+        "[push_service] VAPID_PRIVATE_KEY/VAPID_PUBLIC_KEY_B64 not set -- "
+        "generating an ephemeral VAPID keypair for this process. Push "
+        "subscriptions will NOT survive a restart. Set both env vars in "
+        "production."
+    )
+    from py_vapid import Vapid
+
+    v = Vapid()
+    v.generate_keys()
+    priv_pem = v.private_pem()
+    if isinstance(priv_pem, bytes):
+        priv_pem = priv_pem.decode()
+    return priv_pem, _derive_public_b64url(v)
+
+
+_ACTIVE_PRIVATE_KEY, VAPID_PUBLIC_KEY_B64 = _load_vapid_keys()
+
+
 def _private_key_source():
-    env_key = os.getenv("VAPID_PRIVATE_KEY")
-    if env_key:
-        return env_key
-    return _PRIVATE_KEY_PATH
+    return _ACTIVE_PRIVATE_KEY
 
 
 def _db_path():

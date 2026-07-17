@@ -152,6 +152,33 @@ app.include_router(hero_showcase_router, prefix="/api", tags=["Hero Showcase"])
 app.include_router(push_router, prefix="/api", tags=["Push"])
 
 
+# Real scheduled job for the daily Free Signals push (replaces relying
+# solely on the lazy "first request of the day recomputes the cache"
+# fallback in api/market_pulse.py -- that fallback still exists and
+# stays in place, this just makes the push fire at a predictable time
+# even if nobody visits the site right after midnight). Runs in-process
+# via APScheduler's BackgroundScheduler (non-blocking, no extra worker
+# dyno/process needed) -- safe as long as this app runs as a single
+# process (the Procfile's `uvicorn backend.main:app` does not pass
+# --workers, so this holds today; if that ever changes, this needs to
+# move to a single dedicated worker to avoid duplicate sends -- though
+# _notify_free_signals_ready's push_send_log guard makes duplicate
+# sends merely wasteful, not incorrect).
+from apscheduler.schedulers.background import BackgroundScheduler
+from api.market_pulse import refresh_free_signals_and_notify
+
+_push_scheduler = BackgroundScheduler(timezone="Asia/Hong_Kong")
+_push_scheduler.add_job(
+    refresh_free_signals_and_notify,
+    "cron",
+    hour=8,
+    minute=0,
+    id="daily_free_signals_push",
+    replace_existing=True,
+)
+_push_scheduler.start()
+
+
 @app.get("/")
 def root():
     return {

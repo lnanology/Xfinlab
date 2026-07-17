@@ -90,7 +90,11 @@
 
     var wrap = document.createElement('div');
     wrap.id = 'shareWidget';
-    wrap.style.cssText = 'position:fixed;bottom:140px;right:24px;z-index:9996;';
+    // Right-side floating stack (bottom-up): TG Signals widget (24) ->
+    // Daily Signals badge (80) -> language switcher (136) -> share
+    // widget (192, here). Was bottom:140, bumped up to keep clear of
+    // the language switcher's new position.
+    wrap.style.cssText = 'position:fixed;bottom:192px;right:24px;z-index:9996;';
 
     var panel = document.createElement('div');
     panel.id = 'sharePanel';

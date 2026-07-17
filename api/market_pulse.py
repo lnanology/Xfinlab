@@ -379,12 +379,11 @@ def _lookup_plan(token: Optional[str]) -> str:
 
 
 def _notify_free_signals_ready(today: str, cache: Dict):
-    # Best-effort daily push -- fires on the first /free-signals request
-    # of a new calendar day (this endpoint is the only place the cache
-    # refreshes; there's no separate cron job). Guarded by a persisted
-    # push_send_log row so a process restart later the same day doesn't
-    # re-fire it. Any failure here must never break the actual API
-    # response, hence the broad except.
+    # Best-effort daily push. Guarded by a persisted push_send_log row so
+    # this only ever fires once per calendar day no matter how many
+    # times the cache gets (re)computed that day -- whether triggered by
+    # the scheduled cron job below or by the lazy per-request fallback.
+    # Any failure here must never break the caller, hence the broad except.
     try:
         from services.push_service import already_sent_today, mark_sent_today, send_push_to_all
 
@@ -405,15 +404,38 @@ def _notify_free_signals_ready(today: str, cache: Dict):
         pass
 
 
+def _refresh_free_signals_cache():
+    """Recompute the free-signals cache for "today" and fire the daily
+    push notification. Shared by both trigger paths below so the logic
+    can't drift between them."""
+    global _free_signals_cache, _free_signals_cache_date
+    today = date.today().isoformat()
+    _free_signals_cache = _compute_free_signals()
+    _free_signals_cache_date = today
+    _notify_free_signals_ready(today, _free_signals_cache)
+
+
+def refresh_free_signals_and_notify():
+    """Entry point for the real scheduled job (APScheduler BackgroundScheduler,
+    wired up in backend/main.py) that recomputes the cache and sends the
+    push at a fixed time every day -- e.g. 08:00 Asia/Hong_Kong -- instead
+    of only whenever the first visitor of the day happens to hit
+    /api/free-signals. Safe to call redundantly: _notify_free_signals_ready's
+    push_send_log guard makes any given day's push idempotent regardless
+    of whether the scheduler or the lazy per-request fallback got there
+    first."""
+    _refresh_free_signals_cache()
+
+
 @router.get("/free-signals")
 def free_signals(token: Optional[str] = None):
-    global _free_signals_cache, _free_signals_cache_date
-
     today = date.today().isoformat()
     if _free_signals_cache is None or _free_signals_cache_date != today:
-        _free_signals_cache = _compute_free_signals()
-        _free_signals_cache_date = today
-        _notify_free_signals_ready(today, _free_signals_cache)
+        # Fallback path -- normally the scheduled job above already
+        # refreshed the cache for today before anyone visits. This just
+        # covers the scheduler being late, disabled, or the process
+        # having just restarted.
+        _refresh_free_signals_cache()
 
     result = _free_signals_cache
     plan = _lookup_plan(token)

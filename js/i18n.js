@@ -44,7 +44,12 @@ const I18N = {
 
     const switcher = document.createElement('div');
     switcher.id = 'langSwitcher';
-    switcher.style.cssText = 'position:fixed;bottom:80px;right:24px;z-index:9998;';
+    // Right-side floating stack (bottom-up): TG Signals widget (24) ->
+    // Daily Signals badge (80, js/free-signals-badge.js) -> language
+    // switcher (136, here) -> share widget (192, js/share-widget.js).
+    // Was bottom:80 before, which sat exactly on top of the Daily
+    // Signals badge -- bumped up to clear it.
+    switcher.style.cssText = 'position:fixed;bottom:136px;right:24px;z-index:9998;';
 
     const btn = document.createElement('button');
     btn.style.cssText = 'background:#0d1525;border:1px solid #1e2d45;color:#e2e8f0;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
