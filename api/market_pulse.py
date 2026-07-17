@@ -29,7 +29,10 @@ Design:
   beyond its own 10-minute AI-response cache).
 """
 
+import os
+import sqlite3
 import time
+from datetime import date
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter
@@ -275,3 +278,129 @@ def top_opportunities():
     _top_opp_cache = result
     _top_opp_cache_time = now
     return {**result, "cached": False}
+
+
+# ---------------------------------------------------------------------------
+# Free Signals -- new site-wide "Free Signals" page/feature. Reuses the
+# exact same fixed candidate baskets + Confluence Engine as
+# _compute_top_opportunities() above (no new external data source, no AI
+# cost), but instead of picking one winner PER asset class, it scores every
+# basket member across ALL classes and ranks them by |confluence score| --
+# i.e. "which real, live signals are currently the most confident calls
+# right now", regardless of which asset class they happen to be in.
+#
+# The result is regenerated once per CALENDAR DAY (not just a short TTL
+# cache like the other two endpoints above) so that "today's free signals"
+# reads as a stable daily list for marketing/consistency purposes -- a
+# visitor who checks back later the same day sees the same list, and it's
+# clearly a "daily" feature rather than something that reshuffles every 5
+# minutes.
+#
+# Tier gating: everyone (including signed-out visitors) sees the top 3
+# signals for free. Logged-in paid-tier users (anything other than "free")
+# get the full top 6 -- the extra 3 are reported to free/signed-out callers
+# as `locked_count` so the frontend can render blurred/teaser rows with an
+# upgrade CTA, without ever sending the actual locked signal data to a
+# free-tier client.
+# ---------------------------------------------------------------------------
+
+_FREE_SIGNALS_VISIBLE_FREE = 3
+_FREE_SIGNALS_VISIBLE_PAID = 6
+
+_free_signals_cache: Optional[Dict] = None
+_free_signals_cache_date: Optional[str] = None
+
+
+def _compute_all_signals() -> List[Dict]:
+    candidates: List[Dict] = []
+    for asset_class, basket in _ASSET_CLASS_BASKETS.items():
+        for ticker in basket:
+            try:
+                tech = get_technical_analysis(ticker, period="3mo")
+            except Exception:
+                tech = None
+            if not tech or "error" in tech:
+                continue
+
+            confluence = tech.get("confluence", {})
+            score = confluence.get("score", 0.0)
+            candidates.append({
+                "asset_class": asset_class,
+                "asset_class_label": _ASSET_CLASS_LABELS[asset_class],
+                "ticker": ticker,
+                "label": _TICKER_LABELS.get(ticker, ticker),
+                "price": tech.get("last_close"),
+                "confluence_direction": confluence.get("direction"),
+                "confluence_confidence_pct": confluence.get("confidence_pct"),
+                "volume_desc": tech.get("volume_desc"),
+                "_score": score,
+            })
+
+    # Strongest conviction first, whichever direction it points -- a
+    # confident bearish call is just as much a "signal" as a confident
+    # bullish one.
+    candidates.sort(key=lambda c: abs(c["_score"]), reverse=True)
+    for c in candidates:
+        c.pop("_score", None)
+    return candidates
+
+
+def _compute_free_signals() -> Dict:
+    signals = _compute_all_signals()
+    for i, s in enumerate(signals):
+        s["rank"] = i + 1
+    return {
+        "date": date.today().isoformat(),
+        "signals": signals,
+        "data_source": "即市技術分析（真實價格數據，非AI猜測）",
+        "disclaimer": "呢個係整體市場技術面參考，唔係投資建議。",
+    }
+
+
+def _lookup_plan(token: Optional[str]) -> str:
+    """Best-effort plan lookup from a JWT -- mirrors api/quota.py's
+    pattern. Returns "free" for missing/invalid tokens or any lookup
+    failure (fail open to the free tier, never fail the request)."""
+    if not token:
+        return "free"
+    try:
+        from backend.auth.jwt_handler import verify_token
+        payload = verify_token(token)
+        if not payload:
+            return "free"
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT plan FROM users WHERE id=?", (payload["id"],)).fetchone()
+        conn.close()
+        return (row["plan"] if row and row["plan"] else "free")
+    except Exception:
+        return "free"
+
+
+@router.get("/free-signals")
+def free_signals(token: Optional[str] = None):
+    global _free_signals_cache, _free_signals_cache_date
+
+    today = date.today().isoformat()
+    if _free_signals_cache is None or _free_signals_cache_date != today:
+        _free_signals_cache = _compute_free_signals()
+        _free_signals_cache_date = today
+
+    result = _free_signals_cache
+    plan = _lookup_plan(token)
+    is_paid = plan not in ("free", None, "")
+
+    all_signals = result["signals"]
+    visible_n = _FREE_SIGNALS_VISIBLE_PAID if is_paid else _FREE_SIGNALS_VISIBLE_FREE
+    visible = all_signals[:visible_n]
+    locked_count = max(0, len(all_signals) - visible_n)
+
+    return {
+        "date": result["date"],
+        "signals": visible,
+        "locked_count": locked_count,
+        "plan": plan,
+        "data_source": result["data_source"],
+        "disclaimer": result["disclaimer"],
+    }

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — Signals Engine™ 免費每日訊號</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/theme-toggle.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+.primary-btn{background:var(--accent-blue);color:#fff;border:none;padding:0 14px;border-radius:8px;cursor:pointer;height:44px}
+.primary-btn:hover{background:#1D4ED8}
+
+.signals-meta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:1rem 0;font-size:0.82rem;color:var(--text-muted)}
+.signals-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.signal-item{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.signal-rank{font-size:1.1rem;font-weight:700;color:var(--text-muted);width:28px;text-align:center;flex-shrink:0}
+.signal-main{flex:1;min-width:0}
+.signal-ticker{font-weight:700;font-family:monospace;font-size:0.95rem}
+.signal-name{font-size:0.8rem;color:var(--text-secondary);margin-top:1px}
+.signal-class{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:0.7rem;font-weight:700;background:rgba(0,212,255,0.12);color:#00d4ff;margin-left:6px}
+.signal-stats{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.signal-direction{font-weight:700;font-size:0.9rem}
+.dir-up{color:#10b981}
+.dir-down{color:#ef4444}
+.dir-neutral{color:#f59e0b}
+.signal-confidence{font-size:0.78rem;color:var(--text-muted)}
+.signal-price{font-size:0.78rem;color:var(--text-muted)}
+
+.locked-item{position:relative;overflow:hidden}
+.locked-item .signal-main,.locked-item .signal-stats{filter:blur(5px);user-select:none;pointer-events:none}
+.locked-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.15);border-radius:10px}
+.locked-badge{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:99px;padding:6px 14px;font-size:0.78rem;font-weight:700;color:var(--text-secondary);display:flex;align-items:center;gap:6px}
+
+.upgrade-banner{margin-top:14px;background:linear-gradient(135deg,rgba(0,212,255,0.1),rgba(124,58,237,0.1));border:1px solid var(--border-color);border-radius:10px;padding:16px;text-align:center}
+.upgrade-banner a{display:inline-block;margin-top:8px;background:#00d4ff;color:#000;font-weight:700;padding:9px 20px;border-radius:8px;text-decoration:none;font-size:0.85rem}
+
+.edu{line-height:1.7;margin-top:1.6rem}
+.edu h3{color:var(--accent-blue);margin-top:0.6rem}
+.edu p{color:var(--text-secondary);margin-bottom:0.6rem}
+
+.empty-box{color:var(--text-muted);font-size:0.9rem;padding:24px 0;text-align:center}
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/share-tools.js"></script>
+<script src="js/points-badge.js"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="free-signals.html" class="nav-link" data-i18n="nav_free_signals">免費訊號</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">Signals Engine™</div>
+  <h1 class="page-title" data-i18n="freesig_title">免費每日訊號</h1>
+  <p class="page-sub" data-i18n="freesig_subtitle">每日精選幾個技術面訊號最強嘅資產（股票／期貨／加密貨幣），由真實市場數據同Confluence Engine計出嚟，唔係AI估估吓。</p>
+
+  <div class="signals-meta">
+    <span id="signalsDate" data-i18n="freesig_loading">載入中…</span>
+    <span data-i18n="freesig_data_source">即市技術分析（真實價格數據，非AI猜測）</span>
+  </div>
+
+  <div class="signals-list" id="signalsList">
+    <div class="empty-box" data-i18n="freesig_loading_list">載入緊今日訊號…</div>
+  </div>
+
+  <div class="upgrade-banner" id="upgradeBanner" style="display:none">
+    <div data-i18n="freesig_upgrade_text">升級解鎖埋今日剩低嘅訊號，睇多啲、睇快啲。</div>
+    <a href="pricing.html" data-i18n="freesig_upgrade_btn">⭐ 查看方案</a>
+  </div>
+
+  <div class="edu">
+    <h3 data-i18n="freesig_edu_title">呢啲訊號係點計出嚟？</h3>
+    <p data-i18n="freesig_edu_p1">每個訊號都嚟自XFINLAB嘅Confluence Engine——一個綜合趨勢、RSI、MACD、支撐/阻力、成交量等多個真實技術指標嘅評分系統，同全站其他分析工具用緊同一套引擎，唔係獨立嘅AI估算。</p>
+    <p data-i18n="freesig_edu_p2">排名純粹按訊號強度（信心度）由高到低排列，唔代表買賣建議，僅供參考。</p>
+  </div>
+
+  <div id="shareBar"></div>
+</div>
+
+<footer class="footer">
+  <div data-i18n="freesig_footer_note">XFINLAB © 2026 · 免費每日訊號 · <a href="privacy.html" style="color:var(--accent-blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a></div>
+</footer>
+
+<script>
+const API = "https://api.xfinlab.com/api";
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+const DIR_CLASS = { '偏多': 'dir-up', '偏空': 'dir-down' };
+function dirClass(dir) { return DIR_CLASS[dir] || 'dir-neutral'; }
+
+async function loadFreeSignals() {
+  const listEl = document.getElementById('signalsList');
+  const dateEl = document.getElementById('signalsDate');
+  const bannerEl = document.getElementById('upgradeBanner');
+  const token = localStorage.getItem('xfinlab_token') || '';
+
+  try {
+    const url = token ? `${API}/free-signals?token=${encodeURIComponent(token)}` : `${API}/free-signals`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    dateEl.textContent = t('freesig_updated_prefix', '更新日期：') + (data.date || '-');
+
+    const signals = data.signals || [];
+    if (!signals.length) {
+      listEl.innerHTML = `<div class="empty-box">${t('freesig_no_data','暫時未有訊號，請稍後再試。')}</div>`;
+      return;
+    }
+
+    let html = signals.map(s => `
+      <div class="signal-item">
+        <div class="signal-rank">#${s.rank}</div>
+        <div class="signal-main">
+          <span class="signal-ticker">${s.ticker}</span><span class="signal-class">${s.asset_class_label}</span>
+          <div class="signal-name">${s.label}</div>
+        </div>
+        <div class="signal-stats">
+          <div class="signal-direction ${dirClass(s.confluence_direction)}">${s.confluence_direction || '-'}</div>
+          <div class="signal-confidence">${t('freesig_confidence_label','信心度')} ${s.confluence_confidence_pct != null ? Math.round(s.confluence_confidence_pct) + '%' : '-'}</div>
+          <div class="signal-price">${s.price != null ? '$' + Number(s.price).toFixed(2) : ''}</div>
+        </div>
+      </div>
+    `).join('');
+
+    const lockedCount = data.locked_count || 0;
+    if (lockedCount > 0) {
+      for (let i = 0; i < lockedCount; i++) {
+        html += `
+        <div class="signal-item locked-item">
+          <div class="signal-rank">#?</div>
+          <div class="signal-main">
+            <span class="signal-ticker">XXXX</span><span class="signal-class">--</span>
+            <div class="signal-name">------</div>
+          </div>
+          <div class="signal-stats">
+            <div class="signal-direction">--</div>
+            <div class="signal-confidence">--</div>
+            <div class="signal-price">--</div>
+          </div>
+          <div class="locked-overlay"><div class="locked-badge">🔒 ${t('freesig_locked_label','升級解鎖')}</div></div>
+        </div>`;
+      }
+      bannerEl.style.display = 'block';
+    } else {
+      bannerEl.style.display = 'none';
+    }
+
+    listEl.innerHTML = html;
+
+    if (typeof window.renderShareBar === 'function') {
+      window.renderShareBar('shareBar', 'signalsList', { filename: 'xfinlab-free-signals' });
+    }
+  } catch (e) {
+    console.error(e);
+    listEl.innerHTML = `<div class="empty-box">${t('freesig_error','載入失敗，請稍後再試。')}</div>`;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadFreeSignals();
+
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+</body>
+</html>
