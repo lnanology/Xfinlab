@@ -21,6 +21,7 @@
 .preview-img{width:100%;height:auto;border-radius:4px;display:block}
 .meta-line{font-size:0.82rem;color:var(--text2);margin-top:0.5rem}
 .analysis-section{margin-top:1.2rem;display:grid;grid-template-columns:1fr 320px;gap:1rem}
+.analysis-section.single-col{grid-template-columns:1fr}
 .analysis-main{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
 .analysis-side{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
 .result-row{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
@@ -113,7 +114,7 @@
     <div id="klineChart" style="height:320px"></div>
   </div>
 
-  <div class="analysis-section">
+  <div class="analysis-section single-col" id="analysisSection">
     <div class="analysis-main">
       <div id="resultContent">
       <h3 style="margin-top:0" data-i18n="ca_result_title">AI 分析結果 <span class="meta-line" id="dataSourceTag" style="display:inline;margin-left:0.4rem"></span></h3>
@@ -187,7 +188,7 @@
 
     </div>
 
-    <aside class="analysis-side">
+    <aside class="analysis-side" id="analysisSide" style="display:none">
       <h4 style="margin-top:0" data-i18n="ca_side_original_img">原始圖片</h4>
       <div id="sidePreview" style="background:var(--navy3);border-radius:6px;padding:0.6rem;text-align:center">
         <div style="color:var(--text3)" id="sidePreviewText" data-i18n="ca_side_not_uploaded">尚未上傳</div>
@@ -339,6 +340,13 @@ function switchMode(mode) {
   document.getElementById('uploadPanel').style.display = isSearch ? 'none' : 'block';
   document.getElementById('tabSearch').classList.toggle('active', isSearch);
   document.getElementById('tabUpload').classList.toggle('active', !isSearch);
+  // 右邊「原始圖片／上傳時間」個側欄淨係上傳截圖模式先有意思，搜尋
+  // 代號模式冇上傳圖片可以顯示，所以一齊收埋，並且將analysis-section
+  // 由兩欄(1fr 320px)變返一欄(1fr)，唔會留低一舊空白。
+  const analysisSide = document.getElementById('analysisSide');
+  const analysisSection = document.getElementById('analysisSection');
+  if (analysisSide) analysisSide.style.display = isSearch ? 'none' : 'block';
+  if (analysisSection) analysisSection.classList.toggle('single-col', isSearch);
   if (!isSearch) {
     document.getElementById('chartPanel').style.display = 'none';
     document.getElementById('patternBlock').style.display = 'block';
