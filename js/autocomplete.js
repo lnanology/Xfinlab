@@ -457,6 +457,38 @@ function searchAssets(query, limit) {
   return {results, suggestion};
 }
 
+// ---- 全球即時搜尋融合 (本地227隻靜態清單 + 後端proxy嘅Yahoo Finance
+// 即時搜尋) ----
+// 本地清單即刻有結果、零延遲；同時(debounced)問返後端
+// /api/ticker-search，攞返本地清單以外嘅真.全球資產配對(例如冷門
+// TW/HK個股)，過返嚟之後同本地結果去重、merge，等用戶打乜代號都搵
+// 到，唔使我哋逐隻手動維護個清單。見 renderResults() 點用呢兩個function。
+function _dedupeAssets(primary, extra) {
+  const seen = new Set(primary.map(a => (a.api || a.symbol).toUpperCase()));
+  return extra.filter(a => {
+    const key = (a.api || a.symbol).toUpperCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function fetchLiveAssetSearch(query) {
+  if (!query) return Promise.resolve([]);
+  return fetch(`https://api.xfinlab.com/api/ticker-search?q=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(data => (data && data.results) || [])
+    .then(results => results.map(r => ({
+      symbol: r.symbol,
+      name: r.name,
+      type: r.type || 'stock',
+      api: r.symbol,
+      exchange: r.exchange,
+      popularity: 10
+    })))
+    .catch(() => []);
+}
+
 // ---- 熱門搜尋 (未輸入任何嘢、focus緊個input時顯示) ----
 // 國際/預設清單 -- 冇偵測到地區、或者本地熱門股未攞到之前，用呢個頂住。
 const TRENDING_SYMBOLS = ['AAPL', 'TSLA', 'NVDA', 'BTC', 'SPX', 'XAUUSD'];
@@ -650,25 +682,51 @@ function attachTickerAutocomplete(input, options) {
     if (document.activeElement === input && !activeSegment()) renderEmptyState();
   });
 
+  let _liveSearchGeneration = 0;
+  let _liveSearchTimer = null;
+
   function renderResults(val) {
     const {results, suggestion} = searchAssets(val, 8);
     currentResults = results;
     currentSuggestion = suggestion;
     activeIndex = -1;
 
-    if (results.length === 0 && !suggestion) { closeDropdown(); return; }
-
-    let html = '';
-    if (results.length) {
-      html += results.map(a => _renderAssetRow(a)).join('');
-    } else if (suggestion) {
-      html += `<div class="xfl-suggestion-row" style="padding:12px 14px;cursor:pointer;color:#94a3b8;font-size:0.82rem;border-bottom:1px solid #1e2d45">
-        Did you mean <strong style="color:#00d4ff">${suggestion.name} (${suggestion.symbol})</strong>?
-      </div>`;
+    if (results.length === 0 && !suggestion) {
+      closeDropdown();
+    } else {
+      let html = '';
+      if (results.length) {
+        html += results.map(a => _renderAssetRow(a)).join('');
+      } else if (suggestion) {
+        html += `<div class="xfl-suggestion-row" style="padding:12px 14px;cursor:pointer;color:#94a3b8;font-size:0.82rem;border-bottom:1px solid #1e2d45">
+          Did you mean <strong style="color:#00d4ff">${suggestion.name} (${suggestion.symbol})</strong>?
+        </div>`;
+      }
+      dropdown.innerHTML = html;
+      wireRowClicks(suggestion);
+      dropdown.style.display = 'block';
     }
-    dropdown.innerHTML = html;
-    wireRowClicks(suggestion);
-    dropdown.style.display = 'block';
+
+    // 本地清單搵完之後，再(debounced)問返後端融合全球即時搜尋結果 --
+    // 就算本地已經有結果都照問(可能仲有本地清單以外嘅冷門資產)；
+    // 就算本地完全搵唔到都照問(呢個先係最需要live search嗰個情況，
+    // 例如打緊一隻冇喺227隻清單入面嘅代號)。用generation counter同
+    // 「個input仲係咪同一個查詢」嚟避免用戶打緊字嗰陣，慢咗返嚟嘅
+    // 舊結果overwrite咗新結果。
+    const generation = ++_liveSearchGeneration;
+    clearTimeout(_liveSearchTimer);
+    _liveSearchTimer = setTimeout(function () {
+      fetchLiveAssetSearch(val).then(function (liveResults) {
+        if (generation !== _liveSearchGeneration) return;
+        if (activeSegment() !== val) return;
+        const extra = _dedupeAssets(currentResults, liveResults);
+        if (!extra.length) return;
+        currentResults = currentResults.concat(extra);
+        dropdown.innerHTML = currentResults.map(a => _renderAssetRow(a)).join('');
+        wireRowClicks(suggestion);
+        dropdown.style.display = 'block';
+      });
+    }, 300);
   }
 
   function wireRowClicks(suggestionForEmptyMatch) {
