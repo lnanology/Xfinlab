@@ -72,11 +72,12 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <div class="panel">
     <div class="input-row">
       <input id="symbolInput" autocomplete="off" class="input-field" data-i18n-placeholder="aa_input_placeholder" placeholder="輸入代號，支援多個以逗號分隔，例如 NVDA,AAPL,BTC">
-      <select id="assetType" class="input-field">
-        <option value="auto" data-i18n="aa_asset_auto">自動辨識（股票/ETF/加密）</option>
-        <option value="stock" data-i18n="aa_asset_stock">股票</option>
-        <option value="etf" data-i18n="aa_asset_etf">ETF</option>
-        <option value="crypto" data-i18n="aa_asset_crypto">加密貨幣</option>
+      <!-- 手動揀「股票/ETF/加密」類別嘅select已移除 -- 一律自動辨識，
+           唔再展示呢啲字眼。保留返呢個隱藏嘅select、value定死做"auto"，
+           係為咗唔使改動下面runAnalysis()讀取assetType嗰段邏輯，亦保留
+           埋分享連結(?assetType=xxx)嗰段round-trip代碼繼續得。 -->
+      <select id="assetType" class="input-field" style="display:none">
+        <option value="auto" selected>auto</option>
       </select>
       <button class="primary-btn" onclick="runAnalysis()" data-i18n="aa_run_btn">🔍 執行分析</button>
     </div>
