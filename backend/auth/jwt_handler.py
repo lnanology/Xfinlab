@@ -3,7 +3,18 @@ import os
 import secrets
 import logging
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
+# Migrated from python-jose to PyJWT (2026-07-18): python-jose bundles
+# the `ecdsa` package as a transitive dependency, which has a known,
+# unfixed timing side-channel (PYSEC-2026-1325 / the "Minerva" attack)
+# in its ECDSA signing path. This app only ever signs/verifies with
+# HS256 (HMAC, see ALGORITHM below) -- it never calls into ecdsa's
+# vulnerable code at all -- so this wasn't actually exploitable here,
+# but PyJWT has no ecdsa dependency for HS256 use, so migrating removes
+# the flagged CVE from the dependency tree entirely rather than just
+# noting "we don't hit that code path." API is a drop-in match
+# (jwt.encode/jwt.decode with the same argument shapes), only the
+# exception type changed (jwt.PyJWTError instead of jose's JWTError).
+import jwt
 
 logger = logging.getLogger(__name__)
 
@@ -42,5 +53,5 @@ def verify_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:
+    except jwt.PyJWTError:
         return None

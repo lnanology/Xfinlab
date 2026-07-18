@@ -8,7 +8,7 @@ python-dotenv
 groq
 requests
 beautifulsoup4
-python-jose
+PyJWT
 passlib
 bcrypt
 python-multipart
