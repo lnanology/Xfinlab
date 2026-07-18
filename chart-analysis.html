@@ -44,6 +44,7 @@
 <script src="js/points-badge.js"></script>
 <script src="js/free-signals-badge.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script src="js/tradingview-widget.js"></script>
 </head>
 <body>
 
@@ -115,6 +116,11 @@
 
   <div class="panel" id="chartPanel" style="display:none">
     <div id="klineChart" style="height:320px"></div>
+  </div>
+
+  <div class="panel" id="tvChartPanel" style="display:none">
+    <h4 style="margin-top:0" data-i18n="ca_tv_title">TradingView 圖表</h4>
+    <div id="tvChartContainer" style="height:500px"></div>
   </div>
 
   <div class="analysis-section single-col" id="analysisSection">
@@ -352,6 +358,7 @@ function switchMode(mode) {
   if (analysisSection) analysisSection.classList.toggle('single-col', isSearch);
   if (!isSearch) {
     document.getElementById('chartPanel').style.display = 'none';
+    document.getElementById('tvChartPanel').style.display = 'none';
     document.getElementById('patternBlock').style.display = 'block';
     document.getElementById('aiCommentaryBlock').style.display = 'none';
     document.getElementById('marketStructureBlock').style.display = 'none';
@@ -438,6 +445,17 @@ async function runTickerSearch(symbolOverride){
     if(res.ohlc && res.ohlc.length){
       klineSeries.setData(res.ohlc.map(b => ({time: b.time, open: b.open, high: b.high, low: b.low, close: b.close})));
       klineChart.timeScale().fitContent();
+    }
+
+    // TradingView chart -- shown alongside the real-data candlestick chart
+    // above (which drives the actual Support/Resistance/RSI/MACD numbers).
+    // Purely a familiar professional-grade visual reference; not all
+    // tickers map cleanly to TradingView's EXCHANGE:SYMBOL format (see
+    // js/tradingview-widget.js), in which case it shows a plain notice
+    // instead of a wrong chart.
+    if (typeof window.renderTradingViewWidget === 'function') {
+      document.getElementById('tvChartPanel').style.display = 'block';
+      window.renderTradingViewWidget('tvChartContainer', symbol);
     }
 
     document.getElementById('dataSourceTag').textContent = t('ca_data_source_search','（支撐/阻力/RSI/MACD 來自真實歷史數據）');

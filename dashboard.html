@@ -694,8 +694,11 @@
 
   <!-- Watchlist -->
   <div class="panel" style="margin-bottom:24px">
-    <div class="panel-title" data-i18n="dash_watchlist_title">我的自選股</div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div class="panel-title" data-i18n="dash_watchlist_title">我的自選股</div>
+      <button onclick="downloadWatchlistCsv()" id="watchlistDownloadBtn" data-i18n="dash_watchlist_download_btn" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">⬇ 下載 CSV</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;margin-top:10px">
       <input id="watchlistTicker" placeholder="輸入代號加入" data-i18n-placeholder="dash_watchlist_placeholder" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:0.82rem;text-transform:uppercase">
       <button onclick="addToWatchlist()" data-i18n="dash_watchlist_add_btn" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">加入</button>
     </div>
@@ -1148,6 +1151,30 @@ if (typeof autoAttachTickerAutocomplete === 'function') {
   autoAttachTickerAutocomplete('#watchlistTicker');
 }
 
+// 記低最新一次load到嘅watchlist，等downloadWatchlistCsv()唔使再fetch多次。
+let _lastWatchlistItems = [];
+
+function downloadWatchlistCsv() {
+  if (!_lastWatchlistItems.length) {
+    alert(t('dash_watchlist_download_empty', '未有自選股可以下載'));
+    return;
+  }
+  const header = 'Ticker,Price,Trend,Added At\n';
+  const rows = _lastWatchlistItems.map(item => {
+    const price = item.price != null ? item.price : '';
+    const addedAt = item.added_at || '';
+    return `${item.ticker},${price},${item.trend || ''},${addedAt}`;
+  }).join('\n');
+  const csv = header + rows;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `xfinlab-watchlist-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function loadWatchlist() {
   const token = localStorage.getItem('xfinlab_token');
   if (!token) {
@@ -1158,6 +1185,7 @@ async function loadWatchlist() {
     const res = await fetch(`${API}/watchlist?token=${token}`);
     const data = await res.json();
     const items = data.watchlist || [];
+    _lastWatchlistItems = items;
     if (items.length === 0) {
       document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_empty','未有自選股，輸入代號加入')}</div>`;
       return;

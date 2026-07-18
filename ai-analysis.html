@@ -39,6 +39,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
 <script src="js/free-signals-badge.js"></script>
+<script src="js/tradingview-widget.js"></script>
 <meta name="description" content="Instant AI stock analysis. Market scores, risk & investment ratings.">
 <meta property="og:title" content="AI Stock Analysis — XFINLAB">
 <meta property="og:description" content="Instant AI stock analysis. Market scores, risk & investment ratings.">
@@ -84,6 +85,11 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   </div>
 
   <div id="resultContent">
+    <div class="panel" id="tvChartPanel" style="display:none">
+      <h4 style="margin-top:0" data-i18n="ca_tv_title">TradingView 圖表</h4>
+      <div id="tvChartContainer" style="height:500px"></div>
+    </div>
+
     <div class="grid">
       <div class="score-card">
         <div class="score-label" data-i18n="aa_fund_label">基本面評分</div>
@@ -183,6 +189,14 @@ async function runAnalysis(){
     const data = result.data;
     const scores = data.scores;
     const probs = data.probabilities;
+    // TradingView chart -- shown for the first symbol searched, purely as
+    // a familiar professional-grade visual reference alongside the scores
+    // below (see js/tradingview-widget.js for the symbol-mapping limits).
+    if (typeof window.renderTradingViewWidget === 'function' && symbols.length) {
+      document.getElementById('tvChartPanel').style.display = 'block';
+      window.renderTradingViewWidget('tvChartContainer', symbols[0]);
+    }
+
     document.getElementById('fundScore').textContent = scores.fund + '/100';
     document.getElementById('techScore').textContent = scores.tech + '/100';
     document.getElementById('newsScore').textContent = scores.news + '/100';

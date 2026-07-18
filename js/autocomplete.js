@@ -585,6 +585,9 @@ function _ensureAcStyles() {
     .xfl-asset-row .xfl-meta { font-size:0.68rem; color:var(--text-muted,#666666); white-space:nowrap; flex-shrink:0; }
     .xfl-asset-row .xfl-meta.xfl-country { min-width:44px; text-align:right; }
     .xfl-suggestion-row { padding:12px 14px; cursor:pointer; color:var(--text-muted,#666666); font-size:0.82rem; border-bottom:1px solid var(--border-color,#000000); }
+    .xfl-star-btn { flex-shrink:0; background:none; border:none; cursor:pointer; font-size:1rem; padding:2px 4px; line-height:1; color:var(--text-muted,#666666); }
+    .xfl-star-btn:hover { color:#f59e0b; }
+    .xfl-star-btn.xfl-star-active { color:#f59e0b; }
     @media (max-width: 480px) {
       .xfl-asset-row .xfl-meta { display:none; }
       .xfl-asset-row .xfl-name { font-size:0.75rem; }
@@ -593,9 +596,43 @@ function _ensureAcStyles() {
   document.head.appendChild(style);
 }
 
+// ---- Star / Add-to-Watchlist ----
+// Shared across every page this file is loaded on (search dropdowns
+// everywhere) so users don't have to first run a full analysis just to
+// save a ticker -- reuses the existing POST /watchlist/add/{ticker} API
+// (see api/watchlist.py) that dashboard.html's watchlist panel already
+// calls the same way.
+const WATCHLIST_API = 'https://api.xfinlab.com/api';
+
+function xflAddToWatchlist(ticker, starEl) {
+  const token = (function () { try { return localStorage.getItem('xfinlab_token'); } catch (e) { return null; } })();
+  if (!token) {
+    if (confirm('請先登入先可以加入自選股，而家去登入頁？')) {
+      window.location.href = 'login.html';
+    }
+    return;
+  }
+  if (starEl) { starEl.textContent = '⏳'; starEl.disabled = true; }
+  fetch(`${WATCHLIST_API}/watchlist/add/${encodeURIComponent(ticker)}?token=${encodeURIComponent(token)}`, { method: 'POST' })
+    .then(res => res.json())
+    .then(() => {
+      if (starEl) {
+        starEl.textContent = '★';
+        starEl.classList.add('xfl-star-active');
+        starEl.title = '已加入自選股';
+        starEl.disabled = true;
+      }
+    })
+    .catch(() => {
+      if (starEl) { starEl.textContent = '☆'; starEl.disabled = false; }
+    });
+}
+window.xflAddToWatchlist = xflAddToWatchlist;
+
 function _renderAssetRow(a, extraAttrs) {
   const meta = getAssetMeta(a);
   const logo = getAssetLogo(a);
+  const watchTicker = a.api || a.symbol;
   // Note: this row intentionally does NOT show a "Stock/ETF/Crypto"
   // type badge anymore -- removed per feedback that the type label
   // (TICKER_TYPE_LABEL) was noisy/unnecessary in the dropdown. The
@@ -608,6 +645,7 @@ function _renderAssetRow(a, extraAttrs) {
     <span class="xfl-name">${a.name}</span>
     <span class="xfl-meta">${meta.exchange}</span>
     <span class="xfl-meta xfl-country">${meta.country}</span>
+    <button type="button" class="xfl-star-btn" data-watch-ticker="${watchTicker}" title="加入自選股">☆</button>
   </div>`;
 }
 
@@ -775,6 +813,13 @@ function attachTickerAutocomplete(input, options) {
     rows.forEach((row, i) => {
       row.addEventListener('mouseenter', () => { activeIndex = i; highlight(); });
       row.addEventListener('click', () => selectAsset(currentResults[i]));
+      const starBtn = row.querySelector('.xfl-star-btn');
+      if (starBtn) {
+        starBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          xflAddToWatchlist(starBtn.dataset.watchTicker, starBtn);
+        });
+      }
     });
     const sugRow = dropdown.querySelector('.xfl-suggestion-row');
     if (sugRow && suggestionForEmptyMatch) {
