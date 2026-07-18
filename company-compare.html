@@ -213,6 +213,9 @@ function updateCompanyCount(){
 
 document.querySelectorAll('.company-input').forEach(input=>{
   input.addEventListener('input',updateCompanyCount);
+  // 2026-07-18 fix: no Enter-key handling existed on any of these 5
+  // fields -- pressing Enter did nothing, had to click "開始對標分析".
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter') doCompare(); });
 });
 window.addEventListener('DOMContentLoaded', updateCompanyCount);
 window.addEventListener('DOMContentLoaded', () => {

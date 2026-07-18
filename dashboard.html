@@ -47,7 +47,15 @@
     justify-content: space-between;
     padding: 16px 32px;
     border-bottom: 1px solid var(--border);
-    background: rgba(8,12,20,0.95);
+    /* 2026-07-18 fix: this was still the old dark-theme navy
+       (rgba(8,12,20,0.95)) left over from before the site-wide light-
+       theme-default flip (task #161-165) never touched this page's nav.
+       Everything else in :root moved to light (--text:#000, --surface:
+       #fff), so the "FIN" span (color:var(--text) = black) rendered
+       black-on-near-black -- invisible. Switching nav bg to var(--surface)
+       matches the rest of the page and restores contrast for both the
+       black "FIN" text and the blue "X"/"LAB" accent text. */
+    background: rgba(255,255,255,0.95);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -904,6 +912,10 @@ async function runFullAnalysis() {
 }
 
 async function loadScreener() {
+  // 2026-07-18 fix: this panel sits far below the fold (below Watchlist +
+  // Decision Journal), so clicking the button fetched real data but the
+  // user's viewport never moved -- looked like the button did nothing.
+  document.getElementById('screenerContent').closest('.panel').scrollIntoView({behavior:'smooth', block:'center'});
   document.getElementById('screenerContent').innerHTML = loading();
   try {
     const token = localStorage.getItem('xfinlab_token');
@@ -927,6 +939,7 @@ async function loadScreener() {
 }
 
 async function loadPortfolio() {
+  document.getElementById('portfolioContent').closest('.panel').scrollIntoView({behavior:'smooth', block:'center'});
   document.getElementById('portfolioContent').innerHTML = loading();
   try {
     const token = localStorage.getItem('xfinlab_token');
@@ -948,6 +961,7 @@ async function loadPortfolio() {
 }
 
 async function loadAnomaly() {
+  document.getElementById('anomalyContent').closest('.panel').scrollIntoView({behavior:'smooth', block:'center'});
   document.getElementById('anomalyContent').innerHTML = loading();
   try {
     const token = localStorage.getItem('xfinlab_token');

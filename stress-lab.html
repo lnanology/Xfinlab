@@ -195,6 +195,12 @@ function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translation
 // 喺2008/2020/2022嘅估算最大回撤 + 假設年化回報率），淨係從未被
 // runStressTest() 用過。而家改做直接用返呢份現成數據，喺前端
 // client-side計算，唔使call backend，即刻show結果、亦都唔會再壞。
+// 2026-07-18 fix: no Enter-key handling existed on the amount field --
+// had to click "開始模擬" every time.
+document.getElementById('amountInput').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') runStressTest();
+});
+
 function runStressTest(){
   const stratKey=document.getElementById('strategySelect').value;
   const amount=parseFloat(document.getElementById('amountInput').value)||100000;

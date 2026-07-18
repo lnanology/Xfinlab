@@ -673,6 +673,13 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   checkDebateAvailability();
 });
+
+// 2026-07-18 fix: input box had no Enter-key handling at all -- had to
+// click the 🔍 button every time. Matches the same pattern already used
+// on chart-analysis.html / anomaly.html / probability-scan.html.
+document.getElementById('symbolInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') runAnalysis();
+});
 </script>
 
 <script>
