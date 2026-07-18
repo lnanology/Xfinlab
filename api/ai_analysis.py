@@ -6,6 +6,7 @@ from engines.rule_engine import RuleEngine
 from engines.score_engine import ScoreEngine
 from engines.risk_engine import RiskEngine
 from engines.news_engine import NewsEngine
+from backend.alpha.regime_detector import RegimeDetector
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -122,12 +123,113 @@ async def ai_analysis(body: dict):
     # simply None and the frontend renders nothing extra (never a
     # fabricated level).
     decision_levels = None
+    confluence = None
+    market_structure = None
+    tech_trend = None
+    tech_support = None
+    tech_resistance = None
     try:
         tech = get_technical_analysis(symbol)
         if tech and "error" not in tech:
             decision_levels = tech.get("decision_levels")
+            confluence = tech.get("confluence")
+            market_structure = tech.get("market_structure")
+            tech_trend = tech.get("trend")
+            tech_support = tech.get("support")
+            tech_resistance = tech.get("resistance")
     except Exception:
-        decision_levels = None
+        pass
+
+    # ---- Layered-UX pass (2026-07-18): Hero Score / Dashboard / Accordion
+    # reasons -- all derived from data this endpoint already computes above
+    # (rule-engine scores, real confluence signals, real regime inputs).
+    # Nothing new is fabricated; anything without a real data source
+    # (valuation -- no fundamentals/multiples source exists in this
+    # codebase) is honestly reported as unavailable rather than guessed.
+    from datetime import datetime, timezone
+
+    if bull >= 55 and bull >= bear:
+        hero_rating = "BUY"
+    elif bear >= 55 and bear > bull:
+        hero_rating = "SELL"
+    else:
+        hero_rating = "HOLD"
+    # Stars purely reflect distance-from-neutral of whichever side leads --
+    # same real bull/bear numbers as the probability bars above, just
+    # re-expressed as a quick-glance 1-5 scale.
+    lead_pct = max(bull, bear)
+    hero_stars = 1 if lead_pct < 40 else 2 if lead_pct < 55 else 3 if lead_pct < 65 else 4 if lead_pct < 80 else 5
+
+    regime_result = None
+    try:
+        structure_event = None
+        if market_structure and market_structure.get("events"):
+            structure_event = market_structure["events"][0].get("type")
+        regime_result = RegimeDetector.classify({
+            "volatility": volatility,
+            "trend_direction": confluence.get("direction") if confluence else None,
+            "trend_confidence_pct": confluence.get("confidence_pct") if confluence else None,
+            "volume_ratio": volume_ratio,
+            "structure_event": structure_event,
+        })
+    except Exception:
+        regime_result = None
+
+    dashboard = {
+        "trend": tech_trend or ("上升" if trend == "bullish" else "下降" if trend == "bearish" else "中性"),
+        "risk": risk_result["risk_level"],
+        "momentum": (confluence.get("direction") if confluence else None) or "數據不足",
+        "news": news_result["sentiment"],
+        "sentiment": "偏多" if bull > bear else "偏空" if bear > bull else "中性",
+        # Honest gap: no fundamentals/valuation-multiples data source exists
+        # in this codebase (see fund_score above -- it's actually a
+        # technical/news composite, not a real P/E-style valuation read).
+        # Reporting "N/A" here rather than reusing fund_score under a
+        # misleading label.
+        "valuation": "N/A（暫無估值數據源）",
+        "liquidity": "偏低" if volume_ratio < 0.7 else "良好",
+    }
+
+    reasons = {
+        "bullish": (confluence.get("bullish_signals") if confluence else []) or [],
+        "bearish": (confluence.get("bearish_signals") if confluence else []) or [],
+    }
+
+    # ---- Tier 2: Scenario Lab (Bull/Base/Bear) ----
+    # Targets reuse decision_levels' real ATR/support-resistance-derived
+    # TP1/TP3/stop -- never invented price levels. Probabilities are
+    # deterministically derived from confluence's real confidence_pct
+    # (signal-agreement strength), NOT a statistical forecast -- labelled
+    # honestly via `methodology` so nobody mistakes this for a calibrated
+    # probability model the way api/pipeline_api.py already cautions for
+    # its own bullish_probability field.
+    scenario = None
+    if decision_levels and confluence:
+        conf_pct = confluence.get("confidence_pct", 0) or 0
+        bias = decision_levels["bias"]
+        tp1, _, tp3 = decision_levels["take_profits"]
+        stop = decision_levels["stop_loss"]
+        base_prob = round(min(70, max(30, 30 + conf_pct * 0.4)))
+        remaining = 100 - base_prob
+        trend_prob = round(remaining * (0.5 + conf_pct / 200))
+        trend_prob = min(remaining, max(0, trend_prob))
+        counter_prob = remaining - trend_prob
+        if bias == "long":
+            scenario = {
+                "bull": {"target": tp3, "probability_pct": trend_prob},
+                "base": {"target": tp1, "probability_pct": base_prob},
+                "bear": {"target": stop, "probability_pct": counter_prob},
+            }
+        else:
+            scenario = {
+                "bull": {"target": stop, "probability_pct": counter_prob},
+                "base": {"target": tp1, "probability_pct": base_prob},
+                "bear": {"target": tp3, "probability_pct": trend_prob},
+            }
+        scenario["methodology"] = (
+            "機率粗略推算自現時訊號共識程度（Confluence confidence），"
+            "並非統計預測模型，僅供參考，並非投資建議。"
+        )
 
     return {
         "data": {
@@ -146,6 +248,24 @@ async def ai_analysis(body: dict):
             "conclusion": conclusion,
             "symbol": symbol,
             "price": market.get("price", 0),
-            "decision_levels": decision_levels
+            "decision_levels": decision_levels,
+            "hero": {
+                "rating": hero_rating,
+                "stars": hero_stars,
+                "confidence_pct": (confluence.get("confidence_pct") if confluence else None) or lead_pct,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+            "dashboard": dashboard,
+            "regime": regime_result,
+            "reasons": reasons,
+            "support_resistance": {
+                "support": tech_support,
+                "resistance": tech_resistance,
+            },
+            "scenario": scenario,
+            # News Timeline (Tier 2): the SAME real headlines already
+            # fetched above for news_result -- just passed through with
+            # their url/published_at instead of only the aggregate score.
+            "news_headlines": news[:8],
         }
     }

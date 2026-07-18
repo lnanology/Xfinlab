@@ -47,6 +47,9 @@ from api.ticker_search import router as ticker_search_router
 from api.smart_route import router as smart_route_router
 from api.backtest import router as backtest_router
 from api.rss_news import router as rss_news_router
+from api.decision_journal import router as decision_journal_router
+from api.agent_debate import router as agent_debate_router
+from api.historical_analog import router as historical_analog_router
 
 
 app = FastAPI(
@@ -160,6 +163,9 @@ app.include_router(ticker_search_router, prefix="/api", tags=["Ticker Search"])
 app.include_router(smart_route_router, prefix="/api", tags=["Smart Route"])
 app.include_router(backtest_router, prefix="/api", tags=["Backtest"])
 app.include_router(rss_news_router, prefix="/api", tags=["RSS News"])
+app.include_router(decision_journal_router, prefix="/api", tags=["Decision Journal"])
+app.include_router(agent_debate_router, prefix="/api", tags=["Agent Debate"])
+app.include_router(historical_analog_router, prefix="/api", tags=["Historical Analog"])
 
 
 # Real scheduled job for the daily Free Signals push (replaces relying

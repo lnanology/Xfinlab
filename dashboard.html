@@ -711,6 +711,12 @@
     <div id="watchlistContent"><div class="empty">登入後查看你的自選股</div></div>
   </div>
 
+  <!-- Decision Journal (Tier 2 layered-UX addition, 2026-07-18) -->
+  <div class="panel" style="margin-bottom:24px">
+    <div class="panel-title">📓 Decision Journal</div>
+    <div id="journalContent"><div class="empty">登入後查看你嘅Decision Journal</div></div>
+  </div>
+
   <!-- BOTTOM PANELS -->
   <div class="bottom-grid">
 
@@ -1236,6 +1242,54 @@ async function removeFromWatchlist(ticker) {
 }
 
 loadWatchlist();
+
+// ---- Decision Journal (Tier 2 layered-UX addition, 2026-07-18) ----
+// Same fetch/render pattern as loadWatchlist() above -- lists what a user
+// saved from ai-analysis.html's "📓 加入Decision Journal" quick action.
+async function loadDecisionJournal() {
+  const token = localStorage.getItem('xfinlab_token');
+  const journalEl = document.getElementById('journalContent');
+  if (!token) {
+    journalEl.innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">登入</a>後查看你嘅Decision Journal</div>`;
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/decision-journal?token=${token}`);
+    const data = await res.json();
+    const entries = data.entries || [];
+    if (entries.length === 0) {
+      journalEl.innerHTML = `<div class="empty">未有紀錄 -- 喺AI市場分析頁撳「加入Decision Journal」即可儲存。</div>`;
+      return;
+    }
+    journalEl.innerHTML = entries.map(e => {
+      const color = e.rating === 'BUY' ? 'var(--green)' : e.rating === 'SELL' ? 'var(--red)' : 'var(--muted)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:monospace;font-weight:600">${e.symbol}</span>
+          <span style="color:${color};font-size:0.78rem">${e.rating || '-'}</span>
+          <span style="font-size:0.72rem;color:var(--muted)">${e.created_at || ''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-family:monospace;font-size:0.8rem;color:var(--muted)">Entry ${e.entry_price != null ? e.entry_price : '-'} / Stop ${e.stop_loss != null ? e.stop_loss : '-'}</span>
+          <button onclick="removeJournalEntry(${e.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    journalEl.innerHTML = `<div class="empty">載入失敗</div>`;
+  }
+}
+
+async function removeJournalEntry(entryId) {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) return;
+  try {
+    await fetch(`${API}/decision-journal/${entryId}?token=${token}`, { method: 'DELETE' });
+    loadDecisionJournal();
+  } catch(e) {}
+}
+
+loadDecisionJournal();
 
 </script>
 

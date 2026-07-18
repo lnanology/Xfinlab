@@ -25,9 +25,15 @@ def get_last_usage_tokens() -> int:
     return _LAST_USAGE_TOKENS["value"]
 
 
-def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
+def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -> str:
     """
-    Universal AI router - switch provider via AI_PROVIDER env var
+    Universal AI router - switch provider via AI_PROVIDER env var, or pass
+    `provider` explicitly to override it for one call (added 2026-07-18
+    for features like services/agent_debate_service.py that deliberately
+    always want DeepSeek regardless of the site's global default -- a
+    multi-call feature like a debate should stay on the specifically
+    confirmed-cheap provider, not silently ride whatever AI_PROVIDER
+    happens to be set to).
 
     Supported:
         groq     → Groq (free, fast)
@@ -37,11 +43,13 @@ def get_ai_response(prompt: str, max_tokens: int = 1000) -> str:
     Args:
         prompt: The prompt to send
         max_tokens: Max response tokens
+        provider: optional override ("groq"/"deepseek"/"claude"); defaults
+            to the AI_PROVIDER env var when omitted
 
     Returns:
         str: AI response text
     """
-    provider = AI_PROVIDER.lower()
+    provider = (provider or AI_PROVIDER).lower()
     _LAST_USAGE_TOKENS["value"] = 0
 
     if provider == "groq":
@@ -169,20 +177,36 @@ def _groq(prompt: str, max_tokens: int) -> str:
     return response.choices[0].message.content.strip()
 
 
-def _deepseek(prompt: str, max_tokens: int) -> str:
+def _deepseek(prompt: str, max_tokens: int, _retry: int = 1) -> str:
+    """
+    DeepSeek publishes no hard rate limits or SLA -- "best-effort", may
+    return 429/503 under peak load (see their own API docs). Retries once
+    after a short backoff rather than failing the whole request outright,
+    same "good citizen + graceful degradation" convention as
+    services/outbound_http.py uses for scraped sources.
+    """
+    import time
     import requests
     headers = {
         "Authorization": f"Bearer {os.getenv('DEEPSEEK_API_KEY')}",
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "deepseek-chat",
+        # 2026-07-18: "deepseek-chat" is deprecated by DeepSeek on
+        # 2026-07-24 -- "deepseek-v4-flash" is its direct replacement
+        # (non-thinking mode of the same model family, same
+        # chat-completions shape). Do not revert this without checking
+        # DeepSeek's current model-deprecation page first.
+        "model": "deepseek-v4-flash",
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
         "temperature": 0.3
     }
     res = requests.post("https://api.deepseek.com/v1/chat/completions",
                         json=payload, headers=headers, timeout=30)
+    if res.status_code in (429, 503) and _retry > 0:
+        time.sleep(3)
+        return _deepseek(prompt, max_tokens, _retry=_retry - 1)
     data = res.json()
     usage = data.get("usage", {}).get("total_tokens")
     if usage:

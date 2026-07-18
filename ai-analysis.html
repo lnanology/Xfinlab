@@ -33,6 +33,41 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 .footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
 
 @media(max-width:768px){.prob-section{flex-direction:column}}
+
+/* ---- Layered-UX pass (2026-07-18) ---- */
+.hero-card{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:1.4rem 1.6rem;margin-bottom:1rem}
+.hero-left{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.hero-symbol{font-size:1.6rem;font-weight:700}
+.hero-stars{color:var(--accent-orange);font-size:1.2rem;letter-spacing:2px}
+.hero-rating{font-weight:700;font-size:1.1rem;padding:0.3rem 0.9rem;border-radius:999px}
+.hero-rating.buy{background:rgba(16,185,129,0.15);color:var(--accent-green)}
+.hero-rating.sell{background:rgba(239,68,68,0.15);color:var(--accent-red)}
+.hero-rating.hold{background:rgba(148,163,184,0.15);color:var(--text-muted)}
+.hero-right{text-align:right;font-size:0.85rem;color:var(--text-secondary)}
+.hero-confidence{font-size:1.3rem;font-weight:700;color:var(--accent-blue)}
+
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.7rem;margin-bottom:1rem}
+.dash-cell{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:0.7rem 0.8rem;text-align:center}
+.dash-cell-label{font-size:0.72rem;color:var(--text-muted);margin-bottom:0.3rem}
+.dash-cell-value{font-size:0.95rem;font-weight:600}
+
+.ai-summary-box{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;line-height:1.6}
+
+.xfl-accordion{border:1px solid var(--border-color);border-radius:10px;margin-bottom:0.6rem;overflow:hidden}
+.xfl-accordion summary{cursor:pointer;padding:0.8rem 1rem;font-weight:600;list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg-card)}
+.xfl-accordion summary::-webkit-details-marker{display:none}
+.xfl-accordion summary::after{content:'▶';font-size:0.75rem;color:var(--text-muted);transition:transform 0.15s}
+.xfl-accordion[open] summary::after{transform:rotate(90deg)}
+.xfl-accordion-body{padding:0.9rem 1rem;border-top:1px solid var(--border-color)}
+.xfl-reason-list{list-style:none;padding:0;margin:0}
+.xfl-reason-list li{padding:0.4rem 0;border-bottom:1px solid var(--border-color)}
+.xfl-reason-list li:last-child{border-bottom:none}
+.xfl-reason-list.bull li{color:var(--accent-green)}
+.xfl-reason-list.bear li{color:var(--accent-red)}
+
+.quick-actions{display:flex;gap:0.6rem;flex-wrap:wrap;margin:1rem 0}
+.quick-actions button, .quick-actions a{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem}
+.quick-actions button:hover, .quick-actions a:hover{border-color:var(--accent-blue)}
 </style>
 <script src="js/nav.js"></script>
 <script src="js/autocomplete.js"></script>
@@ -88,41 +123,81 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   </div>
 
   <div id="resultContent">
+
+    <!-- Layer 1: Hero Score (3-second glance) -->
+    <div class="hero-card" id="heroCard" style="display:none">
+      <div class="hero-left">
+        <span class="hero-symbol" id="heroSymbol">-</span>
+        <span class="hero-stars" id="heroStars">-</span>
+        <span class="hero-rating hold" id="heroRating">-</span>
+      </div>
+      <div class="hero-right">
+        <div>AI Confidence <span class="hero-confidence" id="heroConfidence">-</span></div>
+        <div id="heroUpdated">-</div>
+      </div>
+    </div>
+
+    <!-- Layer 2: Dashboard grid (30-second read) -->
+    <div class="dash-grid" id="dashGrid" style="display:none">
+      <div class="dash-cell"><div class="dash-cell-label">Trend</div><div class="dash-cell-value" id="dashTrend">-</div></div>
+      <div class="dash-cell"><div class="dash-cell-label">Risk</div><div class="dash-cell-value" id="dashRisk">-</div></div>
+      <div class="dash-cell"><div class="dash-cell-label">Momentum</div><div class="dash-cell-value" id="dashMomentum">-</div></div>
+      <div class="dash-cell"><div class="dash-cell-label">News</div><div class="dash-cell-value" id="dashNews">-</div></div>
+      <div class="dash-cell"><div class="dash-cell-label">Sentiment</div><div class="dash-cell-value" id="dashSentiment">-</div></div>
+      <div class="dash-cell"><div class="dash-cell-label">Valuation</div><div class="dash-cell-value" id="dashValuation">-</div></div>
+      <div class="dash-cell"><div class="dash-cell-label">Liquidity</div><div class="dash-cell-value" id="dashLiquidity">-</div></div>
+      <div class="dash-cell"><div class="dash-cell-label">Regime</div><div class="dash-cell-value" id="dashRegime">-</div></div>
+    </div>
+
+    <!-- Layer 3: AI Summary (1-minute read) -->
+    <div class="ai-summary-box" id="aiSummaryBox" style="display:none"></div>
+
     <div class="panel" id="tvChartPanel" style="display:none">
       <h4 style="margin-top:0" data-i18n="ca_tv_title">TradingView 圖表</h4>
       <div id="tvChartContainer" style="height:500px"></div>
     </div>
 
-    <div class="grid">
-      <div class="score-card">
-        <div class="score-label" data-i18n="aa_fund_label">基本面評分</div>
-        <div class="score-value" id="fundScore">-</div>
-        <div class="score-sub" data-i18n="aa_fund_sub">衡量盈利能力與估值</div>
+    <!-- Layer 4: interactive accordion modules (5-minute deep dive) -->
+    <details class="xfl-accordion">
+      <summary id="reasonsSummary">▶ AI點解咁評級？ / AI推理</summary>
+      <div class="xfl-accordion-body" id="reasonsBody">
+        <ul class="xfl-reason-list bull" id="reasonsBull"></ul>
+        <ul class="xfl-reason-list bear" id="reasonsBear"></ul>
+        <div id="reasonsEmpty" style="color:var(--text-muted);font-size:0.85rem">-</div>
       </div>
-      <div class="score-card">
-        <div class="score-label" data-i18n="aa_tech_label">技術面評分</div>
-        <div class="score-value" id="techScore">-</div>
-        <div class="score-sub" data-i18n="aa_tech_sub">趨勢、動能與波動</div>
-      </div>
-      <div class="score-card">
-        <div class="score-label" data-i18n="aa_news_label">新聞面評分</div>
-        <div class="score-value" id="newsScore">-</div>
-        <div class="score-sub" data-i18n="aa_news_sub">媒體情緒與話題熱度</div>
-      </div>
-      <div class="score-card">
-        <div class="score-label" data-i18n="aa_risk_label">RiskDNA™ 評分</div>
-        <div class="score-value" id="riskScore">-</div>
-        <div class="score-sub" data-i18n="aa_risk_sub">短中期風險評估</div>
-      </div>
-    </div>
+    </details>
 
-    <div style="margin:1.2rem 0;">
-      <div class="reusable-score-card" data-title="示例：綜合評分" data-fund="78" data-tech="65" data-news="82" data-risk="28" data-overall="73"></div>
-    </div>
+    <details class="xfl-accordion">
+      <summary>▶ 詳細評分</summary>
+      <div class="xfl-accordion-body">
+        <div class="grid">
+          <div class="score-card">
+            <div class="score-label" data-i18n="aa_fund_label">基本面評分</div>
+            <div class="score-value" id="fundScore">-</div>
+            <div class="score-sub" data-i18n="aa_fund_sub">衡量盈利能力與估值</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label" data-i18n="aa_tech_label">技術面評分</div>
+            <div class="score-value" id="techScore">-</div>
+            <div class="score-sub" data-i18n="aa_tech_sub">趨勢、動能與波動</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label" data-i18n="aa_news_label">新聞面評分</div>
+            <div class="score-value" id="newsScore">-</div>
+            <div class="score-sub" data-i18n="aa_news_sub">媒體情緒與話題熱度</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label" data-i18n="aa_risk_label">RiskDNA™ 評分</div>
+            <div class="score-value" id="riskScore">-</div>
+            <div class="score-sub" data-i18n="aa_risk_sub">短中期風險評估</div>
+          </div>
+        </div>
+      </div>
+    </details>
 
-    <div class="panel">
-      <div class="result-title" data-i18n="aa_prob_title">機率分析（未來 30 日）</div>
-      <div style="margin-top:0.8rem">
+    <details class="xfl-accordion">
+      <summary>▶ 機率分析（未來 30 日）</summary>
+      <div class="xfl-accordion-body">
         <div class="prob-section">
           <div class="prob-label" data-i18n="aa_bull_label">偏多機率</div>
           <div class="prob-bar"><div id="bullFill" class="prob-fill bull" style="width:0%"></div></div>
@@ -139,30 +214,82 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
           <div style="width:60px;text-align:right;color:var(--text2)" id="bearPct">-</div>
         </div>
       </div>
-    </div>
+    </details>
 
-    <div class="panel">
-      <div class="result-title" data-i18n="aa_risk_factors_title">風險因素</div>
-      <ul class="risk-list" id="riskList">
-        <li class="risk-item" data-i18n="aa_risk_industry">產業風險：-</li>
-        <li class="risk-item" data-i18n="aa_risk_financial">財務風險：-</li>
-        <li class="risk-item" data-i18n="aa_risk_policy">政策風險：-</li>
-      </ul>
-    </div>
+    <details class="xfl-accordion">
+      <summary>▶ 支持阻力</summary>
+      <div class="xfl-accordion-body" id="supportResistanceBody">-</div>
+    </details>
 
-    <div class="panel">
-      <div class="result-title" data-i18n="aa_conclusion_title">AI 結論</div>
-      <div class="ai-conclusion" id="aiConclusion">
-        <h4 data-i18n="aa_adv_header">目前優勢</h4>
-        <p>-</p>
-        <h4 data-i18n="aa_risk_header">目前風險</h4>
-        <p>-</p>
-        <h4 data-i18n="aa_track_header">需要持續追蹤的指標</h4>
-        <p>-</p>
+    <details class="xfl-accordion" id="historicalAnalogAccordion" style="display:none">
+      <summary>▶ 歷史類比 Historical Analog</summary>
+      <div class="xfl-accordion-body" id="historicalAnalogBody">-</div>
+    </details>
+
+    <details class="xfl-accordion" id="scenarioAccordion" style="display:none">
+      <summary>▶ 情境分析 Scenario Lab</summary>
+      <div class="xfl-accordion-body">
+        <div class="dash-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="dash-cell"><div class="dash-cell-label">Bull</div><div class="dash-cell-value" id="scenBullTarget">-</div><div class="score-sub" id="scenBullProb">-</div></div>
+          <div class="dash-cell"><div class="dash-cell-label">Base</div><div class="dash-cell-value" id="scenBaseTarget">-</div><div class="score-sub" id="scenBaseProb">-</div></div>
+          <div class="dash-cell"><div class="dash-cell-label">Bear</div><div class="dash-cell-value" id="scenBearTarget">-</div><div class="score-sub" id="scenBearProb">-</div></div>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.6rem" id="scenMethodology"></div>
       </div>
-    </div>
+    </details>
+
+    <details class="xfl-accordion" id="newsTimelineAccordion" style="display:none">
+      <summary>▶ 新聞時間軸 News Timeline</summary>
+      <div class="xfl-accordion-body" id="newsTimelineBody">-</div>
+    </details>
+
+    <details class="xfl-accordion" id="relatedResearchAccordion" style="display:none">
+      <summary>▶ 相關研究 Related Research</summary>
+      <div class="xfl-accordion-body" id="relatedResearchBody">-</div>
+    </details>
+
+    <!-- Tier 3: Agent Society / AI辯論 -- hidden entirely unless the
+         backend confirms DEEPSEEK_API_KEY is configured (see
+         services/agent_debate_service.py). Never shown as a broken
+         button. -->
+    <details class="xfl-accordion" id="debateAccordion" style="display:none">
+      <summary>▶ 🗣️ AI辯論 Agent Debate</summary>
+      <div class="xfl-accordion-body">
+        <button type="button" id="debateRunBtn" class="primary-btn" style="height:38px;padding:0 14px">開始辯論</button>
+        <div id="debateBody" style="margin-top:0.8rem"></div>
+      </div>
+    </details>
+
+    <details class="xfl-accordion">
+      <summary data-i18n="aa_risk_factors_title">▶ 風險因素</summary>
+      <div class="xfl-accordion-body">
+        <ul class="risk-list" id="riskList">
+          <li class="risk-item" data-i18n="aa_risk_industry">產業風險：-</li>
+          <li class="risk-item" data-i18n="aa_risk_financial">財務風險：-</li>
+          <li class="risk-item" data-i18n="aa_risk_policy">政策風險：-</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="xfl-accordion">
+      <summary data-i18n="aa_conclusion_title">▶ AI 結論</summary>
+      <div class="xfl-accordion-body">
+        <div class="ai-conclusion" id="aiConclusion">
+          <h4 data-i18n="aa_adv_header">目前優勢</h4>
+          <p>-</p>
+        </div>
+      </div>
+    </details>
 
     <div id="decisionFooter"></div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions" id="quickActions" style="display:none">
+      <a id="qaCompare" href="#">🆚 比較其他資產</a>
+      <button id="qaWatchlist" type="button">☆ 加入Watchlist</button>
+      <button id="qaJournal" type="button">📓 加入Decision Journal</button>
+      <a href="free-signals.html">🔔 設定Alert</a>
+    </div>
   </div>
 
   <div id="shareBar"></div>
@@ -181,6 +308,26 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 <script src="js/mvp-api.js"></script>
 
 <script>
+// Tier 2: Related Research -- a small, hand-curated map (NOT a dynamic
+// AI-generated relevance graph -- see task #222's scope note), just
+// enough to let a search naturally lead to the next one instead of
+// ending the session.
+window.XFL_RELATED_MAP = {
+  NVDA: ['AMD', 'AVGO', 'TSM', 'SMCI'],
+  AMD: ['NVDA', 'INTC', 'TSM'],
+  TSM: ['NVDA', 'AMD', 'ASML'],
+  AAPL: ['MSFT', 'GOOGL', 'META'],
+  MSFT: ['GOOGL', 'AMZN', 'NVDA'],
+  GOOGL: ['MSFT', 'META', 'AMZN'],
+  AMZN: ['MSFT', 'GOOGL', 'SHOP'],
+  META: ['GOOGL', 'SNAP', 'AAPL'],
+  TSLA: ['RIVN', 'NIO', 'BYDDF'],
+  JPM: ['BAC', 'GS', 'MS'],
+  V: ['MA', 'PYPL', 'AXP'],
+  BTC: ['ETH', 'COIN', 'MSTR'],
+  ETH: ['BTC', 'COIN'],
+};
+
 async function runAnalysis(){
   const input=document.getElementById('symbolInput').value.trim();
   if(!input){alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_alert_no_symbol'])||'請輸入至少一個代號');return}
@@ -204,6 +351,171 @@ async function runAnalysis(){
     document.getElementById('techScore').textContent = scores.tech + '/100';
     document.getElementById('newsScore').textContent = scores.news + '/100';
     document.getElementById('riskScore').textContent = scores.risk + '/100';
+
+    // ---- Layer 1: Hero Score ----
+    const hero = data.hero || {};
+    const heroCard = document.getElementById('heroCard');
+    if (hero.rating) {
+      heroCard.style.display = 'flex';
+      document.getElementById('heroSymbol').textContent = symbols[0] || data.symbol || '-';
+      document.getElementById('heroStars').textContent = '★'.repeat(hero.stars || 0) + '☆'.repeat(5 - (hero.stars || 0));
+      const ratingEl = document.getElementById('heroRating');
+      ratingEl.textContent = hero.rating;
+      ratingEl.className = 'hero-rating ' + hero.rating.toLowerCase();
+      document.getElementById('heroConfidence').textContent = (hero.confidence_pct != null ? Math.round(hero.confidence_pct) : '-') + '%';
+      const updated = hero.updated_at ? new Date(hero.updated_at) : new Date();
+      document.getElementById('heroUpdated').textContent = '更新時間 ' + updated.toLocaleTimeString();
+      document.getElementById('reasonsSummary').textContent = `▶ AI點解比${hero.rating}？ / AI推理`;
+    }
+
+    // ---- Layer 2: Dashboard grid ----
+    const dash = data.dashboard || {};
+    if (Object.keys(dash).length) {
+      document.getElementById('dashGrid').style.display = 'grid';
+      document.getElementById('dashTrend').textContent = dash.trend || '-';
+      document.getElementById('dashRisk').textContent = dash.risk || '-';
+      document.getElementById('dashMomentum').textContent = dash.momentum || '-';
+      document.getElementById('dashNews').textContent = dash.news || '-';
+      document.getElementById('dashSentiment').textContent = dash.sentiment || '-';
+      document.getElementById('dashValuation').textContent = dash.valuation || '-';
+      document.getElementById('dashLiquidity').textContent = dash.liquidity || '-';
+      document.getElementById('dashRegime').textContent = (data.regime && data.regime.regime) || '-';
+    }
+
+    // ---- Layer 4: reasons accordion ----
+    const reasons = data.reasons || { bullish: [], bearish: [] };
+    const bullUl = document.getElementById('reasonsBull');
+    const bearUl = document.getElementById('reasonsBear');
+    bullUl.innerHTML = (reasons.bullish || []).map(r => `<li>▲ ${r}</li>`).join('');
+    bearUl.innerHTML = (reasons.bearish || []).map(r => `<li>▼ ${r}</li>`).join('');
+    document.getElementById('reasonsEmpty').style.display =
+      (!(reasons.bullish || []).length && !(reasons.bearish || []).length) ? 'block' : 'none';
+
+    // ---- support/resistance accordion ----
+    const sr = data.support_resistance || {};
+    const srBody = document.getElementById('supportResistanceBody');
+    if (sr.support || sr.resistance) {
+      srBody.innerHTML = `
+        ${sr.support ? `<div>支撐位：${sr.support.level}（觸及 ${sr.support.touches} 次）</div>` : ''}
+        ${sr.resistance ? `<div>阻力位：${sr.resistance.level}（觸及 ${sr.resistance.touches} 次）</div>` : ''}
+      `;
+    } else {
+      srBody.textContent = '暫無足夠數據推算支持阻力位。';
+    }
+
+    // ---- Tier 3: Historical Analog (honest replacement for a fabricated
+    // macro-shock slider -- see services/historical_analog_service.py) ----
+    const analogAccordion = document.getElementById('historicalAnalogAccordion');
+    const analogBody = document.getElementById('historicalAnalogBody');
+    if (symbols.length) {
+      analogAccordion.style.display = 'block';
+      analogBody.textContent = '計算緊...';
+      fetch(`${API_BASE}/api/historical-analog/${encodeURIComponent(symbols[0])}`)
+        .then(r => r.json())
+        .then(a => {
+          if (a.error) { analogBody.textContent = a.error; return; }
+          if (!a.match_count) { analogBody.textContent = a.note || '暫無足夠歷史類比。'; return; }
+          analogBody.innerHTML = `
+            <div>市況組合：${a.regime_label}（過去出現 ${a.match_count} 次）</div>
+            <div>之後${a.forward_days}日勝率：${a.win_rate_pct}%</div>
+            <div>平均回報：${a.avg_forward_return_pct}%（最好 ${a.best_forward_return_pct}% / 最差 ${a.worst_forward_return_pct}%）</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem">${a.methodology || ''}</div>
+          `;
+        })
+        .catch(() => { analogBody.textContent = '暫時無法計算歷史類比。'; });
+    } else {
+      analogAccordion.style.display = 'none';
+    }
+
+    // ---- Tier 2: Scenario Lab ----
+    const scen = data.scenario;
+    const scenAccordion = document.getElementById('scenarioAccordion');
+    if (scen) {
+      scenAccordion.style.display = 'block';
+      document.getElementById('scenBullTarget').textContent = scen.bull.target != null ? scen.bull.target : '-';
+      document.getElementById('scenBullProb').textContent = scen.bull.probability_pct + '%';
+      document.getElementById('scenBaseTarget').textContent = scen.base.target != null ? scen.base.target : '-';
+      document.getElementById('scenBaseProb').textContent = scen.base.probability_pct + '%';
+      document.getElementById('scenBearTarget').textContent = scen.bear.target != null ? scen.bear.target : '-';
+      document.getElementById('scenBearProb').textContent = scen.bear.probability_pct + '%';
+      document.getElementById('scenMethodology').textContent = scen.methodology || '';
+    } else {
+      scenAccordion.style.display = 'none';
+    }
+
+    // ---- Tier 2: News Timeline ----
+    const newsItems = data.news_headlines || [];
+    const newsAccordion = document.getElementById('newsTimelineAccordion');
+    if (newsItems.length) {
+      newsAccordion.style.display = 'block';
+      document.getElementById('newsTimelineBody').innerHTML = newsItems.map(n => `
+        <div style="padding:0.5rem 0;border-bottom:1px solid var(--border-color)">
+          <a href="${n.url}" target="_blank" rel="noopener" style="color:var(--text-primary);text-decoration:none;font-weight:600">${n.title}</a>
+          <div style="font-size:0.75rem;color:var(--text-muted)">${n.source || ''} · ${n.published_at || ''}</div>
+        </div>
+      `).join('');
+    } else {
+      newsAccordion.style.display = 'none';
+    }
+
+    // ---- Tier 2: Related Research (curated, click-through re-analysis) ----
+    const relatedAccordion = document.getElementById('relatedResearchAccordion');
+    const related = (window.XFL_RELATED_MAP || {})[symbols[0]];
+    if (related && related.length) {
+      relatedAccordion.style.display = 'block';
+      document.getElementById('relatedResearchBody').innerHTML = related.map(r =>
+        `<button type="button" class="related-chip" data-symbol="${r}" style="margin:0.2rem;padding:0.4rem 0.8rem;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-primary);cursor:pointer">${r}</button>`
+      ).join('');
+      relatedAccordion.querySelectorAll('.related-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('symbolInput').value = btn.dataset.symbol;
+          runAnalysis();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+    } else {
+      relatedAccordion.style.display = 'none';
+    }
+
+    // ---- Tier 3: reveal AI辯論 entry point only if backend confirmed available ----
+    _xflLastAnalyzedSymbol = symbols[0] || null;
+    document.getElementById('debateAccordion').style.display = _xflDebateAvailable ? 'block' : 'none';
+    document.getElementById('debateBody').innerHTML = '';
+
+    // ---- Quick actions ----
+    const qa = document.getElementById('quickActions');
+    if (symbols.length) {
+      qa.style.display = 'flex';
+      document.getElementById('qaCompare').href = `company-compare.html?a=${encodeURIComponent(symbols[0])}`;
+      const qaWatchlist = document.getElementById('qaWatchlist');
+      qaWatchlist.onclick = () => {
+        if (typeof window.xflAddToWatchlist === 'function') {
+          window.xflAddToWatchlist(symbols[0], qaWatchlist);
+        }
+      };
+      const qaJournal = document.getElementById('qaJournal');
+      qaJournal.onclick = async () => {
+        const journalToken = localStorage.getItem('xfinlab_token');
+        if (!journalToken) { alert('請先登入先可以用Decision Journal'); return; }
+        try {
+          await fetch(`${API_BASE}/api/decision-journal/add/${encodeURIComponent(symbols[0])}?token=${encodeURIComponent(journalToken)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rating: hero.rating,
+              confidence_pct: hero.confidence_pct,
+              entry_price: data.decision_levels ? data.decision_levels.entry : null,
+              stop_loss: data.decision_levels ? data.decision_levels.stop_loss : null,
+              take_profit: (data.decision_levels && data.decision_levels.take_profits) ? data.decision_levels.take_profits[0] : null,
+              snapshot: { dashboard: dash, regime: data.regime, scenario: scen }
+            })
+          });
+          qaJournal.textContent = '✅ 已加入Journal';
+        } catch (e) {
+          console.error(e);
+        }
+      };
+    }
 
     // Cosmetic display-only transform (js/prob-display.js) -- never
     // shows 100%, and differentiates identical raw scores across
@@ -234,6 +546,22 @@ async function runAnalysis(){
       <h4>${advHeader}</h4>
       <p>${data.conclusion}</p>
     `;
+
+    // ---- Layer 3: AI Summary (3 sentences, template-composed from the
+    // SAME real conclusion + top confluence signal + regime -- not a new
+    // AI call, just a short-form re-expression of data already computed
+    // above). ----
+    const summaryBox = document.getElementById('aiSummaryBox');
+    const topBullish = (reasons.bullish || [])[0];
+    const topBearish = (reasons.bearish || [])[0];
+    const regimeLabel = (data.regime && data.regime.regime) || null;
+    const summaryParts = [data.conclusion];
+    if (topBullish || topBearish) {
+      summaryParts.push(topBullish ? `利好訊號：${topBullish}` : `留意訊號：${topBearish}`);
+    }
+    if (regimeLabel) summaryParts.push(`當前市況：${regimeLabel}`);
+    summaryBox.style.display = 'block';
+    summaryBox.textContent = summaryParts.join('。') + '。';
 
     // Decision Report™ footer -- reuses the SAME real numbers already
     // shown above (tech_score as the composite decision figure, the
@@ -280,6 +608,51 @@ async function runAnalysis(){
   }
 }
 
+// ---- Tier 3: Agent Society / AI辯論 -- gated feature, checked once ----
+let _xflDebateAvailable = false;
+let _xflLastAnalyzedSymbol = null;
+
+async function checkDebateAvailability() {
+  try {
+    const res = await fetch(`${API_BASE}/api/agent-debate/status`);
+    const data = await res.json();
+    _xflDebateAvailable = !!data.available;
+  } catch (e) {
+    _xflDebateAvailable = false;
+  }
+}
+
+document.getElementById('debateRunBtn').addEventListener('click', async () => {
+  if (!_xflLastAnalyzedSymbol) return;
+  const btn = document.getElementById('debateRunBtn');
+  const body = document.getElementById('debateBody');
+  btn.disabled = true;
+  btn.textContent = '辯論緊...';
+  try {
+    const res = await fetch(`${API_BASE}/api/agent-debate/${encodeURIComponent(_xflLastAnalyzedSymbol)}`);
+    const d = await res.json();
+    if (!d.available) {
+      body.innerHTML = `<div style="color:var(--text-muted)">${d.message || 'AI辯論暫時未開放。'}</div>`;
+    } else if (d.error) {
+      body.innerHTML = `<div style="color:var(--accent-red)">辯論失敗：${d.error}</div>`;
+    } else {
+      const args = d.arguments || {};
+      body.innerHTML = `
+        <div style="margin-bottom:0.6rem"><strong>🐂 Bull：</strong>${args.bull || '-'}</div>
+        <div style="margin-bottom:0.6rem"><strong>🐻 Bear：</strong>${args.bear || '-'}</div>
+        <div style="margin-bottom:0.6rem"><strong>🛡️ Risk Manager：</strong>${args.risk_manager || '-'}</div>
+        <div style="margin-bottom:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color)"><strong>⚖️ 仲裁：</strong>${d.verdict || '-'}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted)">${d.disclaimer || ''}</div>
+      `;
+    }
+  } catch (e) {
+    body.innerHTML = `<div style="color:var(--accent-red)">辯論失敗，請稍後重試。</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '開始辯論';
+  }
+});
+
 // Share System: a link like ai-analysis.html?symbols=NVDA,AAPL&assetType=auto
 // prefills the form and immediately re-runs the real analysis, so a shared
 // link always shows live current data instead of a stale screenshot.
@@ -298,6 +671,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof autoAttachTickerAutocomplete === 'function') {
     autoAttachTickerAutocomplete('#symbolInput', {multi: true});
   }
+  checkDebateAvailability();
 });
 </script>
 
