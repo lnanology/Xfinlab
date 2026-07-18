@@ -124,6 +124,60 @@ class TechnicalAnalysisService:
             )
         vwap_series = self._vwap(highs, lows, closes, volume)
 
+        # ---- Step 2 (2026-07-18) Signal Engine upgrade: SuperTrend /
+        # Ichimoku / Donchian / Keltner -- additive, same real df, no new
+        # network calls. See each method's own docstring for the exact
+        # causal math used.
+        supertrend_series, supertrend_dir_series = self._supertrend(highs, lows, closes)
+        supertrend_last = (
+            {
+                "value": round(float(supertrend_series.iloc[-1]), 2),
+                "direction": "上升" if supertrend_dir_series.iloc[-1] == 1 else "下降",
+            }
+            if not supertrend_series.empty
+            else None
+        )
+
+        tenkan, kijun, senkou_a, senkou_b = self._ichimoku(highs, lows, closes)
+        ichimoku_last = None
+        if not senkou_a.empty and not pd.isna(senkou_a.iloc[-1]) and not pd.isna(senkou_b.iloc[-1]):
+            cloud_top = max(float(senkou_a.iloc[-1]), float(senkou_b.iloc[-1]))
+            cloud_bottom = min(float(senkou_a.iloc[-1]), float(senkou_b.iloc[-1]))
+            if last_close > cloud_top:
+                cloud_position = "雲上（偏多結構）"
+            elif last_close < cloud_bottom:
+                cloud_position = "雲下（偏空結構）"
+            else:
+                cloud_position = "雲內（盤整）"
+            ichimoku_last = {
+                "tenkan": round(float(tenkan.iloc[-1]), 2) if not pd.isna(tenkan.iloc[-1]) else None,
+                "kijun": round(float(kijun.iloc[-1]), 2) if not pd.isna(kijun.iloc[-1]) else None,
+                "senkou_a": round(float(senkou_a.iloc[-1]), 2),
+                "senkou_b": round(float(senkou_b.iloc[-1]), 2),
+                "cloud_position": cloud_position,
+            }
+
+        donchian_upper, donchian_lower = self._donchian(highs, lows)
+        donchian_last = (
+            {
+                "upper": round(float(donchian_upper.iloc[-1]), 2),
+                "lower": round(float(donchian_lower.iloc[-1]), 2),
+            }
+            if not donchian_upper.empty and not pd.isna(donchian_upper.iloc[-1])
+            else None
+        )
+
+        keltner_upper, keltner_mid, keltner_lower = self._keltner(closes, highs, lows)
+        keltner_last = (
+            {
+                "upper": round(float(keltner_upper.iloc[-1]), 2),
+                "mid": round(float(keltner_mid.iloc[-1]), 2),
+                "lower": round(float(keltner_lower.iloc[-1]), 2),
+            }
+            if not keltner_upper.empty and not pd.isna(keltner_upper.iloc[-1])
+            else None
+        )
+
         indicators = {
             "ema20": round(float(self._ema(closes, 20).iloc[-1]), 2),
             "ema50": round(float(self._ema(closes, 50).iloc[-1]), 2) if len(closes) >= 2 else None,
@@ -137,6 +191,10 @@ class TechnicalAnalysisService:
             # session VWAP (that needs tick-level same-day data we don't
             # fetch) -- labelled honestly so it isn't mistaken for one.
             "vwap": round(float(vwap_series.iloc[-1]), 2) if not vwap_series.empty else None,
+            "supertrend": supertrend_last,
+            "ichimoku": ichimoku_last,
+            "donchian": donchian_last,
+            "keltner": keltner_last,
         }
 
         confluence = self._confluence(
@@ -149,6 +207,10 @@ class TechnicalAnalysisService:
             fib=fib,
             bollinger=bb_last,
             obv_trend=obv_trend,
+            supertrend=supertrend_last,
+            ichimoku=ichimoku_last,
+            donchian=donchian_last,
+            keltner=keltner_last,
         )
 
         decision_levels = self._decision_levels(
@@ -388,6 +450,116 @@ class TechnicalAnalysisService:
         cum_vol = volume.cumsum().replace(0, np.nan)
         return (typical_price * volume).cumsum() / cum_vol
 
+    # ---- Step 2 (2026-07-18) Signal Engine upgrade additions ----
+    # SuperTrend / Ichimoku / Donchian / Keltner -- all computed purely
+    # from bar i and bar i-1 (or a trailing rolling window ending at bar
+    # i), same no-look-ahead convention as every other indicator in this
+    # class, so BacktestService can reuse these directly if a future
+    # strategy family wants them without any extra scrutiny.
+
+    @staticmethod
+    def _supertrend(highs: pd.Series, lows: pd.Series, closes: pd.Series,
+                     period: int = 10, multiplier: float = 3.0):
+        """
+        Standard SuperTrend: an ATR-based trailing stop/trend line that
+        flips side when price closes through it. Returns (line, direction)
+        where direction is +1 (bullish -- line acts as support below
+        price) or -1 (bearish -- line acts as resistance above price).
+        Implemented as an explicit bar-by-bar loop (like _swing_points())
+        because each bar's "final" band depends on the PRIOR bar's final
+        band, not just a rolling window -- that recursive definition is
+        the actual SuperTrend algorithm, not a look-ahead shortcut.
+        """
+        atr = TechnicalAnalysisService._atr(highs, lows, closes, period)
+        hl2 = (highs + lows) / 2
+        basic_upper = (hl2 + multiplier * atr).values
+        basic_lower = (hl2 - multiplier * atr).values
+        closes_v = closes.values
+        n = len(closes_v)
+
+        final_upper = np.zeros(n)
+        final_lower = np.zeros(n)
+        st = np.zeros(n)
+        direction = np.ones(n, dtype=int) * -1
+
+        for i in range(n):
+            if i == 0 or np.isnan(basic_upper[i]) or np.isnan(basic_lower[i]):
+                final_upper[i] = 0.0 if np.isnan(basic_upper[i]) else basic_upper[i]
+                final_lower[i] = 0.0 if np.isnan(basic_lower[i]) else basic_lower[i]
+                st[i] = final_upper[i]
+                direction[i] = -1
+                continue
+
+            final_upper[i] = (
+                basic_upper[i]
+                if (basic_upper[i] < final_upper[i - 1] or closes_v[i - 1] > final_upper[i - 1])
+                else final_upper[i - 1]
+            )
+            final_lower[i] = (
+                basic_lower[i]
+                if (basic_lower[i] > final_lower[i - 1] or closes_v[i - 1] < final_lower[i - 1])
+                else final_lower[i - 1]
+            )
+
+            if st[i - 1] == final_upper[i - 1] and closes_v[i] <= final_upper[i]:
+                st[i], direction[i] = final_upper[i], -1
+            elif st[i - 1] == final_upper[i - 1] and closes_v[i] > final_upper[i]:
+                st[i], direction[i] = final_lower[i], 1
+            elif st[i - 1] == final_lower[i - 1] and closes_v[i] >= final_lower[i]:
+                st[i], direction[i] = final_lower[i], 1
+            elif st[i - 1] == final_lower[i - 1] and closes_v[i] < final_lower[i]:
+                st[i], direction[i] = final_upper[i], -1
+            else:
+                st[i], direction[i] = final_upper[i], -1
+
+        return pd.Series(st, index=closes.index), pd.Series(direction, index=closes.index)
+
+    @staticmethod
+    def _ichimoku(highs: pd.Series, lows: pd.Series, closes: pd.Series,
+                  tenkan_period: int = 9, kijun_period: int = 26, senkou_b_period: int = 52):
+        """
+        Ichimoku Kinko Hyo's Tenkan-sen / Kijun-sen / Senkou Span A & B.
+        Deliberately NOT shifted 26 bars forward the way a chart normally
+        PLOTS the cloud -- that shift is a display convention (drawing
+        today's cloud ahead of today's candle), not a data dependency, and
+        shifting it here would make "today's cloud" secretly describe a
+        future bar. Used as a same-bar "is price above/below/inside the
+        cloud computed from data up to and including today" signal, which
+        stays fully causal.
+        """
+        tenkan = (highs.rolling(min(tenkan_period, len(highs))).max()
+                  + lows.rolling(min(tenkan_period, len(lows))).min()) / 2
+        kijun = (highs.rolling(min(kijun_period, len(highs))).max()
+                 + lows.rolling(min(kijun_period, len(lows))).min()) / 2
+        senkou_a = (tenkan + kijun) / 2
+        senkou_b = (highs.rolling(min(senkou_b_period, len(highs))).max()
+                    + lows.rolling(min(senkou_b_period, len(lows))).min()) / 2
+        return tenkan, kijun, senkou_a, senkou_b
+
+    @staticmethod
+    def _donchian(highs: pd.Series, lows: pd.Series, period: int = 20):
+        """Donchian Channel: rolling `period`-bar high/low envelope."""
+        upper = highs.rolling(min(period, len(highs))).max()
+        lower = lows.rolling(min(period, len(lows))).min()
+        return upper, lower
+
+    @staticmethod
+    def _keltner(closes: pd.Series, highs: pd.Series, lows: pd.Series,
+                 period: int = 20, multiplier: float = 2.0):
+        """
+        Keltner Channel: EMA basis +/- ATR*multiplier. Unlike Bollinger
+        (std-dev based, read here as mean-reversion overbought/oversold),
+        Keltner is read as a trend-continuation signal below -- a close
+        beyond the band on an ATR-scaled channel is treated in this
+        codebase's confluence scoring as confirming a strong directional
+        move, not as "overextended".
+        """
+        ema = closes.ewm(span=period, adjust=False).mean()
+        atr = TechnicalAnalysisService._atr(highs, lows, closes, period)
+        upper = ema + multiplier * atr
+        lower = ema - multiplier * atr
+        return upper, ema, lower
+
     @staticmethod
     def _swing_points(highs: pd.Series, lows: pd.Series, window: int = 5):
         """
@@ -503,6 +675,16 @@ class TechnicalAnalysisService:
         "fib": 0.8,
         "bollinger": 0.9,
         "obv": 0.9,
+        # Step 2 (2026-07-18) Signal Engine upgrade additions. SuperTrend
+        # weighted close to trend (same trend-following family); Donchian
+        # weighted like a breakout-confirmation signal (comparable to
+        # support/resistance proximity, slightly lower since it doesn't
+        # cluster multiple touches); Ichimoku and Keltner weighted like
+        # the other single-oscillator-style signals.
+        "supertrend": 1.1,
+        "donchian": 1.0,
+        "ichimoku": 1.0,
+        "keltner": 0.8,
     }
 
     @classmethod
@@ -517,6 +699,10 @@ class TechnicalAnalysisService:
         fib: Optional[Dict],
         bollinger: Optional[Dict] = None,
         obv_trend: Optional[str] = None,
+        supertrend: Optional[Dict] = None,
+        ichimoku: Optional[Dict] = None,
+        donchian: Optional[Dict] = None,
+        keltner: Optional[Dict] = None,
         proximity_tolerance: float = 0.03,
     ) -> Dict:
         """
@@ -586,6 +772,38 @@ class TechnicalAnalysisService:
             signals.append({"signal": "OBV成交量動能上升，資金流入", "bias": 1, "weight": w["obv"]})
         elif obv_trend == "下降":
             signals.append({"signal": "OBV成交量動能下降，資金流出", "bias": -1, "weight": w["obv"]})
+
+        # 8. SuperTrend direction (Step 2 addition)
+        if supertrend:
+            if supertrend["direction"] == "上升":
+                signals.append({"signal": "SuperTrend看多（收於支撐線之上）", "bias": 1, "weight": w["supertrend"]})
+            else:
+                signals.append({"signal": "SuperTrend看空（收於阻力線之下）", "bias": -1, "weight": w["supertrend"]})
+
+        # 9. Ichimoku Cloud position (Step 2 addition)
+        if ichimoku:
+            if ichimoku["cloud_position"].startswith("雲上"):
+                signals.append({"signal": "現價企穩Ichimoku雲之上，結構偏多", "bias": 1, "weight": w["ichimoku"]})
+            elif ichimoku["cloud_position"].startswith("雲下"):
+                signals.append({"signal": "現價跌穿Ichimoku雲之下，結構偏空", "bias": -1, "weight": w["ichimoku"]})
+            # 雲內 (inside the cloud) is genuinely neutral -- skipped, not
+            # forced into a bullish/bearish bucket.
+
+        # 10. Donchian Channel breakout (Step 2 addition)
+        if donchian:
+            if last_close >= donchian["upper"]:
+                signals.append({"signal": "現價創20日新高，Donchian突破訊號", "bias": 1, "weight": w["donchian"]})
+            elif last_close <= donchian["lower"]:
+                signals.append({"signal": "現價創20日新低，Donchian破位訊號", "bias": -1, "weight": w["donchian"]})
+
+        # 11. Keltner Channel (Step 2 addition) -- read as trend
+        # continuation (see _keltner()'s docstring), the opposite framing
+        # from Bollinger's mean-reversion read above.
+        if keltner:
+            if last_close >= keltner["upper"]:
+                signals.append({"signal": "現價突破Keltner上軌，強勢延續", "bias": 1, "weight": w["keltner"]})
+            elif last_close <= keltner["lower"]:
+                signals.append({"signal": "現價跌穿Keltner下軌，弱勢延續", "bias": -1, "weight": w["keltner"]})
 
         counted = len(signals)
         weight_total = sum(s["weight"] for s in signals)

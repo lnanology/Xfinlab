@@ -50,10 +50,30 @@ MAX_HOLD_BARS = 20    # force-exit at close if neither stop nor target hit withi
 ATR_STOP_MULT = 1.5   # same stop-distance convention as _decision_levels()'s ATR fallback branch
 ATR_TARGET_MULT = 3.0  # ~1:2 risk-reward target, deliberately conservative vs the live 1:3 TP1
 
+# Step 4 (2026-07-18) Strategy Families expansion constants.
+DIVERGENCE_WINDOW = 14          # lookback bars for RSI Divergence's local price high/low
+DIVERGENCE_PRICE_TOLERANCE = 0.005  # today's close within 0.5% of the window extreme still "counts"
+VOLUME_BREAKOUT_MULT = 1.5      # breakout bar's volume must be >= 1.5x its 20-day average to count
+# ma_golden_cross needs true 50/200-bar SMAs (not the len()-adapted ones
+# used elsewhere) since a "golden cross" is a specific, real technical
+# term -- a short history simply produces NaN (and therefore 0 trades,
+# reported honestly via _compute_stats()'s "note" field) rather than a
+# fake cross on a shortened window.
+GOLDEN_CROSS_FAST = 50
+GOLDEN_CROSS_SLOW = 200
+
 
 class BacktestService:
 
-    STRATEGIES = ["confluence_trend", "breakout_donchian", "mean_reversion_bollinger"]
+    STRATEGIES = [
+        "confluence_trend", "breakout_donchian", "mean_reversion_bollinger",
+        # Step 4 (2026-07-18) Strategy Families expansion -- 4 more, each
+        # reusing indicators already computed causally in
+        # _compute_causal_indicators() below (or a small causal addition
+        # to it), same no-look-ahead / no-fabrication conventions as the
+        # original 3.
+        "atr_turtle_breakout", "rsi_divergence", "volume_breakout_confirmation", "ma_golden_cross",
+    ]
 
     # ---- public entry points ----
 
@@ -79,6 +99,10 @@ class BacktestService:
             "confluence_trend": cls._signal_confluence_trend,
             "breakout_donchian": cls._signal_breakout_donchian,
             "mean_reversion_bollinger": cls._signal_mean_reversion_bollinger,
+            "atr_turtle_breakout": cls._signal_atr_turtle_breakout,
+            "rsi_divergence": cls._signal_rsi_divergence,
+            "volume_breakout_confirmation": cls._signal_volume_breakout_confirmation,
+            "ma_golden_cross": cls._signal_ma_golden_cross,
         }[strategy]
 
         trades = cls._simulate(df, ind, signal_fn)
@@ -157,6 +181,22 @@ class BacktestService:
         donchian_high = highs.rolling(20).max().shift(1)
         donchian_low = lows.rolling(20).min().shift(1)
 
+        # ---- Step 4 (2026-07-18) additions for the 4 new strategy families ----
+        # Turtle-style 55-bar channel, same shift(1) convention (prior 55
+        # bars only, never today).
+        donchian_high_55 = highs.rolling(55).max().shift(1)
+        donchian_low_55 = lows.rolling(55).min().shift(1)
+        # ATR's own 20-bar moving average -- a rolling mean of an already-
+        # causal series is itself still causal, used as the Turtle
+        # strategy's "volatility expanding" filter.
+        atr_sma20 = atr14.rolling(20).mean()
+        # True 50/200-bar SMAs for a real Golden/Death Cross (see
+        # GOLDEN_CROSS_FAST/SLOW module constants above).
+        sma50_bt = closes.rolling(GOLDEN_CROSS_FAST).mean()
+        sma200_bt = closes.rolling(min(GOLDEN_CROSS_SLOW, n)).mean()
+        # 20-day volume average for Volume Breakout Confirmation.
+        volume_sma20 = volume.rolling(20).mean()
+
         return {
             "close": closes.values,
             "trend": trend,
@@ -168,6 +208,13 @@ class BacktestService:
             "obv_trend": obv_trend,
             "donchian_high": donchian_high.values,
             "donchian_low": donchian_low.values,
+            "donchian_high_55": donchian_high_55.values,
+            "donchian_low_55": donchian_low_55.values,
+            "atr_sma20": atr_sma20.values,
+            "sma50_bt": sma50_bt.values,
+            "sma200_bt": sma200_bt.values,
+            "volume": volume.values,
+            "volume_sma20": volume_sma20.values,
         }
 
     # ---- strategy signal functions (all read only ind[...][i], i.e. only
@@ -251,6 +298,111 @@ class BacktestService:
             return "long"
         if close >= bb_upper:
             return "short"
+        return None
+
+    # ---- Step 4 (2026-07-18) Strategy Families expansion ----
+
+    @staticmethod
+    def _signal_atr_turtle_breakout(i: int, ind: Dict) -> Optional[str]:
+        """
+        Turtle-style trend-following breakout: Richard Dennis's original
+        system used a 55-bar channel (System 2) alongside the shorter
+        20-bar one (System 1, already covered by breakout_donchian above).
+        Added here: an ATR-expansion filter (today's ATR14 above its own
+        20-bar average) as the "only take breakouts when volatility is
+        genuinely picking up" Turtle-style confirmation, so this isn't
+        just a longer-window copy of breakout_donchian.
+        """
+        close = ind["close"][i]
+        dh55, dl55 = ind["donchian_high_55"][i], ind["donchian_low_55"][i]
+        atr, atr_avg = ind["atr14"][i], ind["atr_sma20"][i]
+        if any(v is None or np.isnan(v) for v in (dh55, dl55, atr, atr_avg)):
+            return None
+        if atr <= atr_avg:
+            return None  # volatility not expanding -- Turtle filter skips this breakout
+        if close > dh55:
+            return "long"
+        if close < dl55:
+            return "short"
+        return None
+
+    @staticmethod
+    def _signal_rsi_divergence(i: int, ind: Dict) -> Optional[str]:
+        """
+        Bullish divergence: today's close is at (or within
+        DIVERGENCE_PRICE_TOLERANCE of) the lowest close in the trailing
+        DIVERGENCE_WINDOW bars, but today's RSI is HIGHER than the RSI on
+        that earlier low bar -- price pressing to a new low without
+        matching downside momentum, a classic reversal-warning pattern.
+        Bearish divergence is the mirror image at the window's high.
+        Entirely causal: the window is `ind[...][i - DIVERGENCE_WINDOW : i
+        + 1]`, i.e. only bars up to and including today.
+        """
+        if i < DIVERGENCE_WINDOW:
+            return None
+        window_close = ind["close"][i - DIVERGENCE_WINDOW: i + 1]
+        window_rsi = ind["rsi"][i - DIVERGENCE_WINDOW: i + 1]
+        if np.any(np.isnan(window_rsi)):
+            return None
+
+        today_close = window_close[-1]
+        today_rsi = window_rsi[-1]
+        low_idx = int(np.argmin(window_close))
+        high_idx = int(np.argmax(window_close))
+        last_idx = len(window_close) - 1
+
+        if low_idx != last_idx:
+            price_low = window_close[low_idx]
+            if today_close <= price_low * (1 + DIVERGENCE_PRICE_TOLERANCE) and today_rsi > window_rsi[low_idx]:
+                return "long"
+
+        if high_idx != last_idx:
+            price_high = window_close[high_idx]
+            if today_close >= price_high * (1 - DIVERGENCE_PRICE_TOLERANCE) and today_rsi < window_rsi[high_idx]:
+                return "short"
+
+        return None
+
+    @staticmethod
+    def _signal_volume_breakout_confirmation(i: int, ind: Dict) -> Optional[str]:
+        """
+        Same 20-bar Donchian breakout as breakout_donchian, but only
+        counted as a signal when today's volume is at least
+        VOLUME_BREAKOUT_MULT times its own 20-day average -- filters out
+        low-conviction breakouts that lack real participation.
+        """
+        close = ind["close"][i]
+        dh, dl = ind["donchian_high"][i], ind["donchian_low"][i]
+        vol, vol_avg = ind["volume"][i], ind["volume_sma20"][i]
+        if any(v is None or np.isnan(v) for v in (dh, dl, vol_avg)) or vol_avg <= 0:
+            return None
+        if vol < vol_avg * VOLUME_BREAKOUT_MULT:
+            return None
+        if close > dh:
+            return "long"
+        if close < dl:
+            return "short"
+        return None
+
+    @staticmethod
+    def _signal_ma_golden_cross(i: int, ind: Dict) -> Optional[str]:
+        """
+        Fires only on the actual crossover BAR (50-bar SMA crossing above/
+        below the 200-bar SMA), not on every bar the fast MA happens to sit
+        above the slow one -- otherwise this would open a fresh "long"
+        signal every single bar of an entire bull market instead of once
+        at the real Golden Cross event.
+        """
+        if i < 1:
+            return None
+        fast, fast_prev = ind["sma50_bt"][i], ind["sma50_bt"][i - 1]
+        slow, slow_prev = ind["sma200_bt"][i], ind["sma200_bt"][i - 1]
+        if any(v is None or np.isnan(v) for v in (fast, fast_prev, slow, slow_prev)):
+            return None
+        if fast_prev <= slow_prev and fast > slow:
+            return "long"   # Golden Cross
+        if fast_prev >= slow_prev and fast < slow:
+            return "short"  # Death Cross
         return None
 
     # ---- simulation loop ----
