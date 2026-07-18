@@ -134,6 +134,10 @@
   /* Features */
   .features { max-width: 1100px; margin: 0 auto; padding: 80px 24px; }
   .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); text-align: center; margin-bottom: 16px; }
+  /* Doubled from the base .section-label size per explicit request --
+     scoped to this one label only (not .section-label globally, which
+     is shared by every other section heading on the page). */
+  .topopp-label { font-size: 1.4rem; }
   .section-title { font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 48px; }
   .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
   .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; transition: border-color 0.2s; }
@@ -178,6 +182,10 @@
   .ticker-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
   .ticker-symbol { font-weight: 600; color: var(--text); }
   .ticker-price { color: var(--label); }
+  /* Red/green up-down coloring, real price_change_pct from
+     api/market.py's get_stock_data (not estimated) -- see loadTickers(). */
+  .ticker-price.ticker-up { color: var(--green); }
+  .ticker-price.ticker-down { color: var(--red); }
   .ticker-change.up { color: var(--green); }
   .ticker-change.down { color: var(--red); }
   @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -191,7 +199,7 @@
   .pulse-section { max-width: 1000px; margin: 0 auto; padding: 40px 24px 0; }
   .pulse-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; }
   .pulse-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
-  .pulse-title { font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .pulse-title { font-size: 1.9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
   .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulseDot 2s infinite; }
   @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   .pulse-overall { font-size: 0.85rem; color: var(--muted); }
@@ -423,7 +431,7 @@
      一樣用真實Confluence Engine計，唔係AI估。放喺Outlook上面，等訪客
      一開始就見到「而家邊隻最強」。 -->
 <div class="top-opp-section">
-  <div class="section-label" data-i18n="topopp_label">🏆 Top Opportunity</div>
+  <div class="section-label topopp-label" data-i18n="topopp_label">🏆 Top Opportunity</div>
   <div class="top-opp-grid" id="topOppGrid">
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
@@ -435,7 +443,7 @@
 <div class="pulse-section">
   <div class="pulse-box">
     <div class="pulse-head">
-      <div class="pulse-title"><span class="pulse-dot"></span><span data-i18n="outlook_title">Today's AI Outlook</span></div>
+      <div class="pulse-title"><span class="pulse-dot"></span><span data-i18n="outlook_title">今日重點</span></div>
       <div class="pulse-overall" id="pulseOverall" data-i18n="outlook_loading">載入緊...</div>
     </div>
     <div class="pulse-top" id="pulseBottom" style="display:none"></div>
@@ -778,8 +786,15 @@ async function loadTickers() {
       const res = await fetch(`${API}/market/${encodeURIComponent(it.api)}`);
       const data = await res.json();
       if (data && data.price) {
+        // Red/green per real price_change_pct (services/market_data_service.py
+        // computes this from actual previous-close data, not an estimate).
+        const changePct = typeof data.price_change_pct === 'number' ? data.price_change_pct : 0;
+        const dirClass = changePct > 0 ? 'ticker-up' : (changePct < 0 ? 'ticker-down' : '');
+        const arrow = changePct > 0 ? '▲' : (changePct < 0 ? '▼' : '');
         document.querySelectorAll(`[data-ticker-symbol="${CSS.escape(it.api)}"]`).forEach(function(el) {
-          el.textContent = `$${Number(data.price).toFixed(2)}`;
+          el.textContent = `$${Number(data.price).toFixed(2)}${arrow ? ' ' + arrow + ' ' + Math.abs(changePct).toFixed(2) + '%' : ''}`;
+          el.classList.remove('ticker-up', 'ticker-down');
+          if (dirClass) el.classList.add(dirClass);
         });
       }
     } catch(e) {}
