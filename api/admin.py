@@ -6,10 +6,23 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
 from backend.auth.jwt_handler import verify_token
 from services.audit_log_service import log_action, get_recent_logs
+from services.request_ip import get_client_ip
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 ADMIN_EMAIL = "abcoaj888@gmail.com"
+
+# Optional defense-in-depth: if ADMIN_IP_ALLOWLIST is set (comma-separated
+# IPs, e.g. "1.2.3.4,5.6.7.8"), admin endpoints reject any caller whose IP
+# isn't on the list -- even with a valid, correctly-signed admin token.
+# This protects against the scenario where JWT_SECRET or a live admin
+# token leaks (e.g. via a compromised browser/device) but the attacker
+# isn't calling from one of your own known IPs. Backwards compatible:
+# unset (the default) means no restriction at all, matching prior
+# behavior exactly -- this only activates if you opt in.
+_ADMIN_IP_ALLOWLIST = [
+    ip.strip() for ip in os.getenv("ADMIN_IP_ALLOWLIST", "").split(",") if ip.strip()
+]
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -67,8 +80,15 @@ def verify_admin(token: str, action: str = None, request: Request = None):
         raise HTTPException(status_code=401, detail="Invalid token")
     if payload.get("sub") != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Admin access required")
+
+    ip = get_client_ip(request) if request else None
+    if _ADMIN_IP_ALLOWLIST and ip not in _ADMIN_IP_ALLOWLIST:
+        # Logged with user_id=None (like login_failed) so blocked attempts
+        # are visible in the audit trail even though they never got in.
+        log_action(None, f"admin_ip_blocked:{action or 'unknown'}", ip)
+        raise HTTPException(status_code=403, detail="Admin access not permitted from this network")
+
     if action:
-        ip = request.client.host if request and request.client else None
         log_action(payload.get("id"), f"admin:{action}", ip)
     return payload
 

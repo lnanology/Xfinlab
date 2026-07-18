@@ -5,10 +5,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from services.request_ip import get_client_ip
 from api.market import router as market_router
 from api.analyze import router as analyze_router
 from api.event import router as event_router
@@ -75,7 +75,7 @@ reset_admin_password_if_requested()
 # calling. In-memory backend is fine for our current single-instance Railway
 # deployment; would need a Redis backend if we ever scale to multiple
 # instances (limits would then be per-instance, not global).
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+limiter = Limiter(key_func=get_client_ip, default_limits=["100/minute"])
 app.state.limiter = limiter
 
 

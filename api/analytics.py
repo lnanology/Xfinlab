@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
 from services.user_analytics import UserAnalytics
 from backend.auth.jwt_handler import verify_token
+from services.request_ip import get_client_ip
 
 router = APIRouter()
 
@@ -21,7 +22,7 @@ async def track_event(request: Request):
         user_id=user_id,
         session_id=body.get("session_id"),
         page=body.get("page"),
-        ip=request.client.host
+        ip=get_client_ip(request)
     )
     return {"status": "ok"}
 

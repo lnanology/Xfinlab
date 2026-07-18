@@ -2,6 +2,7 @@ import os
 import requests
 from fastapi import APIRouter, Request
 from services.i18n import get_translations, detect_language_from_country, SUPPORTED_LANGUAGES
+from services.request_ip import get_client_ip
 
 router = APIRouter()
 
@@ -22,11 +23,7 @@ def get_country_from_ip(ip: str) -> str:
 @router.get("/i18n/detect")
 def detect_language(request: Request):
     """Detect user language from IP"""
-    # 取得真實 IP
-    ip = request.headers.get("X-Forwarded-For", request.client.host)
-    if "," in ip:
-        ip = ip.split(",")[0].strip()
-
+    ip = get_client_ip(request)  # was a local, near-duplicate copy of this logic -- now shared, see services/request_ip.py
     country = get_country_from_ip(ip)
     lang = detect_language_from_country(country)
     translations = get_translations(lang)

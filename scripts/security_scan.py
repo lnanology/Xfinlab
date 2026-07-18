@@ -24,6 +24,18 @@ realistically automate for free:
      API_KEY is set in the environment (free key from Google Cloud
      Console -- see README note at the bottom of this file). Checks
      whether Google has the domain flagged as unsafe.
+  6. File integrity      -- fetches the live static files (index.html
+     + the JS files most worth tampering with) and byte-compares them
+     against this repo's own git-tracked copies at HEAD. Unlike check
+     #4 (which only catches KNOWN malware patterns), this catches ANY
+     unauthorized change at all -- the real "did someone actually get
+     in and modify the live deploy outside of git" check. www.xfinlab.com
+     is a static deploy of this exact repo (api.xfinlab.com is the
+     separate backend service), so at rest they should always match
+     byte-for-byte; a mismatch means either a legitimate deploy lag
+     (the live site hasn't picked up the latest push yet) or real
+     tampering -- this tool can't tell the difference automatically,
+     it just flags a mismatch for you to look at.
 
 Usage:
     python3 scripts/security_scan.py [--url https://www.xfinlab.com]
@@ -49,6 +61,17 @@ except Exception:
 
 DEFAULT_URL = "https://www.xfinlab.com"
 PAGES_TO_SCAN = ["/", "/dashboard.html", "/login.html", "/pricing.html"]
+
+# Files worth checking byte-for-byte against the repo -- prioritizes
+# the JS that runs on every page (most valuable injection target) plus
+# the homepage and login flow (highest-traffic, most sensitive pages).
+# Deliberately a small curated list, not every file in the repo -- this
+# runs every 6 hours, keep it fast and cheap.
+INTEGRITY_FILES = [
+    "index.html", "login.html", "dashboard.html",
+    "js/autocomplete.js", "js/i18n.js", "js/theme-toggle.js",
+    "js/nav.js", "js/share-widget.js",
+]
 
 # Known-good script/iframe source domains -- anything outside this list
 # found in a <script src="..."> or <iframe src="..."> on the live site
@@ -231,6 +254,70 @@ def check_safe_browsing(base_url):
         print(f"  ERROR: {e}")
 
 
+def check_file_integrity(base_url, repo_root):
+    print("\n=== 6. File Integrity Check (live site vs. git HEAD) ===")
+    if requests is None:
+        print("  SKIP: `requests` not installed.")
+        return
+
+    any_flag = False
+    checked_count = 0
+    for rel_path in INTEGRITY_FILES:
+        local_path = os.path.join(repo_root, rel_path)
+        if not os.path.exists(local_path):
+            print(f"  SKIP  {rel_path}: not found in local repo copy")
+            continue
+
+        with open(local_path, "rb") as f:
+            local_bytes = f.read()
+
+        url = base_url.rstrip("/") + "/" + rel_path
+        try:
+            res = requests.get(url, timeout=15)
+            live_bytes = res.content
+        except Exception as e:
+            print(f"  ERROR fetching {url}: {e}")
+            continue
+
+        checked_count += 1
+        if live_bytes == local_bytes:
+            print(f"  OK    {rel_path}: matches git HEAD exactly")
+        else:
+            any_flag = True
+            # Show a rough size delta and a short snippet of the first
+            # differing region -- not a full diff (this is a quick pulse
+            # check, not a diffing tool), just enough to tell at a
+            # glance whether this looks like a normal deploy lag
+            # (e.g. whitespace/comment changes) or something alarming
+            # (injected <script>/<iframe> that isn't in the repo at all).
+            size_delta = len(live_bytes) - len(local_bytes)
+            print(f"  FLAG  {rel_path}: live version differs from git HEAD (size delta: {size_delta:+d} bytes)")
+            try:
+                live_text = live_bytes.decode("utf-8", errors="replace")
+                local_text = local_bytes.decode("utf-8", errors="replace")
+                # Find the first differing line for a quick pointer --
+                # cheap alternative to a full line-by-line diff.
+                live_lines = live_text.splitlines()
+                local_lines = local_text.splitlines()
+                for i, (a, b) in enumerate(zip(live_lines, local_lines)):
+                    if a != b:
+                        print(f"        first differing line ({i + 1}): repo={b[:100]!r} live={a[:100]!r}")
+                        break
+                else:
+                    if len(live_lines) != len(local_lines):
+                        print(f"        line count differs: repo={len(local_lines)} live={len(live_lines)}")
+            except Exception:
+                pass
+
+    if checked_count == 0:
+        print(f"  Could not fetch any of the {len(INTEGRITY_FILES)} files to compare (network/connectivity issue) -- integrity NOT verified this run.")
+    elif not any_flag:
+        print(f"  All {checked_count}/{len(INTEGRITY_FILES)} successfully-fetched files match git HEAD exactly.")
+    else:
+        print("  NOTE: a mismatch can also just mean the live deploy hasn't picked up")
+        print("  the latest git push yet -- check deploy timestamps before assuming tampering.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="XFINLAB periodic security watch")
     parser.add_argument("--url", default=DEFAULT_URL)
@@ -245,6 +332,7 @@ def main():
     check_dependencies(args.repo_root)
     check_suspicious_content(args.url)
     check_safe_browsing(args.url)
+    check_file_integrity(args.url, args.repo_root)
 
     print("\n=== Done ===")
 

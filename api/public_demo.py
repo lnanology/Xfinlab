@@ -35,6 +35,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Request
 
 from services.technical_analysis_service import get_technical_analysis
+from services.request_ip import get_client_ip
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
@@ -78,7 +79,12 @@ init_demo_usage_table()
 
 @router.get("/demo/analyze/{ticker}")
 def demo_analyze(ticker: str, request: Request):
-    ip = request.client.host if request.client else "unknown"
+    # Was request.client.host directly -- on Railway that's the edge
+    # proxy's address for every visitor, not the real caller's IP,
+    # which would make the "1 free-trial window per IP" policy below
+    # apply to the whole site's traffic as if it were a single visitor
+    # instead of per real visitor. See services/request_ip.py.
+    ip = get_client_ip(request)
     now = datetime.utcnow()
 
     conn = _get_db()

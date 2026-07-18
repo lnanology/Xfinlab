@@ -17,6 +17,7 @@ from auth.password import hash_password, verify_password
 from backend.auth.jwt_handler import create_access_token
 from services.email_service import EmailService
 from services.audit_log_service import log_action, count_recent_failed_logins
+from services.request_ip import get_client_ip
 from auth.email_verification import send_verification_email
 from infrastructure.event_bus import EventBus
 
@@ -94,7 +95,7 @@ def register(user: UserRegister, request: Request):
             "user_id": user_id,
             "email": user.email,
             "name": user.name,
-            "ip": request.client.host if request.client else None,
+            "ip": get_client_ip(request),
         })
         return UserResponse(id=user_id, email=user.email, name=user.name, plan="free", token=token)
     except sqlite3.IntegrityError:
@@ -128,10 +129,10 @@ def login(user: UserLogin, request: Request):
         # audit_logs.user_id nullable migration) so failed attempts are
         # visible for brute-force/credential-stuffing monitoring, not just
         # successful logins.
-        log_action(None, f"login_failed:{user.email}", request.client.host if request.client else None)
+        log_action(None, f"login_failed:{user.email}", get_client_ip(request))
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token = create_access_token({"sub": row["email"], "id": row["id"]})
-    log_action(row["id"], "login", request.client.host if request.client else None)
+    log_action(row["id"], "login", get_client_ip(request))
     return UserResponse(id=row["id"], email=row["email"], name=row["name"], plan=row["plan"], token=token)
 
 @router.get("/auth/me")
