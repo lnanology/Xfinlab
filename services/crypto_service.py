@@ -6,6 +6,8 @@ Crypto Service - Fetches cryptocurrency data from CoinGecko API (no API key requ
 import requests
 from typing import Dict, Optional
 
+from services.outbound_http import get_with_backoff
+
 
 # CoinGecko ID to symbol mapping
 CRYPTO_MAP = {
@@ -63,7 +65,11 @@ class CryptoService:
         }
 
         try:
-            response = requests.get(url, params=params, timeout=10)
+            # 2026-07-18 compliance fix: honest User-Agent + 429/503
+            # backoff instead of a bare requests.get() (see
+            # services/outbound_http.py). CoinGecko's free tier is rate-
+            # limited and does return 429s under load.
+            response = get_with_backoff(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
 

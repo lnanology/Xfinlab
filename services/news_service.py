@@ -8,6 +8,8 @@ import requests
 from typing import List, Dict
 from dotenv import load_dotenv
 
+from services.outbound_http import get_with_backoff
+
 # Load environment variables from .env
 load_dotenv()
 
@@ -76,7 +78,11 @@ class NewsService:
             params["to"] = to_date
 
         try:
-            response = requests.get(self.BASE_URL, params=params, timeout=10)
+            # 2026-07-18 compliance fix: was a bare requests.get() with no
+            # identifying User-Agent and no backoff on a 429 -- switched to
+            # the shared honest-UA/backoff helper (see
+            # services/outbound_http.py).
+            response = get_with_backoff(self.BASE_URL, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
 

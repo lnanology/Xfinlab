@@ -842,6 +842,32 @@ def get_technical_analysis(
     return technical_service.get_analysis(symbol, period, interval)
 
 
+def fetch_ohlc_history(symbol: str, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:
+    """
+    Public wrapper around TechnicalAnalysisService._fetch_history() --
+    2026-07-18 data-compliance pass: several other files (services/
+    anomaly_history_service.py, services/trending_stocks_service.py,
+    api/pipeline_api.py) previously called `yfinance` directly for plain
+    OHLC history, bypassing the Alpaca-first/yfinance-fallback routing
+    this class already has (Alpaca's terms explicitly permit displaying
+    data to end users commercially; yfinance's do not -- see
+    services/license_registry.py). Routing them through this shared
+    function means every plain-OHLC-history caller in the codebase now
+    gets the same reduced yfinance exposure for free, instead of each
+    file needing its own copy of the Alpaca-routing logic.
+
+    Not a fit for every yfinance use in this codebase: `yf.Ticker(...).
+    info`/`.fast_info` (services/market_data_service.py, api/admin.py)
+    and `yf.Lookup(...)` (services/ticker_search_service.py) are
+    different yfinance features -- quote/company-info snapshots and
+    fuzzy ticker search -- that Alpaca's free IEX bars endpoint doesn't
+    replace one-for-one. Migrating those needs a genuinely different
+    integration (Alpaca's separate quote-snapshot API), tracked as
+    follow-up work rather than silently left half-done here.
+    """
+    return TechnicalAnalysisService._fetch_history(symbol, period, interval)
+
+
 if __name__ == "__main__":
     import json
 

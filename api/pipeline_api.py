@@ -4,12 +4,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
 import numpy as np
-import yfinance as yf
 from fastapi import APIRouter
 
 from core.master_pipeline import MasterPipeline
 from services.market_data_service import get_stock_data
-from services.technical_analysis_service import get_technical_analysis
+# 2026-07-18 data-compliance pass: was a direct `yfinance` call, now
+# routed through TechnicalAnalysisService's Alpaca-first/yfinance-
+# fallback fetcher (see fetch_ohlc_history()'s docstring there).
+from services.technical_analysis_service import get_technical_analysis, fetch_ohlc_history
 from services.news_service import NewsService
 
 router = APIRouter()
@@ -25,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 def _price_series(ticker: str, period: str = "3mo"):
     try:
-        hist = yf.Ticker(ticker).history(period=period, interval="1d")
+        hist = fetch_ohlc_history(ticker, period=period, interval="1d")
         if hist is None or hist.empty:
             return None
         return hist["Close"].tolist()

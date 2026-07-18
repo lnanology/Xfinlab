@@ -25,13 +25,18 @@ as api/market_pulse.py's free-signals cache, so this only does real
 network work once per country per day rather than on every autocomplete
 focus.
 """
-import requests
 from datetime import date
 
+from services.outbound_http import get_with_backoff
+
+# 2026-07-18 data-compliance pass: was a direct `yfinance` call, now
+# routed through TechnicalAnalysisService's Alpaca-first/yfinance-
+# fallback fetcher for the same reason as services/anomaly_history_
+# service.py (see fetch_ohlc_history()'s docstring).
 try:
-    import yfinance as yf
+    from services.technical_analysis_service import fetch_ohlc_history
 except Exception:
-    yf = None
+    fetch_ohlc_history = None
 
 # ---- Tier 2 fallback baskets: well-known large caps per country ----
 # Deliberately small and curated (not an attempt at full-market coverage)
@@ -84,7 +89,10 @@ def _fetch_taiwan_official():
     today_str = date.today().strftime("%Y%m%d")
     url = f"https://www.twse.com.tw/exchangeReport/MI_INDEX20?response=json&date={today_str}"
     try:
-        res = requests.get(url, timeout=6)
+        # 2026-07-18 compliance pass: honest User-Agent + 429/503 backoff
+        # (see services/outbound_http.py) even though this is an official
+        # free public feed -- being a good citizen towards it costs nothing.
+        res = get_with_backoff(url, timeout=6)
         if res.status_code != 200:
             return None
         payload = res.json()
@@ -107,13 +115,13 @@ def _fetch_taiwan_official():
 
 def _fetch_basket_ranked(country):
     basket = COUNTRY_BASKETS.get(country)
-    if not basket or yf is None:
+    if not basket or fetch_ohlc_history is None:
         return None
     ranked = []
     for ticker, name in basket:
         volume = 0
         try:
-            hist = yf.Ticker(ticker).history(period="7d")
+            hist = fetch_ohlc_history(ticker, period="7d")
             if not hist.empty and "Volume" in hist:
                 volume = int(hist["Volume"].sum())
         except Exception:

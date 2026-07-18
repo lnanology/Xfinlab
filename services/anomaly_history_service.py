@@ -19,10 +19,15 @@ timestamp.
 """
 from datetime import datetime, timedelta
 
+# 2026-07-18 data-compliance pass: was a direct `yfinance` call, now
+# routed through TechnicalAnalysisService's Alpaca-first/yfinance-
+# fallback fetcher (see services/technical_analysis_service.py's
+# fetch_ohlc_history() docstring) so this reduces yfinance exposure the
+# same way the Chart/Research Engines already do, for free.
 try:
-    import yfinance as yf
+    from services.technical_analysis_service import fetch_ohlc_history
 except Exception:
-    yf = None
+    fetch_ohlc_history = None
 
 from services.news_service import NewsService
 
@@ -73,7 +78,7 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
     if not ticker:
         return {"status": "error", "message": "代號格式無效，請重新輸入。", "ticker": ticker, "flagged": []}
 
-    if yf is None:
+    if fetch_ohlc_history is None:
         return {"status": "error", "message": "市場數據服務暫時無法使用。", "ticker": ticker, "flagged": []}
 
     try:
@@ -81,7 +86,7 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
         # average volume baseline even for the earliest day inside the
         # last-30-calendar-day window (which itself needs ~22 trading
         # days, plus 20 more trading days of lookback before that).
-        hist = yf.Ticker(ticker).history(period="3mo")
+        hist = fetch_ohlc_history(ticker, period="3mo")
     except Exception as e:
         return {"status": "error", "message": f"攞唔到 {ticker} 嘅歷史數據: {e}", "ticker": ticker, "flagged": []}
 

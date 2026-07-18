@@ -51,6 +51,102 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "polygon_io", "twelve_data", "finnhub", "eod_historical_data", "alpaca_markets",
         ],
     ),
+    # 2026-07-18 data-compliance pass: this registry previously only had
+    # ONE entry (yahoo_finance) even though 5 other external sources were
+    # already live in the codebase -- adding them so "can we legally use
+    # this?" is a real one-line lookup for every source actually in use,
+    # not just the one that happened to be documented first.
+    "alpaca_markets": LicenseRecord(
+        source_id="alpaca_markets",
+        license_type="commercial",
+        commercial_use_allowed=True,
+        terms_url="https://alpaca.markets/support/end-user-agreement",
+        risk_level="low",
+        notes=(
+            "Free IEX feed via Alpaca's Market Data API. Alpaca's terms "
+            "explicitly permit displaying this data to end users in a "
+            "commercial app -- the one source in this registry that's "
+            "actually clean for XFINLAB's use case as-is. US-listed "
+            "symbols only; see services/technical_analysis_service.py's "
+            "Alpaca-first / yfinance-fallback routing."
+        ),
+    ),
+    "newsapi_org": LicenseRecord(
+        source_id="newsapi_org",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="https://newsapi.org/terms",
+        risk_level="medium",
+        notes=(
+            "Used by services/news_service.py. NewsAPI.org's free "
+            "'Developer' plan is explicitly for development/testing only "
+            "and disallows production commercial use; their paid "
+            "'Business' plan is required for that. Whether this project's "
+            "NEWS_API_KEY is on the free or a paid plan hasn't been "
+            "confirmed here -- flag as commercial_use_allowed=False until "
+            "verified, rather than assuming it's fine. Exposure is "
+            "somewhat reduced regardless: only title/source/published_at/"
+            "url are stored (see NewsService.get_company_news()), never "
+            "full article text, and users are pointed back to the "
+            "original article via `url` rather than XFINLAB redisplaying "
+            "the content itself."
+        ),
+        replacement_candidates=["newsapi_org_business_tier"],
+    ),
+    "coingecko": LicenseRecord(
+        source_id="coingecko",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="https://www.coingecko.com/en/api_terms",
+        risk_level="medium",
+        notes=(
+            "Used by services/crypto_service.py (free, no-API-key public "
+            "endpoints). CoinGecko's public/Demo API terms are oriented "
+            "around non-commercial/personal use; their docs point "
+            "commercial products at a paid 'Pro' API plan. Whether that's "
+            "needed for XFINLAB's specific usage pattern (aggregate price/"
+            "market-cap/volume figures, not redistributing raw datasets) "
+            "hasn't been legally confirmed -- flagged conservatively."
+        ),
+        replacement_candidates=["coingecko_pro"],
+    ),
+    "reddit_unauthenticated": LicenseRecord(
+        source_id="reddit_unauthenticated",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="https://www.redditinc.com/policies/data-api-terms",
+        risk_level="medium",
+        notes=(
+            "growth/reddit_bot.py hits Reddit's unauthenticated /r/{sub}/"
+            "hot.json endpoint (not the official OAuth Data API). Not "
+            "currently wired into any live production endpoint (grepped: "
+            "no api/ router or scheduled job imports RedditBot as of "
+            "2026-07-18), so exposure today is limited to this standalone "
+            "script -- but Reddit's Data API terms require going through "
+            "their official OAuth API with a registered app for any real "
+            "usage, which this doesn't do. 2026-07-18 fix stopped the "
+            "worse practice of spoofing a Chrome User-Agent (see the "
+            "file's own docstring) as an interim mitigation; migrating to "
+            "`praw` + a registered Reddit app is the real fix, needs "
+            "Reddit developer credentials this session doesn't have."
+        ),
+        replacement_candidates=["reddit_oauth_api_via_praw"],
+    ),
+    "twse_official": LicenseRecord(
+        source_id="twse_official",
+        license_type="public_domain",
+        commercial_use_allowed=True,
+        terms_url="https://www.twse.com.tw",
+        risk_level="low",
+        notes=(
+            "Taiwan Stock Exchange's own free, anonymous, official JSON "
+            "endpoint (MI_INDEX20 -- today's top 20 securities by volume/"
+            "value), used by services/trending_stocks_service.py. A "
+            "government exchange publishing its own market data for "
+            "public consumption -- the lowest-risk source in this "
+            "registry alongside alpaca_markets."
+        ),
+    ),
 }
 
 
