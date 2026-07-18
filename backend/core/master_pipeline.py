@@ -18,8 +18,6 @@ from alpha.feature_engine import FeatureEngine
 from alpha.alpha_engine import AlphaEngine
 from alpha.regime_detector import RegimeDetector
 
-from evolution.evolution_loop import EvolutionLoop
-
 from agents.ceo_agent import CEOAgent
 from agents.analyst_agent import AnalystAgent
 from agents.risk_agent_v2 import RiskAgentV2
@@ -30,7 +28,17 @@ from agi.learning_loop import LearningLoop
 
 
 class MasterPipeline:
-    trader = PaperTrader()
+    # 2026-07-18 fix: `trader` used to be a single PaperTrader() instance
+    # shared as a CLASS attribute -- every ticker, every user, across the
+    # whole server process's lifetime, all mutated the SAME cash/position
+    # dict. A request for AAPL could show paper-trading state left over
+    # from an unrelated NVDA request five minutes earlier from a
+    # different user. Not currently exposed to end users (api/
+    # pipeline_api.py's _to_probability_view() never reads raw["paper_
+    # trading"]), but it's a real correctness bug in the internal result,
+    # not just an unvalidated formula -- fixed by creating a fresh
+    # PaperTrader() per pipeline run instead of sharing one across every
+    # call.
     agi = LearningLoop()
 
     @staticmethod
@@ -38,6 +46,8 @@ class MasterPipeline:
         cached = Cache.get(f"master:{ticker}")
         if cached:
             return cached
+
+        trader = PaperTrader()
 
         # L2: Factor + Quant
         factor = FactorEngine.calculate(market_data)
@@ -51,7 +61,7 @@ class MasterPipeline:
 
         # L5: Trading
         signal = SignalEngine.generate(decision)
-        paper = MasterPipeline.trader.execute(ticker, signal, market_data.get("price", 100))
+        paper = trader.execute(ticker, signal, market_data.get("price", 100))
 
         # L6: Alpha
         features = FeatureEngine.build(market_data)

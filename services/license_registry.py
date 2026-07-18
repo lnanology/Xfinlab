@@ -198,6 +198,27 @@ _LICENSES: Dict[str, LicenseRecord] = {
         ),
         replacement_candidates=["stocktwits_official_api_when_reopened"],
     ),
+    "sec_edgar": LicenseRecord(
+        source_id="sec_edgar",
+        license_type="public_domain",
+        commercial_use_allowed=True,
+        terms_url="https://www.sec.gov/search-filings/edgar-application-programming-interfaces",
+        risk_level="low",
+        notes=(
+            "Used by services/fundamentals_service.py (EPS/Revenue via "
+            "the free XBRL companyconcept API, US SEC filers only) to "
+            "fill the fund_score/valuation gap this codebase previously "
+            "had no real data source for. Public-domain US government "
+            "data, no API key, 10 req/sec limit, no daily cap -- the "
+            "same underlying data Bloomberg/FactSet/Refinitiv build "
+            "their commercial products on. Chosen over Finnhub (needs "
+            "written approval for commercial use on the free tier) and "
+            "Financial Modeling Prep (free tier explicitly requires a "
+            "paid Data Display/Licensing Agreement before commercial "
+            "display) -- the only one of the three with no commercial-"
+            "use ambiguity or extra cost."
+        ),
+    ),
     "twse_official": LicenseRecord(
         source_id="twse_official",
         license_type="public_domain",

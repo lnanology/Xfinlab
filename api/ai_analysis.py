@@ -7,6 +7,7 @@ from engines.score_engine import ScoreEngine
 from engines.risk_engine import RiskEngine
 from engines.news_engine import NewsEngine
 from backend.alpha.regime_detector import RegimeDetector
+from services.fundamentals_service import get_fundamentals
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -175,18 +176,25 @@ async def ai_analysis(body: dict):
     except Exception:
         regime_result = None
 
+    # 2026-07-18: was a hardcoded "N/A（暫無估值數據源）" -- now backed by
+    # services/fundamentals_service.py's real SEC EDGAR data (US-listed
+    # SEC filers only; non-US tickers/no-match honestly still report
+    # unavailable, never a guessed P/E).
+    fundamentals = get_fundamentals(symbol, current_price=market.get("price") or None)
+    if fundamentals.get("available") and fundamentals.get("pe_ratio") is not None:
+        valuation_display = f"P/E {fundamentals['pe_ratio']}"
+    elif fundamentals.get("available"):
+        valuation_display = "P/E 不適用（EPS為負或缺失）"
+    else:
+        valuation_display = "N/A（非美股SEC申報公司或暫無數據）"
+
     dashboard = {
         "trend": tech_trend or ("上升" if trend == "bullish" else "下降" if trend == "bearish" else "中性"),
         "risk": risk_result["risk_level"],
         "momentum": (confluence.get("direction") if confluence else None) or "數據不足",
         "news": news_result["sentiment"],
         "sentiment": "偏多" if bull > bear else "偏空" if bear > bull else "中性",
-        # Honest gap: no fundamentals/valuation-multiples data source exists
-        # in this codebase (see fund_score above -- it's actually a
-        # technical/news composite, not a real P/E-style valuation read).
-        # Reporting "N/A" here rather than reusing fund_score under a
-        # misleading label.
-        "valuation": "N/A（暫無估值數據源）",
+        "valuation": valuation_display,
         "liquidity": "偏低" if volume_ratio < 0.7 else "良好",
     }
 
@@ -267,5 +275,6 @@ async def ai_analysis(body: dict):
             # fetched above for news_result -- just passed through with
             # their url/published_at instead of only the aggregate score.
             "news_headlines": news[:8],
+            "fundamentals": fundamentals,
         }
     }
