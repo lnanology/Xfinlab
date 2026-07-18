@@ -261,10 +261,18 @@
   /* How it works */
   .how-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; text-align: center; }
   .steps-row { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
-  .step-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; width: 180px; }
-  .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(0,212,255,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; }
-  .step-title { font-size: 0.9rem; font-weight: 600; }
-  .step-arrow { color: var(--border); font-size: 1.4rem; }
+  .step-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; width: 180px; min-height: 112px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(37,99,235,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; flex-shrink: 0; }
+  .step-title { font-size: 0.9rem; font-weight: 600; line-height: 1.35; }
+  .step-arrow { color: var(--border); font-size: 1.4rem; flex-shrink: 0; }
+  /* Mobile: stack the 3 steps vertically and centered instead of
+     letting them wrap awkwardly with the arrows -- each box takes the
+     same centered column, arrows rotate to point downward between them. */
+  @media (max-width: 640px) {
+    .steps-row { flex-direction: column; gap: 12px; }
+    .step-box { width: 100%; max-width: 280px; }
+    .step-arrow { transform: rotate(90deg); }
+  }
 
   /* Demo widget */
   .demo-section { max-width: 640px; margin: 0 auto; padding: 60px 24px; text-align: center; }
