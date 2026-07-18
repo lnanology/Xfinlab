@@ -1,4 +1,19 @@
-"""Risk Engine Module - Evaluates market risk based on volatility"""
+"""
+Risk Engine Module - Evaluates market risk based on volatility.
+
+This is the ONE canonical RiskEngine for the whole codebase (every real
+caller -- api/ai_analysis.py, api/hero_showcase.py, api/full_analysis_v3.py,
+api/analysis_api.py, backend/core/pipeline.py, services/dashboard_
+snapshot_service.py -- imports from here: `from engines.risk_engine import
+RiskEngine`).
+
+2026-07-18 consolidation note: two other near-duplicate copies used to
+exist (engines/risk_engine_v2.py and backend/engines/risk_engine.py) --
+both were dead code (grepped: zero real importers anywhere in the repo,
+only this file was ever actually imported) and have been deleted. If you
+need a risk calculation anywhere, import THIS module; don't create a new
+risk_engine variant.
+"""
 
 from typing import Dict
 
