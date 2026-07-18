@@ -58,12 +58,12 @@
     var wrap = document.createElement('div');
     wrap.id = 'xflPushPrompt';
     wrap.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;' +
-      'background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);border-radius:12px;' +
-      'padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.4);display:flex;align-items:center;gap:14px;' +
+      'background:var(--bg-card,#FFFFFF);border:1px solid var(--border-color,#000000);border-radius:12px;' +
+      'padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,0.2);display:flex;align-items:center;gap:14px;' +
       'max-width:min(92vw,420px);font-family:inherit;';
 
     var textEl = document.createElement('div');
-    textEl.style.cssText = 'color:var(--text-primary,#e2e8f0);font-size:0.85rem;font-weight:600;flex:1;line-height:1.4;';
+    textEl.style.cssText = 'color:var(--text-primary,#000000);font-size:0.85rem;font-weight:600;flex:1;line-height:1.4;';
     textEl.textContent = title;
 
     var actions = document.createElement('div');
@@ -78,7 +78,7 @@
     var dismissBtn = document.createElement('button');
     dismissBtn.type = 'button';
     dismissBtn.textContent = dismissLabel;
-    dismissBtn.style.cssText = 'background:none;border:none;color:var(--text-muted,#64748b);font-size:0.72rem;' +
+    dismissBtn.style.cssText = 'background:none;border:none;color:var(--text-muted,#666666);font-size:0.72rem;' +
       'cursor:pointer;padding:2px;font-family:inherit;';
 
     subBtn.onclick = async function () {

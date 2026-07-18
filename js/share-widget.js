@@ -36,7 +36,7 @@
     {key: 'whatsapp', icon: 'fa-brands fa-whatsapp', color: '#25D366', label: 'WhatsApp'},
     {key: 'telegram', icon: 'fa-brands fa-telegram', color: '#26A5E4', label: 'Telegram'},
     {key: 'facebook', icon: 'fa-brands fa-facebook', color: '#1877F2', label: 'Facebook'},
-    {key: 'twitter', icon: 'fa-brands fa-x-twitter', color: '#e2e8f0', label: 'X (Twitter)'},
+    {key: 'twitter', icon: 'fa-brands fa-x-twitter', color: 'var(--text-primary,#000000)', label: 'X (Twitter)'},
     {key: 'linkedin', icon: 'fa-brands fa-linkedin', color: '#0A66C2', label: 'LinkedIn'},
     {key: 'line', icon: 'fa-brands fa-line', color: '#00B900', label: 'LINE'}
   ];
@@ -76,9 +76,9 @@
   function buildItem(html, onClick, href) {
     var el = document.createElement(href ? 'a' : 'div');
     if (href) { el.href = href; el.target = '_blank'; el.rel = 'noopener'; }
-    el.style.cssText = 'display:flex;align-items:center;gap:8px;padding:9px 14px;color:#e2e8f0;text-decoration:none;font-size:0.82rem;cursor:pointer;';
+    el.style.cssText = 'display:flex;align-items:center;gap:8px;padding:9px 14px;color:var(--text-primary,#000000);text-decoration:none;font-size:0.82rem;cursor:pointer;';
     el.innerHTML = html;
-    el.onmouseenter = function () { el.style.background = '#111d30'; };
+    el.onmouseenter = function () { el.style.background = 'var(--bg-secondary,#F8FAFC)'; };
     el.onmouseleave = function () { el.style.background = 'transparent'; };
     if (onClick) el.onclick = function (e) { onClick(el, e); };
     return el;
@@ -100,11 +100,11 @@
     overlay.onclick = function (e) { if (e.target === overlay) toggleQrModal(false); };
 
     var card = document.createElement('div');
-    card.style.cssText = 'background:#0d1525;border:1px solid #1e2d45;border-radius:14px;padding:24px;max-width:280px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.5);';
+    card.style.cssText = 'background:var(--bg-card,#FFFFFF);border:1px solid var(--border-color,#000000);border-radius:14px;padding:24px;max-width:280px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.25);';
 
     var title = document.createElement('div');
     title.id = 'shareQrModalTitle';
-    title.style.cssText = 'font-size:0.85rem;font-weight:600;color:#e2e8f0;margin-bottom:14px;';
+    title.style.cssText = 'font-size:0.85rem;font-weight:600;color:var(--text-primary,#000000);margin-bottom:14px;';
     title.textContent = t('share_qr_scan', 'Scan to visit XFINLAB');
     card.appendChild(title);
 
@@ -117,7 +117,7 @@
     card.appendChild(img);
 
     var urlRow = document.createElement('div');
-    urlRow.style.cssText = 'margin-top:14px;font-size:0.8rem;color:#94a3b8;word-break:break-all;';
+    urlRow.style.cssText = 'margin-top:14px;font-size:0.8rem;color:var(--text-muted,#666666);word-break:break-all;';
     urlRow.textContent = SITE_URL.replace(/\/$/, '');
     card.appendChild(urlRow);
 
@@ -125,7 +125,7 @@
     closeBtn.type = 'button';
     closeBtn.id = 'shareQrModalClose';
     closeBtn.textContent = t('share_qr_close', 'Close');
-    closeBtn.style.cssText = 'margin-top:16px;background:#111d30;border:1px solid #1e2d45;color:#e2e8f0;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;';
+    closeBtn.style.cssText = 'margin-top:16px;background:var(--bg-secondary,#F8FAFC);border:1px solid var(--border-color,#000000);color:var(--text-primary,#000000);padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-family:inherit;';
     closeBtn.onclick = function () { toggleQrModal(false); };
     card.appendChild(closeBtn);
 
@@ -156,11 +156,11 @@
 
     var panel = document.createElement('div');
     panel.id = 'sharePanel';
-    panel.style.cssText = 'display:none;position:absolute;bottom:44px;right:0;background:#0d1525;border:1px solid #1e2d45;border-radius:10px;width:210px;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden;';
+    panel.style.cssText = 'display:none;position:absolute;bottom:44px;right:0;background:var(--bg-card,#FFFFFF);border:1px solid var(--border-color,#000000);border-radius:10px;width:210px;box-shadow:0 8px 24px rgba(0,0,0,0.2);overflow:hidden;';
 
     var header = document.createElement('div');
     header.id = 'sharePanelTitle';
-    header.style.cssText = 'padding:10px 14px;border-bottom:1px solid #1e2d45;font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#64748b';
+    header.style.cssText = 'padding:10px 14px;border-bottom:1px solid var(--border-color,#000000);font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted,#666666)';
     header.textContent = t('share_panel_title', 'Share XFINLAB');
     panel.appendChild(header);
 
@@ -173,10 +173,10 @@
     });
 
     var qrItem = buildItem(
-      '<i class="fa-solid fa-qrcode" style="color:#e2e8f0;width:16px;text-align:center;font-size:0.95rem;"></i><span class="share-item-label" id="shareQrLabel">' + t('share_qr_code', 'QR Code') + '</span>',
+      '<i class="fa-solid fa-qrcode" style="color:var(--text-primary,#000000);width:16px;text-align:center;font-size:0.95rem;"></i><span class="share-item-label" id="shareQrLabel">' + t('share_qr_code', 'QR Code') + '</span>',
       function () { toggleQrModal(); }
     );
-    qrItem.style.borderTop = '1px solid #1e2d45';
+    qrItem.style.borderTop = '1px solid var(--border-color,#000000)';
     panel.appendChild(qrItem);
 
     var copyItem = buildItem(
@@ -188,7 +188,7 @@
     var btn = document.createElement('button');
     btn.id = 'shareWidgetBtn';
     btn.type = 'button';
-    btn.style.cssText = 'background:#0d1525;border:1px solid #1e2d45;color:#e2e8f0;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-family:inherit;';
+    btn.style.cssText = 'background:var(--bg-card,#FFFFFF);border:1px solid var(--border-color,#000000);color:var(--text-primary,#000000);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-family:inherit;';
     btn.textContent = '📤 ' + t('share_btn_label', 'Share');
     btn.onclick = function (e) {
       e.stopPropagation();

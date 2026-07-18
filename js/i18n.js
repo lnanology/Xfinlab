@@ -57,21 +57,21 @@ const I18N = {
     switcher.style.cssText = 'position:fixed;bottom:136px;right:24px;z-index:9998;';
 
     const btn = document.createElement('button');
-    btn.style.cssText = 'background:#0d1525;border:1px solid #1e2d45;color:#e2e8f0;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    btn.style.cssText = 'background:var(--bg-card,#FFFFFF);border:1px solid var(--border-color,#000000);color:var(--text-primary,#000000);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
     btn.textContent = '🌐 ' + (supportedLangs[this.currentLang] || 'Language');
 
     const panel = document.createElement('div');
-    panel.style.cssText = 'display:none;position:absolute;bottom:44px;right:0;background:#0d1525;border:1px solid #1e2d45;border-radius:10px;width:210px;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden;';
+    panel.style.cssText = 'display:none;position:absolute;bottom:44px;right:0;background:var(--bg-card,#FFFFFF);border:1px solid var(--border-color,#000000);border-radius:10px;width:210px;box-shadow:0 8px 24px rgba(0,0,0,0.2);overflow:hidden;';
 
     // Header
     const header = document.createElement('div');
-    header.style.cssText = 'padding:10px 14px 6px;border-bottom:1px solid #1e2d45;';
-    header.innerHTML = '<div style="font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#64748b;margin-bottom:6px;">Language</div>';
+    header.style.cssText = 'padding:10px 14px 6px;border-bottom:1px solid var(--border-color,#000000);';
+    header.innerHTML = '<div style="font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted,#666666);margin-bottom:6px;">Language</div>';
 
     // 搜尋框
     const searchInput = document.createElement('input');
     searchInput.placeholder = '🔍 Search all 46 languages...';
-    searchInput.style.cssText = 'width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:0.78rem;font-family:inherit;box-sizing:border-box;outline:none;';
+    searchInput.style.cssText = 'width:100%;background:var(--bg-primary,#FFFFFF);border:1px solid var(--border-color,#000000);color:var(--text-primary,#000000);padding:6px 10px;border-radius:6px;font-size:0.78rem;font-family:inherit;box-sizing:border-box;outline:none;';
     header.appendChild(searchInput);
     panel.appendChild(header);
 
@@ -81,7 +81,7 @@ const I18N = {
 
     // 自定義 scrollbar
     const style = document.createElement('style');
-    style.textContent = '#langSwitcher div::-webkit-scrollbar{width:4px}#langSwitcher div::-webkit-scrollbar-track{background:#0d1525}#langSwitcher div::-webkit-scrollbar-thumb{background:#1e2d45;border-radius:99px}';
+    style.textContent = '#langSwitcher div::-webkit-scrollbar{width:4px}#langSwitcher div::-webkit-scrollbar-track{background:var(--bg-card,#FFFFFF)}#langSwitcher div::-webkit-scrollbar-thumb{background:var(--border-color,#000000);border-radius:99px}';
     document.head.appendChild(style);
 
     const allEntries = Object.entries(supportedLangs);
@@ -110,7 +110,7 @@ const I18N = {
       }
 
       if (entries.length === 0) {
-        list.innerHTML = '<div style="padding:16px;color:#64748b;font-size:0.8rem;text-align:center;">No results</div>';
+        list.innerHTML = '<div style="padding:16px;color:var(--text-muted,#666666);font-size:0.8rem;text-align:center;">No results</div>';
         return;
       }
 
@@ -118,7 +118,7 @@ const I18N = {
         if (entry === null) {
           // 分隔線
           const sep = document.createElement('div');
-          sep.style.cssText = 'height:1px;background:#1e2d45;margin:4px 0;';
+          sep.style.cssText = 'height:1px;background:var(--border-color,#000000);margin:4px 0;';
           list.appendChild(sep);
           return;
         }
@@ -126,10 +126,10 @@ const I18N = {
         const [code, name] = entry;
         const isActive = code === this.currentLang;
         const item = document.createElement('div');
-        item.style.cssText = `padding:9px 14px;cursor:pointer;font-size:0.82rem;display:flex;justify-content:space-between;align-items:center;transition:background 0.1s;color:${isActive ? '#00d4ff' : '#e2e8f0'};background:${isActive ? 'rgba(0,212,255,0.08)' : 'transparent'};`;
-        item.innerHTML = `<span>${name}</span>${isActive ? '<span style="color:#00d4ff;font-size:0.75rem;font-weight:700;">✓</span>' : ''}`;
-        item.onmouseenter = () => { if (!isActive) item.style.background = '#111d30'; };
-        item.onmouseleave = () => { item.style.background = isActive ? 'rgba(0,212,255,0.08)' : 'transparent'; };
+        item.style.cssText = `padding:9px 14px;cursor:pointer;font-size:0.82rem;display:flex;justify-content:space-between;align-items:center;transition:background 0.1s;color:${isActive ? 'var(--accent-blue,#2563EB)' : 'var(--text-primary,#000000)'};background:${isActive ? 'rgba(37,99,235,0.08)' : 'transparent'};`;
+        item.innerHTML = `<span>${name}</span>${isActive ? '<span style="color:var(--accent-blue,#2563EB);font-size:0.75rem;font-weight:700;">✓</span>' : ''}`;
+        item.onmouseenter = () => { if (!isActive) item.style.background = 'var(--bg-secondary,#F8FAFC)'; };
+        item.onmouseleave = () => { item.style.background = isActive ? 'rgba(37,99,235,0.08)' : 'transparent'; };
         item.onclick = () => I18N.setLang(code);
         list.appendChild(item);
       });
@@ -141,7 +141,7 @@ const I18N = {
 
     // Footer
     const footer = document.createElement('div');
-    footer.style.cssText = 'padding:6px 14px;border-top:1px solid #1e2d45;font-size:0.68rem;color:#64748b;text-align:center;';
+    footer.style.cssText = 'padding:6px 14px;border-top:1px solid var(--border-color,#000000);font-size:0.68rem;color:var(--text-muted,#666666);text-align:center;';
     footer.textContent = `${allEntries.length} languages available`;
     panel.appendChild(footer);
 
