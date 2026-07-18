@@ -567,19 +567,47 @@ const PLACEHOLDER_ROTATION = [
   'Try Gold', 'Try S&P 500', 'Search any global asset...'
 ];
 
+// One shared <style> block, injected once, for the dropdown's internal
+// row styling -- lets the exchange/country columns collapse on narrow
+// mobile screens via a real media query (impossible with inline
+// styles), and keeps row colors theme-aware (var(...) with light
+// fallbacks) instead of the hardcoded dark hex this used to have.
+let _acStylesInjected = false;
+function _ensureAcStyles() {
+  if (_acStylesInjected) return;
+  _acStylesInjected = true;
+  const style = document.createElement('style');
+  style.textContent = `
+    .xfl-asset-row { padding:9px 14px; cursor:pointer; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border-color,#000000); }
+    .xfl-asset-row .xfl-logo { font-size:1.05rem; width:22px; text-align:center; flex-shrink:0; }
+    .xfl-asset-row .xfl-symbol { font-weight:600; color:var(--text-primary,#000000); font-family:monospace; min-width:64px; flex-shrink:0; }
+    .xfl-asset-row .xfl-name { font-size:0.78rem; color:var(--text-muted,#666666); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .xfl-asset-row .xfl-meta { font-size:0.68rem; color:var(--text-muted,#666666); white-space:nowrap; flex-shrink:0; }
+    .xfl-asset-row .xfl-meta.xfl-country { min-width:44px; text-align:right; }
+    .xfl-suggestion-row { padding:12px 14px; cursor:pointer; color:var(--text-muted,#666666); font-size:0.82rem; border-bottom:1px solid var(--border-color,#000000); }
+    @media (max-width: 480px) {
+      .xfl-asset-row .xfl-meta { display:none; }
+      .xfl-asset-row .xfl-name { font-size:0.75rem; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function _renderAssetRow(a, extraAttrs) {
   const meta = getAssetMeta(a);
   const logo = getAssetLogo(a);
   // Note: this row intentionally does NOT show a "Stock/ETF/Crypto"
   // type badge anymore -- removed per feedback that the type label
   // (TICKER_TYPE_LABEL) was noisy/unnecessary in the dropdown. The
-  // exchange + country columns already carry enough context.
-  return `<div class="xfl-asset-row" ${extraAttrs || ''} style="padding:9px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e2d45;">
-    <span style="font-size:1.05rem;width:22px;text-align:center;flex-shrink:0">${logo}</span>
-    <span style="font-weight:600;color:#e2e8f0;font-family:monospace;min-width:64px;flex-shrink:0">${a.symbol}</span>
-    <span style="font-size:0.78rem;color:#94a3b8;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</span>
-    <span style="font-size:0.68rem;color:#64748b;white-space:nowrap;flex-shrink:0">${meta.exchange}</span>
-    <span style="font-size:0.68rem;color:#64748b;white-space:nowrap;flex-shrink:0;min-width:44px;text-align:right">${meta.country}</span>
+  // exchange + country columns already carry enough context (and are
+  // hidden on narrow mobile screens via the @media rule in
+  // _ensureAcStyles() to keep rows from overflowing).
+  return `<div class="xfl-asset-row" ${extraAttrs || ''}>
+    <span class="xfl-logo">${logo}</span>
+    <span class="xfl-symbol">${a.symbol}</span>
+    <span class="xfl-name">${a.name}</span>
+    <span class="xfl-meta">${meta.exchange}</span>
+    <span class="xfl-meta xfl-country">${meta.country}</span>
   </div>`;
 }
 
@@ -612,9 +640,22 @@ function attachTickerAutocomplete(input, options) {
       parent.style.position = 'relative';
     }
     dropdown = document.createElement('div');
+    dropdown.className = 'xfl-ac-dropdown';
+    // Previously this auto-created dropdown had NO layout CSS at all --
+    // it just flowed inline in normal document flow (full width, no
+    // cap on height), pushing the rest of the page down instead of
+    // floating over it, and overflowing badly on narrow mobile
+    // screens. Explicitly position/size/cap it like a real dropdown.
+    // (Pages that pass options.existingDropdown -- e.g. index.html's
+    // hero search via initAutocomplete -- already have their own
+    // hand-styled dropdown element and are unaffected by this.)
+    dropdown.style.cssText = 'position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:500;' +
+      'background:var(--bg-card,#FFFFFF);border:1px solid var(--border-color,#000000);border-radius:10px;' +
+      'max-height:min(360px,60vh);overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.15);';
     if (parent) parent.appendChild(dropdown);
   }
   dropdown.style.display = 'none';
+  _ensureAcStyles();
 
   let currentResults = [];
   let currentSuggestion = null;
@@ -642,7 +683,7 @@ function attachTickerAutocomplete(input, options) {
   function highlight() {
     const rows = dropdown.querySelectorAll('.xfl-asset-row');
     rows.forEach((r, i) => {
-      r.style.background = i === activeIndex ? '#131c2e' : 'transparent';
+      r.style.background = i === activeIndex ? 'var(--bg-secondary,#F8FAFC)' : 'transparent';
     });
   }
 
@@ -655,7 +696,7 @@ function attachTickerAutocomplete(input, options) {
 
   function renderSection(title, assets) {
     if (!assets.length) return '';
-    const header = `<div style="padding:8px 14px 4px;font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#64748b">${title}</div>`;
+    const header = `<div style="padding:8px 14px 4px;font-size:0.68rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted,#666666)">${title}</div>`;
     return header + assets.map(a => _renderAssetRow(a)).join('');
   }
 
@@ -698,8 +739,8 @@ function attachTickerAutocomplete(input, options) {
       if (results.length) {
         html += results.map(a => _renderAssetRow(a)).join('');
       } else if (suggestion) {
-        html += `<div class="xfl-suggestion-row" style="padding:12px 14px;cursor:pointer;color:#94a3b8;font-size:0.82rem;border-bottom:1px solid #1e2d45">
-          Did you mean <strong style="color:#00d4ff">${suggestion.name} (${suggestion.symbol})</strong>?
+        html += `<div class="xfl-suggestion-row">
+          Did you mean <strong style="color:var(--accent-blue,#2563EB)">${suggestion.name} (${suggestion.symbol})</strong>?
         </div>`;
       }
       dropdown.innerHTML = html;
