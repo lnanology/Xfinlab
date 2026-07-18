@@ -132,6 +132,72 @@ _LICENSES: Dict[str, LicenseRecord] = {
         ),
         replacement_candidates=["reddit_oauth_api_via_praw"],
     ),
+    # 2026-07-18 Data Layer expansion pass: services/rss_news_service.py's
+    # 3 live sources, plus documenting the StockTwits gap this same pass
+    # found and deliberately did NOT build around (see task #212 -- their
+    # developer registrations are closed and their ToS bars unauthorized
+    # automated extraction, so there is no compliant path today).
+    "investing_com_rss": LicenseRecord(
+        source_id="investing_com_rss",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="https://www.investing.com/rss/news.rss",
+        risk_level="medium",
+        notes=(
+            "Used by services/rss_news_service.py. Publicly published RSS "
+            "feed intended for syndication; exact commercial-redistribution "
+            "terms weren't independently verified this pass -- flagged "
+            "conservatively. Exposure minimized: only title/link/"
+            "published_at/source kept, never full article text, same "
+            "convention as NewsService.get_company_news()."
+        ),
+    ),
+    "globenewswire_rss": LicenseRecord(
+        source_id="globenewswire_rss",
+        license_type="public_domain",
+        commercial_use_allowed=True,
+        terms_url="https://www.globenewswire.com/rss/list",
+        risk_level="low",
+        notes=(
+            "Used by services/rss_news_service.py. GlobeNewswire's RSS "
+            "feeds are explicitly published for public syndication "
+            "(journalists/bloggers/readers can freely subscribe); content "
+            "is itself a company's own public press release. Only title/"
+            "link/published_at kept, never full release text."
+        ),
+    ),
+    "prnewswire_rss": LicenseRecord(
+        source_id="prnewswire_rss",
+        license_type="public_domain",
+        commercial_use_allowed=True,
+        terms_url="https://www.prnewswire.com/rss/",
+        risk_level="low",
+        notes=(
+            "Used by services/rss_news_service.py. Same reasoning as "
+            "globenewswire_rss -- publicly syndicated company press "
+            "releases, headline/link/date only kept here."
+        ),
+    ),
+    "stocktwits": LicenseRecord(
+        source_id="stocktwits",
+        license_type="non_commercial",
+        commercial_use_allowed=False,
+        terms_url="https://stocktwits.com/about/legal/terms/",
+        risk_level="high",
+        notes=(
+            "NOT integrated anywhere in this codebase (checked 2026-07-18, "
+            "see task #212). Their developer API registration is "
+            "explicitly closed ('we unfortunately won't be accepting new "
+            "registrations'), and their current Terms of Service bar "
+            "automated data extraction 'except through an approved API'. "
+            "The only working endpoint found (unauthenticated symbol "
+            "stream) is therefore against their own terms to use -- "
+            "recorded here so nobody re-discovers this gap and quietly "
+            "scrapes it without knowing it's against ToS. Revisit if/when "
+            "their developer program reopens."
+        ),
+        replacement_candidates=["stocktwits_official_api_when_reopened"],
+    ),
     "twse_official": LicenseRecord(
         source_id="twse_official",
         license_type="public_domain",
