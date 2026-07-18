@@ -69,10 +69,24 @@ def _fetch_real_pipeline_inputs(ticker: str):
         # NewsAgent對冇新聞嘅情況已經有中性fallback(score=50)。
         logger.info("pipeline_api: news fetch unavailable for %s: %s", ticker, e)
 
-    confluence_score = (
-        tech.get("confluence", {}).get("score", 0) if tech_ok else 0
-    )
+    confluence = tech.get("confluence", {}) if tech_ok else {}
+    confluence_score = confluence.get("score", 0)
     score_0_100 = round((confluence_score + 100) / 2, 1)
+
+    # Step 2 of the Strategy Intelligence roadmap (2026-07-18): these three
+    # were already being computed by TechnicalAnalysisService (Confluence
+    # Engine's direction/confidence_pct, and volume_ratio) but never passed
+    # into market_data, so RegimeDetector could only ever see `volatility`.
+    # structure_event pulls the single most recent Market Structure Engine
+    # event (if any) so RegimeDetector can flag TREND_REVERSAL_WATCH on a
+    # real CHOCH rather than guessing.
+    trend_direction = confluence.get("direction") if tech_ok else None
+    trend_confidence_pct = confluence.get("confidence_pct") if tech_ok else None
+    volume_ratio = tech.get("volume_ratio") if tech_ok else None
+    market_structure = tech.get("market_structure") if tech_ok else None
+    structure_event = None
+    if market_structure and market_structure.get("events"):
+        structure_event = market_structure["events"][0].get("type")
 
     # market_link矩陣:呢隻股vs大盤(SPY)嘅相關性,俾TensorNetwork用。
     # 攞唔到就退返做2x3嘅中性矩陣(即係之前嗰個mock預設值)。
@@ -98,6 +112,13 @@ def _fetch_real_pipeline_inputs(ticker: str):
         "volume": snapshot.get("volume", 0) if snapshot_ok else 0,
         "prices": prices,
         "matrix": matrix,
+        # Step 2 additions -- real Confluence/Market Structure Engine
+        # outputs, feeding RegimeDetector's multi-factor classification
+        # (see backend/alpha/regime_detector.py).
+        "trend_direction": trend_direction,
+        "trend_confidence_pct": trend_confidence_pct,
+        "volume_ratio": volume_ratio,
+        "structure_event": structure_event,
     }
     return market_data, news_data, {"tech_ok": tech_ok, "snapshot_ok": snapshot_ok}
 
@@ -111,20 +132,43 @@ def _to_probability_view(raw: dict, data_quality: dict) -> dict:
     final_score = raw.get("decision", {}).get("final_score", 50)
     bullish_probability = round(max(0.0, min(100.0, final_score)) / 100, 3)
 
-    # regime係"HIGH_VOLATILITY"/"LOW_VOLATILITY"/"NORMAL"呢類市況描述,
-    # 唔係買賣建議,所以OK擺出嚟。Committee.vote()就係直接返BUY/SELL/HOLD
-    # 呢隻string —— 呢個先係user明確話唔想顯示嘅嘢,所以刻意唔攞嚟用。
+    # regime係"STRONG_BULLISH"/"PANIC"呢類市況描述,唔係買賣建議,所以OK
+    # 擺出嚟。Committee.vote()就係直接返BUY/SELL/HOLD呢隻string —— 呢個
+    # 先係user明確話唔想顯示嘅嘢,所以刻意唔攞嚟用。
+    #
+    # Step 2 of the Strategy Intelligence roadmap (2026-07-18): expanded
+    # from 3 volatility-only buckets to RegimeDetector's 9-state taxonomy
+    # (see backend/alpha/regime_detector.py) -- kept the old 3 keys too so
+    # this stays backward compatible if `regime` is ever "NORMAL" etc.
+    # from some other caller.
     regime_zh = {
+        "STRONG_BULLISH": "強勢多頭",
+        "WEAK_BULLISH": "弱勢多頭",
+        "STRONG_BEARISH": "強勢空頭",
+        "WEAK_BEARISH": "弱勢空頭",
+        "RANGING": "區間震盪",
         "HIGH_VOLATILITY": "高波動",
+        "PANIC": "恐慌",
+        "EUPHORIA": "狂熱",
+        "LOW_LIQUIDITY": "流動性不足",
         "LOW_VOLATILITY": "低波動",
         "NORMAL": "正常波動",
     }.get(raw.get("regime"), "未知")
+
+    secondary_flag_zh = {
+        "LOW_LIQUIDITY": "流動性不足",
+        "TREND_REVERSAL_WATCH": "疑似轉勢，觀察中",
+    }
+    regime_secondary_flags_zh = [
+        secondary_flag_zh.get(f, f) for f in raw.get("regime_secondary_flags", [])
+    ]
 
     return {
         "ticker": raw["ticker"],
         "bullish_probability": bullish_probability,
         "bearish_probability": round(1 - bullish_probability, 3),
         "market_regime": regime_zh,
+        "market_regime_flags": regime_secondary_flags_zh,
         "risk_score": raw.get("risk", {}).get("risk_score"),
         "risk_level": raw.get("risk", {}).get("level"),
         "factor_score": raw.get("factor", {}).get("factor_score"),

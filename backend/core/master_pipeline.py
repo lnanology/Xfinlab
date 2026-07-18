@@ -56,7 +56,14 @@ class MasterPipeline:
         # L6: Alpha
         features = FeatureEngine.build(market_data)
         alpha = AlphaEngine.generate(features)
-        regime = RegimeDetector.detect(market_data)
+        # Step 2 of the Strategy Intelligence roadmap (2026-07-18): classify()
+        # returns the same regime string detect() always did, PLUS
+        # secondary_flags (e.g. LOW_LIQUIDITY, TREND_REVERSAL_WATCH) derived
+        # from real Confluence/Market Structure Engine signals now passed
+        # through in market_data. Purely additive -- `regime` is unchanged.
+        regime_info = RegimeDetector.classify(market_data)
+        regime = regime_info["regime"]
+        regime_secondary_flags = regime_info["secondary_flags"]
 
         # L8: Fund Committee
         ceo = CEOAgent.decide(market_data)
@@ -84,6 +91,7 @@ class MasterPipeline:
             "paper_trading": paper,
             "alpha": alpha,
             "regime": regime,
+            "regime_secondary_flags": regime_secondary_flags,
             "committee": committee,
             "agi": agi_result
         }
