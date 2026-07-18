@@ -1,7 +1,8 @@
-// XFINLAB theme toggle -- dark (site default/brand) <-> light.
-// Applies data-theme="light" on <html> to opt into the light palette
-// defined in css/style.css; absence of the attribute (or "dark") uses
-// the dark default. Persisted per-browser via localStorage so it sticks
+// XFINLAB theme toggle -- light (site default, 2026-07-18: white bg,
+// black text, black border) <-> dark (brand palette, opt-in).
+// Applies data-theme="dark" on <html> to opt into the dark palette
+// defined in css/style.css; absence of the attribute (or "light") uses
+// the light default. Persisted per-browser via localStorage so it sticks
 // across pages and reloads.
 //
 // Placement (2026-07): previously a fixed bottom-right floating button
@@ -18,7 +19,7 @@
 
   function getTheme() {
     var saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'light' ? 'light' : 'dark';
+    return saved === 'dark' ? 'dark' : 'light';
   }
 
   // Set the attribute as early as possible (script runs synchronously in

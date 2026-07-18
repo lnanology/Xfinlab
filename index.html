@@ -16,6 +16,22 @@
 <script src="js/push-prompt.js"></script>
 <style>
   :root {
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --border: #000000;
+    --accent: #2563EB;
+    --text: #000000;
+    --muted: #666666;
+    --label: #333333;
+    --green: #16A34A;
+    --amber: #F59E0B;
+    --red: #DC2626;
+    --muted2: #64748B;
+  }
+  /* Dark theme override -- opt-in via data-theme="dark" on <html>,
+     toggled by js/theme-toggle.js. Light (white bg / black text / black
+     border) is now the site default as of 2026-07-18. */
+  [data-theme="dark"] {
     --bg: #080c14;
     --surface: #0d1525;
     --border: #1e2d45;
@@ -27,24 +43,6 @@
     --amber: #f59e0b;
     --red: #ef4444;
     --muted2: #475569;
-  }
-  /* Light theme override -- opt-in via data-theme="light" on <html>,
-     toggled by js/theme-toggle.js (same mechanism piloted earlier on
-     company-compare.html/anomaly.html/portfolio.html, now wired up here
-     too since index.html previously hardcoded dark colors directly and
-     had no theme variables at all). */
-  [data-theme="light"] {
-    --bg: #FFFFFF;
-    --surface: #FFFFFF;
-    --border: #E5E7EB;
-    --accent: #2563EB;
-    --text: #111111;
-    --muted: #666666;
-    --label: #333333;
-    --green: #16A34A;
-    --amber: #F59E0B;
-    --red: #DC2626;
-    --muted2: #64748B;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
