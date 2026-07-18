@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /dashboard.html
+Disallow: /reset-password.html
+Disallow: /forgot-password.html
+Disallow: /verify-email.html
+
+Sitemap: https://www.xfinlab.com/sitemap.xml
