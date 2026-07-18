@@ -309,6 +309,7 @@
   }
 </style>
 <script src="js/autocomplete.js"></script>
+<script src="js/smart-router.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/prob-display.js"></script>
 <meta property="og:title" content="XFINLAB — Decision Intelligence for Investors">
@@ -480,10 +481,10 @@
 <div class="demo-section" id="demoSection">
   <div class="section-label" data-i18n="demo_label">免費體驗</div>
   <div class="section-title" data-i18n="demo_title">不需註冊，即刻試用</div>
-  <p style="color:var(--muted);font-size:0.88rem" data-i18n="demo_subtitle">真實技術分析，即刻試用</p>
+  <p style="color:var(--muted);font-size:0.88rem" data-i18n="demo_smart_subtitle">輸入股票代號，或者直接講你想知咩 -- AI會自動帶你去啱嘅功能</p>
   <div class="demo-box">
     <div class="demo-input-row">
-      <input id="demoTicker" data-i18n-placeholder="demo_placeholder" placeholder="輸入股票代號 例如 AAPL" maxlength="10">
+      <input id="demoTicker" data-i18n-placeholder="demo_smart_placeholder" placeholder="例如 AAPL、比較TSLA同FORD、比特幣會唔會跌" maxlength="120">
       <button id="demoBtn" onclick="runDemo()" data-i18n="demo_btn">立即體驗</button>
     </div>
     <div id="demoTrialInfo" style="display:none;margin-top:12px;font-size:0.8rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px">
@@ -1075,12 +1076,43 @@ loadDailyExperience();
 // 唔會因為重開網頁/清cache而重置，時段內可以任意查詢），時段完結之後
 // 會直接帶去login.html，冇cooldown會重開新時段。見api/public_demo.py
 async function runDemo() {
-  const ticker = normalizeGlobalTicker(document.getElementById('demoTicker').value);
+  const rawInput = document.getElementById('demoTicker').value.trim();
   const btn = document.getElementById('demoBtn');
   const resultBox = document.getElementById('demoResult');
   const errorBox = document.getElementById('demoError');
   const trialInfo = document.getElementById('demoTrialInfo');
-  if (!ticker) { alert('請輸入股票代號'); return; }
+  if (!rawInput) { alert(t('demo_smart_alert_empty','請輸入股票代號，或者講你想知咩')); return; }
+
+  // Smart AI Router: figure out whether this is just a bare ticker
+  // (stays on the homepage, runs the existing inline demo below) or a
+  // question that maps to one of the other 10 Engine pages (e.g.
+  // "比較TSLA同FORD" -> company-compare.html) -- see js/smart-router.js.
+  if (typeof XFLSmartRouter !== 'undefined') {
+    btn.disabled = true; btn.textContent = t('demo_smart_routing','搵緊啱嘅功能...');
+    try {
+      const routed = await XFLSmartRouter.route(rawInput);
+      if (!routed.stayOnHomepage && routed.url) {
+        if (typeof trackEvent === 'function') trackEvent('smart_route', {intent: routed.intent, query: rawInput});
+        window.location.href = routed.url;
+        return;
+      }
+      if (routed.ticker) {
+        document.getElementById('demoTicker').value = routed.ticker;
+      }
+    } catch (e) {
+      // Routing failed -- fall through and just try the input as a
+      // plain ticker below, same as before this feature existed.
+    } finally {
+      btn.disabled = false; btn.textContent = t('demo_btn','立即體驗');
+    }
+  }
+
+  const ticker = normalizeGlobalTicker(document.getElementById('demoTicker').value);
+  if (!ticker) {
+    errorBox.textContent = t('demo_smart_no_match','搵唔到相關功能，試下直接打股票代號，例如 AAPL');
+    errorBox.style.display = 'block';
+    return;
+  }
 
   // 按鈕按下時先顯示試用規則說明
   if (trialInfo) trialInfo.style.display = 'block';

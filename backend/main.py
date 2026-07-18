@@ -44,6 +44,7 @@ from api.hero_showcase import router as hero_showcase_router
 from api.push import router as push_router
 from api.trending import router as trending_router
 from api.ticker_search import router as ticker_search_router
+from api.smart_route import router as smart_route_router
 
 
 app = FastAPI(
@@ -154,6 +155,7 @@ app.include_router(hero_showcase_router, prefix="/api", tags=["Hero Showcase"])
 app.include_router(push_router, prefix="/api", tags=["Push"])
 app.include_router(trending_router, prefix="/api", tags=["Trending"])
 app.include_router(ticker_search_router, prefix="/api", tags=["Ticker Search"])
+app.include_router(smart_route_router, prefix="/api", tags=["Smart Route"])
 
 
 # Real scheduled job for the daily Free Signals push (replaces relying

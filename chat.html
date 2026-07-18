@@ -330,6 +330,17 @@ async function sendQuick(text) {
   await sendMessage();
 }
 
+// Smart Router: a link like chat.html?q=依家邊隻股份值博率最高 prefills
+// the chat box with the visitor's original free-text question and
+// sends it immediately, so the homepage's "AI, help me find the right
+// tool" input box has somewhere sensible to land for open-ended
+// questions that don't map to any single Engine page.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const qParam = params.get('q');
+  if (qParam) sendQuick(qParam);
+});
+
 async function sendMessage() {
   if (isLoading) return;
   const input = document.getElementById('inputBox');

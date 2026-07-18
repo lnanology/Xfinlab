@@ -292,6 +292,17 @@ if (typeof autoAttachTickerAutocomplete === 'function') {
   autoAttachTickerAutocomplete('#anomSearchInput');
 }
 
+// Share System / Smart Router: a link like anomaly.html?ticker=AAPL
+// prefills the single-ticker search box and re-runs the same real scan.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const tickerParam = params.get('ticker');
+  if (tickerParam) {
+    document.getElementById('anomSearchInput').value = tickerParam;
+    runAnomalySearch(tickerParam);
+  }
+});
+
 // auto-run once on load, same behaviour as dashboard.html's Anomaly Radar
 runAnomalyScan();
 </script>
