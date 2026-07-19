@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — Pairs Arbitrage Engine™ 配對統計套利掃描</title>
+<meta name="description" content="Pairs 統計套利掃描器 — 監察兩隻股票嘅真實歷史價格關係，z-score偏離同相關係數掃描，僅供研究參考。">
+<link rel="canonical" href="https://www.xfinlab.com/pairs-scan.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Pairs 統計套利掃描器 — XFINLAB">
+<meta property="og:description" content="監察兩隻股票嘅真實歷史價格關係，z-score偏離同相關係數掃描，僅供研究參考。">
+<meta property="og:url" content="https://www.xfinlab.com/pairs-scan.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/theme-toggle.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:900px;margin:0 auto;padding:28px 18px;flex:1}
+
+.input-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
+.input-label{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);display:block;margin-bottom:0.75rem;font-weight:600}
+.pair-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.8rem;margin-bottom:1rem}
+.input-group{display:flex;flex-direction:column}
+.input-group label{font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem}
+.input-field, select.input-field{background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:0.6rem 0.7rem;border-radius:8px;font-family:inherit;font-size:0.95rem;height:44px}
+.btn-group{display:flex;gap:0.6rem;flex-wrap:wrap}
+.run-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0 18px;height:44px;font-size:0.95rem;font-weight:600;cursor:pointer}
+.run-btn:hover{background:#1D4ED8}
+.run-btn:disabled{background:var(--bg-secondary);color:var(--text-muted);cursor:not-allowed}
+.clear-btn{background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0 12px;height:44px;font-size:0.95rem;cursor:pointer}
+.clear-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue)}
+
+.loading-state{text-align:center;padding:2rem 1.5rem;color:var(--text-secondary)}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block}
+.dot-ani span:nth-child(2){animation-delay:0.2s}
+.dot-ani span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+
+.result-section{display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.4rem 1.6rem;margin-bottom:1rem}
+.result-section.show{display:block}
+.result-title{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent-blue);margin-bottom:1rem;font-weight:600}
+.unavailable-msg{color:var(--text-secondary);padding:1rem 0;text-align:center}
+
+.overlap-note{font-size:0.78rem;color:var(--text-muted);margin-bottom:1rem}
+
+.prob-section{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:0.9rem}
+.prob-bar{flex:1;height:12px;background:var(--bg-secondary);border-radius:8px;overflow:hidden;position:relative;min-width:120px}
+.prob-fill{height:100%;position:absolute;top:0;border-radius:8px}
+.prob-fill.normal{background:linear-gradient(90deg,var(--accent-green),var(--accent-blue))}
+.prob-fill.elevated{background:linear-gradient(90deg,var(--accent-orange),var(--accent-blue))}
+.prob-fill.extreme{background:linear-gradient(90deg,var(--accent-red),var(--accent-orange))}
+.prob-label{width:190px;text-align:right;font-size:0.85rem;color:var(--text-secondary)}
+.prob-value{width:80px;text-align:right;font-size:0.9rem;font-weight:700;color:var(--text-primary)}
+
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1rem}
+.metric-cell{background:var(--bg-secondary);border-radius:10px;padding:0.8rem 1rem;text-align:center}
+.metric-cell-label{font-size:0.72rem;color:var(--text-muted);margin-bottom:0.3rem}
+.metric-cell-value{font-size:1.15rem;font-weight:700}
+
+.bias-line{background:var(--bg-secondary);border-radius:10px;padding:0.8rem 1rem;font-size:0.9rem;margin-bottom:1rem;color:var(--text-primary)}
+
+.disclaimer{font-size:0.75rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:1rem;margin-top:1rem;line-height:1.6}
+.methodology-note{font-size:0.75rem;color:var(--text-muted);margin-bottom:0.8rem;line-height:1.5}
+
+footer{padding:2rem 1.5rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+
+@media(max-width:768px){
+  nav{padding:0.7rem 1rem}
+  .container{padding:1.5rem 1rem}
+  .input-section,.result-section{padding:1.2rem}
+  .btn-group{flex-direction:column}
+  .run-btn,.clear-btn{width:100%}
+  .prob-label{width:130px;font-size:0.78rem}
+}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">Pairs Arbitrage Engine™</div>
+  <h1 class="page-title" data-i18n="pair_title">Pairs Statistical Arbitrage Scanner</h1>
+  <p class="page-sub" data-i18n="pair_subtitle">Monitors the real historical price relationship between two tickers and flags when today's spread has moved unusually far from its own historical norm. A correlation + z-score divergence scan — not a formal cointegration test.</p>
+
+  <!-- INPUT SECTION -->
+  <div class="input-section">
+    <label class="input-label" data-i18n="pair_input_label">Ticker Pair</label>
+    <div class="pair-grid">
+      <div class="input-group">
+        <label data-i18n="pair_symbol_a_label">Symbol A</label>
+        <input type="text" id="symbolA" class="input-field" placeholder="e.g. KO" maxlength="10" data-i18n-placeholder="pair_placeholder_a">
+      </div>
+      <div class="input-group">
+        <label data-i18n="pair_symbol_b_label">Symbol B</label>
+        <input type="text" id="symbolB" class="input-field" placeholder="e.g. PEP" maxlength="10" data-i18n-placeholder="pair_placeholder_b">
+      </div>
+      <div class="input-group">
+        <label data-i18n="pair_period_label">Lookback Period</label>
+        <select id="periodSelect" class="input-field">
+          <option value="3mo">3mo</option>
+          <option value="6mo" selected>6mo</option>
+          <option value="1y">1y</option>
+          <option value="2y">2y</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="run-btn" id="scanBtn" onclick="doScan()" data-i18n="pair_run_btn">🔍 Scan Pair</button>
+      <button class="clear-btn" onclick="clearInputs()" data-i18n="pair_clear_btn">Clear</button>
+    </div>
+  </div>
+
+  <!-- RESULT SECTION -->
+  <div class="result-section" id="resultSection">
+    <div class="result-title" data-i18n="pair_result_title">📊 Divergence Scan Result</div>
+    <div id="resultBody"></div>
+  </div>
+
+  <div id="shareBar"></div>
+</div>
+
+<footer>
+  <div class="footer-note"><span data-i18n="pair_footer_note">XFINLAB © 2026 · AI Investment Research Platform · </span><a href="privacy.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="nav_privacy">Privacy Policy</a></div>
+</footer>
+
+<script src="js/mvp-api.js"></script>
+<script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#symbolA, #symbolB');
+  }
+  ['symbolA', 'symbolB'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', function(e){ if (e.key === 'Enter') doScan(); });
+  });
+});
+
+function clearInputs(){
+  document.getElementById('symbolA').value = '';
+  document.getElementById('symbolB').value = '';
+  document.getElementById('resultSection').classList.remove('show');
+}
+
+async function doScan(){
+  const symbolA = document.getElementById('symbolA').value.trim().toUpperCase();
+  const symbolB = document.getElementById('symbolB').value.trim().toUpperCase();
+  const period = document.getElementById('periodSelect').value;
+
+  if (!symbolA || !symbolB) { alert(t('pair_alert_both', 'Please enter both ticker symbols')); return; }
+  if (symbolA === symbolB) { alert(t('pair_alert_same', 'Please enter two different ticker symbols')); return; }
+
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  document.getElementById('resultSection').classList.add('show');
+  document.getElementById('resultBody').innerHTML = `<div class="loading-state"><div class="dot-ani">${t('pair_loading', 'Scanning real price history')}<span>.</span><span>.</span><span>.</span></div></div>`;
+
+  try {
+    const response = await postApi('/api/pairs-scan', { symbol_a: symbolA, symbol_b: symbolB, period });
+    renderResult(response.data, symbolA, symbolB);
+  } catch (error) {
+    console.error(error);
+    document.getElementById('resultBody').innerHTML = `<div class="unavailable-msg">${t('pair_fetch_fail', '⚠️ Scan failed, please try again later')}</div>`;
+  }
+
+  btn.disabled = false;
+}
+
+function renderResult(data, symbolA, symbolB){
+  if (!data || data.available === false) {
+    const msg = (data && data.message) || t('pair_fetch_fail', '⚠️ Scan failed, please try again later');
+    document.getElementById('resultBody').innerHTML = `<div class="unavailable-msg">${msg}</div>`;
+    return;
+  }
+
+  const divergenceMap = {
+    NORMAL: { cls: 'normal', label: t('pair_divergence_normal', 'Normal range') },
+    ELEVATED: { cls: 'elevated', label: t('pair_divergence_elevated', 'Elevated divergence') },
+    EXTREME: { cls: 'extreme', label: t('pair_divergence_extreme', 'Extreme divergence') },
+  };
+  const div = divergenceMap[data.divergence] || divergenceMap.NORMAL;
+
+  // z-score visual: map -3..+3 onto a 0-100% bar position/width, centered at 50%.
+  const z = data.z_score || 0;
+  const clampedZ = Math.max(-3, Math.min(3, z));
+  const pct = ((clampedZ + 3) / 6) * 100;
+  const barWidth = Math.abs(clampedZ) / 3 * 50;
+  const barLeft = z >= 0 ? 50 : 50 - barWidth;
+
+  let biasLine;
+  if (data.richer_symbol && data.cheaper_symbol) {
+    biasLine = t('pair_richer_line', '{richer} looks relatively expensive vs {cheaper} based on the historical price ratio.')
+      .replace('{richer}', data.richer_symbol).replace('{cheaper}', data.cheaper_symbol);
+  } else {
+    biasLine = t('pair_no_bias_line', 'No significant divergence — spread is within its normal historical range.');
+  }
+
+  const corr = data.correlation != null ? data.correlation.toFixed(3) : '-';
+
+  document.getElementById('resultBody').innerHTML = `
+    <div class="overlap-note">${t('pair_overlap_label', 'Overlapping trading days')}: ${data.overlapping_days ?? '-'}</div>
+    <div class="prob-section">
+      <div class="prob-label">${t('pair_zscore_label', 'Z-Score (spread divergence)')} — ${div.label}</div>
+      <div class="prob-bar"><div class="prob-fill ${div.cls}" style="left:${barLeft}%;width:${Math.max(barWidth,2)}%"></div></div>
+      <div class="prob-value">${z.toFixed(2)}</div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-cell">
+        <div class="metric-cell-label">${t('pair_correlation_label', 'Return Correlation')}</div>
+        <div class="metric-cell-value">${corr}</div>
+      </div>
+    </div>
+    <div class="bias-line">${biasLine}</div>
+    <div class="methodology-note">${t('pair_methodology_note', 'This is a correlation + z-score divergence scan, not a formal cointegration (Engle-Granger/ADF) test. For research reference only, not a trading signal.')}</div>
+    <div class="disclaimer">${t('pair_disclaimer', '⚠️ Research tool only — not investment advice. Past correlation and spread behavior do not guarantee future mean-reversion.')}</div>
+  `;
+
+  if (typeof window.renderShareBar === 'function') {
+    const shareUrl = `${location.origin}${location.pathname}?a=${encodeURIComponent(symbolA)}&b=${encodeURIComponent(symbolB)}`;
+    window.renderShareBar('shareBar', 'resultSection', {
+      filename: `xfinlab-pairs-${symbolA}-${symbolB}`,
+      shareUrl: shareUrl
+    });
+  }
+}
+
+// Share System: a link like pairs-scan.html?a=KO&b=PEP prefills the
+// inputs and re-runs the same real scan.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const a = params.get('a');
+  const b = params.get('b');
+  if (a && b) {
+    document.getElementById('symbolA').value = a;
+    document.getElementById('symbolB').value = b;
+    doScan();
+  }
+});
+</script>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Signals</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily AI stock analysis on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:var(--accent-blue);color:#000;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:var(--accent-blue);color:#000;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Signals</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+</body>
+</html>
