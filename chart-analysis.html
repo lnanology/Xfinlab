@@ -49,7 +49,6 @@
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
 <script src="js/free-signals-badge.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <script src="js/tradingview-widget.js"></script>
 </head>
 <body>
@@ -118,10 +117,6 @@
         </div>
       </div>
     </div>
-  </div>
-
-  <div class="panel" id="chartPanel" style="display:none">
-    <div id="klineChart" style="height:320px"></div>
   </div>
 
   <div class="panel" id="tvChartPanel" style="display:none">
@@ -340,7 +335,16 @@ function normalizeGlobalTicker(raw) {
   if (!s) return s;
   if (s.includes('.') || s.includes('-') || s.includes('=')) return s;
   if (/^\d+$/.test(s)) {
-    if (s.length === 4 || s.length === 5) return s.padStart(4, '0') + '.HK';
+    // 2026-07-19 fix: was gated to length===4||5, so common HK shorthand
+    // like "700" (Tencent, usually written 0700.HK) or "5" (HSBC,
+    // 0005.HK) fell through UNNORMALIZED to the length<=5 branch below
+    // and got sent to the backend as literal "700"/"5" -- which yfinance
+    // can't resolve, giving a real "歷史數據不足" error that looked like
+    // a broken HK-stock feature. Confirmed live: /chart-search/700 errored
+    // while /chart-search/0700.HK worked. Now any 1-5 digit numeric input
+    // is treated as an HK code (Yahoo's HK convention is 4-digit
+    // zero-padded), same as it already did for 4/5-digit input.
+    if (s.length <= 5) return s.padStart(4, '0') + '.HK';
     if (s.length === 6) {
       const first = s[0];
       if (first === '6') return s + '.SS';
@@ -352,8 +356,6 @@ function normalizeGlobalTicker(raw) {
   return s;
 }
 
-let klineChart = null;
-let klineSeries = null;
 let currentSearchSymbol = null;
 
 function switchMode(mode) {
@@ -370,7 +372,6 @@ function switchMode(mode) {
   if (analysisSide) analysisSide.style.display = isSearch ? 'none' : 'block';
   if (analysisSection) analysisSection.classList.toggle('single-col', isSearch);
   if (!isSearch) {
-    document.getElementById('chartPanel').style.display = 'none';
     document.getElementById('tvChartPanel').style.display = 'none';
     document.getElementById('patternBlock').style.display = 'block';
     document.getElementById('aiCommentaryBlock').style.display = 'none';
@@ -408,22 +409,6 @@ document.getElementById('tickerSearchInput').addEventListener('input', (e) => {
   hintEl.textContent = preview || '';
 });
 
-function ensureKlineChart() {
-  if (klineChart) return;
-  const container = document.getElementById('klineChart');
-  klineChart = LightweightCharts.createChart(container, {
-    layout: { background: { color: 'transparent' }, textColor: '#94a3b8' },
-    grid: { vertLines: { color: 'rgba(148,163,184,0.08)' }, horzLines: { color: 'rgba(148,163,184,0.08)' } },
-    timeScale: { borderVisible: false },
-    rightPriceScale: { borderVisible: false },
-    autoSize: true,
-  });
-  klineSeries = klineChart.addCandlestickSeries({
-    upColor: '#10b981', downColor: '#ef4444', borderVisible: false,
-    wickUpColor: '#10b981', wickDownColor: '#ef4444',
-  });
-}
-
 async function runTickerSearch(symbolOverride){
   const input = document.getElementById('tickerSearchInput');
   const symbol = normalizeGlobalTicker(symbolOverride || input.value);
@@ -454,19 +439,13 @@ async function runTickerSearch(symbolOverride){
     currentSearchSymbol = symbol;
     trackEvent('search', {ticker: symbol, mode: 'chart_search'});
 
-    document.getElementById('chartPanel').style.display = 'block';
-    ensureKlineChart();
-    if(res.ohlc && res.ohlc.length){
-      klineSeries.setData(res.ohlc.map(b => ({time: b.time, open: b.open, high: b.high, low: b.low, close: b.close})));
-      klineChart.timeScale().fitContent();
-    }
-
-    // TradingView chart -- shown alongside the real-data candlestick chart
-    // above (which drives the actual Support/Resistance/RSI/MACD numbers).
-    // Purely a familiar professional-grade visual reference; not all
-    // tickers map cleanly to TradingView's EXCHANGE:SYMBOL format (see
-    // js/tradingview-widget.js), in which case it shows a plain notice
-    // instead of a wrong chart.
+    // 2026-07-19 fix: this page used to show TWO charts side by side --
+    // this custom lightweight-charts candlestick panel AND the
+    // TradingView widget below. Feedback was that having both was
+    // confusing/redundant. Kept TradingView (familiar professional
+    // interface); the real OHLC bars (res.ohlc) still drive the actual
+    // Support/Resistance/RSI/MACD numbers below same as before, they're
+    // just no longer ALSO rendered as a separate chart.
     if (typeof window.renderTradingViewWidget === 'function') {
       document.getElementById('tvChartPanel').style.display = 'block';
       window.renderTradingViewWidget('tvChartContainer', symbol);

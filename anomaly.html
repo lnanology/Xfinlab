@@ -169,7 +169,11 @@ function normalizeGlobalTicker(raw) {
   if (!s) return s;
   if (s.includes('.') || s.includes('-') || s.includes('=')) return s;
   if (/^\d+$/.test(s)) {
-    if (s.length === 4 || s.length === 5) return s.padStart(4, '0') + '.HK';
+    // 2026-07-19 fix: see chart-analysis.html's normalizeGlobalTicker for
+    // the full story -- short HK shorthand like "700" (Tencent) or "5"
+    // (HSBC) used to fall through unnormalized (only 4/5-digit input was
+    // padded), sending a literal ticker the backend can't resolve.
+    if (s.length <= 5) return s.padStart(4, '0') + '.HK';
     if (s.length === 6) {
       const first = s[0];
       if (first === '6') return s + '.SS';
