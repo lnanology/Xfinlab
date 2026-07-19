@@ -415,3 +415,23 @@ def get_translations(lang: str) -> dict:
 
 def detect_language_from_country(country_code: str) -> str:
     return COUNTRY_LANGUAGE_MAP.get(country_code, "en")
+
+
+# 2026-07-19 fix: every LLM-backed endpoint (chat, company-compare,
+# news-denoise, stress-lab) hardcoded its prompt to "請用繁體中文回答"
+# regardless of the site's selected UI language -- so switching the site
+# to English (or any other of the 46 supported languages) only ever
+# translated the surrounding page chrome (nav/labels/table headers),
+# never the actual AI-generated prose, which always came back in
+# Traditional Chinese. This gives each endpoint a one-line way to build
+# a language instruction from whatever lang code the frontend sends
+# (I18N.currentLang), falling back to the existing zh-HK/Traditional
+# Chinese default when no lang is supplied (old behavior unchanged for
+# any caller that doesn't pass one yet).
+def ai_language_instruction(lang_code: str) -> str:
+    if not lang_code or lang_code not in SUPPORTED_LANGUAGES or lang_code in ("zh-HK", "zh-TW"):
+        return "請用繁體中文回答，格式清晰。"
+    if lang_code == "zh-CN":
+        return "请用简体中文回答，格式清晰。"
+    name = SUPPORTED_LANGUAGES[lang_code]
+    return f"Please answer entirely in {name} ({lang_code}). Keep the same structure/headings requested below, just written in {name} instead of Chinese."

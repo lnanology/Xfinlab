@@ -147,7 +147,7 @@ async function simulateDifyApi() {
   responseJson.textContent = t('nd_calling_api','正在呼叫 /api/news-denoise，請稍候…');
 
   try {
-    const result = await postApi('/api/news-denoise', { query: symbol });
+    const result = await postApi('/api/news-denoise', { query: symbol, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined });
     const data = result.data || {};
     responseJson.textContent = JSON.stringify(result, null, 2);
 

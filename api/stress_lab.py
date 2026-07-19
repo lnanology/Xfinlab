@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from ai.ai_router import get_ai_response
+from services.i18n import ai_language_instruction
 
 router = APIRouter()
 
@@ -16,12 +17,13 @@ async def stress_lab(body: dict):
     strategy = body.get("strategy", "crash2008")
     amount = body.get("amount", 100000)
     token = body.get("token")
+    lang = body.get("lang")
     scenario = SCENARIOS.get(strategy, SCENARIOS["crash2008"])
 
     prompt = (
         f"你是風險分析師。針對投資金額 ${amount:,} 進行壓力測試。"
         f"測試場景：{scenario}。"
-        "請用繁體中文提供：\n"
+        f"{ai_language_instruction(lang)} 內容需包含：\n"
         "## 📉 預估損失\n（金額和百分比）\n"
         "## ⏱ 恢復時間\n（預估恢復所需時間）\n"
         "## 🛡 風險緩解建議\n（3-5個具體建議）\n"

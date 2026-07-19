@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from ai.ai_router import get_ai_response
 from services.market_data_service import MarketDataService
+from services.i18n import ai_language_instruction
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -9,6 +10,7 @@ market_svc = MarketDataService()
 async def company_compare(body: dict):
     symbols = body.get("symbols", [])
     token = body.get("token")
+    lang = body.get("lang")
     if not symbols:
         return {"status": "ok", "data": {"analysis": "請輸入公司代號"}}
 
@@ -25,7 +27,7 @@ async def company_compare(body: dict):
     prompt = (
         f"你是專業金融分析師。請比較以下公司：{', '.join(symbols)}。"
         f"當前價格：{summary}。"
-        "請用繁體中文提供：1) 各公司優劣勢 2) 財務比較 3) 投資建議 4) 風險提示。"
+        f"{ai_language_instruction(lang)} 內容需包含：1) 各公司優劣勢 2) 財務比較 3) 投資建議 4) 風險提示。"
         "格式清晰，使用 ## 標題。"
     )
     from services.quota_middleware import check_token_budget, record_ai_token_usage

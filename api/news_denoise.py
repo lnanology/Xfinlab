@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from ai.ai_router import get_ai_response
+from services.i18n import ai_language_instruction
 
 router = APIRouter()
 
@@ -7,10 +8,11 @@ router = APIRouter()
 async def news_denoise(body: dict):
     query = body.get("query", "")
     topic = body.get("topic", "市場新聞")
+    lang = body.get("lang")
 
     prompt = (
         f"你是一位專業金融分析師。請分析以下主題的最新市場新聞：{query or topic}\n\n"
-        "請用繁體中文回答，格式如下：\n"
+        f"{ai_language_instruction(lang)} 格式如下：\n"
         "## 📰 市場摘要\n（2-3句總結）\n\n"
         "## 📌 重點新聞\n（3-5條重要新聞，每條包含標題和簡短分析）\n\n"
         "## 💡 AI 市場影響評估\n（對投資者的啟示）"

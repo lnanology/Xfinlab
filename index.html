@@ -985,6 +985,19 @@ async function loadMarketPulse() {
     if (overallEl) {
       const _overallConf = (data.confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(data.confidence_pct, 'pulse-overall') : data.confidence_pct;
       overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · Confidence ${_overallConf != null ? _overallConf + '%' : '--'} · ${data.volatility_desc}`;
+      // 2026-07-19 fix: this element keeps its static data-i18n="outlook_loading"
+      // attribute even after we overwrite its innerHTML with real data --
+      // I18N.apply() only looks at the attribute, not at whether the
+      // content was already replaced, so if the translations fetch (a
+      // separate, independently-timed network round trip in js/i18n.js)
+      // resolves AFTER this line runs, apply() stomps the real pulse
+      // content straight back to the "載入緊.../Loading..." placeholder
+      // text, which is exactly the stuck "Loading..." label reported
+      // next to "今日重點" even though the card grid below (rebuilt via
+      // innerHTML, so its data-i18n spans are gone entirely) loaded fine.
+      // Dropping the attribute here means a later apply() call simply
+      // skips this element instead of overwriting it.
+      overallEl.removeAttribute('data-i18n');
     }
     const bottomEl = document.getElementById('pulseBottom');
     if (bottomEl) {
@@ -1031,7 +1044,10 @@ async function loadMarketPulse() {
     }
   } catch(e) {
     const overallEl = document.getElementById('pulseOverall');
-    if (overallEl) overallEl.textContent = t('idx_pulse_load_fail','暫時無法載入');
+    if (overallEl) {
+      overallEl.textContent = t('idx_pulse_load_fail','暫時無法載入');
+      overallEl.removeAttribute('data-i18n');
+    }
   }
 }
 loadMarketPulse();

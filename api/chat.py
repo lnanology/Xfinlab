@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from ai.ai_router import get_ai_response
+from services.i18n import ai_language_instruction
 
 router = APIRouter()
 
@@ -21,6 +22,7 @@ async def chat(body: dict):
     query = body.get("query", "")
     conversation_id = body.get("conversation_id", "default")
     token = body.get("token")
+    lang = body.get("lang")
 
     if not query:
         return {"status": "ok", "answer": "請輸入問題", "conversation_id": conversation_id}
@@ -41,7 +43,7 @@ async def chat(body: dict):
 
     prompt = (
         "你是 XFINLAB AI 投資助手。專門回答股票、投資、市場分析問題。"
-        "用繁體中文回答，專業但易懂。如果問題與投資無關，禮貌地引導回投資話題。"
+        f"{ai_language_instruction(lang)} 專業但易懂。如果問題與投資無關，禮貌地引導回投資話題。"
         f"{history_text}\n\n用戶問題：{query}"
     )
 

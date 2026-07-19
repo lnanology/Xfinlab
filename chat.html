@@ -485,7 +485,8 @@ async function sendMessage() {
       query: text || '請分析這張圖表，識別支撐阻力位、圖形形態及技術指標，給出短中期展望',
       conversation_id: conversationId,
       user: 'xfinlab-user',
-      image: imageBase64
+      image: imageBase64,
+      lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined
     };
 
     const res = await postApi('/api/chat', payload);

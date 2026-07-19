@@ -88,6 +88,8 @@
     <div class="upload-hint" style="margin-top:0.2rem" data-i18n="ca_search_hint">支援全球代號：美股（AAPL）、港股（0700 或 0700.HK）、A股（600519）、加密貨幣（BTC）</div>
   </div>
 
+  <div id="searchErrorBanner" style="display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid var(--accent-red,#DC2626);color:var(--accent-red,#DC2626);font-size:0.85rem"></div>
+
   <div class="panel" id="uploadPanel" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
       <div style="flex:1;min-width:240px">
@@ -358,6 +360,38 @@ function normalizeGlobalTicker(raw) {
 
 let currentSearchSymbol = null;
 
+// Defensive DOM helper -- every "分析失敗" crash reported so far traced
+// back to a plain `document.getElementById(id).textContent = ...` call
+// throwing "Cannot set properties of null" when some element wasn't
+// found (stale cache, a future markup edit, a race with mode-switching,
+// etc). Routing every result-writing assignment through this means a
+// missing element is silently skipped (and logged to console for
+// debugging) instead of throwing and popping a blocking alert() that
+// interrupts the user's flow.
+function safeSetText(id, value) {
+  const el = document.getElementById(id);
+  if (!el) { console.warn('[chart-analysis] missing element for id=', id); return; }
+  el.textContent = value;
+}
+
+// Non-blocking inline error banner -- replaces the old alert() on
+// analysis failure, which forced the user to click "OK" before they
+// could do anything else. Errors now show as a dismissible inline
+// message near the search box instead.
+function showSearchError(message) {
+  const banner = document.getElementById('searchErrorBanner');
+  if (banner) {
+    banner.textContent = message;
+    banner.style.display = 'block';
+  } else {
+    console.error('[chart-analysis]', message);
+  }
+}
+function hideSearchError() {
+  const banner = document.getElementById('searchErrorBanner');
+  if (banner) banner.style.display = 'none';
+}
+
 function switchMode(mode) {
   const isSearch = mode === 'search';
   document.getElementById('searchPanel').style.display = isSearch ? 'block' : 'none';
@@ -424,9 +458,10 @@ async function runTickerSearch(symbolOverride){
 
   document.getElementById('patternBlock').style.display = 'none';
   document.getElementById('aiCommentaryBlock').style.display = 'block';
-  document.getElementById('commentaryResult').textContent = '';
+  safeSetText('commentaryResult', '');
   document.getElementById('commentaryBtn').disabled = false;
-  document.getElementById('commentaryBtn').textContent = t('ca_ai_commentary_btn','🤖 產生AI文字解讀');
+  safeSetText('commentaryBtn', t('ca_ai_commentary_btn','🤖 產生AI文字解讀'));
+  hideSearchError();
 
   try {
     const response = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}`);
@@ -451,25 +486,25 @@ async function runTickerSearch(symbolOverride){
       window.renderTradingViewWidget('tvChartContainer', symbol);
     }
 
-    document.getElementById('dataSourceTag').textContent = t('ca_data_source_search','（支撐/阻力/RSI/MACD 來自真實歷史數據）');
+    safeSetText('dataSourceTag', t('ca_data_source_search','（支撐/阻力/RSI/MACD 來自真實歷史數據）'));
     const noRealData = t('ca_no_real_data','未有真實數據');
-    document.getElementById('trendValue').textContent = res.trend || '-';
-    document.getElementById('supportValue').textContent = res.support ? res.support.level : noRealData;
-    document.getElementById('resistanceValue').textContent = res.resistance ? res.resistance.level : noRealData;
-    document.getElementById('fibValue').textContent = res.fibonacci_0618 ? res.fibonacci_0618.level_0618 : noRealData;
+    safeSetText('trendValue', res.trend || '-');
+    safeSetText('supportValue', res.support ? res.support.level : noRealData);
+    safeSetText('resistanceValue', res.resistance ? res.resistance.level : noRealData);
+    safeSetText('fibValue', res.fibonacci_0618 ? res.fibonacci_0618.level_0618 : noRealData);
     if(res.confluence){
       const c = res.confluence;
-      document.getElementById('confluenceValue').textContent = `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`;
+      safeSetText('confluenceValue', `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`);
     } else {
-      document.getElementById('confluenceValue').textContent = noRealData;
+      safeSetText('confluenceValue', noRealData);
     }
-    document.getElementById('volumeZone').textContent = res.volume_desc || '-';
-    document.getElementById('rsiValue').textContent = res.rsi != null ? res.rsi : '-';
-    document.getElementById('macdValue').textContent = res.macd ? res.macd.trend : '-';
-    document.getElementById('patternSummary').textContent = t('ca_pattern_search_mode_note','需上傳截圖先做型態辨識');
+    safeSetText('volumeZone', res.volume_desc || '-');
+    safeSetText('rsiValue', res.rsi != null ? res.rsi : '-');
+    safeSetText('macdValue', res.macd ? res.macd.trend : '-');
+    safeSetText('patternSummary', t('ca_pattern_search_mode_note','需上傳截圖先做型態辨識'));
     const useCommentaryNote = t('ca_search_use_commentary','按「產生AI文字解讀」查看');
-    document.getElementById('riskTips').textContent = useCommentaryNote;
-    document.getElementById('recommendationValue').textContent = useCommentaryNote;
+    safeSetText('riskTips', useCommentaryNote);
+    safeSetText('recommendationValue', useCommentaryNote);
 
     // Phase 2 Market Structure Engine -- always shown when present, since
     // it's computed for free from the same data already fetched above
@@ -479,7 +514,7 @@ async function runTickerSearch(symbolOverride){
     if (ms) {
       msBlock.style.display = 'block';
       const structureLabel = {uptrend: t('ca_ms_uptrend','上升結構'), downtrend: t('ca_ms_downtrend','下降結構'), mixed: t('ca_ms_mixed','結構混合/盤整')}[ms.prior_structure] || ms.prior_structure;
-      document.getElementById('msPriorStructure').textContent = structureLabel;
+      safeSetText('msPriorStructure', structureLabel);
       const eventsEl = document.getElementById('msEvents');
       if (ms.events && ms.events.length) {
         eventsEl.innerHTML = ms.events.map(e => `<div class="result-row"><div class="result-label">${e.type}</div><div class="result-value">${e.detail}</div></div>`).join('');
@@ -494,14 +529,14 @@ async function runTickerSearch(symbolOverride){
     document.getElementById('mtfBlock').style.display = 'block';
     document.getElementById('mtfResult').innerHTML = '';
     document.getElementById('mtfBtn').disabled = false;
-    document.getElementById('mtfBtn').textContent = t('ca_mtf_btn','📊 查看跨時間框架');
+    safeSetText('mtfBtn', t('ca_mtf_btn','📊 查看跨時間框架'));
 
     // Strategy Intelligence Step 3/4/5 -- real historical backtest
     // comparison across strategies, lazy button, reset per search.
     document.getElementById('backtestBlock').style.display = 'block';
     document.getElementById('backtestResult').innerHTML = '';
     document.getElementById('backtestBtn').disabled = false;
-    document.getElementById('backtestBtn').textContent = t('ca_backtest_btn','🧪 回測比較策略');
+    safeSetText('backtestBtn', t('ca_backtest_btn','🧪 回測比較策略'));
 
     if (typeof window.renderDecisionFooter === 'function') {
       if (res.confluence) {
@@ -543,9 +578,10 @@ async function runTickerSearch(symbolOverride){
       });
     }
   } catch (err) {
-    alert(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
+    console.error('[chart-analysis] runTickerSearch failed:', err);
+    showSearchError(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
   } finally {
-    btn.disabled = false; btn.textContent = t('ca_search_btn','🔍 分析');
+    btn.disabled = false; safeSetText('searchBtn', t('ca_search_btn','🔍 分析'));
     if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
   }
 }
@@ -677,6 +713,7 @@ async function runImageAnalysis(){
 
   analyzeBtn.disabled = true; analyzeBtn.textContent=t('ca_analyzing','分析中...');
   if (typeof window.startAiLoading === 'function') window.startAiLoading();
+  hideSearchError();
 
   try {
     // dataUrl looks like: data:image/png;base64,AAAA....
@@ -706,29 +743,29 @@ async function runImageAnalysis(){
     const res = json.data;
     if (symbol) trackEvent('search', {ticker: symbol.toUpperCase()});
     const usedRealData = res.data_source === 'real_market_data+ai_vision_patterns';
-    document.getElementById('dataSourceTag').textContent = usedRealData
+    safeSetText('dataSourceTag', usedRealData
       ? t('ca_data_source_real','（支撐/阻力/RSI/MACD 來自真實歷史數據，型態辨識來自AI視覺）')
-      : t('ca_data_source_ai_only','（未填代號 — 全部由AI視覺估算，準確度較低）');
+      : t('ca_data_source_ai_only','（未填代號 — 全部由AI視覺估算，準確度較低）'));
 
     const noRealData = t('ca_no_real_data','未有真實數據');
-    document.getElementById('trendValue').textContent = res.trend || '-';
-    document.getElementById('supportValue').textContent = res.support || '-';
-    document.getElementById('resistanceValue').textContent = res.resistance || '-';
-    document.getElementById('fibValue').textContent = res.fibonacci_0618 != null ? res.fibonacci_0618 : noRealData;
+    safeSetText('trendValue', res.trend || '-');
+    safeSetText('supportValue', res.support || '-');
+    safeSetText('resistanceValue', res.resistance || '-');
+    safeSetText('fibValue', res.fibonacci_0618 != null ? res.fibonacci_0618 : noRealData);
     if(res.confluence){
       const c = res.confluence;
-      document.getElementById('confluenceValue').textContent = `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`;
+      safeSetText('confluenceValue', `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`);
     } else {
-      document.getElementById('confluenceValue').textContent = noRealData;
+      safeSetText('confluenceValue', noRealData);
     }
-    document.getElementById('volumeZone').textContent = res.volume || '-';
-    document.getElementById('rsiValue').textContent = res.rsi || '-';
-    document.getElementById('macdValue').textContent = res.macd || '-';
+    safeSetText('volumeZone', res.volume || '-');
+    safeSetText('rsiValue', res.rsi || '-');
+    safeSetText('macdValue', res.macd || '-');
     const patterns = res.patterns || {};
-    document.getElementById('patternSummary').textContent =
-      Object.values(patterns).filter(p => p === '可能').length > 0 ? t('ca_pattern_detected','偵測到若干型態') : t('ca_pattern_not_detected','未偵測到明顯型態');
-    document.getElementById('riskTips').textContent = res.risk || t('ca_no_risk','無顯著風險提示');
-    document.getElementById('recommendationValue').textContent = res.recommendation || '-';
+    safeSetText('patternSummary',
+      Object.values(patterns).filter(p => p === '可能').length > 0 ? t('ca_pattern_detected','偵測到若干型態') : t('ca_pattern_not_detected','未偵測到明顯型態'));
+    safeSetText('riskTips', res.risk || t('ca_no_risk','無顯著風險提示'));
+    safeSetText('recommendationValue', res.recommendation || '-');
 
     const unclear = t('ca_unclear','不明');
     // Phase 1 Pattern Intelligence expansion: 7 -> 17 patterns (image-
@@ -738,8 +775,7 @@ async function runImageAnalysis(){
      'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
      'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island'
     ].forEach(key => {
-      const el = document.getElementById(key);
-      if (el) el.textContent = patterns[key] || unclear;
+      safeSetText(key, patterns[key] || unclear);
     });
 
     // Decision Report™ footer -- only when we have the real confluence
@@ -791,7 +827,8 @@ async function runImageAnalysis(){
     }
 
   } catch (err) {
-    alert(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
+    console.error('[chart-analysis] runImageAnalysis failed:', err);
+    showSearchError(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
   } finally {
     analyzeBtn.disabled = false; analyzeBtn.textContent=t('ca_run_btn','🔍 執行 AI 分析');
     if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
