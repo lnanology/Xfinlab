@@ -11,6 +11,7 @@ from services.fundamentals_service import get_fundamentals
 from services.i18n import get_translations
 from services.smart_beta_service import get_smart_beta
 from services.fractal_regime_service import detect_transition_signal as detect_fractal_transition
+from services.direction_probability_service import get_direction_probability
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -317,6 +318,19 @@ async def ai_analysis(body: dict):
     except Exception:
         smart_beta = None
 
+    # Stage 2 roadmap (2026-07-19): lightweight scikit-learn direction-
+    # probability model (see services/direction_probability_service.py
+    # for why this is scikit-learn rather than a literal LSTM, and for
+    # the backtest significance gate that must pass before a symbol's
+    # model is ever served here). Only ever returns a prediction for
+    # symbols whose model has already been trained+validated by
+    # scripts/train_direction_models.py -- this endpoint never trains
+    # on the fly, and honestly reports unavailable otherwise.
+    try:
+        direction_probability = get_direction_probability(symbol)
+    except Exception:
+        direction_probability = None
+
     return {
         "data": {
             "scores": {
@@ -355,5 +369,6 @@ async def ai_analysis(body: dict):
             "news_headlines": news[:8],
             "fundamentals": fundamentals,
             "smart_beta": smart_beta,
+            "direction_probability": direction_probability,
         }
     }

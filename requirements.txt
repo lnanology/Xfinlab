@@ -16,3 +16,5 @@ reportlab
 apscheduler
 python-telegram-bot
 pywebpush
+scikit-learn
+joblib

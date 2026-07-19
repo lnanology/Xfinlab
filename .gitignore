@@ -1,5 +1,8 @@
 .env
 *.db
+# Trained model artifacts (services/direction_probability_service.py) --
+# regeneratable via scripts/train_direction_models.py, not source.
+/models/
 __pycache__/
 *.pyc
 .venv/
