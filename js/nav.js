@@ -37,17 +37,24 @@
     logos.forEach(l => { l.href = 'index.html'; });
 
     // 加登入/用戶按鈕如果未有
+    // 2026-07-19 fix: was appending into .nav-links itself (or falling
+    // back there whenever a page has no separate .nav-right), which made
+    // this button just another flex item inside the SAME row that now
+    // wraps ("字大過框" fix added flex-wrap:wrap to .nav-links) -- so on
+    // narrower desktop widths it wrapped onto its own line, floating
+    // under the logo instead of staying next to Dark/Account
+    // ("TOPBAR 走位"). Insert it as a direct child of <nav> itself
+    // instead (same fix already applied below for the Settings flyout),
+    // so it's a sibling of nav-brand/nav-links/nav-right, not part of
+    // their wrapping flow, and stays pinned at the far right.
     const hasAuth = nav.querySelector('a[href="login.html"], a[href="dashboard.html"]');
-    if (!hasAuth) {
-      const navRight = nav.querySelector('.nav-right') || nav.querySelector('.nav-links');
-      if (navRight) {
-        const btn = document.createElement('a');
-        btn.href = user.name ? 'dashboard.html' : 'login.html';
-        btn.textContent = user.name ? user.name.split(' ')[0] : '登入';
-        btn.className = 'nav-cta';
-        btn.style.cssText = 'background:#00d4ff;color:#000;padding:6px 14px;border-radius:6px;font-weight:600;font-size:0.82rem;text-decoration:none;margin-left:8px';
-        navRight.appendChild(btn);
-      }
+    if (!hasAuth && !nav.querySelector('.nav-cta')) {
+      const btn = document.createElement('a');
+      btn.href = user.name ? 'dashboard.html' : 'login.html';
+      btn.textContent = user.name ? user.name.split(' ')[0] : '登入';
+      btn.className = 'nav-cta';
+      btn.style.cssText = 'background:#00d4ff;color:#000;padding:6px 14px;border-radius:6px;font-weight:600;font-size:0.82rem;text-decoration:none;margin-left:8px;flex-shrink:0;white-space:nowrap';
+      nav.appendChild(btn);
     }
   }
 
