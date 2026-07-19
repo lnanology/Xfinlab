@@ -7,6 +7,7 @@
 <link rel="canonical" href="https://www.xfinlab.com/pricing.html">
 <meta name="robots" content="index, follow">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="js/theme-toggle.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   /* Light default (2026-07-18): white bg, black text, black border. */
@@ -23,9 +24,30 @@
     --text: #000000;
     --muted: #666666;
     --label: #333333;
+    --nav-bg: rgba(255,255,255,0.95);
+  }
+  /* 2026-07-19: pricing.html, like dashboard.html, always had its own
+     self-contained :root and never used css/style.css, so it never had
+     a [data-theme=dark] override -- js/theme-toggle.js could toggle the
+     attribute but nothing here would visually react. Mirrors css/
+     style.css's existing brand dark palette. */
+  [data-theme="dark"] {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --surface2: #111d30;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --purple: #7c3aed;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+    --nav-bg: rgba(8,12,20,0.95);
   }
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 100; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--nav-bg); backdrop-filter: blur(12px); z-index: 100; }
   .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
   .nav-brand span { color: var(--text); }
   .nav-links { display: flex; gap: 24px; align-items: center; }

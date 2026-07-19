@@ -11,6 +11,7 @@
 <meta property="og:description" content="XFINLAB個人投資儀表板 — 自選股、投資組合、AI分析記錄一站式管理。">
 <meta property="og:url" content="https://www.xfinlab.com/dashboard.html">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="js/theme-toggle.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -31,6 +32,29 @@
     --text: #000000;
     --muted: #666666;
     --label: #333333;
+    --nav-bg: rgba(255,255,255,0.95);
+  }
+
+  /* 2026-07-19: dashboard.html always had its own self-contained
+     :root (never used css/style.css), so it never had a [data-theme=
+     dark] override either -- js/theme-toggle.js could toggle the
+     attribute but nothing on this page would visually react. Values
+     mirror css/style.css's existing brand dark palette so the toggle
+     behaves consistently with every other page site-wide. */
+  [data-theme="dark"] {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --surface2: #111d30;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+    --nav-bg: rgba(8,12,20,0.95);
   }
 
   body {
@@ -52,10 +76,9 @@
        theme-default flip (task #161-165) never touched this page's nav.
        Everything else in :root moved to light (--text:#000, --surface:
        #fff), so the "FIN" span (color:var(--text) = black) rendered
-       black-on-near-black -- invisible. Switching nav bg to var(--surface)
-       matches the rest of the page and restores contrast for both the
-       black "FIN" text and the blue "X"/"LAB" accent text. */
-    background: rgba(255,255,255,0.95);
+       black-on-near-black -- invisible. Now uses --nav-bg, which flips
+       correctly with the [data-theme=dark] override added 2026-07-19. */
+    background: var(--nav-bg);
     position: sticky;
     top: 0;
     z-index: 100;
