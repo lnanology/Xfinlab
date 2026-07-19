@@ -83,7 +83,13 @@ def _load_ticker_cik_map() -> dict:
         return cached or {}
 
 
-def _fetch_concept(cik: int, tags: List[str]) -> Optional[Dict]:
+def _fetch_concept_series(cik: int, tags: List[str]) -> Optional[List[Dict]]:
+    """
+    Same annual-10-K-only filtering as _fetch_concept() below, but returns
+    the FULL sorted annual series instead of just the latest point --
+    needed for Stage-1 Smart Beta's Quality/Growth factor (2026-07-19),
+    which needs a real YoY comparison, not just the newest figure.
+    """
     for tag in tags:
         try:
             url = CONCEPT_URL.format(cik=cik, tag=tag)
@@ -95,19 +101,23 @@ def _fetch_concept(cik: int, tags: List[str]) -> Optional[Dict]:
             series = units.get("USD/shares") or units.get("USD")
             if not series:
                 continue
-            # Only trailing-ANNUAL 10-K figures -- skip 10-Q quarterly
-            # entries so every fetched number is a like-for-like annual
-            # comparison, not accidentally a quarter mixed in with years.
             annual = [p for p in series if p.get("form") == "10-K" and p.get("fp") == "FY" and p.get("val") is not None]
             if not annual:
                 continue
             annual.sort(key=lambda p: p.get("end", ""))
-            latest = annual[-1]
-            return {"value": latest["val"], "fiscal_year": latest.get("fy"), "period_end": latest.get("end")}
+            return annual
         except Exception as e:
-            logger.info("fundamentals_service: concept fetch failed for tag %s: %s", tag, e)
+            logger.info("fundamentals_service: concept series fetch failed for tag %s: %s", tag, e)
             continue
     return None
+
+
+def _fetch_concept(cik: int, tags: List[str]) -> Optional[Dict]:
+    annual = _fetch_concept_series(cik, tags)
+    if not annual:
+        return None
+    latest = annual[-1]
+    return {"value": latest["val"], "fiscal_year": latest.get("fy"), "period_end": latest.get("end")}
 
 
 def get_fundamentals(symbol: str, current_price: Optional[float] = None) -> Dict:
@@ -144,7 +154,22 @@ def get_fundamentals(symbol: str, current_price: Optional[float] = None) -> Dict
         return result
 
     eps = _fetch_concept(cik, EPS_TAGS)
-    revenue = _fetch_concept(cik, REVENUE_TAGS)
+    revenue_series = _fetch_concept_series(cik, REVENUE_TAGS)
+    revenue = {"value": revenue_series[-1]["val"], "fiscal_year": revenue_series[-1].get("fy"),
+               "period_end": revenue_series[-1].get("end")} if revenue_series else None
+
+    # 2026-07-19 Stage-1 Smart Beta addition: real YoY revenue growth as
+    # the Quality/Growth factor input (see services/smart_beta_service.py)
+    # -- reuses the SAME annual series already being fetched for the
+    # "revenue" field above rather than making a second SEC request.
+    # Needs at least 2 annual points; honestly omitted (never estimated)
+    # if the company only has 1 year of 10-K history on file.
+    revenue_growth_pct = None
+    if revenue_series and len(revenue_series) >= 2:
+        prev_val = revenue_series[-2]["val"]
+        latest_val = revenue_series[-1]["val"]
+        if prev_val:
+            revenue_growth_pct = round((latest_val - prev_val) / abs(prev_val) * 100, 1)
 
     if not eps and not revenue:
         result = {"status": "ok", "available": False, "message": f"暫時攞唔到 {bare_symbol} 嘅SEC申報數據。"}
@@ -157,6 +182,7 @@ def get_fundamentals(symbol: str, current_price: Optional[float] = None) -> Dict
         "source": "SEC EDGAR (官方申報數據)",
         "eps": eps,
         "revenue": revenue,
+        "revenue_growth_pct": revenue_growth_pct,
         "pe_ratio": None,
         "note": "EPS／營收數字嚟自最近一份10-K年報申報，並非即時數據；市盈率(P/E)由即時股價與最近年度EPS計算得出。",
     }

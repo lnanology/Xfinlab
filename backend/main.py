@@ -16,6 +16,7 @@ from api.full_analysis_v3 import router as full_analysis_router
 from api.screener import router as screener_router
 from api.portfolio import router as portfolio_router
 from api.anomaly import router as anomaly_router
+from api.pairs_scan import router as pairs_scan_router
 from api.research import router as research_router
 from api.report import router as report_router
 from auth.auth import router as auth_router
@@ -132,6 +133,7 @@ app.include_router(portfolio_router, prefix="/api", tags=["Portfolio"])
 
 # P1 Anomaly Engine
 app.include_router(anomaly_router, prefix="/api", tags=["Anomaly"])
+app.include_router(pairs_scan_router, prefix="/api", tags=["Pairs Scan"])
 app.include_router(research_router, prefix="/api", tags=["Research"])
 app.include_router(report_router, prefix="/api", tags=["Report"])
 app.include_router(auth_router, prefix="/api", tags=["Auth"])

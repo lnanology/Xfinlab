@@ -217,6 +217,24 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </details>
 
+    <!-- Stage 1 roadmap (2026-07-19): Smart Beta multi-factor score +
+         Bayesian regime-probability-driven dynamic factor weighting --
+         see services/smart_beta_service.py. Hidden until data.smart_beta
+         actually has factors (some tickers -- e.g. non-US, no SEC data --
+         may have zero real factors available, never a fabricated one). -->
+    <details class="xfl-accordion" id="smartBetaAccordion" style="display:none">
+      <summary data-i18n="sb_title">▶ Smart Beta Multi-Factor Analysis</summary>
+      <div class="xfl-accordion-body">
+        <div id="sbFactorsBody"></div>
+        <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center">
+          <span data-i18n="sb_blended_label" style="font-weight:600">Blended Factor Score</span>
+          <span id="sbBlendedScore" style="font-weight:700;font-size:1.1rem">-</span>
+        </div>
+        <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)" id="sbRegimeLine">-</div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="sb_methodology_note">Factor weights are dynamically tilted by Bayesian regime probabilities, not fixed ratios. Only factors backed by real data are shown — for research reference only, not investment advice.</div>
+      </div>
+    </details>
+
     <details class="xfl-accordion">
       <summary>▶ 支持阻力</summary>
       <div class="xfl-accordion-body" id="supportResistanceBody">-</div>
@@ -329,6 +347,52 @@ window.XFL_RELATED_MAP = {
   ETH: ['BTC', 'COIN'],
 };
 
+// Stage 1 roadmap: renders Smart Beta multi-factor scores + the Bayesian
+// regime line inside #smartBetaAccordion (see services/smart_beta_service.py
+// for the exact shape of `sb`). Hides the whole accordion when there isn't
+// at least one factor backed by real data -- never shows a fabricated bar.
+function renderSmartBeta(sb){
+  const acc = document.getElementById('smartBetaAccordion');
+  if (!acc) return;
+  if (!sb || !sb.factors || !Object.keys(sb.factors).length) {
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+
+  const tr = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+  const factorLabels = {
+    value: tr('sb_factor_value', 'Value'),
+    momentum: tr('sb_factor_momentum', 'Momentum'),
+    quality: tr('sb_factor_quality', 'Quality / Growth'),
+    low_vol: tr('sb_factor_low_vol', 'Low-Vol'),
+  };
+  const weights = sb.weights_used || {};
+  const rows = ['value', 'momentum', 'quality', 'low_vol'].filter(k => sb.factors[k]).map(k => {
+    const f = sb.factors[k];
+    const w = weights[k] != null ? Math.round(weights[k] * 100) : null;
+    const cls = f.score >= 60 ? 'bull' : f.score <= 40 ? 'bear' : 'flat';
+    const weightSuffix = w != null ? ` (${w}%)` : '';
+    return `<div class="prob-section" style="margin-bottom:0.5rem">
+      <div class="prob-label">${factorLabels[k]}${weightSuffix}</div>
+      <div class="prob-bar"><div class="prob-fill ${cls}" style="width:${f.score}%"></div></div>
+      <div style="width:44px;text-align:right;font-size:0.8rem;color:var(--text-secondary)">${f.score}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('sbFactorsBody').innerHTML = rows;
+  document.getElementById('sbBlendedScore').textContent = sb.blended_score != null ? sb.blended_score : '-';
+
+  const regime = sb.regime;
+  const regimeLineEl = document.getElementById('sbRegimeLine');
+  if (regime && regime.top_regime) {
+    const regimeLabel = tr('regime_' + regime.top_regime, regime.top_regime);
+    const regimeTmpl = tr('sb_regime_line', 'Current regime: {regime} ({pct}% probability)');
+    regimeLineEl.textContent = regimeTmpl.replace('{regime}', regimeLabel).replace('{pct}', regime.top_probability_pct);
+  } else {
+    regimeLineEl.textContent = '-';
+  }
+}
+
 async function runAnalysis(){
   const input=document.getElementById('symbolInput').value.trim();
   if(!input){alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_alert_no_symbol'])||'請輸入至少一個代號');return}
@@ -384,6 +448,10 @@ async function runAnalysis(){
       document.getElementById('dashLiquidity').textContent = dash.liquidity || '-';
       document.getElementById('dashRegime').textContent = (data.regime && data.regime.regime) || '-';
     }
+
+    // ---- Stage 1 roadmap: Smart Beta multi-factor + Bayesian regime
+    // probability (see services/smart_beta_service.py) ----
+    renderSmartBeta(data.smart_beta);
 
     // ---- Layer 4: reasons accordion ----
     const reasons = data.reasons || { bullish: [], bearish: [] };

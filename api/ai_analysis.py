@@ -9,6 +9,7 @@ from engines.news_engine import NewsEngine
 from backend.alpha.regime_detector import RegimeDetector
 from services.fundamentals_service import get_fundamentals
 from services.i18n import get_translations
+from services.smart_beta_service import get_smart_beta
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -293,6 +294,17 @@ async def ai_analysis(body: dict):
             "並非統計預測模型，僅供參考，並非投資建議。"
         )
 
+    # Stage 1 roadmap (2026-07-19): Smart Beta multi-factor score + the
+    # Bayesian regime-probability update that drives its dynamic factor
+    # weighting -- see services/smart_beta_service.py. Independently
+    # try/except'd so a failure here (e.g. this symbol's fundamentals
+    # genuinely unavailable) never breaks the rest of an otherwise
+    # working analysis.
+    try:
+        smart_beta = get_smart_beta(symbol, current_price=market.get("price"))
+    except Exception:
+        smart_beta = None
+
     return {
         "data": {
             "scores": {
@@ -330,5 +342,6 @@ async def ai_analysis(body: dict):
             # their url/published_at instead of only the aggregate score.
             "news_headlines": news[:8],
             "fundamentals": fundamentals,
+            "smart_beta": smart_beta,
         }
     }
