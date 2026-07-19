@@ -27,7 +27,7 @@
 | AI Market Research™ | `ai-analysis.html` |
 | Company Compare™ | `company-compare.html` |
 | Event Intelligence™ / News Intelligence™ | `news-denoise.html`, `news.html` |
-| Risk Radar™ | `stress-lab.html` |
+| Risk Engine™ | `stress-lab.html` |
 | Chart Research™ | `chart-analysis.html`, `chart.html` |
 | 首頁 Layer 9 | `index.html` |
 

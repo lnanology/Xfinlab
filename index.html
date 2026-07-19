@@ -273,7 +273,7 @@
   .top-opp-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; font-size: 0.72rem; color: var(--muted); }
   @media (max-width: 768px) { .top-opp-grid { grid-template-columns: 1fr; } }
 
-  /* Daily Experience: personalized AI Watchlist / Risk Radar, nested
+  /* Daily Experience: personalized AI Watchlist / Anomaly Detection Radar, nested
      inside the same Today's AI Outlook box (not a new section -- keeps
      the mandated homepage flow order intact). */
   .pulse-personal { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); display: none; }
@@ -499,13 +499,13 @@
           <div id="watchlistMini"><div class="pulse-personal-empty" data-i18n="outlook_loading">載入緊...</div></div>
         </div>
         <div>
-          <div class="pulse-personal-title" data-i18n="riskradar_title">🚨 Risk Radar</div>
+          <div class="pulse-personal-title" data-i18n="riskradar_title">🚨 異常偵測雷達</div>
           <div id="riskRadarMini"><div class="pulse-personal-empty" data-i18n="outlook_loading">載入緊...</div></div>
         </div>
       </div>
     </div>
     <div class="pulse-personal-cta" id="pulsePersonalCta" style="display:none">
-      <a href="login.html" data-i18n="daily_cta">登入解鎖你嘅AI Watchlist同Risk Radar，每日自動更新 →</a>
+      <a href="login.html" data-i18n="daily_cta">登入解鎖你嘅AI Watchlist同異常偵測雷達，每日自動更新 →</a>
     </div>
   </div>
 </div>
@@ -1094,7 +1094,7 @@ async function loadTopOpportunities() {
 loadTopOpportunities();
 setInterval(loadTopOpportunities, 300000);
 
-// Daily Experience: personalized AI Watchlist / Risk Radar nested inside
+// Daily Experience: personalized AI Watchlist / Anomaly Detection Radar nested inside
 // the same Today's AI Outlook box. Reuses /api/screener and /api/anomaly
 // (built earlier this session -- real per-user watchlist scoring/anomaly
 // detection, already live on dashboard.html). Anonymous visitors get an

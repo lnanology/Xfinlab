@@ -28,4 +28,4 @@ python3 mock-server.py
 | Chart Research™ | `chart-analysis.html` |
 | Company Compare™ | `company-compare.html` |
 | Event Intelligence™ | `news-denoise.html` |
-| Risk Radar™ | `stress-lab.html` |
+| Risk Engine™ | `stress-lab.html` |
