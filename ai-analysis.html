@@ -336,7 +336,7 @@ async function runAnalysis(){
   const assetType=document.getElementById('assetType').value;
 
   try {
-    const result = await postApi('/api/ai-analysis', { symbols, assetType });
+    const result = await postApi('/api/ai-analysis', { symbols, assetType, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined });
     const data = result.data;
     const scores = data.scores;
     const probs = data.probabilities;
@@ -365,8 +365,10 @@ async function runAnalysis(){
       ratingEl.className = 'hero-rating ' + hero.rating.toLowerCase();
       document.getElementById('heroConfidence').textContent = (hero.confidence_pct != null ? Math.round(hero.confidence_pct) : '-') + '%';
       const updated = hero.updated_at ? new Date(hero.updated_at) : new Date();
-      document.getElementById('heroUpdated').textContent = '更新時間 ' + updated.toLocaleTimeString();
-      document.getElementById('reasonsSummary').textContent = `▶ AI點解比${hero.rating}？ / AI推理`;
+      const updatedLabel = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_updated_label'])||'更新時間 ';
+      document.getElementById('heroUpdated').textContent = updatedLabel + updated.toLocaleTimeString();
+      const whyLabel = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_reasons_summary'])||'▶ AI點解比{rating}？ / AI推理';
+      document.getElementById('reasonsSummary').textContent = whyLabel.replace('{rating}', hero.rating);
     }
 
     // ---- Layer 2: Dashboard grid ----
@@ -557,10 +559,13 @@ async function runAnalysis(){
     const topBearish = (reasons.bearish || [])[0];
     const regimeLabel = (data.regime && data.regime.regime) || null;
     const summaryParts = [data.conclusion];
+    const bullSignalLabel = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_bull_signal_label'])||'利好訊號：';
+    const watchSignalLabel = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_watch_signal_label'])||'留意訊號：';
+    const regimeNowLabel = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_regime_now_label'])||'當前市況：';
     if (topBullish || topBearish) {
-      summaryParts.push(topBullish ? `利好訊號：${topBullish}` : `留意訊號：${topBearish}`);
+      summaryParts.push(topBullish ? `${bullSignalLabel}${topBullish}` : `${watchSignalLabel}${topBearish}`);
     }
-    if (regimeLabel) summaryParts.push(`當前市況：${regimeLabel}`);
+    if (regimeLabel) summaryParts.push(`${regimeNowLabel}${regimeLabel}`);
     summaryBox.style.display = 'block';
     summaryBox.textContent = summaryParts.join('。') + '。';
 

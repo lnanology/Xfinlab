@@ -185,6 +185,13 @@ nav {
   align-items: center;
   gap: 1.2rem;
   max-height: none;
+  /* 2026-07-19 fix: on narrower desktop widths the 9-10 nav links didn't
+     fit one row, and with no white-space rule the flex items shrank
+     below their text width, breaking each label mid-word onto 2 lines
+     ("字大過框"/"字分2層比例"). Let the whole row wrap onto extra
+     lines as needed instead of splitting individual words. */
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
 }
 
 .nav-links.open {
@@ -203,6 +210,7 @@ nav {
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
 .nav-link:hover,

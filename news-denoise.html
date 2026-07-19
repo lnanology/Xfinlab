@@ -57,6 +57,14 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 .result-content h3{color:var(--accent-blue);font-size:0.95rem;font-weight:600;margin:1rem 0 0.4rem}
 .result-content h3:first-child{margin-top:0}
 .result-content strong{color:var(--accent-orange)}
+/* 2026-07-19 fix: AI replies with a markdown "| # | Title | Brief Analysis |"
+   table were being run through formatAnalysisText's plain escape+\n->br
+   pass, so the table showed up as one unbroken line of raw pipe
+   characters instead of a table ("字排列可以顯示跟第二張咁嗎"). Same
+   table-detection approach as company-compare.html's cc-card fix. */
+.result-content table{width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:0.85rem}
+.result-content table th,.result-content table td{border:1px solid var(--border-color);padding:0.5rem 0.6rem;text-align:left;vertical-align:top}
+.result-content table th{background:var(--bg-primary);color:var(--accent-blue)}
 
 .disclaimer{font-size:0.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:1rem;margin-top:1rem;line-height:1.6}
 
@@ -196,14 +204,70 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function formatAnalysisText(text) {
-  return text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+// 2026-07-19 fix: markdown tables in the AI reply used to be dumped as
+// literal "| # | Title | ... |" text because this ran the whole response
+// through one escape+<br> pass with no table awareness. Now splits the
+// message into table vs. text blocks first (same approach used on
+// company-compare.html) so tables render as real <table> markup.
+function ndIsTableRow(line) {
+  const t = line.trim();
+  return t.startsWith('|') && t.endsWith('|') && t.length > 1;
+}
+function ndIsTableSeparator(line) {
+  const t = line.trim();
+  return t.includes('-') && /^\|?[\s:|-]+\|?$/.test(t);
+}
+function ndSplitTableRow(line) {
+  let t = line.trim();
+  if (t.startsWith('|')) t = t.slice(1);
+  if (t.endsWith('|')) t = t.slice(0, -1);
+  return t.split('|').map(c => c.trim());
+}
+function ndEscape(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function ndInlineFormat(s) {
+  return ndEscape(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function ndRenderTableBlock(tableLines) {
+  const header = ndSplitTableRow(tableLines[0]);
+  const rows = tableLines.slice(2).map(ndSplitTableRow).filter(r => r.length === header.length);
+  const theadHtml = `<tr>${header.map(h => `<th>${ndInlineFormat(h)}</th>`).join('')}</tr>`;
+  const tbodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${ndInlineFormat(c)}</td>`).join('')}</tr>`).join('');
+  return `<table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;
+}
+function ndRenderTextBlock(text) {
+  return ndInlineFormat(text)
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h3>$1</h3>')
     .replace(/^# (.+)$/gm, '<h3>$1</h3>')
     .replace(/\n/g, '<br>');
+}
+function formatAnalysisText(text) {
+  const lines = text.split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (ndIsTableRow(lines[i]) && ndIsTableSeparator(lines[i + 1] || '')) {
+      const tableLines = [lines[i], lines[i + 1]];
+      i += 2;
+      while (i < lines.length && ndIsTableRow(lines[i])) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'table', lines: tableLines });
+    } else {
+      const textLines = [];
+      while (i < lines.length && !(ndIsTableRow(lines[i]) && ndIsTableSeparator(lines[i + 1] || ''))) {
+        textLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'text', lines: textLines });
+    }
+  }
+  return blocks
+    .map(b => b.type === 'table' ? ndRenderTableBlock(b.lines) : ndRenderTextBlock(b.lines.join('\n')))
+    .join('');
 }
 </script>
 

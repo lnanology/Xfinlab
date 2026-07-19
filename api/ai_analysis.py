@@ -8,6 +8,7 @@ from engines.risk_engine import RiskEngine
 from engines.news_engine import NewsEngine
 from backend.alpha.regime_detector import RegimeDetector
 from services.fundamentals_service import get_fundamentals
+from services.i18n import get_translations
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -22,6 +23,19 @@ async def ai_analysis(body: dict):
     filters = body.get("filters", {})
     query = body.get("query", "")
     token = body.get("token")
+    lang = body.get("lang")
+    # 2026-07-19 fix: the Trend/Momentum/Sentiment/Valuation/Liquidity
+    # dashboard cells (and the "利好訊號"/"當前市況" summary framing on the
+    # frontend) always came back in Chinese regardless of the site's
+    # selected UI language -- switching to English only ever translated
+    # the surrounding page chrome, never these values ("ENGLISH 重有中文").
+    # Any caller that doesn't send `lang` yet keeps the exact old Chinese
+    # default (zero behavior change). When a non-Chinese lang is supplied,
+    # reuse the SAME idx_dir_* vocabulary already translated into all 46
+    # languages for the homepage's bullish/bearish/mixed labels, instead of
+    # hand-rolling a second translation table for the same 3 concepts.
+    is_zh_default = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
+    dir_tr = get_translations(lang) if not is_zh_default else None
 
     # Screener mode
     if filters and not symbols:
@@ -105,12 +119,22 @@ async def ai_analysis(body: dict):
         risks.append({"title": "風險可控", "desc": "目前市場狀況相對穩定"})
 
     # Conclusion
-    if total_score >= 75:
-        conclusion = f"{symbol} 技術面強勢，新聞情緒{news_result['sentiment']}，整體評分{total_score:.0f}/100，建議關注買入機會。"
-    elif total_score >= 50:
-        conclusion = f"{symbol} 整體評分{total_score:.0f}/100，市場情緒中性，建議觀望為主。"
+    # 2026-07-19 fix: was hardcoded Chinese regardless of `lang` (see the
+    # is_zh_default note above the dashboard fields further down).
+    if is_zh_default:
+        if total_score >= 75:
+            conclusion = f"{symbol} 技術面強勢，新聞情緒{news_result['sentiment']}，整體評分{total_score:.0f}/100，建議關注買入機會。"
+        elif total_score >= 50:
+            conclusion = f"{symbol} 整體評分{total_score:.0f}/100，市場情緒中性，建議觀望為主。"
+        else:
+            conclusion = f"{symbol} 整體評分{total_score:.0f}/100，技術面偏弱，建議謹慎操作。"
     else:
-        conclusion = f"{symbol} 整體評分{total_score:.0f}/100，技術面偏弱，建議謹慎操作。"
+        if total_score >= 75:
+            conclusion = f"{symbol} shows strong technicals, news sentiment {news_result['sentiment']}, overall score {total_score:.0f}/100 -- worth watching for a buying opportunity."
+        elif total_score >= 50:
+            conclusion = f"{symbol} overall score {total_score:.0f}/100, neutral market sentiment -- mostly a wait-and-see stance."
+        else:
+            conclusion = f"{symbol} overall score {total_score:.0f}/100, technicals look weak -- proceed cautiously."
 
     # Phase 1 wiring: this endpoint has always used its own lightweight
     # rule/score engine (volume_ratio/trend/breakout/sentiment above) for
@@ -184,18 +208,48 @@ async def ai_analysis(body: dict):
     if fundamentals.get("available") and fundamentals.get("pe_ratio") is not None:
         valuation_display = f"P/E {fundamentals['pe_ratio']}"
     elif fundamentals.get("available"):
-        valuation_display = "P/E 不適用（EPS為負或缺失）"
+        valuation_display = "P/E 不適用（EPS為負或缺失）" if is_zh_default else "P/E N/A (negative or missing EPS)"
     else:
-        valuation_display = "N/A（非美股SEC申報公司或暫無數據）"
+        valuation_display = "N/A（非美股SEC申報公司或暫無數據）" if is_zh_default else "N/A (not a US SEC-filing company, or no data available)"
+
+    raw_trend = tech_trend or ("上升" if trend == "bullish" else "下降" if trend == "bearish" else "中性")
+    raw_momentum = (confluence.get("direction") if confluence else None) or "數據不足"
+    raw_sentiment = "偏多" if bull > bear else "偏空" if bear > bull else "中性"
+    raw_liquidity = "偏低" if volume_ratio < 0.7 else "良好"
+
+    if is_zh_default:
+        trend_display = raw_trend
+        momentum_display = raw_momentum
+        sentiment_display = raw_sentiment
+        liquidity_display = raw_liquidity
+    else:
+        # Same finite vocabulary technical_analysis_service.py / this
+        # endpoint's own fallbacks return in Chinese, mapped onto the
+        # already-46-language-translated idx_dir_* labels rather than a
+        # second hand-rolled table for the same bullish/bearish/neutral
+        # concepts.
+        dir_map = {
+            "上升": dir_tr.get("idx_dir_bull", "Bullish"),
+            "下降": dir_tr.get("idx_dir_bear", "Bearish"),
+            "中性": dir_tr.get("idx_dir_neutral", "Mixed, Neutral"),
+            "偏多": dir_tr.get("idx_dir_bull", "Bullish"),
+            "偏空": dir_tr.get("idx_dir_bear", "Bearish"),
+            "訊號分歧，中性": dir_tr.get("idx_dir_neutral", "Mixed, Neutral"),
+            "數據不足": dir_tr.get("idx_dir_insufficient", "Insufficient data"),
+        }
+        trend_display = dir_map.get(raw_trend, raw_trend)
+        momentum_display = dir_map.get(raw_momentum, raw_momentum)
+        sentiment_display = dir_map.get(raw_sentiment, raw_sentiment)
+        liquidity_display = "Low" if raw_liquidity == "偏低" else "Good"
 
     dashboard = {
-        "trend": tech_trend or ("上升" if trend == "bullish" else "下降" if trend == "bearish" else "中性"),
+        "trend": trend_display,
         "risk": risk_result["risk_level"],
-        "momentum": (confluence.get("direction") if confluence else None) or "數據不足",
+        "momentum": momentum_display,
         "news": news_result["sentiment"],
-        "sentiment": "偏多" if bull > bear else "偏空" if bear > bull else "中性",
+        "sentiment": sentiment_display,
         "valuation": valuation_display,
-        "liquidity": "偏低" if volume_ratio < 0.7 else "良好",
+        "liquidity": liquidity_display,
     }
 
     reasons = {

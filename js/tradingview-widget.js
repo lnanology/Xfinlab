@@ -55,6 +55,24 @@
     return attr === 'dark' ? 'dark' : 'light';
   }
 
+  // 2026-07-19 fix: was hardcoded to 'zh_TW' regardless of the site's
+  // selected UI language, so switching to English (or any other of the
+  // 46 supported languages) still showed TradingView's own toolbar/axis
+  // labels in Chinese ("ENGLISH 重有中文"). Only map to locales
+  // TradingView's embed actually supports -- everything else honestly
+  // falls back to English rather than silently defaulting to Chinese or
+  // guessing an unsupported code.
+  var TV_LOCALE_MAP = {
+    'en': 'en', 'zh-TW': 'zh_TW', 'zh-HK': 'zh_TW', 'zh-CN': 'zh_CN',
+    'ja': 'ja', 'ko': 'ko', 'es': 'es', 'fr': 'fr', 'de': 'de',
+    'it': 'it', 'pt': 'pt', 'ru': 'ru', 'tr': 'tr', 'ar': 'ar',
+    'th': 'th', 'vi': 'vi', 'id': 'id', 'pl': 'pl'
+  };
+  function currentTvLocale() {
+    var lang = (typeof I18N !== 'undefined' && I18N.currentLang) || 'zh-HK';
+    return TV_LOCALE_MAP[lang] || 'en';
+  }
+
   function render(containerId, symbol) {
     var container = document.getElementById(containerId);
     if (!container) return;
@@ -86,7 +104,7 @@
       timezone: 'Etc/UTC',
       theme: currentTheme(),
       style: '1',
-      locale: 'zh_TW',
+      locale: currentTvLocale(),
       allow_symbol_change: true,
       hide_side_toolbar: false,
       support_host: 'https://www.tradingview.com'
