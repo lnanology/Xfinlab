@@ -84,6 +84,33 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 .msg-bubble td{padding:0.35rem 0.6rem;border:1px solid var(--border-color);color:var(--text-secondary)}
 .msg-bubble tr:hover td{background:var(--bg-secondary)}
 .msg-bubble .disclaimer{font-size:0.82rem;color:var(--text-muted);border-top:1px solid var(--border-color);margin-top:0.8rem;padding-top:0.6rem}
+
+/* 2026-07-19: comparison content (e.g. "AAPL vs TSLA vs NVDA, 優勢/劣勢")
+   used to come back from the AI as a raw markdown table -- formatMsg()
+   never parsed "|...|" at all, so it rendered as one unbroken wall of
+   pipe characters and literal "<br>" text. Two fixes: (1) generic
+   markdown tables now actually parse into the <table> styling above
+   that already existed but was dead code; (2) pros/cons-style compare
+   tables specifically render as stacked cards instead -- a table
+   forces side-by-side reading in a narrow chat bubble (bad for a
+   crowded 85%-width column), whereas one card per asset with a
+   green/red split lets the eye pattern-match ✓ vs ✗ instead of reading
+   full sentences (pre-attentive color coding + chunking, so each card
+   stays within ~4-5 short points per side -- Miller's Law). */
+.cc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;overflow:hidden}
+.cc-card-title{background:var(--bg-secondary);color:var(--accent-blue);font-weight:600;font-size:0.9rem;padding:0.5rem 0.8rem}
+.cc-card-grid{display:flex;flex-wrap:wrap}
+.cc-col{flex:1 1 160px;padding:0.6rem 0.8rem}
+.cc-col-pro{border-right:1px solid var(--border-color)}
+.cc-col-label{font-size:0.72rem;font-weight:600;letter-spacing:0.04em;margin-bottom:0.35rem}
+.cc-col-pro .cc-col-label{color:var(--accent-green)}
+.cc-col-con .cc-col-label{color:var(--accent-red)}
+.cc-list{list-style:none;padding:0;margin:0}
+.cc-list li{font-size:0.85rem;line-height:1.5;padding:0.15rem 0 0.15rem 1.1rem;position:relative;color:var(--text-secondary)}
+.cc-pro::before{content:'✓';position:absolute;left:0;color:var(--accent-green);font-weight:700}
+.cc-con::before{content:'✗';position:absolute;left:0;color:var(--accent-red);font-weight:700}
+@media(max-width:520px){.cc-col-pro{border-right:none;border-bottom:1px solid var(--border-color)}}
+
 .msg-time{font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;padding:0 0.2rem}
 .msg.user .msg-time{text-align:right}
 
@@ -278,14 +305,99 @@ function addMessage(role, content, imageUrl) {
   return div;
 }
 
-function formatMsg(text) {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+// 2026-07-19 fix: this used to run the ENTIRE message (including any
+// markdown table) through one \n -> <br> replace, so a table like
+// "| AAPL | ...優勢... | ...劣勢... |" rendered as one unbroken line of
+// raw pipe characters and literal "<br>" text -- see the .cc-card CSS
+// comment above for the full reasoning. formatMsg() now splits the
+// message into table vs. non-table blocks first, so each gets the
+// right treatment.
+function isTableRow(line) {
+  const t = line.trim();
+  return t.startsWith('|') && t.endsWith('|') && t.length > 1;
+}
+function isTableSeparator(line) {
+  const t = line.trim();
+  return t.includes('-') && /^\|?[\s:|-]+\|?$/.test(t);
+}
+function splitTableRow(line) {
+  let t = line.trim();
+  if (t.startsWith('|')) t = t.slice(1);
+  if (t.endsWith('|')) t = t.slice(0, -1);
+  return t.split('|').map(c => c.trim());
+}
+function inlineFormat(s) {
+  return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function splitCellPoints(cell) {
+  // Cells commonly separate multiple points with a literal "<br>" or a
+  // real newline, each line optionally starting with a "•"/"-"/"*"
+  // bullet marker that gets stripped (the ✓/✗ pseudo-element already
+  // supplies the marker visually).
+  return cell
+    .split(/<br\s*\/?>|\n/gi)
+    .map(s => inlineFormat(s.trim().replace(/^[•·\-*]\s*/, '')))
+    .filter(Boolean);
+}
+function renderCompareCard(name, prosCell, consCell) {
+  const pros = splitCellPoints(prosCell).map(p => `<li class="cc-pro">${p}</li>`).join('');
+  const cons = splitCellPoints(consCell).map(c => `<li class="cc-con">${c}</li>`).join('');
+  return `<div class="cc-card">
+    <div class="cc-card-title">${inlineFormat(name)}</div>
+    <div class="cc-card-grid">
+      <div class="cc-col cc-col-pro"><div class="cc-col-label">優勢</div><ul class="cc-list">${pros}</ul></div>
+      <div class="cc-col cc-col-con"><div class="cc-col-label">留意</div><ul class="cc-list">${cons}</ul></div>
+    </div>
+  </div>`;
+}
+function renderTableBlock(tableLines) {
+  const header = splitTableRow(tableLines[0]);
+  const rows = tableLines.slice(2).map(splitTableRow).filter(r => r.length === header.length);
+
+  const prosIdx = header.findIndex(h => /優勢|优势|pros|advantage/i.test(h));
+  const consIdx = header.findIndex(h => /劣勢|劣势|cons|disadvantage/i.test(h));
+
+  if (prosIdx > -1 && consIdx > -1 && header.length <= 4) {
+    return rows.map(r => renderCompareCard(r[0], r[prosIdx], r[consIdx])).join('');
+  }
+
+  const theadHtml = `<tr>${header.map(h => `<th>${inlineFormat(h)}</th>`).join('')}</tr>`;
+  const tbodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${inlineFormat(c)}</td>`).join('')}</tr>`).join('');
+  return `<table>${theadHtml ? `<thead>${theadHtml}</thead>` : ''}<tbody>${tbodyHtml}</tbody></table>`;
+}
+function renderTextBlock(text) {
+  return inlineFormat(text)
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h3>$1</h3>')
     .replace(/^# (.+)$/gm, '<h3>$1</h3>')
     .replace(/⚠️(.+)/g, '<div class="disclaimer">⚠️$1</div>')
     .replace(/\n/g, '<br>');
+}
+function formatMsg(text) {
+  const lines = text.split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (isTableRow(lines[i]) && isTableSeparator(lines[i + 1] || '')) {
+      const tableLines = [lines[i], lines[i + 1]];
+      i += 2;
+      while (i < lines.length && isTableRow(lines[i])) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'table', lines: tableLines });
+    } else {
+      const textLines = [];
+      while (i < lines.length && !(isTableRow(lines[i]) && isTableSeparator(lines[i + 1] || ''))) {
+        textLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'text', lines: textLines });
+    }
+  }
+  return blocks
+    .map(b => b.type === 'table' ? renderTableBlock(b.lines) : renderTextBlock(b.lines.join('\n')))
+    .join('');
 }
 
 function addTyping() {

@@ -6,20 +6,71 @@ const I18N = {
   async init() {
     try {
       const lang = this.currentLang;
-      const url = lang ? `https://api.xfinlab.com/api/i18n/${lang}` : `https://api.xfinlab.com/api/i18n/detect`;
-      const res = await fetch(url);
-      const data = await res.json();
+      let data;
+
+      if (lang) {
+        // User has an explicit saved choice (picked from the switcher, or
+        // resolved once before) -- always honour it, never re-guess.
+        const res = await fetch(`https://api.xfinlab.com/api/i18n/${lang}`);
+        data = await res.json();
+      } else {
+        // 2026-07-19 fix: first-visit language used to be decided purely
+        // by IP geolocation (ipapi.co lookup via /i18n/detect) -- so a
+        // Hong Kong user browsing over a US VPN, or anyone travelling,
+        // got the "wrong" language even though their browser/OS was
+        // correctly set to their real preferred language. Now we ask the
+        // BROWSER what the user actually chose in their own settings
+        // (navigator.languages) first, and only fall back to the IP
+        // guess if none of the browser's preferred languages are in our
+        // supported list. /i18n/detect is still called once here purely
+        // to get `supported_languages` + `country` (the latter feeds
+        // js/autocomplete.js's country-prioritized trending stocks --
+        // unrelated to UI language, left untouched).
+        const detectRes = await fetch(`https://api.xfinlab.com/api/i18n/detect`);
+        const detectData = await detectRes.json();
+
+        const browserLang = this.matchBrowserLanguage(detectData.supported_languages);
+        if (browserLang && browserLang !== detectData.language) {
+          const res = await fetch(`https://api.xfinlab.com/api/i18n/${browserLang}`);
+          data = await res.json();
+        } else {
+          data = detectData;
+        }
+        if (detectData.country) data.country = detectData.country;
+      }
+
       this.currentLang = data.language;
       this.translations = data.translations;
       localStorage.setItem('xfinlab_lang', this.currentLang);
-      // /i18n/detect (first-visit-only call, see the `lang ? ... : ...`
-      // branch above) already resolves the visitor's country from IP;
-      // cache it here so js/autocomplete.js can show country-prioritized
-      // trending stocks without doing a second IP lookup of its own.
       if (data.country) localStorage.setItem('xfinlab_country', data.country);
       this.apply();
       this.addLanguageSwitcher(data.supported_languages);
     } catch(e) {}
+  },
+
+  // Matches navigator.languages (the user's own browser/OS language
+  // preference, in their preferred order) against our supported language
+  // codes. Tries exact code match, then case-insensitive, then base-
+  // language match (e.g. "en-GB" -> "en", "pt-BR" -> "pt", "zh" -> first
+  // "zh-*" variant). Returns null if nothing matches, so the caller can
+  // fall back to the IP-based guess.
+  matchBrowserLanguage(supportedLangs) {
+    if (!supportedLangs) return null;
+    const prefs = (navigator.languages && navigator.languages.length)
+      ? navigator.languages
+      : [navigator.language].filter(Boolean);
+
+    for (const raw of prefs) {
+      if (!raw) continue;
+      if (supportedLangs[raw]) return raw;
+      const exact = Object.keys(supportedLangs).find(c => c.toLowerCase() === raw.toLowerCase());
+      if (exact) return exact;
+      const base = raw.split('-')[0].toLowerCase();
+      if (supportedLangs[base]) return base;
+      const baseMatch = Object.keys(supportedLangs).find(c => c.split('-')[0].toLowerCase() === base);
+      if (baseMatch) return baseMatch;
+    }
+    return null;
   },
 
   t(key) { return this.translations[key] || key; },
