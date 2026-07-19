@@ -10,6 +10,7 @@ from backend.alpha.regime_detector import RegimeDetector
 from services.fundamentals_service import get_fundamentals
 from services.i18n import get_translations
 from services.smart_beta_service import get_smart_beta
+from services.fractal_regime_service import detect_transition_signal as detect_fractal_transition
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -186,6 +187,16 @@ async def ai_analysis(body: dict):
     lead_pct = max(bull, bear)
     hero_stars = 1 if lead_pct < 40 else 2 if lead_pct < 55 else 3 if lead_pct < 65 else 4 if lead_pct < 80 else 5
 
+    # 2026-07-19 Stage 2 roadmap ("市況轉換偵測延伸"): a real Hurst-exponent
+    # transition read, wrapped in its own try/except so a slow/failed
+    # extra history fetch never breaks the regime classification (or the
+    # rest of the analysis) it's merely annotating.
+    hurst_signal = None
+    try:
+        hurst_signal = detect_fractal_transition(symbol)
+    except Exception:
+        hurst_signal = None
+
     regime_result = None
     try:
         structure_event = None
@@ -197,6 +208,7 @@ async def ai_analysis(body: dict):
             "trend_confidence_pct": confluence.get("confidence_pct") if confluence else None,
             "volume_ratio": volume_ratio,
             "structure_event": structure_event,
+            "hurst_signal": hurst_signal,
         })
     except Exception:
         regime_result = None

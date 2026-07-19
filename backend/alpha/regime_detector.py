@@ -22,6 +22,13 @@ fabricated-looking-precise number this codebase avoids elsewhere. Same
 reasoning kept "TREND_REVERSAL" as a secondary flag (driven by a real
 Market Structure Engine CHOCH event) rather than inventing it as a
 standalone primary regime with no reliable trigger condition.
+
+2026-07-19 Stage 2 roadmap addition ("市況轉換偵測延伸"): a new optional
+`hurst_signal` input (from services/fractal_regime_service.py's real R/S-
+analysis Hurst exponent estimate) can attach a "TREND_TRANSITION_WATCH"
+secondary flag the same way `structure_event` already attaches
+"TREND_REVERSAL_WATCH" above -- an additive, clearly-labelled watch
+signal, not a change to the primary regime classification logic.
 """
 
 from typing import Dict, List
@@ -66,12 +73,16 @@ class RegimeDetector:
           structure_event        'BOS' / 'CHOCH' / 'liquidity_sweep' / None
                                   (Market Structure Engine's most recent
                                   event type, if any)
+          hurst_signal            optional dict from
+                                  services/fractal_regime_service.
+                                  detect_transition_signal(), or None
         """
         volatility = market_data.get("volatility", 50) or 50
         direction = market_data.get("trend_direction")
         confidence_pct = market_data.get("trend_confidence_pct", 0) or 0
         volume_ratio = market_data.get("volume_ratio")
         structure_event = market_data.get("structure_event")
+        hurst_signal = market_data.get("hurst_signal")
 
         strong = confidence_pct >= cls.STRONG_CONFIDENCE_PCT
         high_vol = volatility >= cls.HIGH_VOLATILITY_THRESHOLD
@@ -106,6 +117,8 @@ class RegimeDetector:
                 regime = "LOW_LIQUIDITY"
         if structure_event == "CHOCH":
             secondary_flags.append("TREND_REVERSAL_WATCH")  # 趨勢反轉觀察
+        if hurst_signal and hurst_signal.get("available") and hurst_signal.get("transition_watch"):
+            secondary_flags.append("TREND_TRANSITION_WATCH")  # 市況轉換觀察（Hurst指數）
 
         return {
             "regime": regime,
@@ -118,5 +131,6 @@ class RegimeDetector:
                 "trend_confidence_pct": confidence_pct,
                 "volume_ratio": volume_ratio,
                 "structure_event": structure_event,
+                "hurst_signal": hurst_signal,
             },
         }
