@@ -188,7 +188,14 @@ nav {
 }
 
 .nav-links.open {
-  max-height: 320px;
+  /* 2026-07-19 fix: was a fixed 320px cap left over from when the nav
+     only had 5-6 links -- most pages now carry 9-10 links (~52px each
+     once stacked on mobile, see .nav-link padding below), so the cap
+     clipped the bottom few items off-screen with no way to reach them
+     ("滑出TOPBAR功能頁沒看到全部"). Use a generous viewport-relative cap
+     with a scrollbar as a safety net instead of guessing a fixed px. */
+  max-height: min(80vh, 640px);
+  overflow-y: auto;
 }
 
 .nav-link {
@@ -518,19 +525,30 @@ nav {
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(13,27,48,0.98);
+    /* 2026-07-19 fix: this was hardcoded to a dark navy regardless of
+       the site's light/dark theme (leftover from when dark was the
+       only theme) -- .nav-link's text color correctly follows
+       var(--text2), so in light mode that meant dark-gray text on a
+       near-black background, and in dark mode light-gray text that
+       read as too faint/washed out against it ("黑底白字太淺色"). Use
+       the actual theme surface color instead so contrast always
+       matches whatever theme is active. */
+    background: var(--bg-card);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.12);
     flex-direction: column;
     gap: 0;
     overflow: hidden;
     max-height: 0;
     transition: max-height 0.3s ease;
     backdrop-filter: blur(20px);
+    z-index: 200;
   }
 
   .nav-link {
     display: block;
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--border);
+    color: var(--text-primary);
   }
 
   .input-row {

@@ -31,9 +31,21 @@
 .analysis-section.single-col{grid-template-columns:1fr}
 .analysis-main{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
 .analysis-side{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
-.result-row{display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
-.result-label{color:var(--text3)}
-.result-value{font-weight:600;color:var(--text)}
+.result-row{display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
+.result-label{color:var(--text3);flex-shrink:0}
+.result-value{font-weight:600;color:var(--text);min-width:0;overflow-wrap:break-word;word-break:break-word;text-align:right}
+/* 2026-07-19 fix: no gap + no min-width/word-break on the flex children
+   meant a longer result-value string (e.g. a full English confidence
+   sentence once AI replies started following site language, or the
+   Chinese confluence summary) couldn't shrink or wrap -- it either burst
+   past the card's right edge on narrow screens, or squeezed flush
+   against the label with no breathing room ("文字穿出超越框",
+   "資訊貼埋一齊"). On phones/iPad portrait, stack label above value
+   instead of forcing them onto one cramped row. */
+@media(max-width:480px){
+  .result-row{flex-direction:column;align-items:flex-start;gap:0.2rem}
+  .result-value{text-align:left}
+}
 .pattern-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-top:0.6rem}
 .pattern-item{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.6rem;text-align:center}
 .education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}

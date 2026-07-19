@@ -118,6 +118,14 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 const API = "https://api.xfinlab.com/api";
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
+// 2026-07-19 fix: the nav-toggle button already called toggleNav() but
+// the function was never defined on this page, so tapping the hamburger
+// on mobile/iPad did nothing -- the nav could never be opened here.
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+
 const DIR_CLASS = { '偏多': 'dir-up', '偏空': 'dir-down' };
 function dirClass(dir) { return DIR_CLASS[dir] || 'dir-neutral'; }
 
