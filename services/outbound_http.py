@@ -59,3 +59,37 @@ def get_with_backoff(
             time.sleep(backoff_seconds)
             continue
         return response
+
+
+def post_with_backoff(
+    url: str,
+    json: dict = None,
+    headers: dict = None,
+    timeout: float = 10,
+    max_retries: int = DEFAULT_MAX_RETRIES,
+    backoff_seconds: float = DEFAULT_BACKOFF_SECONDS,
+) -> requests.Response:
+    """
+    POST counterpart to get_with_backoff() -- added 2026-07-19 for
+    services/finbert_sentiment_service.py's calls to the HuggingFace
+    Inference API (a JSON-body POST, unlike the GET-only outbound calls
+    this module previously served). Same honest-UA + 429/503 backoff
+    behaviour, same drop-in intent: replace a bare
+    `requests.post(url, json=payload, timeout=10)` with this.
+    """
+    merged_headers = {"User-Agent": DEFAULT_USER_AGENT}
+    if headers:
+        merged_headers.update(headers)
+
+    attempt = 0
+    while True:
+        response = requests.post(url, json=json, headers=merged_headers, timeout=timeout)
+        if response.status_code in (429, 503) and attempt < max_retries:
+            attempt += 1
+            logger.info(
+                "outbound_http: %s returned HTTP %s, backing off %ss then retrying (attempt %s/%s)",
+                url, response.status_code, backoff_seconds, attempt, max_retries,
+            )
+            time.sleep(backoff_seconds)
+            continue
+        return response

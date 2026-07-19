@@ -234,6 +234,35 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "registry alongside alpaca_markets."
         ),
     ),
+    "huggingface_inference_api": LicenseRecord(
+        source_id="huggingface_inference_api",
+        license_type="unknown",
+        commercial_use_allowed=True,
+        terms_url="https://huggingface.co/inference-api",
+        risk_level="medium",
+        notes=(
+            "Used by services/finbert_sentiment_service.py (Stage 2 "
+            "roadmap: 'FinBERT 新聞情緒升級') to call the ProsusAI/finbert "
+            "model hosted on HuggingFace's Inference API, replacing/"
+            "augmenting the old hand-picked keyword sentiment list in "
+            "engines/news_engine.py. HuggingFace's own Inference API "
+            "terms generally permit commercial use of hosted public "
+            "models, but the ProsusAI/finbert model card's own license "
+            "terms have not been independently re-verified for this "
+            "specific commercial usage pattern (calling it via the "
+            "hosted API rather than downloading the weights) -- flagged "
+            "conservatively, same treatment as coingecko_free_tier above. "
+            "Gated entirely behind an HF_API_TOKEN env var "
+            "(finbert_sentiment_service.is_available()); when unset or "
+            "the API call fails, callers fall back to the original "
+            "keyword heuristic rather than fabricating a FinBERT-"
+            "labelled score. No new package dependency -- called over "
+            "plain HTTPS via services/outbound_http.py's backoff helper, "
+            "not the `transformers`/`torch` self-hosting path (this "
+            "backend is a single small Railway dyno; a ~440MB in-process "
+            "model was judged not worth the memory/cold-start cost)."
+        ),
+    ),
 }
 
 

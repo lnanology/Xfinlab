@@ -3,10 +3,18 @@ import sys
 import time
 import requests
 import re
-sys.path.insert(0, "/Users/aj/Desktop/Xfinlab-main")
+
+# 2026-07-19: was a hardcoded "/Users/aj/Desktop/Xfinlab-main" -- only
+# worked on that one machine's local path. Needed a real fix now (not
+# just when this script is run directly) because the new FinBERT import
+# below depends on the repo root actually being on sys.path in whatever
+# environment runs this (sandbox, Railway, or a dev laptop).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
 load_dotenv()
+
+from services.finbert_sentiment_service import analyze_batch as finbert_analyze_batch
 
 
 class RedditBot:
@@ -108,6 +116,70 @@ class RedditBot:
         return dict(sorted(mentions.items(), key=lambda x: x[1]["count"], reverse=True))
 
     @staticmethod
+    def score_sentiment(mentions: dict) -> dict:
+        """
+        2026-07-19 Stage 2 roadmap fix ("升級...社交情緒引擎"): despite its
+        name, get_sentiment_summary() never actually scored sentiment --
+        it only counted ticker MENTIONS and summed Reddit's own upvote
+        "score" field, neither of which is a polarity measure (a ticker
+        can be mentioned heavily in an angry or bearish thread and still
+        rack up mentions/upvotes). This runs the same real
+        services/finbert_sentiment_service.py used for the News Engine
+        over each ticker's collected post titles and attaches a genuine
+        bullish/neutral/bearish read.
+
+        Mutates and returns `mentions` in place, adding per-ticker
+        "sentiment_available", and when available: "sentiment_score"
+        (0-100), "sentiment_label", "sentiment_method". When FinBERT
+        isn't configured/reachable, sentiment_available is honestly set
+        to False for every ticker -- this NEVER fabricates a polarity
+        from the mention/upvote counts as a substitute.
+
+        Note: this is unrelated to (and doesn't change) the open Reddit
+        Data API compliance gap documented in
+        services/license_registry.py's "reddit_unauthenticated" entry --
+        this bot still isn't wired into any live XFINLAB endpoint, and
+        migrating to the official OAuth API (via `praw`) remains a
+        separate, not-yet-done task needing Reddit developer credentials.
+        """
+        if not mentions:
+            return mentions
+
+        # One batched FinBERT call across every ticker's posts (cheaper
+        # and faster than one call per ticker), then redistribute results
+        # back by tracking each text's (ticker, index) origin.
+        all_texts = []
+        origin = []  # parallel list: (ticker, position_in_that_tickers_posts)
+        for ticker, data in mentions.items():
+            for post_title in data["posts"]:
+                all_texts.append(post_title)
+                origin.append(ticker)
+
+        finbert_result = finbert_analyze_batch(all_texts) if all_texts else {"available": False}
+
+        if not finbert_result.get("available"):
+            for data in mentions.values():
+                data["sentiment_available"] = False
+            return mentions
+
+        per_ticker_scores: dict = {}
+        for ticker, scored in zip(origin, finbert_result["results"]):
+            per_ticker_scores.setdefault(ticker, []).append(scored["score"])
+
+        for ticker, data in mentions.items():
+            scores = per_ticker_scores.get(ticker, [])
+            if not scores:
+                data["sentiment_available"] = False
+                continue
+            avg = round(sum(scores) / len(scores), 1)
+            data["sentiment_available"] = True
+            data["sentiment_score"] = avg
+            data["sentiment_label"] = "Bullish" if avg >= 60 else "Bearish" if avg <= 40 else "Neutral"
+            data["sentiment_method"] = "finbert"
+
+        return mentions
+
+    @staticmethod
     def get_sentiment_summary() -> dict:
         all_posts = []
         for i, subreddit in enumerate(RedditBot.SUBREDDITS):
@@ -118,6 +190,7 @@ class RedditBot:
             print(f"  r/{subreddit}: {len(posts)} posts")
 
         mentions = RedditBot.find_stock_mentions(all_posts)
+        RedditBot.score_sentiment(mentions)
         return {
             "total_posts_analyzed": len(all_posts),
             "subreddits": RedditBot.SUBREDDITS,
@@ -133,6 +206,10 @@ if __name__ == "__main__":
     print("\nTop Stock Mentions:")
 
     for ticker, data in list(result["top_mentions"].items())[:10]:
-        print(f"  {ticker}: {data['count']} mentions | Score: {data['total_score']}")
+        sentiment_note = (
+            f" | Sentiment: {data['sentiment_label']} ({data['sentiment_score']}/100, FinBERT)"
+            if data.get("sentiment_available") else " | Sentiment: unavailable (HF_API_TOKEN not configured)"
+        )
+        print(f"  {ticker}: {data['count']} mentions | Score: {data['total_score']}{sentiment_note}")
         for post in data["posts"][:2]:
             print(f"    - {post}")
