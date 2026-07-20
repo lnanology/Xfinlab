@@ -16,7 +16,7 @@
     if (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['nav_free_signals']) {
       return I18N.translations['nav_free_signals'];
     }
-    return '免費訊號';
+    return '訂閱每日信號';
   }
 
   function addBadge() {

@@ -110,12 +110,63 @@
   function removeBanner() {
     var el = document.getElementById('xflCookieBanner');
     if (el && el.parentNode) el.parentNode.removeChild(el);
+    stopStackWatch();
+  }
+
+  // While the banner sits fixed at bottom:0, it visually covers the
+  // bottom portion of the right-side floating widget stack (TG Signals
+  // widget bottom:24 -> Daily Signals badge bottom:80 -> language
+  // switcher bottom:136 -> share widget bottom:192 -- see the stack-order
+  // comment in js/free-signals-badge.js). Push that whole stack up by the
+  // banner's own rendered height (plus a small gap) for as long as the
+  // banner is visible, using !important inline overrides so it beats each
+  // widget's own inline bottom value. Reverted the moment the banner is
+  // dismissed.
+  var STACK_IDS = { tgWidget: 24, freeSignalsBadge: 80, langSwitcher: 136, shareWidget: 192 };
+  var stackObserver = null;
+
+  function applyStackOffset(offsetPx) {
+    Object.keys(STACK_IDS).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.style.setProperty('bottom', (STACK_IDS[id] + offsetPx) + 'px', 'important');
+    });
+  }
+
+  function clearStackOffset() {
+    Object.keys(STACK_IDS).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.style.removeProperty('bottom');
+    });
+  }
+
+  function startStackWatch(offsetPx) {
+    applyStackOffset(offsetPx);
+    if (stackObserver) return;
+    // Some of these widgets (Daily Signals badge, language switcher,
+    // share widget) are appended to <body> asynchronously on their own
+    // DOMContentLoaded handlers, which may run after this one -- watch
+    // for late arrivals and re-apply the offset to them too.
+    stackObserver = new MutationObserver(function () { applyStackOffset(offsetPx); });
+    stackObserver.observe(document.body, { childList: true });
+  }
+
+  function stopStackWatch() {
+    if (stackObserver) { stackObserver.disconnect(); stackObserver = null; }
+    clearStackOffset();
   }
 
   function init() {
     if (getConsent()) return; // already decided, don't show again
     ensureStyle();
-    document.body.appendChild(buildBanner());
+    var banner = buildBanner();
+    document.body.appendChild(banner);
+    requestAnimationFrame(function () {
+      startStackWatch(banner.offsetHeight + 8);
+    });
+    window.addEventListener('resize', function () {
+      var el = document.getElementById('xflCookieBanner');
+      if (el) startStackWatch(el.offsetHeight + 8);
+    });
   }
 
   if (document.readyState === 'loading') {
