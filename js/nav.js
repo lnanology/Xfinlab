@@ -106,15 +106,6 @@
       .xfl-flyout-head .xfl-email{font-size:0.82rem;color:var(--text-primary,#e2e8f0);margin-top:2px;word-break:break-all;}
       .xfl-flyout-head .xfl-signedin{font-size:0.72rem;color:#64748b;}
       .xfl-flyout-head .xfl-plan{font-size:0.7rem;color:var(--accent-orange,#f59e0b);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em;}
-      /* 桌面版先至畀連結行自己刮，闊度唔夠嘅話 -- 手機版<=768px嗰個
-         .nav-links已經變咗做position:absolute嘅落拉selu menu（見
-         css/style.css嘅media query），呢度加嘅overflow-x規則對嗰個
-         狀態冇影響。 */
-      @media (min-width:769px){
-        nav{flex-wrap:nowrap;}
-        .nav-links{flex-shrink:1;min-width:0;overflow-x:auto;scrollbar-width:thin;}
-        .nav-right{flex-shrink:1;min-width:0;overflow-x:auto;scrollbar-width:thin;}
-      }
     `;
     document.head.appendChild(style);
 
@@ -203,6 +194,47 @@
     document.addEventListener('i18nApplied', applyTopbarI18n);
   }
 
+  // 2026-07-20: TOPBAR自動調節 -- most function pages carry 9-12
+  // .nav-links items, which used to get force-nowrapped on desktop
+  // widths + hidden behind an easy-to-miss horizontal scrollbar (see the
+  // removed @media block above). Instead, let the row genuinely wrap
+  // (css/style.css's own `nav{flex-wrap:wrap}`) and use real measurement
+  // -- not a guessed breakpoint, since link count/text length varies per
+  // page and per language -- to detect when .nav-links has actually
+  // dropped onto its own line (no longer sharing row 1 with the logo).
+  // When it has, add .xfl-nav-wrapped so that row spans full width,
+  // centers itself, and sits a clear gap below the logo instead of a
+  // ragged partial row crowding it ("不要貼太近XFINLAB").
+  function adjustNavWrap() {
+    const nav = document.querySelector('nav');
+    if (!nav) return;
+    const links = nav.querySelector('.nav-links');
+    const brand = nav.querySelector('.nav-brand, .logo');
+    const toggle = nav.querySelector('.nav-toggle');
+    if (!links || !brand) return;
+
+    // Mobile hamburger mode: .nav-links becomes a position:absolute
+    // dropdown (css/style.css's max-width:768px media query) -- that's
+    // an entirely different layout, this wrap detection doesn't apply.
+    if (toggle && getComputedStyle(toggle).display !== 'none') {
+      links.classList.remove('xfl-nav-wrapped');
+      return;
+    }
+
+    // Measure with the forced class removed first, so we're checking
+    // where the browser would naturally place it, not where our own
+    // previous adjustment left it.
+    links.classList.remove('xfl-nav-wrapped');
+    const wrapped = links.getBoundingClientRect().top > brand.getBoundingClientRect().top + 4;
+    if (wrapped) links.classList.add('xfl-nav-wrapped');
+  }
+
+  let navWrapResizeTimer = null;
+  function scheduleNavWrapCheck() {
+    clearTimeout(navWrapResizeTimer);
+    navWrapResizeTimer = setTimeout(adjustNavWrap, 120);
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', enhanceNav);
     document.addEventListener('DOMContentLoaded', injectUserTopbarFlyout);
@@ -210,6 +242,18 @@
     enhanceNav();
     injectUserTopbarFlyout();
   }
+
+  // Run after the above (and any account flyout / nav-cta button they
+  // add) have settled into the layout, then keep re-checking on resize
+  // and language change (translated labels can be longer/shorter).
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleNavWrapCheck);
+  } else {
+    scheduleNavWrapCheck();
+  }
+  window.addEventListener('load', scheduleNavWrapCheck);
+  window.addEventListener('resize', scheduleNavWrapCheck);
+  document.addEventListener('i18nApplied', scheduleNavWrapCheck);
 
   // Auto page_view. Harmless if a page also fires its own (e.g.
   // dashboard.html, chart-analysis.html already do) -- DAU/MAU count

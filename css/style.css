@@ -150,6 +150,15 @@ nav {
   gap: 1rem;
   padding: 0.8rem 1.5rem;
   border-bottom: 1px solid var(--border);
+  /* 2026-07-20 fix: js/nav.js used to force flex-wrap:nowrap on this at
+     desktop widths and make .nav-links horizontally scrollable instead
+     -- with 9-12 links on most function pages, that hid most of the nav
+     behind an easy-to-miss scrollbar rather than actually showing them.
+     Allow the row to wrap onto a 2nd line instead ("TOPBAR自動調節可分
+     2行"); .nav-links.xfl-nav-wrapped below handles centering that 2nd
+     line with a gap so it doesn't crowd the logo above it. */
+  flex-wrap: wrap;
+  row-gap: 0.6rem;
 }
 
 .nav-brand,
@@ -192,6 +201,18 @@ nav {
      lines as needed instead of splitting individual words. */
   flex-wrap: wrap;
   row-gap: 0.5rem;
+}
+
+/* 2026-07-20: applied by js/nav.js when it measures .nav-links has
+   actually wrapped onto its own line (no longer sharing the first row
+   with the logo) -- makes that wrapped row span the full width and
+   center its links, with a clear top gap, instead of a ragged
+   left-aligned partial row sitting right under XFINLAB. */
+.nav-links.xfl-nav-wrapped {
+  flex: 1 1 100%;
+  justify-content: center;
+  margin-top: 0.6rem;
+  order: 3;
 }
 
 .nav-links.open {
