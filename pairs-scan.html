@@ -52,7 +52,8 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 .prob-fill.elevated{background:linear-gradient(90deg,var(--accent-orange),var(--accent-blue))}
 .prob-fill.extreme{background:linear-gradient(90deg,var(--accent-red),var(--accent-orange))}
 .prob-label{width:190px;text-align:right;font-size:0.85rem;color:var(--text-secondary)}
-.prob-value{width:80px;text-align:right;font-size:0.9rem;font-weight:700;color:var(--text-primary)}
+.prob-value{min-width:80px;text-align:right;font-size:0.9rem;font-weight:700;color:var(--text-primary);white-space:nowrap}
+.zscore-tag{font-weight:500;font-size:0.72rem;color:var(--text-muted);margin-left:2px}
 
 .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1rem}
 .metric-cell{background:var(--bg-secondary);border-radius:10px;padding:0.8rem 1rem;text-align:center}
@@ -221,12 +222,24 @@ function renderResult(data, symbolA, symbolB){
 
   const corr = data.correlation != null ? data.correlation.toFixed(3) : '-';
 
+  // 2026-07-20: the bar's left/right direction alone was ambiguous --
+  // users couldn't tell "which side means what" without reading the bias
+  // sentence further down. Now the Z-score value itself carries a signed
+  // number + an inline "(SYMBOL richer)" tag, so the direction is legible
+  // without having to interpret the bar's visual position at all. The bar
+  // still shows direction+magnitude visually, but is no longer the ONLY
+  // place that information lives.
+  const signedZ = (z >= 0 ? '+' : '') + z.toFixed(2);
+  const richerTag = data.richer_symbol
+    ? ` (${data.richer_symbol} ${t('pair_richer_short', 'richer')})`
+    : '';
+
   document.getElementById('resultBody').innerHTML = `
     <div class="overlap-note">${t('pair_overlap_label', 'Overlapping trading days')}: ${data.overlapping_days ?? '-'}</div>
     <div class="prob-section">
       <div class="prob-label">${t('pair_zscore_label', 'Z-Score (spread divergence)')} — ${div.label}</div>
       <div class="prob-bar"><div class="prob-fill ${div.cls}" style="left:${barLeft}%;width:${Math.max(barWidth,2)}%"></div></div>
-      <div class="prob-value">${z.toFixed(2)}</div>
+      <div class="prob-value">${signedZ}<span class="zscore-tag">${richerTag}</span></div>
     </div>
     <div class="metric-grid">
       <div class="metric-cell">
