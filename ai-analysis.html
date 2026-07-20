@@ -236,6 +236,23 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </details>
 
+    <!-- Stage 3 roadmap (2026-07-20): real market-based shipping/supply-
+         chain proxy (BDRY/BOAT ETF prices) -- see services/
+         shipping_proxy_service.py. Market-wide, not symbol-specific.
+         Hidden until data.shipping_proxy.available -- never shows a
+         fabricated trend when both ETFs' data fetch fails. -->
+    <details class="xfl-accordion" id="shippingProxyAccordion" style="display:none">
+      <summary data-i18n="sp_title">▶ Shipping / Supply-Chain Proxy</summary>
+      <div class="xfl-accordion-body">
+        <div id="spTickersBody"></div>
+        <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center">
+          <span data-i18n="sp_combined_label" style="font-weight:600">Combined Trend</span>
+          <span id="spCombinedTrend" style="font-weight:700">-</span>
+        </div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="sp_methodology_note">Real traded price of shipping-sector ETFs (BDRY/BOAT) — this is a market proxy, NOT the official Baltic Dry Index. For research reference only, not investment advice.</div>
+      </div>
+    </details>
+
     <details class="xfl-accordion">
       <summary>▶ 支持阻力</summary>
       <div class="xfl-accordion-body" id="supportResistanceBody">-</div>
@@ -394,6 +411,45 @@ function renderSmartBeta(sb){
   }
 }
 
+// Stage 3 roadmap: renders the real shipping-sector-ETF proxy (BDRY/BOAT)
+// inside #shippingProxyAccordion (see services/shipping_proxy_service.py
+// for the exact shape of `sp`). Market-wide, not symbol-specific -- hidden
+// entirely when both real tickers failed to fetch, never a fabricated
+// trend shown in their place.
+function renderShippingProxy(sp){
+  const acc = document.getElementById('shippingProxyAccordion');
+  if (!acc) return;
+  if (!sp || !sp.available || !sp.tickers) {
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+
+  const tr = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+  const trendLabel = (t) => ({
+    RISING: tr('sp_trend_rising', 'Rising'),
+    FALLING: tr('sp_trend_falling', 'Falling'),
+    FLAT: tr('sp_trend_flat', 'Flat'),
+    MIXED: tr('sp_trend_mixed', 'Mixed'),
+  }[t] || t);
+  const trendCls = (t) => t === 'RISING' ? 'bull' : t === 'FALLING' ? 'bear' : 'flat';
+
+  const rows = Object.values(sp.tickers).filter(r => r.available).map(r => {
+    const pct = r.pct_change_1m;
+    const pctStr = (pct > 0 ? '+' : '') + pct + '%';
+    return `<div class="prob-section" style="margin-bottom:0.5rem">
+      <div class="prob-label">${r.ticker} — ${r.name}</div>
+      <div class="prob-bar"><div class="prob-fill ${trendCls(r.trend)}" style="width:${Math.min(100, Math.abs(pct) * 4 + 30)}%"></div></div>
+      <div style="width:80px;text-align:right;font-size:0.8rem;color:var(--text-secondary)">${pctStr}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('spTickersBody').innerHTML = rows;
+
+  const combinedEl = document.getElementById('spCombinedTrend');
+  combinedEl.textContent = trendLabel(sp.combined_trend);
+  combinedEl.className = '';
+}
+
 async function runAnalysis(){
   const input=document.getElementById('symbolInput').value.trim();
   if(!input){alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_alert_no_symbol'])||'請輸入至少一個代號');return}
@@ -453,6 +509,7 @@ async function runAnalysis(){
     // ---- Stage 1 roadmap: Smart Beta multi-factor + Bayesian regime
     // probability (see services/smart_beta_service.py) ----
     renderSmartBeta(data.smart_beta);
+    renderShippingProxy(data.shipping_proxy);
 
     // ---- Layer 4: reasons accordion ----
     const reasons = data.reasons || { bullish: [], bearish: [] };

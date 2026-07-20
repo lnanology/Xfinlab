@@ -12,6 +12,7 @@ from services.i18n import get_translations
 from services.smart_beta_service import get_smart_beta
 from services.fractal_regime_service import detect_transition_signal as detect_fractal_transition
 from services.direction_probability_service import get_direction_probability
+from services.shipping_proxy_service import get_shipping_proxy
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -331,6 +332,17 @@ async def ai_analysis(body: dict):
     except Exception:
         direction_probability = None
 
+    # Stage 3 roadmap (2026-07-20): real market-based shipping/supply-chain
+    # proxy (BDRY/BOAT ETF prices) -- see services/shipping_proxy_service.py
+    # for why this is a labeled proxy, not the official Baltic Dry Index.
+    # Market-wide, not symbol-specific -- same value surfaces regardless of
+    # which symbol is being analyzed, cached internally to avoid refetching
+    # on every request.
+    try:
+        shipping_proxy = get_shipping_proxy()
+    except Exception:
+        shipping_proxy = None
+
     return {
         "data": {
             "scores": {
@@ -370,5 +382,6 @@ async def ai_analysis(body: dict):
             "fundamentals": fundamentals,
             "smart_beta": smart_beta,
             "direction_probability": direction_probability,
+            "shipping_proxy": shipping_proxy,
         }
     }

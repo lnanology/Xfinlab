@@ -263,6 +263,51 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "model was judged not worth the memory/cold-start cost)."
         ),
     ),
+    "shipping_sector_etfs_proxy": LicenseRecord(
+        source_id="shipping_sector_etfs_proxy",
+        license_type="commercial",
+        commercial_use_allowed=True,
+        risk_level="low",
+        notes=(
+            "Used by services/shipping_proxy_service.py (Stage 3 roadmap: "
+            "'航運/供應鏈壓力代理指標'). Not a new external data source -- "
+            "just two additional tickers (BDRY, BOAT, both real/actively-"
+            "traded ETFs) routed through the exact same Alpaca-first/"
+            "yfinance-fallback OHLC infra already documented under "
+            "alpaca_markets / yahoo_finance above (see services/"
+            "technical_analysis_service.fetch_ohlc_history). Explicitly "
+            "NOT the official Baltic Dry Index (BDI) -- that's a "
+            "licensed, subscription-only Baltic Exchange benchmark this "
+            "codebase has no feed for. Every output field of this service "
+            "is labeled 'proxy' precisely so it's never mistaken for the "
+            "real BDI. Inherits the same risk profile as its two upstream "
+            "sources: low when Alpaca serves the request, elevated to "
+            "yahoo_finance's risk_level on its yfinance fallback path."
+        ),
+        replacement_candidates=["oilpriceapi_baltic_dry_index"],
+    ),
+    "oilpriceapi_baltic_dry_index": LicenseRecord(
+        source_id="oilpriceapi_baltic_dry_index",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="https://www.oilpriceapi.com",
+        risk_level="high",
+        notes=(
+            "NOT currently integrated anywhere in this codebase -- "
+            "documented here only as a tracked future option, per the "
+            "Stage 3 roadmap's mention of an 'optional real-BDI path'. "
+            "OilPriceAPI's free tier exposes a Baltic Dry Index endpoint, "
+            "but its commercial-use terms have not been reviewed and it "
+            "would introduce a new required paid/keyed external "
+            "dependency (OILPRICEAPI_KEY) for a single metric. Deliberately "
+            "not built speculatively against an unverified ToS -- the "
+            "same reasoning that led this codebase to previously reject "
+            "StockTwits (see stocktwits above) and prefer SEC EDGAR over "
+            "paid FMP. If a user configures OILPRICEAPI_KEY themselves in "
+            "the future, this entry should be revisited and its ToS "
+            "actually reviewed before any code goes live behind that key."
+        ),
+    ),
 }
 
 

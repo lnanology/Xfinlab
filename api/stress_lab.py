@@ -1,41 +1,42 @@
+"""
+2026-07-19 Stage 3 roadmap rewrite ("歷史事件蒙地卡羅模擬"): this endpoint
+used to build a prompt asking an LLM to "estimate" a loss percentage and
+recovery time for a hardcoded historical-scenario description -- a
+number the model invented with zero grounding in actual price data, a
+real violation of this codebase's "never fabricate a number" principle.
+
+By the time this was found, stress-lab.html had already stopped calling
+this endpoint (see that file's own 2026-07-11 inline comment) in favor
+of a transparent, clearly-labelled client-side calculation using assumed
+per-strategy drawdown profiles -- so this dead code wasn't actually
+reaching any live user. Rather than just delete it, it's rewritten here
+to do something genuinely real: a Monte Carlo bootstrap simulation over
+a symbol's own real historical daily returns (services/
+monte_carlo_service.py), wired back into stress-lab.html as a new,
+complementary section alongside its existing historical-scenario cards.
+"""
+
 from fastapi import APIRouter
-from ai.ai_router import get_ai_response
-from services.i18n import ai_language_instruction
+from services.monte_carlo_service import simulate
 
 router = APIRouter()
 
-SCENARIOS = {
-    "crash2008": "2008年金融海嘯（標普500跌57%，持續18個月）",
-    "covid2020": "2020年COVID崩盤（標普500跌34%，持續1個月）",
-    "dotcom2000": "2000年科網泡沫（納斯達克跌78%，持續30個月）",
-    "inflation2022": "2022年加息周期（標普500跌25%，持續12個月）",
-    "custom": "自定義壓力測試場景",
-}
 
 @router.post("/stress-lab")
 async def stress_lab(body: dict):
-    strategy = body.get("strategy", "crash2008")
+    symbol = body.get("symbol", "")
     amount = body.get("amount", 100000)
-    token = body.get("token")
-    lang = body.get("lang")
-    scenario = SCENARIOS.get(strategy, SCENARIOS["crash2008"])
-
-    prompt = (
-        f"你是風險分析師。針對投資金額 ${amount:,} 進行壓力測試。"
-        f"測試場景：{scenario}。"
-        f"{ai_language_instruction(lang)} 內容需包含：\n"
-        "## 📉 預估損失\n（金額和百分比）\n"
-        "## ⏱ 恢復時間\n（預估恢復所需時間）\n"
-        "## 🛡 風險緩解建議\n（3-5個具體建議）\n"
-        "## 💡 歷史啟示\n（從歷史事件學到的教訓）"
-    )
-    from services.quota_middleware import check_token_budget, record_ai_token_usage
-    user_id = check_token_budget(token)
+    horizon_days = body.get("horizon_days", 252)
 
     try:
-        answer = get_ai_response(prompt, max_tokens=800)
-        record_ai_token_usage(user_id)
-    except:
-        answer = "壓力測試服務暫時不可用，請稍後再試。"
+        amount = float(amount)
+    except (TypeError, ValueError):
+        amount = 100000
 
-    return {"status": "ok", "data": {"analysis": answer, "conclusion": answer, "scenario": scenario}}
+    try:
+        horizon_days = int(horizon_days)
+    except (TypeError, ValueError):
+        horizon_days = 252
+
+    result = simulate(symbol, amount=amount, horizon_days=horizon_days)
+    return {"status": "ok", "data": result}
