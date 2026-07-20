@@ -15,7 +15,23 @@ def agent_debate_status():
 
 
 @router.get("/agent-debate/{symbol}")
-def agent_debate(symbol: str):
+def agent_debate(symbol: str, token: str = None):
+    """
+    2026-07-20 fix: this endpoint used to take no token param at all and
+    never touched services/quota_middleware.py, so AI辯論 (4 sequential
+    LLM calls per run -- the most expensive single feature on the site)
+    rode completely outside the token-quota system anyone could hit it
+    for free, repeatedly, logged in or not. Wired into the same
+    check_token_budget()/record_ai_token_usage() pattern api/chat.py
+    already uses: paid tiers get billed the real (summed, not
+    fabricated) token cost of all 4 calls -- see
+    services/agent_debate_service.py's run_debate() docstring -- against
+    their existing monthly budget; free users still just earn a point
+    (same as every other AI feature), never hard-blocked.
+    """
+    from services.quota_middleware import check_token_budget, record_ai_token_usage
+    user_id = check_token_budget(token)
+
     symbol = symbol.upper()
     context = {}
     try:
@@ -43,4 +59,6 @@ def agent_debate(symbol: str):
     except Exception:
         context["regime"] = None
 
-    return run_debate(symbol, context)
+    result = run_debate(symbol, context)
+    record_ai_token_usage(user_id)
+    return result

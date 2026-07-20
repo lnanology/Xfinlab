@@ -39,6 +39,7 @@ import logging
 import os
 from typing import Dict, Optional
 
+from ai import ai_router
 from ai.ai_router import get_ai_response
 
 logger = logging.getLogger(__name__)
@@ -88,6 +89,25 @@ def run_debate(symbol: str, context: Dict) -> Dict:
         {"available": False, "message": "..."}  -- if DEEPINFRA_API_KEY isn't set
         {"available": True, "arguments": {...}, "verdict": "...", "error": None}
         {"available": True, "error": "..."}      -- if a call failed mid-debate
+
+    2026-07-20 fix: this feature previously had ZERO resource accounting --
+    api/agent_debate.py's endpoint took no token param and never called
+    services/quota_middleware.py at all, so it rode entirely outside the
+    site's token-quota system despite being a genuinely more expensive
+    feature (4 sequential LLM calls vs. every other AI feature's single
+    call). ai/ai_router.py's get_ai_response() only tracks the MOST
+    RECENT call's usage in its shared _LAST_USAGE_TOKENS slot (see its
+    docstring), so a single record_ai_token_usage() call after this
+    function returns would have only captured the 4th (arbiter) call's
+    tokens, silently dropping the other 3 personas' real cost. Fixed by
+    summing every call's actual usage here into `total_tokens` and
+    writing that real (not fabricated/multiplied) sum back into
+    ai_router's shared slot just before returning, so the API layer's
+    existing record_ai_token_usage(user_id) call (same pattern as
+    api/chat.py) now bills the honest total. No arbitrary "5x" multiplier
+    is applied -- the sum of 4 real calls already naturally costs ~4x a
+    single-call feature, which correctly reflects this feature's real
+    resource weight without inventing a number.
     """
     if not is_available():
         return {
@@ -97,11 +117,13 @@ def run_debate(symbol: str, context: Dict) -> Dict:
 
     summary = _context_summary(symbol, context)
     arguments = {}
+    total_tokens = 0
 
     try:
         for persona, instruction in _PERSONA_PROMPTS.items():
             prompt = f"{instruction}\n\n真實數據：\n{summary}"
             arguments[persona] = get_ai_response(prompt, max_tokens=_MAX_TOKENS, provider=_PROVIDER).strip()
+            total_tokens += ai_router.get_last_usage_tokens()
 
         arbiter_prompt = (
             "你係一個中立嘅仲裁者。下面有3個分析員嘅意見（Bull/Bear/Risk Manager），"
@@ -112,6 +134,12 @@ def run_debate(symbol: str, context: Dict) -> Dict:
             f"Risk Manager：{arguments['risk_manager']}"
         )
         verdict = get_ai_response(arbiter_prompt, max_tokens=_MAX_TOKENS, provider=_PROVIDER).strip()
+        total_tokens += ai_router.get_last_usage_tokens()
+
+        # Overwrite the shared slot with the honest 4-call total so the
+        # caller's record_ai_token_usage(user_id) bills the real cost,
+        # not just this last arbiter call.
+        ai_router.set_last_usage_tokens(total_tokens)
 
         return {
             "available": True,
@@ -121,5 +149,6 @@ def run_debate(symbol: str, context: Dict) -> Dict:
             "error": None,
         }
     except Exception as e:
+        ai_router.set_last_usage_tokens(total_tokens)
         logger.info("agent_debate_service: debate failed for %s: %s", symbol, e)
         return {"available": True, "arguments": arguments or None, "verdict": None, "error": str(e)}

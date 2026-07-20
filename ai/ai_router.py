@@ -25,6 +25,19 @@ def get_last_usage_tokens() -> int:
     return _LAST_USAGE_TOKENS["value"]
 
 
+def set_last_usage_tokens(total: int) -> None:
+    """2026-07-20 addition: lets a caller that makes SEVERAL sequential
+    get_ai_response() calls for one logical "feature run" (e.g.
+    services/agent_debate_service.py's run_debate(), which makes 4 calls
+    -- 3 personas + 1 arbiter) overwrite this shared slot with the real
+    summed total across all of them, right before returning. Without
+    this, the site's usual pattern of "call get_ai_response(), then once
+    record_ai_token_usage()" would only ever bill the LAST of the 4
+    calls, silently dropping the other 3's real cost. Same shared-slot
+    concurrency caveat as get_last_usage_tokens() applies here."""
+    _LAST_USAGE_TOKENS["value"] = total
+
+
 def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -> str:
     """
     Universal AI router - switch provider via AI_PROVIDER env var, or pass

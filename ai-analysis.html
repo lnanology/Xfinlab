@@ -93,13 +93,15 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <div class="nav-links" id="navLinks">
     <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
     <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
-    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
-    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
-    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
     <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
-    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
     <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
     <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
     <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
   </div>
 
@@ -761,7 +763,15 @@ document.getElementById('debateRunBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = '辯論緊...';
   try {
-    const res = await fetch(`${API_BASE}/api/agent-debate/${encodeURIComponent(_xflLastAnalyzedSymbol)}`);
+    // 2026-07-20 fix: this used to call with no token at all, so AI辯論
+    // (4 sequential LLM calls per run) rode completely outside the
+    // token-quota system -- see api/agent_debate.py's docstring. Now
+    // passes the same xfinlab_token every other metered AI call on this
+    // page already sends, so paid tiers get billed the real cost against
+    // their monthly budget and js/quota.js's global 429 handler can
+    // catch quota_exceeded the same way it does everywhere else.
+    const debateToken = localStorage.getItem('xfinlab_token') || '';
+    const res = await fetch(`${API_BASE}/api/agent-debate/${encodeURIComponent(_xflLastAnalyzedSymbol)}?token=${encodeURIComponent(debateToken)}`);
     const d = await res.json();
     if (!d.available) {
       body.innerHTML = `<div style="color:var(--text-muted)">${d.message || 'AI辯論暫時未開放。'}</div>`;
