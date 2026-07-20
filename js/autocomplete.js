@@ -167,6 +167,31 @@ const ASSETS = [
   {symbol: '0027', name: 'Galaxy Entertainment 銀河娛樂', type: 'stock', api: '0027.HK', popularity: 30},
   {symbol: '2020', name: 'ANTA Sports 安踏體育', type: 'stock', api: '2020.HK', popularity: 28},
 
+  // 2026-07-20 addition (global-search audit, "全球搜查方向有咩要改善") --
+  // only 14 HK/China names were curated before this, a small slice of
+  // what users searching in Chinese are likely to type. Every symbol
+  // below was individually verified against a real, currently-listed
+  // HKEX quote page (not guessed) before adding -- a wrong HK code here
+  // is the same silent-failure risk js/tradingview-widget.js's exchange
+  // mapping already had to fix once. Note: substring matching on `name`
+  // already lets a partial Chinese company name (e.g. "阿里" inside
+  // "阿里巴巴") match without needing a separate Chinese alias entry --
+  // see searchAssets() below -- so aliases here only cover English/
+  // pinyin variants that wouldn't otherwise match the name string.
+  {symbol: '1810', name: 'Xiaomi Corporation 小米集團', type: 'stock', api: '1810.HK', aliases: ['xiaomi'], popularity: 58},
+  {symbol: '9618', name: 'JD.com 京東集團', type: 'stock', api: '9618.HK', aliases: ['jd', 'jd.com', 'jingdong'], popularity: 50},
+  {symbol: '1211', name: 'BYD Company 比亞迪股份', type: 'stock', api: '1211.HK', aliases: ['byd'], popularity: 55},
+  {symbol: '9999', name: 'NetEase 網易', type: 'stock', api: '9999.HK', aliases: ['netease'], popularity: 42},
+  {symbol: '0939', name: 'China Construction Bank 建設銀行', type: 'stock', api: '0939.HK', aliases: ['ccb', 'china construction bank'], popularity: 45},
+  {symbol: '9961', name: 'Trip.com Group 攜程集團', type: 'stock', api: '9961.HK', aliases: ['trip.com', 'ctrip'], popularity: 35},
+  {symbol: '1024', name: 'Kuaishou Technology 快手科技', type: 'stock', api: '1024.HK', aliases: ['kuaishou'], popularity: 32},
+  {symbol: '0857', name: 'PetroChina 中國石油股份', type: 'stock', api: '0857.HK', aliases: ['petrochina'], popularity: 38},
+  {symbol: '3988', name: 'Bank of China 中國銀行', type: 'stock', api: '3988.HK', aliases: ['boc', 'bank of china'], popularity: 42},
+  {symbol: '2015', name: 'Li Auto 理想汽車', type: 'stock', api: '2015.HK', aliases: ['li auto', 'li xiang'], popularity: 33},
+  {symbol: '0386', name: 'Sinopec 中國石油化工股份', type: 'stock', api: '0386.HK', aliases: ['sinopec'], popularity: 35},
+  {symbol: '0762', name: 'China Unicom 中國聯通', type: 'stock', api: '0762.HK', aliases: ['china unicom', 'unicom'], popularity: 28},
+  {symbol: '3968', name: 'China Merchants Bank 招商銀行', type: 'stock', api: '3968.HK', aliases: ['cmb', 'china merchants bank'], popularity: 38},
+
   // ===== 台股 Taiwan =====
   {symbol: '2330', name: 'TSMC 台積電', type: 'stock', api: '2330.TW', aliases: ['tsmc', 'taiwan semiconductor', 'taiwan'], popularity: 75},
   {symbol: '2317', name: 'Hon Hai (Foxconn) 鴻海', type: 'stock', api: '2317.TW', aliases: ['foxconn', 'hon hai'], popularity: 42},
