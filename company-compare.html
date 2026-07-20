@@ -122,6 +122,12 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 .analysis-content table{width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:0.85rem}
 .analysis-content table th,.analysis-content table td{border:1px solid var(--border-color);padding:0.5rem 0.6rem;text-align:left}
 .analysis-content table th{background:var(--bg-secondary);color:var(--blue)}
+/* 2026-07-20 fix (task #283): non-pros/cons multi-column tables (e.g.
+   代號/公司名稱/核心理由/風險提示 stock-pick lists) -- see ccRenderRowCard(). */
+.analysis-content .rc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem}
+.analysis-content .rc-card-title{color:var(--accent-blue);font-weight:700;font-size:1rem;margin-bottom:0.4rem}
+.analysis-content .rc-field{font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-top:0.3rem}
+.analysis-content .rc-field-label{font-weight:600;color:var(--text-primary);margin-right:0.3rem}
 </style>
 <script src="js/nav.js"></script>
 <script src="js/autocomplete.js"></script>
@@ -422,6 +428,19 @@ function ccRenderCompareCard(name, prosCell, consCell) {
     </div>
   </div>`;
 }
+function ccRenderRowCard(header, row) {
+  // 2026-07-20 fix (task #283): a table shaped like 代號/公司名稱/核心理由/
+  // 風險提示 has no 優勢(pros) column, so it never hit the pros/cons card
+  // branch above and fell through to a squished <table>. Show the primary
+  // column (ticker/symbol-looking header, else the first column) as a
+  // heading, with every other column stacked below as its own labeled line.
+  let primaryIdx = header.findIndex(h => /代號|代码|ticker|symbol/i.test(h));
+  if (primaryIdx === -1) primaryIdx = 0;
+  const fields = row.map((cell, i) => i === primaryIdx ? null :
+    `<div class="rc-field"><span class="rc-field-label">${ccInlineFormat(header[i])}：</span>${ccInlineFormat(cell)}</div>`
+  ).filter(Boolean).join('');
+  return `<div class="rc-card"><div class="rc-card-title">${ccInlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+}
 function ccRenderTableBlock(tableLines) {
   const header = ccSplitTableRow(tableLines[0]);
   const rows = tableLines.slice(2).map(ccSplitTableRow).filter(r => r.length === header.length);
@@ -431,6 +450,13 @@ function ccRenderTableBlock(tableLines) {
 
   if (prosIdx > -1 && consIdx > -1 && header.length <= 4) {
     return rows.map(r => ccRenderCompareCard(r[0], r[prosIdx], r[consIdx])).join('');
+  }
+
+  // Any other multi-column table -- stacked cards read better than a
+  // squished table on narrow screens. A simple 2-column table (nothing
+  // to squish) still renders as a real <table>.
+  if (header.length > 2) {
+    return rows.map(r => ccRenderRowCard(header, r)).join('');
   }
 
   const theadHtml = `<tr>${header.map(h => `<th>${ccInlineFormat(h)}</th>`).join('')}</tr>`;

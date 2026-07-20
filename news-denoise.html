@@ -65,6 +65,13 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 .result-content table{width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:0.85rem}
 .result-content table th,.result-content table td{border:1px solid var(--border-color);padding:0.5rem 0.6rem;text-align:left;vertical-align:top}
 .result-content table th{background:var(--bg-primary);color:var(--accent-blue)}
+/* 2026-07-20 fix (task #283): tables with 3+ columns still looked cramped
+   inside <table> on narrow screens -- render as stacked cards instead
+   (see ndRenderRowCard()). Same classes/approach as chat.html's fix. */
+.result-content .rc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem}
+.result-content .rc-card-title{color:var(--accent-blue);font-weight:700;font-size:1rem;margin-bottom:0.4rem}
+.result-content .rc-field{font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-top:0.3rem}
+.result-content .rc-field-label{font-weight:600;color:var(--text-primary);margin-right:0.3rem}
 
 .disclaimer{font-size:0.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:1rem;margin-top:1rem;line-height:1.6}
 
@@ -232,9 +239,28 @@ function ndEscape(s) {
 function ndInlineFormat(s) {
   return ndEscape(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
+function ndRenderRowCard(header, row) {
+  // 2026-07-20 fix (task #283): a multi-column table (e.g. 代號/公司名稱/
+  // 核心理由/風險提示 stock-pick lists) squished into a real <table> is
+  // still cramped on narrow screens. Show the primary column (a ticker/
+  // symbol-looking header, else the first column) as a heading, with
+  // every other column stacked below as its own labeled line.
+  let primaryIdx = header.findIndex(h => /代號|代码|ticker|symbol/i.test(h));
+  if (primaryIdx === -1) primaryIdx = 0;
+  const fields = row.map((cell, i) => i === primaryIdx ? null :
+    `<div class="rc-field"><span class="rc-field-label">${ndInlineFormat(header[i])}：</span>${ndInlineFormat(cell)}</div>`
+  ).filter(Boolean).join('');
+  return `<div class="rc-card"><div class="rc-card-title">${ndInlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+}
 function ndRenderTableBlock(tableLines) {
   const header = ndSplitTableRow(tableLines[0]);
   const rows = tableLines.slice(2).map(ndSplitTableRow).filter(r => r.length === header.length);
+  // Simple 2-column tables (e.g. a plain key/value glossary) have nothing
+  // to squish, so they still render as a real <table>; anything wider
+  // becomes stacked cards instead.
+  if (header.length > 2) {
+    return rows.map(r => ndRenderRowCard(header, r)).join('');
+  }
   const theadHtml = `<tr>${header.map(h => `<th>${ndInlineFormat(h)}</th>`).join('')}</tr>`;
   const tbodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${ndInlineFormat(c)}</td>`).join('')}</tr>`).join('');
   return `<table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;

@@ -111,6 +111,17 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 .cc-pro::before{content:'✓';position:absolute;left:0;color:var(--accent-green);font-weight:700}
 .cc-con::before{content:'✗';position:absolute;left:0;color:var(--accent-red);font-weight:700}
 @media(max-width:520px){.cc-col-pro{border-right:none;border-bottom:1px solid var(--border-color)}}
+/* 2026-07-20 fix (task #283): a pasted 4-column table (代號/公司名稱/核心
+   理由/風險提示 -- a stock-pick-style list) used to fall through to the
+   generic <table> below, which crammed 4 columns into one cramped row on
+   any screen narrower than a desktop ("主顯跟內文分行顯示" -- show the
+   primary field on its own line, then the rest stacked below, not squished
+   side by side). Reuses the same stacked-card idea as .cc-card above, just
+   generalized to any row shape instead of only pros/cons. */
+.rc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem}
+.rc-card-title{color:var(--accent-blue);font-weight:700;font-size:1rem;margin-bottom:0.4rem}
+.rc-field{font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-top:0.3rem}
+.rc-field-label{font-weight:600;color:var(--text-primary);margin-right:0.3rem}
 
 .msg-time{font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;padding:0 0.2rem}
 .msg.user .msg-time{text-align:right}
@@ -363,6 +374,20 @@ function renderCompareCard(name, prosCell, consCell) {
     </div>
   </div>`;
 }
+function renderRowCard(header, row) {
+  // Generalized stacked-field card (task #283): the primary column (a
+  // ticker/symbol-looking header, else just the first column) becomes a
+  // bold heading; every other column renders as its own labeled line
+  // below it, instead of squishing all columns into one cramped table
+  // row ("主顯跟內文分行顯示" -- show the primary field on its own line,
+  // rest stacked below).
+  let primaryIdx = header.findIndex(h => /代號|代码|ticker|symbol/i.test(h));
+  if (primaryIdx === -1) primaryIdx = 0;
+  const fields = row.map((cell, i) => i === primaryIdx ? null :
+    `<div class="rc-field"><span class="rc-field-label">${inlineFormat(header[i])}：</span>${splitCellPoints(cell).join(' ')}</div>`
+  ).filter(Boolean).join('');
+  return `<div class="rc-card"><div class="rc-card-title">${inlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+}
 function renderTableBlock(tableLines) {
   const header = splitTableRow(tableLines[0]);
   const rows = tableLines.slice(2).map(splitTableRow).filter(r => r.length === header.length);
@@ -372,6 +397,15 @@ function renderTableBlock(tableLines) {
 
   if (prosIdx > -1 && consIdx > -1 && header.length <= 4) {
     return rows.map(r => renderCompareCard(r[0], r[prosIdx], r[consIdx])).join('');
+  }
+
+  // Any other multi-column table (e.g. 代號/公司名稱/核心理由/風險提示
+  // stock-pick lists) -- stacked cards read better than a squished table
+  // on narrow screens, and match the exact layout the user asked for.
+  // A genuinely simple 2-column table (like a plain key/value glossary)
+  // still renders as a real <table>, since there's nothing to squish.
+  if (header.length > 2) {
+    return rows.map(r => renderRowCard(header, r)).join('');
   }
 
   const theadHtml = `<tr>${header.map(h => `<th>${inlineFormat(h)}</th>`).join('')}</tr>`;
