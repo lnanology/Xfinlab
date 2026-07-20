@@ -208,6 +208,7 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
           </tbody>
         </table>
       </div>
+      <div class="disclaimer" data-i18n="cc_fundamentals_note">📄 年度收入／純利數字嚟自公司最近一份SEC 10-K年報申報（美股適用），並非即時數據；非美股SEC申報公司會顯示N/A，絕不虛構數字。</div>
     </div>
 
     <!-- AI ANALYSIS SECTION -->
@@ -313,9 +314,27 @@ function displayResults(data){
     if(v>=1e6) return `$${(v/1e6).toFixed(1)}M`;
     return `$${v}`;
   };
+  // 2026-07-20 addition (task #289, Morningstar-style revenue/net income):
+  // {value, fiscal_year, period_end} from services/fundamentals_service.py
+  // (SEC EDGAR 10-K data) -- honestly 'N/A' for non-US/non-SEC-filers,
+  // never a fabricated number. Handles negative net income (net loss)
+  // properly, unlike fmtCap above which was written assuming a positive
+  // market cap.
+  const fmtFund = f => {
+    if(!f || f.value==null) return 'N/A';
+    const v = f.value, abs = Math.abs(v), sign = v<0 ? '-' : '';
+    let s;
+    if(abs>=1e12) s = `${(abs/1e12).toFixed(2)}T`;
+    else if(abs>=1e9) s = `${(abs/1e9).toFixed(2)}B`;
+    else if(abs>=1e6) s = `${(abs/1e6).toFixed(1)}M`;
+    else s = abs.toLocaleString();
+    return `${sign}$${s}${f.fiscal_year ? ' (FY'+f.fiscal_year+')' : ''}`;
+  };
   const rows=[
     {label:t('cc_row_price','現價'), fn:c=>fmtPrice(c.price)},
     {label:t('cc_row_marketcap','市值'), fn:c=>fmtCap(c.market_cap)},
+    {label:t('cc_row_revenue','年度收入 (Revenue)'), fn:c=>fmtFund(c.revenue)},
+    {label:t('cc_row_net_income','年度純利 (Net Income)'), fn:c=>fmtFund(c.net_income)},
     {label:t('cc_row_volume_ratio','成交量比 (今日/平均)'), fn:c=>c.volume_ratio!=null?c.volume_ratio:'N/A'},
     {label:t('cc_row_trend','趨勢 (相對50日均線)'), fn:c=>c.trend==='bullish'?t('cc_trend_bullish','📈 偏多'):c.trend==='bearish'?t('cc_trend_bearish','📉 偏空'):'N/A'},
     {label:t('cc_row_52w_high','接近52週高位'), fn:c=>c.breakout?t('cc_yes','✅ 是'):'—'},

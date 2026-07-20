@@ -57,6 +57,10 @@ CONCEPT_URL = "https://data.sec.gov/api/xbrl/companyconcept/CIK{cik:010d}/us-gaa
 
 EPS_TAGS = ["EarningsPerShareDiluted", "EarningsPerShareBasic"]
 REVENUE_TAGS = ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax"]
+# 2026-07-20 addition (task #289, "加入如morningstar, 公司純利及收入"): net
+# income, same free SEC EDGAR source as EPS/Revenue above -- NetIncomeLoss
+# is the standard us-gaap tag virtually all 10-K filers use for this line.
+NET_INCOME_TAGS = ["NetIncomeLoss"]
 
 _CACHE_TTL_DAYS = 7  # ticker->CIK mapping barely changes day to day
 _ticker_cik_cache = {"data": None, "fetched_at": None}
@@ -157,6 +161,7 @@ def get_fundamentals(symbol: str, current_price: Optional[float] = None) -> Dict
     revenue_series = _fetch_concept_series(cik, REVENUE_TAGS)
     revenue = {"value": revenue_series[-1]["val"], "fiscal_year": revenue_series[-1].get("fy"),
                "period_end": revenue_series[-1].get("end")} if revenue_series else None
+    net_income = _fetch_concept(cik, NET_INCOME_TAGS)
 
     # 2026-07-19 Stage-1 Smart Beta addition: real YoY revenue growth as
     # the Quality/Growth factor input (see services/smart_beta_service.py)
@@ -171,7 +176,7 @@ def get_fundamentals(symbol: str, current_price: Optional[float] = None) -> Dict
         if prev_val:
             revenue_growth_pct = round((latest_val - prev_val) / abs(prev_val) * 100, 1)
 
-    if not eps and not revenue:
+    if not eps and not revenue and not net_income:
         result = {"status": "ok", "available": False, "message": f"暫時攞唔到 {bare_symbol} 嘅SEC申報數據。"}
         _fundamentals_cache[bare_symbol] = {"date": today, "data": result}
         return result
@@ -183,8 +188,9 @@ def get_fundamentals(symbol: str, current_price: Optional[float] = None) -> Dict
         "eps": eps,
         "revenue": revenue,
         "revenue_growth_pct": revenue_growth_pct,
+        "net_income": net_income,
         "pe_ratio": None,
-        "note": "EPS／營收數字嚟自最近一份10-K年報申報，並非即時數據；市盈率(P/E)由即時股價與最近年度EPS計算得出。",
+        "note": "EPS／營收／純利數字嚟自最近一份10-K年報申報，並非即時數據；市盈率(P/E)由即時股價與最近年度EPS計算得出。",
     }
     if current_price and eps and eps.get("value") and eps["value"] > 0:
         result["pe_ratio"] = round(current_price / eps["value"], 2)

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from ai.ai_router import get_ai_response
 from services.market_data_service import MarketDataService
+from services.fundamentals_service import get_fundamentals
 from services.i18n import ai_language_instruction
 
 router = APIRouter()
@@ -21,6 +22,18 @@ async def company_compare(body: dict):
             market_data[s] = data
         except:
             market_data[s] = {}
+
+        # 2026-07-20 addition (task #289, "加入如morningstar, 公司純利及收入"):
+        # revenue/net income from the same free SEC EDGAR source already
+        # used by ai-analysis.html's Valuation dashboard cell -- honestly
+        # omitted (never fabricated) for non-US/non-SEC-filing tickers.
+        try:
+            fnd = get_fundamentals(s.upper(), market_data[s].get("price"))
+            if fnd.get("available"):
+                market_data[s]["revenue"] = fnd.get("revenue")
+                market_data[s]["net_income"] = fnd.get("net_income")
+        except Exception:
+            pass
 
     summary = ", ".join([f"{s}: ${market_data[s].get('price', 'N/A')}" for s in symbols])
 
