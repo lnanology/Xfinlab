@@ -232,16 +232,28 @@ const ASSETS = [
   {symbol: 'INFY', name: 'Infosys', type: 'stock', api: 'INFY.NS', popularity: 30},
 
   // ===== 泰國 Thailand =====
-  {symbol: 'PTT', name: 'PTT Public Company', type: 'stock', api: 'PTT.BK', popularity: 22},
-  {symbol: 'CPALL', name: 'CP All', type: 'stock', api: 'CPALL.BK', popularity: 18},
-  {symbol: 'AOT', name: 'Airports of Thailand', type: 'stock', api: 'AOT.BK', popularity: 18},
+  // 2026-07-20 addition: Japan/Korea entries above already had native-
+  // script names (トヨタ自動車/삼성전자 etc.) baked into `name`, letting
+  // substring search work for those languages same as the HK/China
+  // Chinese-name expansion -- but Thailand's 3 entries had zero Thai-
+  // script (ภาษาไทย) coverage at all until now. Each Thai name below
+  // verified via WebSearch against the real SET (Stock Exchange of
+  // Thailand) company profile before adding.
+  {symbol: 'PTT', name: 'PTT Public Company ปตท', type: 'stock', api: 'PTT.BK', popularity: 22},
+  {symbol: 'CPALL', name: 'CP All ซีพี ออลล์', type: 'stock', api: 'CPALL.BK', popularity: 18},
+  {symbol: 'AOT', name: 'Airports of Thailand ท่าอากาศยานไทย', type: 'stock', api: 'AOT.BK', popularity: 18},
 
   // ===== 越南 Vietnam =====
   {symbol: 'VNM', name: 'Vinamilk 越南乳業', type: 'stock', api: 'VNM.VN', aliases: ['vinamilk'], popularity: 18},
   {symbol: 'VIC', name: 'Vingroup', type: 'stock', api: 'VIC.VN', aliases: ['vingroup'], popularity: 18},
 
   // ===== 印尼 Indonesia =====
-  {symbol: 'BBCA', name: 'Bank Central Asia', type: 'stock', api: 'BBCA.JK', popularity: 18},
+  // 2026-07-20 fix: "BCA" (the name everyone actually calls this bank)
+  // didn't match at all -- symbolUpper.startsWith(qUpper) only matches
+  // a QUERY that's a PREFIX of the symbol, and "BCA" is not a prefix of
+  // "BBCA" (it's missing the leading B). Added as an explicit alias so
+  // the common short form actually resolves.
+  {symbol: 'BBCA', name: 'Bank Central Asia', type: 'stock', api: 'BBCA.JK', aliases: ['bca'], popularity: 18},
   {symbol: 'TLKM', name: 'Telkom Indonesia', type: 'stock', api: 'TLKM.JK', popularity: 18},
 
   // ===== 馬來西亞 Malaysia =====
