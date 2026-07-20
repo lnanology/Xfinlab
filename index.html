@@ -142,7 +142,7 @@
   /* Live AI Result -- "AI is working" showcase, right under Hero */
   .live-section { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
   .live-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
-  .live-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 8px; }
+  .live-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 8px; }
   .live-step { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 16px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); opacity: 0.4; transition: opacity 0.4s, border-color 0.4s; }
   .live-step.active { opacity: 1; border-color: rgba(0,212,255,0.35); }
   .live-step.done { opacity: 0.75; }
@@ -454,6 +454,14 @@
       <div class="live-step live-step-clickable" id="liveStep2" onclick="homepagePreviewNavigate('chart-analysis.html')"><div class="live-step-icon">📈</div><div class="live-step-label" data-i18n="live_step2">Scanning Charts...</div></div>
       <div class="live-step live-step-clickable" id="liveStep3" onclick="homepagePreviewNavigate('stress-lab.html')"><div class="live-step-icon">⚠️</div><div class="live-step-label" data-i18n="live_step3">Calculating Risk...</div></div>
       <div class="live-step live-step-clickable" id="liveStep4" onclick="homepagePreviewNavigate('ai-analysis.html')"><div class="live-step-icon">🧠</div><div class="live-step-label" data-i18n="live_step4">Generating Research...</div></div>
+      <!-- 2026-07-20 addition: only 4 of the site's ~12 real engines had a
+           tile here, per user request to add 5 more so this section better
+           represents the range of what's actually on the platform. -->
+      <div class="live-step live-step-clickable" id="liveStep5" onclick="homepagePreviewNavigate('company-compare.html')"><div class="live-step-icon">🆚</div><div class="live-step-label" data-i18n="live_step5">Comparing Companies...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep6" onclick="homepagePreviewNavigate('screener.html')"><div class="live-step-icon">🔎</div><div class="live-step-label" data-i18n="live_step6">Screening Stocks...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep7" onclick="homepagePreviewNavigate('portfolio.html')"><div class="live-step-icon">📊</div><div class="live-step-label" data-i18n="live_step7">Balancing Portfolio...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep8" onclick="homepagePreviewNavigate('anomaly.html')"><div class="live-step-icon">🚨</div><div class="live-step-label" data-i18n="live_step8">Detecting Anomalies...</div></div>
+      <div class="live-step live-step-clickable" id="liveStep9" onclick="homepagePreviewNavigate('pairs-scan.html')"><div class="live-step-icon">⚖️</div><div class="live-step-label" data-i18n="live_step9">Scanning Pairs...</div></div>
     </div>
   </div>
 </div>
@@ -916,7 +924,7 @@ setInterval(rotateHeroResult, 10000);
 // this is just a representative animation of that flow, not a live task
 // tracker for a specific request).
 (function cycleLiveSteps() {
-  const steps = ['liveStep1', 'liveStep2', 'liveStep3', 'liveStep4'];
+  const steps = ['liveStep1', 'liveStep2', 'liveStep3', 'liveStep4', 'liveStep5', 'liveStep6', 'liveStep7', 'liveStep8', 'liveStep9'];
   let i = 0;
   function tick() {
     steps.forEach((id, idx) => {

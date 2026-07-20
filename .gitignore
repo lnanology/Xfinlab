@@ -17,3 +17,5 @@ __pycache__/
 .continue/
 *.pyc
 .venv/
+.DS_Store
+.fuse_hidden*
