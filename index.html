@@ -300,6 +300,8 @@
   .how-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; text-align: center; }
   .steps-row { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
   .step-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; width: 180px; min-height: 112px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .step-box-clickable { cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+  .step-box-clickable:hover { border-color: var(--accent); transform: translateY(-2px); }
   .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(37,99,235,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; flex-shrink: 0; }
   .step-title { font-size: 0.9rem; font-weight: 600; line-height: 1.35; }
   .step-arrow { color: var(--border); font-size: 1.4rem; flex-shrink: 0; }
@@ -528,6 +530,11 @@
     <div class="step-box"><div class="step-num">2</div><div class="step-title" data-i18n="how2">AI即時分析</div></div>
     <div class="step-arrow">→</div>
     <div class="step-box"><div class="step-num">3</div><div class="step-title" data-i18n="how3">獲得完整報告</div></div>
+    <div class="step-arrow">→</div>
+    <!-- 2026-07-20 addition: 3步得返「試一次」，冇閉環帶用戶第二日返嚟。
+         第4步帶去 free-signals.html（已有嘅每日免費信號 + push notification
+         功能），用嚟做retention，唔係淨係得一次性體驗。 -->
+    <div class="step-box step-box-clickable" onclick="location.href='free-signals.html'"><div class="step-num">🔔</div><div class="step-title" data-i18n="how4">訂閱每日免費信號</div></div>
   </div>
 </div>
 
