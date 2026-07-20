@@ -278,6 +278,23 @@ fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
 function t(key, fallback){
   return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback;
 }
+// 2026-07-20 fix (task #282, "選英文重係顯示好多中文字"): the Confluence
+// Engine's direction/confidence come back from the backend as fixed
+// Chinese business-logic strings (services/technical_analysis_service.py
+// literally compares against "偏多"/"偏空" internally, so those values
+// can't just be changed without risking the backend's own logic) --
+// translate them here at the display boundary only, same as ai-analysis.html
+// already does for regime_* codes.
+const CA_DIRECTION_MAP = {'偏多': 'ca_dir_bullish', '偏空': 'ca_dir_bearish', '訊號分歧，中性': 'ca_dir_neutral', '數據不足': 'ca_dir_insufficient'};
+const CA_CONFIDENCE_MAP = {'高': 'ca_conf_high', '中': 'ca_conf_mid', '低': 'ca_conf_low'};
+function caDirectionLabel(direction){
+  const key = CA_DIRECTION_MAP[direction];
+  return key ? t(key, direction) : direction;
+}
+function caConfidenceLabel(confidence){
+  const key = CA_CONFIDENCE_MAP[confidence];
+  return key ? t(key, confidence) : confidence;
+}
 function handleFiles(files){
   if(!files || files.length===0) return;
   const f = files[0];
@@ -510,7 +527,7 @@ async function runTickerSearch(symbolOverride){
     safeSetText('fibValue', res.fibonacci_0618 ? res.fibonacci_0618.level_0618 : noRealData);
     if(res.confluence){
       const c = res.confluence;
-      safeSetText('confluenceValue', `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`);
+      safeSetText('confluenceValue', `${caDirectionLabel(c.direction)}（${t('ca_reco_confidence_label','信心')}${caConfidenceLabel(c.confidence)}，${c.signals_counted}${t('ca_signals_counted_suffix','個訊號')}）`);
     } else {
       safeSetText('confluenceValue', noRealData);
     }
@@ -550,7 +567,7 @@ async function runTickerSearch(symbolOverride){
 
     if (res.confluence) {
       const c = res.confluence;
-      let reco = `${c.direction}（${t('ca_reco_confidence_label','信心')}：${c.confidence}）`;
+      let reco = `${caDirectionLabel(c.direction)}（${t('ca_reco_confidence_label','信心')}：${caConfidenceLabel(c.confidence)}）`;
       const dl = res.decision_levels;
       if (dl && dl.entry != null) {
         reco += ' · ' + t('ca_reco_levels','參考進場 {entry}，止損 {stop}，目標 {tp1}/{tp2}（風險回報比 1:{rr}）')
@@ -835,7 +852,7 @@ async function runImageAnalysis(){
     safeSetText('fibValue', res.fibonacci_0618 != null ? res.fibonacci_0618 : noRealData);
     if(res.confluence){
       const c = res.confluence;
-      safeSetText('confluenceValue', `${c.direction}（信心${c.confidence}，${c.signals_counted}個訊號）`);
+      safeSetText('confluenceValue', `${caDirectionLabel(c.direction)}（${t('ca_reco_confidence_label','信心')}${caConfidenceLabel(c.confidence)}，${c.signals_counted}${t('ca_signals_counted_suffix','個訊號')}）`);
     } else {
       safeSetText('confluenceValue', noRealData);
     }
