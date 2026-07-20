@@ -518,9 +518,51 @@ async function runTickerSearch(symbolOverride){
     safeSetText('rsiValue', res.rsi != null ? res.rsi : '-');
     safeSetText('macdValue', res.macd ? res.macd.trend : '-');
     safeSetText('patternSummary', t('ca_pattern_search_mode_note','需上傳截圖先做型態辨識'));
-    const useCommentaryNote = t('ca_search_use_commentary','按「產生AI文字解讀」查看');
-    safeSetText('riskTips', useCommentaryNote);
-    safeSetText('recommendationValue', useCommentaryNote);
+
+    // 2026-07-20 fix ("風險提示/建議 按「產生AI文字解讀」查看，未做好"):
+    // these two rows used to just say "click the button below to view" --
+    // but that button (requestAiCommentary()) writes into a totally
+    // different element (#commentaryResult), never into these rows, so
+    // the message was a dead end. Every input these two rows need
+    // (RSI, confluence direction/confidence/signals, decision levels,
+    // market-structure events) is already fetched and sitting in `res`
+    // above -- so build real, honestly-derived text from it immediately,
+    // the same way trend/support/resistance/confluence already do. The
+    // AI commentary button remains as an optional deeper narrative on
+    // top of this, not a replacement for it.
+    const riskParts = [];
+    if (res.rsi != null) {
+      if (res.rsi >= 70) riskParts.push(t('ca_risk_rsi_high','RSI {rsi}，偏高（超買區）').replace('{rsi}', res.rsi));
+      else if (res.rsi <= 30) riskParts.push(t('ca_risk_rsi_low','RSI {rsi}，偏低（超賣區）').replace('{rsi}', res.rsi));
+    }
+    if (res.decision_levels && res.decision_levels.risk_pct != null) {
+      riskParts.push(t('ca_risk_stop_dist','止損距離約 {pct}%').replace('{pct}', res.decision_levels.risk_pct));
+    }
+    if (res.confluence) {
+      const c = res.confluence;
+      const opposing = (c.direction || '').includes('空') ? (c.bullish_signals || []) : (c.bearish_signals || []);
+      if (opposing.length) riskParts.push(t('ca_risk_opposing_signals','仍有 {n} 個相反方向訊號').replace('{n}', opposing.length));
+    }
+    if (res.market_structure && res.market_structure.events && res.market_structure.events.some(e => e.type === 'liquidity_sweep')) {
+      riskParts.push(t('ca_risk_liquidity_sweep','偵測到流動性掃蕩事件，留意假突破風險'));
+    }
+    safeSetText('riskTips', riskParts.length ? riskParts.join('；') : t('ca_risk_none','暫無顯著風險數據'));
+
+    if (res.confluence) {
+      const c = res.confluence;
+      let reco = `${c.direction}（${t('ca_reco_confidence_label','信心')}：${c.confidence}）`;
+      const dl = res.decision_levels;
+      if (dl && dl.entry != null) {
+        reco += ' · ' + t('ca_reco_levels','參考進場 {entry}，止損 {stop}，目標 {tp1}/{tp2}（風險回報比 1:{rr}）')
+          .replace('{entry}', dl.entry).replace('{stop}', dl.stop_loss)
+          .replace('{tp1}', dl.take_profits ? dl.take_profits[0] : '-')
+          .replace('{tp2}', dl.take_profits ? dl.take_profits[1] : '-')
+          .replace('{rr}', dl.risk_reward);
+      }
+      safeSetText('recommendationValue', reco);
+    } else {
+      safeSetText('recommendationValue', noRealData);
+    }
 
     // Phase 2 Market Structure Engine -- always shown when present, since
     // it's computed for free from the same data already fetched above
