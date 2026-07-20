@@ -27,7 +27,8 @@ async def company_compare(body: dict):
     prompt = (
         f"你是專業金融分析師。請比較以下公司：{', '.join(symbols)}。"
         f"當前價格：{summary}。"
-        f"{ai_language_instruction(lang)} 內容需包含：1) 各公司優劣勢 2) 財務比較 3) 投資建議 4) 風險提示。"
+        f"{ai_language_instruction(lang)} 內容需包含：1) 各公司優劣勢 2) 財務比較 3) 值得關注的比較觀點 4) 風險提示。"
+        "這是客觀資訊整理，不是投資建議，請勿使用「建議買入」「建議賣出」等字眼。"
         "格式清晰，使用 ## 標題。"
     )
     from services.quota_middleware import check_token_budget, record_ai_token_usage

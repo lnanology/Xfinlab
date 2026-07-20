@@ -16,11 +16,11 @@
     style.id = 'xfl-points-style';
     style.textContent =
       '#xflPointsBadge{position:fixed;bottom:80px;left:24px;z-index:998;' +
-      'background:var(--surface,#0d1525);border:1px solid var(--border,#1e2d45);' +
+      'background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);' +
       'border-radius:99px;padding:6px 14px;font-family:"Inter",sans-serif;' +
-      'font-size:0.75rem;color:var(--text,#e2e8f0);box-shadow:0 4px 16px rgba(0,0,0,0.3);' +
+      'font-size:0.75rem;font-weight:600;color:var(--text-primary,#e2e8f0);box-shadow:0 4px 16px rgba(0,0,0,0.15);' +
       'display:none;white-space:nowrap}' +
-      '#xflPointsBadge.xfl-boosted{color:var(--accent,#00d4ff);border-color:var(--accent,#00d4ff)}';
+      '#xflPointsBadge.xfl-boosted{color:var(--accent-blue,#00d4ff);border-color:var(--accent-blue,#00d4ff)}';
     document.head.appendChild(style);
   }
 
