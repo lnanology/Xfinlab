@@ -343,6 +343,10 @@ const API = 'https://api.xfinlab.com/api';
 const SESSION_ID = Math.random().toString(36).substring(2);
 
 async function trackEvent(event_type, event_data = null) {
+  // 2026-07-20: respect the cookie-consent banner's "Essential Only"
+  // choice (js/cookie-consent.js) -- skip the analytics POST entirely if
+  // the visitor declined, instead of the decline being purely cosmetic.
+  if (typeof window.XFLConsent === 'object' && !window.XFLConsent.hasAnalyticsConsent()) return;
   try {
     const token = localStorage.getItem('xfinlab_token');
     await fetch(`${API}/analytics/track`, {
