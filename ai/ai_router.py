@@ -164,6 +164,29 @@ def _groq_vision(prompt: str, image_base64: str, mime_type: str, max_tokens: int
 
 
 def _groq(prompt: str, max_tokens: int) -> str:
+    """
+    2026-07-20 fix: "AI文字解讀" (chart-analysis.html's commentary feature,
+    which calls this via the AI_PROVIDER default) was silently returning
+    empty text. Root cause: openai/gpt-oss-120b is a REASONING model --
+    per Groq's own docs (console.groq.com/docs/reasoning), its internal
+    chain-of-thought tokens count against the same max_completion_tokens
+    budget as the visible answer, and Groq's community forum documents
+    this model returning a fully empty message.content when that budget
+    is too low (worse the lower it is) -- the model spends the whole
+    budget "thinking" and never gets to write a visible answer. This
+    codebase's chart-analysis.html commentary call used max_tokens=400,
+    well under Groq's own recommended 1024+ default for this model.
+
+    Fix: (1) reasoning_effort="low" -- per Groq's docs this specifically
+    reduces how many tokens gpt-oss-120b spends on hidden reasoning,
+    leaving more of the budget for the actual visible answer; (2) a
+    700-token floor on top of whatever the caller asked for, since even
+    "low" reasoning effort still needs headroom beyond a short answer's
+    own length; (3) max_completion_tokens is the parameter name Groq's
+    current docs use for reasoning-aware models (max_tokens still
+    appeared to be accepted before, but wasn't reliably budgeting
+    reasoning tokens against the callers' request).
+    """
     from groq import Groq
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
     response = client.chat.completions.create(
@@ -172,11 +195,20 @@ def _groq(prompt: str, max_tokens: int) -> str:
         model="openai/gpt-oss-120b",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
-        max_tokens=max_tokens
+        max_completion_tokens=max(max_tokens, 700),
+        reasoning_effort="low",
     )
     if getattr(response, "usage", None) and response.usage.total_tokens:
         _LAST_USAGE_TOKENS["value"] = response.usage.total_tokens
-    return response.choices[0].message.content.strip()
+    content = (response.choices[0].message.content or "").strip()
+    if not content:
+        # Defensive fallback: if the model still burned the whole budget
+        # on reasoning (shouldn't happen with the above, but Groq's own
+        # bug reports show it can still occur), fail loudly instead of
+        # silently returning "" -- the caller's except-block then shows
+        # a real error message instead of a blank result.
+        raise ValueError("Groq gpt-oss-120b returned empty content (reasoning likely consumed the token budget)")
+    return content
 
 
 def _deepseek(prompt: str, max_tokens: int, _retry: int = 1) -> str:

@@ -1003,14 +1003,31 @@ technical_service = TechnicalAnalysisService()
 
 # ---- Phase 2 Multi-Timeframe Engine ----
 # Compares trend/confluence direction across the timeframes the underlying
-# data sources actually support natively -- Weekly, Daily, 1-Hour. No fake
-# "4H" bucket: yfinance/Alpaca don't offer a native 4-hour bar, and
-# resampling 1H bars into synthetic 4H candles here would be presenting
-# derived data as if it were a real timeframe, which this codebase avoids.
+# data sources actually support natively. 2026-07-20: expanded from 3 to 5
+# timeframes on user request (finest to coarsest, for a proper "top-down"
+# read) -- added 15-Minute and Monthly, BOTH genuinely native yfinance
+# bar intervals (verified against yfinance's own supported-interval list),
+# not derived/resampled from a finer interval.
+#
+# Deliberately still NOT adding a "4-Hour" or "Yearly" bucket: neither
+# yfinance nor Alpaca offers a native 4-hour bar (only 1h, 90m, etc. below
+# it), and neither offers a native yearly bar (only up to "1mo"/"3mo").
+# Building either of those here would mean resampling a finer interval's
+# candles into a synthetic bucket and presenting it as if it were a real
+# exchange-published timeframe -- the same "never fabricate data" line
+# this comment already drew before this expansion, so it stays drawn.
+#
+# 15-Minute uses period="1mo": yfinance restricts ALL intraday intervals
+# (anything under 1d) to a rolling ~60-day lookback window, so period must
+# stay well under that regardless of how far back a user might want to
+# look at 15m bars -- 1 month is the deepest we can honestly go and still
+# have comfortable margin inside that limit.
 MULTI_TIMEFRAMES = [
-    {"label": "Weekly", "key": "weekly", "period": "2y", "interval": "1wk"},
-    {"label": "Daily", "key": "daily", "period": "6mo", "interval": "1d"},
+    {"label": "15-Minute", "key": "15m", "period": "1mo", "interval": "15m"},
     {"label": "1-Hour", "key": "1h", "period": "5d", "interval": "1h"},
+    {"label": "Daily", "key": "daily", "period": "6mo", "interval": "1d"},
+    {"label": "Weekly", "key": "weekly", "period": "2y", "interval": "1wk"},
+    {"label": "Monthly", "key": "monthly", "period": "10y", "interval": "1mo"},
 ]
 
 

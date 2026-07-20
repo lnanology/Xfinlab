@@ -681,7 +681,30 @@ async function requestBacktestCompare(){
       return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">勝率 ${st.win_rate_pct}%（${st.trade_count}次交易）· 平均回報 ${st.avg_return_pct}% · 最大回撤 ${st.max_drawdown_pct}%</div></div>`;
     }).join('');
     const caveats = (data.strategies && data.strategies[0] && data.strategies[0].caveats) || [];
-    out.innerHTML = rows
+
+    // 2026-07-20: this info (how much real history the backtest above
+    // actually used) existed in the API response all along but was never
+    // rendered -- user had to guess. Now shown as its own line, e.g.
+    // "回測範圍：過去2年（日線）· 共 504 條K線".
+    const periodLabelMap = {
+      '1mo': t('ca_backtest_period_1mo','past 1 month'), '3mo': t('ca_backtest_period_3mo','past 3 months'),
+      '6mo': t('ca_backtest_period_6mo','past 6 months'), '1y': t('ca_backtest_period_1y','past 1 year'),
+      '2y': t('ca_backtest_period_2y','past 2 years'), '5y': t('ca_backtest_period_5y','past 5 years'),
+    };
+    const intervalLabelMap = {
+      '15m': t('ca_backtest_interval_15m','15-Min bars'), '1h': t('ca_backtest_interval_1h','Hourly bars'),
+      '1d': t('ca_backtest_interval_1d','Daily bars'), '1wk': t('ca_backtest_interval_1wk','Weekly bars'),
+      '1mo': t('ca_backtest_interval_1mo','Monthly bars'),
+    };
+    const periodLabel = periodLabelMap[data.period] || data.period || '-';
+    const intervalLabel = intervalLabelMap[data.interval] || data.interval || '-';
+    const rangeLineTmpl = t('ca_backtest_range_line', 'Backtest window: {period} ({interval}) · {n} bars used');
+    const rangeLine = rangeLineTmpl
+      .replace('{period}', periodLabel).replace('{interval}', intervalLabel)
+      .replace('{n}', data.data_points != null ? data.data_points : '-');
+
+    out.innerHTML = `<div class="upload-hint" style="margin-bottom:0.5rem">${rangeLine}</div>`
+      + rows
       + `<div class="upload-hint" style="margin-top:0.6rem">${data.disclaimer || ''}</div>`
       + (caveats.length ? `<div class="upload-hint" style="margin-top:0.3rem">${caveats.join(' ')}</div>` : '');
   } catch (err) {

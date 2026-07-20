@@ -151,6 +151,15 @@ class BacktestService:
         return {
             "symbol": symbol.upper(),
             "period": period,
+            "interval": interval,
+            # 2026-07-20: every strategy in `results` ran against the same
+            # fetched df, so data_points is identical across all of them --
+            # surfaced once at the top level (rather than making the
+            # frontend dig into strategies[0]) so the UI can honestly show
+            # "how much history did this actually use" without a user
+            # having to ask. Previously this info existed in each per-
+            # strategy result but was never rendered anywhere.
+            "data_points": results[0].get("data_points"),
             "strategies": results,
             "disclaimer": "以上排名純粹基於歷史回測勝率排序，並非投資建議，亦不保證未來表現。",
         }
