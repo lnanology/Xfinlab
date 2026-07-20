@@ -20,11 +20,34 @@
  *   calling page (e.g. 'AAPL', '0700.HK', 'BTC-USD', 'ES=F').
  */
 (function () {
-  // Best-effort mapping from XFINLAB's internal ticker format to
-  // TradingView's EXCHANGE:SYMBOL format. Not exhaustive -- continuous
-  // futures contracts (e.g. 'ES=F') don't have a single stable TradingView
-  // equivalent, so those honestly show a "not supported" note instead of
-  // guessing wrong and showing the wrong chart.
+  // Best-effort mapping from XFINLAB's internal ticker format (Yahoo-style
+  // suffixes, since that's what services/ticker_search_service.py's global
+  // search + normalizeGlobalTicker() already produce) to TradingView's
+  // EXCHANGE:SYMBOL format.
+  //
+  // 2026-07-20: expanded on a real bug report -- "某D股票 TradingView 顯示不到"
+  // (TradingView won't show for certain stocks). Root cause: the live
+  // global-asset search (services/ticker_search_service.py, via yfinance's
+  // Lookup) can return real, analyzable tickers from many more exchanges
+  // than the 6 suffixes this map originally covered -- e.g. Australian
+  // (.AX), Indian (.NS/.BO), German (.DE), French/Dutch/Belgian/
+  // Portuguese (.PA/.AS/.BR/.LS, all Euronext), Brazilian (.SA), Canadian
+  // (.TO), Singaporean (.SI) -- so those were falling into the generic
+  // "anything else unmapped" bucket and showing "not supported" even
+  // though TradingView genuinely does have charts for them, just under a
+  // different exchange prefix. Every mapping added below was verified
+  // against a real, currently-listed TradingView symbol page for that
+  // exchange (not guessed) -- e.g. XETR:SAP, EURONEXT:MC, BMFBOVESPA:
+  // PETR4, TSX:SHOP, SGX:D05, NSE:RELIANCE, ASX:BHP -- because a wrong
+  // guess here is the same silent failure as not mapping it at all, just
+  // harder to notice.
+  //
+  // Still NOT mapped, deliberately: continuous futures contracts (e.g.
+  // 'ES=F') don't have a single stable TradingView equivalent; indices
+  // (^XXX) need TradingView's own index codes, not Yahoo's; forex pairs
+  // and smaller exchanges (Nordic, Warsaw, Madrid, Milan, etc.) weren't
+  // re-verified this pass -- all of these honestly show a "not supported"
+  // note instead of guessing wrong and displaying the wrong chart.
   function toTradingViewSymbol(raw) {
     if (!raw) return null;
     var s = String(raw).toUpperCase().trim();
@@ -44,9 +67,22 @@
     if (s.endsWith('.T')) return 'TSE:' + s.slice(0, -2);
     if (s.endsWith('.KS')) return 'KRX:' + s.slice(0, -3);
     if (s.endsWith('.L')) return 'LSE:' + s.slice(0, -2);
+    if (s.endsWith('.AX')) return 'ASX:' + s.slice(0, -3);
+    if (s.endsWith('.NS')) return 'NSE:' + s.slice(0, -3);
+    if (s.endsWith('.BO')) return 'BSE:' + s.slice(0, -3);
+    if (s.endsWith('.DE')) return 'XETR:' + s.slice(0, -3);
+    if (s.endsWith('.SA')) return 'BMFBOVESPA:' + s.slice(0, -3);
+    if (s.endsWith('.TO')) return 'TSX:' + s.slice(0, -3);
+    if (s.endsWith('.SI')) return 'SGX:' + s.slice(0, -3);
+    // Euronext is a single merged exchange in TradingView's listing --
+    // Paris/Amsterdam/Brussels/Lisbon all resolve under one "EURONEXT:"
+    // prefix (verified via EURONEXT:MC for Paris-listed LVMH).
+    if (s.endsWith('.PA') || s.endsWith('.AS') || s.endsWith('.BR') || s.endsWith('.LS')) {
+      return 'EURONEXT:' + s.slice(0, -3);
+    }
     if (s.startsWith('^')) return null; // indices -- TradingView needs its own index codes, not Yahoo's ^XXX
     if (s.includes('=')) return null;   // continuous futures contracts -- no reliable 1:1 mapping
-    if (s.includes('-') || s.includes('.')) return null; // anything else unmapped (forex pairs etc.)
+    if (s.includes('-') || s.includes('.')) return null; // anything else unmapped (forex pairs, smaller exchanges not yet verified)
     return s; // plain US ticker -- TradingView's widget resolves bare symbols fine
   }
 
