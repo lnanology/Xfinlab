@@ -141,7 +141,7 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 
 /* INPUT */
 .input-area{padding:12px;border-top:1px solid var(--border-color);background:var(--bg-card);flex-shrink:0}
-.input-tools{display:flex;gap:0.4rem;margin-bottom:0.5rem}
+.input-tools{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem}
 .tool-btn{background:transparent;border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);padding:6px 10px;font-size:0.88rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:0.3rem}
 .tool-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:var(--bg-secondary)}
 .input-box{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.95rem;outline:none;resize:none;min-height:44px;max-height:120px;transition:border-color 0.12s;line-height:1.6}
@@ -247,9 +247,16 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
         <button class="tool-btn" onclick="sendQuick('分析港股市場今日走勢及主要板塊表現')" data-i18n="chat_tool_hk">🇭🇰 港股</button>
         <button class="tool-btn" onclick="sendQuick('分析美股市場今日走勢，標普500、納指、道指表現')" data-i18n="chat_tool_us">🇺🇸 美股</button>
         <button class="tool-btn" onclick="sendQuick('分析加密貨幣市場今日走勢，BTC及ETH技術面')" data-i18n="chat_tool_crypto">🪙 加密</button>
+        <button class="tool-btn" onclick="sendQuick('分析日本市場今日走勢，日經225指數表現及主要板塊')" data-i18n="chat_tool_jp">🇯🇵 日本</button>
+        <button class="tool-btn" onclick="sendQuick('分析歐洲市場今日走勢，STOXX 600、DAX、CAC 40表現')" data-i18n="chat_tool_eu">🇪🇺 歐洲</button>
+        <button class="tool-btn" onclick="sendQuick('分析英國市場今日走勢，富時100指數表現')" data-i18n="chat_tool_uk">🇬🇧 英國</button>
+        <button class="tool-btn" onclick="sendQuick('分析澳洲市場今日走勢，澳洲標普200指數表現')" data-i18n="chat_tool_au">🇦🇺 澳洲</button>
+        <button class="tool-btn" onclick="sendQuick('分析中東市場今日走勢及主要風險因素，包括油價影響')" data-i18n="chat_tool_me">🌍 中東</button>
+        <button class="tool-btn" onclick="sendQuick('分析南美市場今日走勢，巴西、阿根廷主要指數表現')" data-i18n="chat_tool_sa">🌎 南美</button>
+        <button class="tool-btn" onclick="sendQuick('分析東南亞市場今日走勢，新加坡、印尼、泰國主要指數表現')" data-i18n="chat_tool_sea">🌏 東南亞</button>
       </div>
       <div class="input-row">
-        <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱，或上傳K線圖截圖…" rows="1"
+        <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱…" rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)" data-i18n-placeholder="chat_input_placeholder"></textarea>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
       </div>
