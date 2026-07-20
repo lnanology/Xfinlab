@@ -37,7 +37,9 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
 
     Supported:
         groq     → Groq (free, fast)
-        deepseek → DeepSeek (cheap)
+        deepseek → DeepSeek V4 Flash, served via DeepInfra (cheap) --
+                   needs DEEPINFRA_API_KEY, not a DeepSeek-issued key;
+                   see _deepseek()'s docstring for why
         claude   → Anthropic Claude (best quality)
 
     Args:
@@ -179,30 +181,38 @@ def _groq(prompt: str, max_tokens: int) -> str:
 
 def _deepseek(prompt: str, max_tokens: int, _retry: int = 1) -> str:
     """
-    DeepSeek publishes no hard rate limits or SLA -- "best-effort", may
-    return 429/503 under peak load (see their own API docs). Retries once
-    after a short backoff rather than failing the whole request outright,
-    same "good citizen + graceful degradation" convention as
-    services/outbound_http.py uses for scraped sources.
+    2026-07-20: switched this provider's backing host from DeepSeek's own
+    API (api.deepseek.com) to DeepInfra (api.deepinfra.com) -- the account
+    only has a DeepInfra API key, not an official DeepSeek one, and
+    DeepInfra hosts the same deepseek-ai/DeepSeek-V4-Flash model behind an
+    OpenAI-compatible chat-completions endpoint, so this is a same-model
+    swap of the transport, not a quality/capability downgrade. Auth is now
+    DEEPINFRA_API_KEY (a DeepSeek-issued DEEPSEEK_API_KEY will NOT work
+    against DeepInfra's endpoint -- the two are separate accounts/keys).
+
+    DeepInfra also publishes no hard rate-limit/SLA guarantee for this
+    model tier, so the same retry-once-after-backoff behavior as the
+    previous direct-DeepSeek integration is kept (matches the "good
+    citizen + graceful degradation" convention services/outbound_http.py
+    uses for scraped sources).
     """
     import time
     import requests
     headers = {
-        "Authorization": f"Bearer {os.getenv('DEEPSEEK_API_KEY')}",
+        "Authorization": f"Bearer {os.getenv('DEEPINFRA_API_KEY')}",
         "Content-Type": "application/json"
     }
     payload = {
-        # 2026-07-18: "deepseek-chat" is deprecated by DeepSeek on
-        # 2026-07-24 -- "deepseek-v4-flash" is its direct replacement
-        # (non-thinking mode of the same model family, same
-        # chat-completions shape). Do not revert this without checking
-        # DeepSeek's current model-deprecation page first.
-        "model": "deepseek-v4-flash",
+        # DeepInfra's model catalog id for this model (NOT the same string
+        # DeepSeek's own API used -- see https://deepinfra.com/deepseek-ai/
+        # DeepSeek-V4-Flash/api for the current reference). Same underlying
+        # model as the previous "deepseek-v4-flash" on api.deepseek.com.
+        "model": "deepseek-ai/DeepSeek-V4-Flash",
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
         "temperature": 0.3
     }
-    res = requests.post("https://api.deepseek.com/v1/chat/completions",
+    res = requests.post("https://api.deepinfra.com/v1/openai/chat/completions",
                         json=payload, headers=headers, timeout=30)
     if res.status_code in (429, 503) and _retry > 0:
         time.sleep(3)

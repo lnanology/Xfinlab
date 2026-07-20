@@ -10,7 +10,7 @@ router = APIRouter()
 def agent_debate_status():
     """Frontend calls this once to decide whether to show the AI辯論
     entry point at all -- see services/agent_debate_service.py's
-    docstring on why this is gated behind DEEPSEEK_API_KEY."""
+    docstring on why this is gated behind DEEPINFRA_API_KEY."""
     return {"available": is_available()}
 
 

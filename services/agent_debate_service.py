@@ -12,16 +12,19 @@ new ones.
 Cost/latency design (see the 2026-07-18 conversation that scoped this):
   - Always forced onto DeepSeek V4 Flash via ai_router.get_ai_response(
     ..., provider="deepseek") regardless of the site's global AI_PROVIDER
-    default -- at DeepSeek's pricing this whole debate costs a fraction
+    default -- at this model's pricing this whole debate costs a fraction
     of a cent, versus Groq's shared 1,000-requests/day free-tier cap
     (which this feature alone could exhaust site-wide) or Claude's
-    per-token cost at ~15-20x this feature's actual DeepSeek cost.
+    per-token cost at ~15-20x this feature's actual cost. (2026-07-20:
+    ai_router._deepseek() now calls this model via DeepInfra rather than
+    DeepSeek's own API -- same model, cheaper/simpler since the only key
+    on hand is a DeepInfra one; see ai/ai_router.py's docstring there.)
   - 3 personas x 1 round + 1 arbiter synthesis = 4 sequential calls, not
     4 personas x 2 rounds = 8 -- half the latency/cost of the originally
     discussed design for the same "multiple viewpoints -> synthesis"
     value, since nothing about the feature's purpose requires a second
     rebuttal round.
-  - Gated entirely behind DEEPSEEK_API_KEY being configured (see
+  - Gated entirely behind DEEPINFRA_API_KEY being configured (see
     is_available()) -- the frontend hides this feature's entry point
     entirely when the key isn't set, rather than showing a button that
     would just error, per the user's "未能用先隱藏" instruction.
@@ -45,9 +48,9 @@ _MAX_TOKENS = 300  # keep each persona's argument short -- this is a quick read,
 
 
 def is_available() -> bool:
-    """DEEPSEEK_API_KEY must be configured -- see this module's docstring
+    """DEEPINFRA_API_KEY must be configured -- see this module's docstring
     for why this feature is deliberately pinned to DeepSeek only."""
-    return bool(os.getenv("DEEPSEEK_API_KEY"))
+    return bool(os.getenv("DEEPINFRA_API_KEY"))
 
 
 def _context_summary(symbol: str, context: Dict) -> str:
@@ -82,14 +85,14 @@ _PERSONA_PROMPTS = {
 def run_debate(symbol: str, context: Dict) -> Dict:
     """
     Returns:
-        {"available": False, "message": "..."}  -- if DEEPSEEK_API_KEY isn't set
+        {"available": False, "message": "..."}  -- if DEEPINFRA_API_KEY isn't set
         {"available": True, "arguments": {...}, "verdict": "...", "error": None}
         {"available": True, "error": "..."}      -- if a call failed mid-debate
     """
     if not is_available():
         return {
             "available": False,
-            "message": "AI辯論功能需要設定 DEEPSEEK_API_KEY 先可以使用，暫時未開放。",
+            "message": "AI辯論功能需要設定 DEEPINFRA_API_KEY 先可以使用，暫時未開放。",
         }
 
     summary = _context_summary(symbol, context)
