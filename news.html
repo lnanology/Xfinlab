@@ -4,90 +4,116 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>XFINLAB — 即時市場新聞</title>
+<meta name="description" content="即時市場新聞 — 輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響。">
+<link rel="canonical" href="https://www.xfinlab.com/news.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="即時市場新聞 — XFINLAB">
+<meta property="og:description" content="輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響。">
+<meta property="og:url" content="https://www.xfinlab.com/news.html">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="js/theme-toggle.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
 <script src="js/ai-loading.js"></script>
 <script src="js/mvp-api.js"></script>
-
-<style>nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
-
-.category-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
-.cat-btn{padding:0.35rem 1rem;border:1px solid var(--border);border-radius:20px;font-size:0.78rem;color:var(--text2);cursor:pointer;transition:all 0.2s;background:transparent;}
-.cat-btn:hover,.cat-btn.active{background:var(--blue-dim);border-color:var(--border2);color:var(--blue);}
-.search-row{display:flex;gap:0.8rem;margin-bottom:2rem;}
-.search-field{flex:1;background:var(--navy4);border:1px solid var(--border2);border-radius:4px;padding:0.65rem 1rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s;}
-.search-field:focus{border-color:var(--blue);}
-.search-field::placeholder{color:var(--text3);}
-.search-btn{background:var(--blue2);color:#fff;border:none;border-radius:4px;padding:0.65rem 1.5rem;font-size:0.85rem;cursor:pointer;transition:background 0.2s;white-space:nowrap;}
-.search-btn:hover{background:var(--blue);}
-.news-grid{display:grid;gap:1rem;}
-.news-card{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.2rem 1.4rem;transition:border-color 0.2s;cursor:pointer;}
-.news-card:hover{border-color:var(--border2);}
-.news-meta{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.6rem;}
-.news-cat{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.15rem 0.6rem;border-radius:3px;font-weight:500;}
-.cat-hk{background:rgba(88,166,255,0.15);color:var(--blue);}
-.cat-us{background:rgba(46,204,113,0.15);color:var(--green);}
-.cat-crypto{background:rgba(201,168,76,0.15);color:var(--gold);}
-.cat-macro{background:rgba(231,76,60,0.15);color:var(--red);}
-.news-time{font-size:0.72rem;color:var(--text3);}
-.news-title{font-size:0.92rem;font-weight:500;color:var(--text);margin-bottom:0.4rem;line-height:1.5;}
-.news-desc{font-size:0.82rem;color:var(--text2);line-height:1.6;}
-.news-footer{display:flex;align-items:center;justify-content:space-between;margin-top:0.8rem;}
-.news-source{font-size:0.72rem;color:var(--text3);}
-.news-impact{font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:3px;}
-.impact-pos{background:rgba(46,204,113,0.1);color:var(--green);}
-.impact-neg{background:rgba(231,76,60,0.1);color:var(--red);}
-.impact-neu{background:rgba(139,148,158,0.1);color:var(--text2);}
-.ai-summary{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:1.2rem 1.4rem;margin-bottom:1.5rem;}
-.ai-summary-title{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--blue);margin-bottom:0.6rem;}
-.ai-summary-text{font-size:0.85rem;color:var(--text2);line-height:1.7;}
-.loading{text-align:center;padding:3rem;color:var(--text2);}
-.dot-ani span{animation:blink 1.4s infinite;display:inline-block;}
-.dot-ani span:nth-child(2){animation-delay:0.2s;}
-.dot-ani span:nth-child(3){animation-delay:0.4s;}
-@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
-</style>
-<script src="js/nav.js"></script>
-<script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1000px;margin:0 auto;padding:28px 18px;flex:1}
+
+.category-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.cat-btn{padding:0.35rem 1rem;border:1px solid var(--border-color);border-radius:20px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer;transition:all 0.2s;background:transparent}
+.cat-btn:hover,.cat-btn.active{background:rgba(37,99,235,0.1);border-color:var(--accent-blue);color:var(--accent-blue)}
+.search-row{display:flex;gap:0.8rem;margin-bottom:2rem}
+.search-field{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.65rem 1rem;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s}
+.search-field:focus{border-color:var(--accent-blue)}
+.search-field::placeholder{color:var(--text-muted)}
+.search-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0.65rem 1.5rem;font-size:0.85rem;font-weight:600;cursor:pointer;transition:background 0.2s;white-space:nowrap}
+.search-btn:hover{background:var(--accent-blue-strong)}
+
+.ai-summary{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.5rem}
+.ai-summary-title{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent-blue);margin-bottom:0.6rem;font-weight:600}
+.ai-summary-text{font-size:0.85rem;color:var(--text-secondary);line-height:1.7}
+.ai-summary-text h3{color:var(--accent-blue);font-size:0.9rem;font-weight:600;margin:0.8rem 0 0.3rem}
+.ai-summary-text strong{color:var(--accent-orange)}
+.loading{text-align:center;padding:3rem;color:var(--text-secondary)}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block}
+.dot-ani span:nth-child(2){animation-delay:0.2s}
+.dot-ani span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1}}
+
+.disclaimer{font-size:0.72rem;color:var(--text-muted);margin-top:1rem}
+
+.footer{padding:16px;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+
+@media(max-width:768px){
+  nav{padding:0.7rem 1rem}
+  .container{padding:18px 12px}
+  .search-row{flex-direction:column;align-items:stretch}
+}
+</style>
 </head>
 <body>
-<nav style="padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e2d45;background:#0d1525;position:sticky;top:0;z-index:1000;">
-  <a href="index.html" style="font-weight:700;color:#00d4ff;text-decoration:none;font-size:1.05rem;">X<span style="color:#e2e8f0">FIN</span>LAB</a>
-  <div style="display:flex;gap:20px;align-items:center;">
-    <a href="index.html" style="color:#94a3b8;text-decoration:none;font-size:0.85rem;">首頁</a>
-    <a href="ai-analysis.html" style="color:#94a3b8;text-decoration:none;font-size:0.85rem;">AI分析</a>
-    <a href="screener.html" style="color:#94a3b8;text-decoration:none;font-size:0.85rem;">篩選器</a>
-    <a href="news.html" style="color:#00d4ff;text-decoration:none;font-size:0.85rem;">新聞</a>
-    <a href="dashboard.html" style="color:#94a3b8;text-decoration:none;font-size:0.85rem;">Dashboard</a>
-    <a href="pricing.html" style="color:#94a3b8;text-decoration:none;font-size:0.85rem;">Pricing</a>
-    <a href="login.html" style="background:#00d4ff;color:#000;padding:6px 14px;border-radius:6px;font-weight:600;font-size:0.82rem;text-decoration:none;">登入</a>
+
+<nav>
+  <a href="index.html" class="nav-brand">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
   </div>
 </nav>
 
 <div class="container">
-  <div class="page-tag">即時資訊</div>
-  <h1 class="page-title">市場新聞追蹤</h1>
-  <p class="page-sub">輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響</p>
+  <div class="page-tag" data-i18n="news_page_tag">即時資訊</div>
+  <h1 class="page-title" data-i18n="news_page_title">市場新聞追蹤</h1>
+  <p class="page-sub" data-i18n="news_page_sub">輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響</p>
   <div class="category-row">
-    <div class="cat-btn active" onclick="setActive(this);loadNews('全球金融市場最新重要新聞')">🌍 全部</div>
-    <div class="cat-btn" onclick="setActive(this);loadNews('港股市場最新重要新聞及分析')">🇭🇰 港股</div>
-    <div class="cat-btn" onclick="setActive(this);loadNews('美股市場最新重要新聞及分析')">🇺🇸 美股</div>
-    <div class="cat-btn" onclick="setActive(this);loadNews('加密貨幣市場最新重要新聞')">🪙 加密</div>
-    <div class="cat-btn" onclick="setActive(this);loadNews('全球宏觀經濟最新新聞及央行政策')">📊 宏觀</div>
-    <div class="cat-btn" onclick="setActive(this);loadNews('地緣政治及戰爭對金融市場的最新影響')">⚠️ 地緣</div>
+    <div class="cat-btn active" data-i18n="news_cat_all" onclick="setActive(this);loadNews('全球金融市場最新重要新聞')">🌍 全部</div>
+    <div class="cat-btn" data-i18n="news_cat_hk" onclick="setActive(this);loadNews('港股市場最新重要新聞及分析')">🇭🇰 港股</div>
+    <div class="cat-btn" data-i18n="news_cat_us" onclick="setActive(this);loadNews('美股市場最新重要新聞及分析')">🇺🇸 美股</div>
+    <div class="cat-btn" data-i18n="news_cat_crypto" onclick="setActive(this);loadNews('加密貨幣市場最新重要新聞')">🪙 加密</div>
+    <div class="cat-btn" data-i18n="news_cat_macro" onclick="setActive(this);loadNews('全球宏觀經濟最新新聞及央行政策')">📊 宏觀</div>
+    <div class="cat-btn" data-i18n="news_cat_geo" onclick="setActive(this);loadNews('地緣政治及戰爭對金融市場的最新影響')">⚠️ 地緣</div>
   </div>
   <div class="search-row">
-    <input class="search-field" id="newsSearch" placeholder="搜尋股票代號或關鍵詞，例：騰訊、AAPL、加息…" onkeydown="if(event.key==='Enter')searchNews()">
-    <button class="search-btn" onclick="searchNews()">🔍 AI 搜尋分析</button>
+    <input class="search-field" id="newsSearch" data-i18n-placeholder="news_search_placeholder" placeholder="搜尋股票代號或關鍵詞，例：騰訊、AAPL、加息…" onkeydown="if(event.key==='Enter')searchNews()">
+    <button class="search-btn" onclick="searchNews()" data-i18n="news_search_btn">🔍 AI 搜尋分析</button>
   </div>
-  <div id="newsArea"><div class="loading"><div class="dot-ani">載入中<span>.</span><span>.</span><span>.</span></div></div></div>
+  <div id="newsArea"><div class="loading"><div class="dot-ani"><span data-i18n="news_loading">載入中</span><span>.</span><span>.</span><span>.</span></div></div></div>
 </div>
+
+<footer class="footer">
+  <div class="footer-note"><span data-i18n="news_footer_note">XFINLAB © 2026 · 智能金融分析平台 · </span><a href="privacy.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="nav_privacy">私隱政策</a></div>
+</footer>
+
 <script>
 function setActive(btn){document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function t(key, fallback){
+  try {
+    if (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) return I18N.translations[key];
+  } catch(e) {}
+  return fallback;
+}
+
 async function loadNews(topic){
-  document.getElementById('newsArea').innerHTML='<div class="loading"><div class="dot-ani">AI 搜尋分析中<span>.</span><span>.</span><span>.</span></div></div>';
+  document.getElementById('newsArea').innerHTML = `<div class="loading"><div class="dot-ani"><span>${t('news_loading_ai','AI 搜尋分析中')}</span><span>.</span><span>.</span><span>.</span></div></div>`;
   const query=`請提供關於「${topic}」的最新市場資訊分析。
 
 格式如下：
@@ -107,49 +133,69 @@ async function loadNews(topic){
     const answer = (res && (res.data?.analysis || res.data?.conclusion || res.data?.answer || res.answer || res.data?.summary)) || '';
     if (answer) {
       document.getElementById('newsArea').innerHTML = `
-        <div class="ai-summary"><div class="ai-summary-title">🤖 AI 市場分析報告 — ${new Date().toLocaleString('zh-HK')}</div><div class="ai-summary-text">${fmt(answer)}</div></div>
-        <div style="font-size:0.72rem;color:var(--text3);margin-top:1rem;">⚠️ 以上分析由AI生成，僅供參考，不構成投資建議。</div>`;
+        <div class="ai-summary"><div class="ai-summary-title">🤖 ${t('news_ai_report_title','AI 市場分析報告 — ')}${new Date().toLocaleString('zh-HK')}</div><div class="ai-summary-text">${fmt(answer)}</div></div>
+        <div class="disclaimer">${t('news_disclaimer','⚠️ 以上分析由AI生成，僅供參考，不構成投資建議。')}</div>`;
     } else {
-      document.getElementById('newsArea').innerHTML = '<div class="loading" style="color:var(--accent-red)">搜尋完成，但無結果可顯示。</div>';
+      document.getElementById('newsArea').innerHTML = `<div class="loading" style="color:var(--accent-red)">${t('news_no_result','搜尋完成，但無結果可顯示。')}</div>`;
     }
-  } catch(e){ document.getElementById('newsArea').innerHTML = '<div class="loading" style="color:var(--accent-red)">搜尋出現問題，請稍後重試。</div>'; }
+  } catch(e){ document.getElementById('newsArea').innerHTML = `<div class="loading" style="color:var(--accent-red)">${t('news_error','搜尋出現問題，請稍後重試。')}</div>`; }
 }
 function searchNews(){
   const v=document.getElementById('newsSearch').value.trim();
   if(!v)return;
   loadNews(`${v}的最新市場新聞及影響分析`);
 }
-function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--gold)">$1</strong>').replace(/^## (.+)$/gm,'<h3 style="color:var(--blue);font-size:0.88rem;font-weight:500;margin:0.8rem 0 0.3rem">$1</h3>').replace(/\n/g,'<br>');}
+function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
 loadNews('全球金融市場最新重要新聞');
+
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
 </script>
 
 <!-- Telegram Subscribe Widget -->
 <div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-  <div id="tgPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
-    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">📡 XFINLAB Daily Signals</div>
-    <div style="font-size:0.78rem;color:#64748b;margin-bottom:14px">Free daily AI stock analysis on Telegram</div>
-    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#00d4ff;color:#000;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
-    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:#1e2d45;color:#e2e8f0;text-align:center;padding:9px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
-    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:#1e2d45;color:#e2e8f0;text-align:center;padding:9px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Signals</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily AI stock analysis on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:var(--accent-blue);color:#000;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
   </div>
-  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#00d4ff;color:#000;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,212,255,0.3)">
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:var(--accent-blue);color:#000;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.3)">
     ✈️ <span data-i18n="free_signals">TG Signals</span>
   </button>
 </div>
 
-
 <!-- Feedback Widget -->
 <div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
-  <div id="fbPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
-    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">💬 Feedback</div>
-    <div style="font-size:0.78rem;color:#64748b;margin-bottom:12px">Bug report, feature request or suggestions</div>
-    <select id="fbType" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
       <option value="bug">🐛 Bug Report</option>
       <option value="feature">💡 Feature Request</option>
       <option value="general">💬 General Feedback</option>
     </select>
-    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
-    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
     <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
     <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
   </div>
