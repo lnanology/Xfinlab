@@ -31,15 +31,15 @@ nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-
 .scan-btn{background:var(--blue2);color:#fff;border:none;border-radius:6px;padding:0.7rem 1.6rem;font-size:0.88rem;font-weight:500;cursor:pointer;transition:background 0.2s;}
 .scan-btn:hover{background:var(--blue);}
 .scan-btn:disabled{background:var(--navy4);color:var(--text3);cursor:not-allowed;}
-.disclaimer-box{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:6px;padding:0.9rem 1.1rem;margin-bottom:1.5rem;font-size:0.8rem;color:var(--text2);line-height:1.6;}
+.disclaimer-box{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:0.9rem 1.1rem;margin-bottom:1.5rem;font-size:0.8rem;color:var(--text2);line-height:1.6;}
 .prob-panel{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1.4rem;margin-bottom:1rem;display:none;}
 .prob-panel.show{display:block;}
 .prob-bar-row{display:flex;align-items:center;gap:1rem;margin-bottom:0.6rem;}
 .prob-bar-label{width:110px;font-size:0.82rem;color:var(--text2);flex-shrink:0;}
 .prob-bar-track{flex:1;height:22px;background:var(--navy3);border-radius:11px;overflow:hidden;position:relative;}
 .prob-bar-fill{height:100%;border-radius:11px;transition:width 0.4s ease;}
-.prob-bar-fill.bull{background:linear-gradient(90deg,#1a9c6a,#2ecc8f);}
-.prob-bar-fill.bear{background:linear-gradient(90deg,#c94c4c,#e06868);}
+.prob-bar-fill.bull{background:var(--accent-green);}
+.prob-bar-fill.bear{background:var(--accent-red);}
 .prob-bar-pct{width:60px;text-align:right;font-family:'DM Serif Display',serif;font-size:1rem;color:var(--text);}
 .sub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-top:1.2rem;}
 .sub-card{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.9rem;}
@@ -136,7 +136,7 @@ function toggleNav(){
   <div id="shareBar"></div>
 
   <div id="loadingBox" class="loading-text" style="display:none" data-i18n="ps_loading">計算緊…</div>
-  <div id="errorBox" style="display:none;color:#e06868;font-size:0.85rem;padding:1rem 0;"></div>
+  <div id="errorBox" style="display:none;color:var(--accent-red,#DC2626);font-size:0.85rem;padding:1rem 0;"></div>
 </div>
 
 <footer>
@@ -265,7 +265,7 @@ document.getElementById('tickerInput').addEventListener('keydown', function(e){
     </select>
     <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
     <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
-    <button onclick="submitFeedback()" style="width:100%;background:#00d4ff;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#2563EB);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
     <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
   </div>
   <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
