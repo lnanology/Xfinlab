@@ -273,6 +273,22 @@
   .top-opp-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; font-size: 0.72rem; color: var(--muted); }
   @media (max-width: 768px) { .top-opp-grid { grid-template-columns: 1fr; } }
 
+  /* 9-Category Opportunity Board -- new ADDITIONAL section (2026-07-21),
+     sits below Top Opportunity, does not replace it. Same real-data
+     Confluence Engine backing as Top Opportunity, see
+     api/market_pulse.py's /api/opportunity-categories. */
+  .nine-cat-section { max-width: 1080px; margin: 40px auto 0; padding: 0 24px; }
+  .nine-cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+  .nine-cat-card { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; }
+  .nine-cat-card:hover { border-color: rgba(0,212,255,0.4); transform: translateY(-2px); }
+  .nine-cat-icon { font-size: 1.1rem; margin-bottom: 6px; }
+  .nine-cat-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+  .nine-cat-main { font-size: 1.05rem; font-weight: 700; }
+  .nine-cat-sub { font-size: 0.78rem; color: var(--label); margin-top: 4px; }
+  .nine-cat-empty { font-size: 0.82rem; color: var(--muted2); }
+  @media (max-width: 768px) { .nine-cat-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .nine-cat-grid { grid-template-columns: 1fr; } }
+
   /* Daily Experience: personalized AI Watchlist / Anomaly Detection Radar, nested
      inside the same Today's AI Outlook box (not a new section -- keeps
      the mandated homepage flow order intact). */
@@ -481,6 +497,25 @@
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_crypto">加密貨幣</div><div class="top-opp-ticker">--</div></div>
+  </div>
+</div>
+
+<!-- 9-Category Opportunity Board -- NEW additional section (2026-07-21),
+     sits below Top Opportunity, does not replace it. See
+     api/market_pulse.py's /api/opportunity-categories. -->
+<div class="nine-cat-section">
+  <div class="section-label" data-i18n="nine_section_label">🌐 Market Opportunity Board</div>
+  <div class="section-title" style="font-size:1.3rem" data-i18n="nine_section_title">邊度而家有機會？</div>
+  <div class="nine-cat-grid" id="nineCatGrid">
+    <div class="nine-cat-card"><div class="nine-cat-icon">💧</div><div class="nine-cat-title" data-i18n="nine_flow_title">市場資金流向</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">🌐</div><div class="nine-cat-title" data-i18n="nine_sentiment_title">市場情緒分析</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">🔥</div><div class="nine-cat-title" data-i18n="nine_trending_title">熱門資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">🚀</div><div class="nine-cat-title" data-i18n="nine_growth_title">最快增長資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">🎯</div><div class="nine-cat-title" data-i18n="nine_best_title">最大機會資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">💵</div><div class="nine-cat-title" data-i18n="nine_yield_title">最高收息資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">📈</div><div class="nine-cat-title" data-i18n="nine_long_title">長線投資</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">📊</div><div class="nine-cat-title" data-i18n="nine_mid_title">中線投資</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon">⚡</div><div class="nine-cat-title" data-i18n="nine_short_title">短線投資</div><div class="nine-cat-empty">--</div></div>
   </div>
 </div>
 
@@ -1115,6 +1150,95 @@ async function loadTopOpportunities() {
 }
 loadTopOpportunities();
 setInterval(loadTopOpportunities, 300000);
+
+// 9-Category Opportunity Board -- 見api/market_pulse.py嘅
+// /api/opportunity-categories（10分鐘後端快取）。每個category獨立可能
+// null（例如即市數據暫時攞唔到），呢種情況就顯示"--"空白卡，唔會
+// fabricate假數據。
+const NINE_CAT_HREF = (ticker) => `ai-analysis.html?symbols=${encodeURIComponent(ticker)}&assetType=auto`;
+function nineCatCard(icon, titleKey, titleFallback, mainHtml, subHtml, href) {
+  const titleHtml = `<div class="nine-cat-icon">${icon}</div><div class="nine-cat-title" data-i18n="${titleKey}">${t(titleKey, titleFallback)}</div>`;
+  if (!mainHtml) {
+    return `<div class="nine-cat-card">${titleHtml}<div class="nine-cat-empty">--</div></div>`;
+  }
+  const body = `${titleHtml}<div class="nine-cat-main">${mainHtml}</div>${subHtml ? `<div class="nine-cat-sub">${subHtml}</div>` : ''}`;
+  return href
+    ? `<a class="nine-cat-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">${body}</a>`
+    : `<div class="nine-cat-card">${body}</div>`;
+}
+function nineCatDir(direction) {
+  return direction === '偏多' ? `<span style="color:var(--green)">${trDirection(direction)}</span>`
+    : direction === '偏空' ? `<span style="color:var(--red)">${trDirection(direction)}</span>`
+    : `<span style="color:var(--amber)">${trDirection(direction) || '--'}</span>`;
+}
+async function loadNineCategories() {
+  const grid = document.getElementById('nineCatGrid');
+  if (!grid) return;
+  try {
+    const res = await fetch(`${API}/opportunity-categories`);
+    const d = await res.json();
+    const cards = [];
+
+    // 1. 市場資金流向
+    const flow = d.fund_flow;
+    cards.push(nineCatCard('💧', 'nine_flow_title', '市場資金流向',
+      flow && flow.flow_in ? `${flow.flow_in.label}（${flow.flow_in.ticker}）` : null,
+      flow && flow.flow_out ? `${t('idx_flow_out_label','最弱')}: ${flow.flow_out.label}` : '',
+      flow && flow.flow_in ? NINE_CAT_HREF(flow.flow_in.ticker) : null));
+
+    // 2. 市場情緒分析
+    const sent = d.sentiment;
+    cards.push(nineCatCard('🌐', 'nine_sentiment_title', '市場情緒分析',
+      sent && sent.overall_sentiment ? sent.overall_sentiment : null,
+      sent && sent.volatility_desc ? sent.volatility_desc : '', null));
+
+    // 3. 熱門資產
+    const trending = d.trending;
+    const topTrend = trending && trending.assets && trending.assets[0];
+    cards.push(nineCatCard('🔥', 'nine_trending_title', '熱門資產',
+      topTrend ? `${topTrend.name}（${topTrend.symbol}）` : null,
+      '', topTrend ? NINE_CAT_HREF(topTrend.symbol) : null));
+
+    // 4. 最快增長資產
+    const growth = d.fastest_growth;
+    cards.push(nineCatCard('🚀', 'nine_growth_title', '最快增長資產',
+      growth ? `${growth.label}（${growth.ticker}）` : null,
+      growth ? `${growth.pct_change_1mo > 0 ? '+' : ''}${growth.pct_change_1mo}% (1${t('idx_month_short','個月')})` : '',
+      growth ? NINE_CAT_HREF(growth.ticker) : null));
+
+    // 5. 最大機會資產
+    const best = d.best_opportunity;
+    cards.push(nineCatCard('🎯', 'nine_best_title', '最大機會資產',
+      best ? `${best.label}（${best.ticker}）` : null,
+      best ? nineCatDir(best.confluence_direction) : '',
+      best ? NINE_CAT_HREF(best.ticker) : null));
+
+    // 6. 最高收息資產
+    const yieldItem = d.highest_yield;
+    cards.push(nineCatCard('💵', 'nine_yield_title', '最高收息資產',
+      yieldItem ? `${yieldItem.label}（${yieldItem.ticker}）` : null,
+      yieldItem ? `${t('idx_yield_label','殖利率')}: ${yieldItem.dividend_yield_pct}%` : '',
+      yieldItem ? NINE_CAT_HREF(yieldItem.ticker) : null));
+
+    // 7/8/9. 長/中/短線投資
+    [['long_term', '📈', 'nine_long_title', '長線投資'],
+     ['mid_term', '📊', 'nine_mid_title', '中線投資'],
+     ['short_term', '⚡', 'nine_short_title', '短線投資']].forEach(function(entry) {
+      const key = entry[0], icon = entry[1], titleKey = entry[2], fallback = entry[3];
+      const item = d[key];
+      cards.push(nineCatCard(icon, titleKey, fallback,
+        item ? `${item.label}（${item.ticker}）` : null,
+        item ? nineCatDir(item.confluence_direction) : '',
+        item ? NINE_CAT_HREF(item.ticker) : null));
+    });
+
+    grid.innerHTML = cards.join('');
+  } catch (e) {
+    // 保持返佔位卡，唔會遮蓋成個homepage
+  }
+}
+loadNineCategories();
+setInterval(loadNineCategories, 600000);
 
 // Daily Experience: personalized AI Watchlist / Anomaly Detection Radar nested inside
 // the same Today's AI Outlook box. Reuses /api/screener and /api/anomaly

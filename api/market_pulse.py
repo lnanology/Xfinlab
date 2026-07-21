@@ -37,7 +37,8 @@ from typing import Dict, List, Optional
 
 from fastapi import APIRouter
 
-from services.technical_analysis_service import get_technical_analysis
+from services.technical_analysis_service import get_technical_analysis, fetch_ohlc_history
+from services.trending_stocks_service import get_trending_for_country
 
 router = APIRouter()
 
@@ -454,3 +455,179 @@ def free_signals(token: Optional[str] = None):
         "data_source": result["data_source"],
         "disclaimer": result["disclaimer"],
     }
+
+
+# ---------------------------------------------------------------------------
+# 9-Category Opportunity Board -- new homepage section (2026-07-21), sitting
+# alongside (not replacing) the existing 3-card Top Opportunity section.
+# 9 categories: fund flow / sentiment / trending / fastest growth / best
+# opportunity / highest yield / long-term / mid-term / short-term.
+#
+# Every category is backed by real, already-audited data -- no fabricated
+# numbers (matches this codebase's standing rule, see e.g. the
+# stress-lab.html and feature_engine.py fixes earlier in the project log):
+#   - fund_flow / sentiment reuse _compute_pulse()'s existing sector-rotation
+#     basket (SPY/QQQ/DIA/IWM/XLK/XLF/XLE/BTC-USD) -- zero new fetches when
+#     the pulse cache is warm.
+#   - trending reuses services/trending_stocks_service.py (already cached
+#     per-day).
+#   - best_opportunity reuses _compute_all_signals()'s existing cross-asset
+#     Confluence ranking -- zero new fetches.
+#   - fastest_growth is a real trailing-1-month % price change scan.
+#   - highest_yield is a real yfinance dividend-yield scan over a small
+#     curated basket of well-known dividend names/ETFs.
+#   - long/mid/short_term each re-run the existing Confluence Engine at a
+#     different timeframe (weekly / daily / 1-hour) over the same combined
+#     basket used by Top Opportunity + Free Signals, then pick the
+#     strongest real signal at that timeframe.
+# ---------------------------------------------------------------------------
+
+_DIVIDEND_BASKET = ["SCHD", "VYM", "JEPI", "VZ", "T", "XOM", "JNJ", "KO", "PFE", "MO"]
+_DIVIDEND_LABELS = {
+    "SCHD": "Schwab美股高股息ETF", "VYM": "Vanguard高股息ETF", "JEPI": "JPMorgan股息收益ETF",
+    "VZ": "Verizon", "T": "AT&T", "XOM": "埃克森美孚", "JNJ": "強生",
+    "KO": "可口可樂", "PFE": "輝瑞", "MO": "奧馳亞",
+}
+
+_TIMEFRAME_SCAN = {
+    "long_term": {"period": "2y", "interval": "1wk", "label": "週線"},
+    "mid_term": {"period": "6mo", "interval": "1d", "label": "日線"},
+    "short_term": {"period": "5d", "interval": "1h", "label": "1小時"},
+}
+
+_NINE_CAT_CACHE_TTL_SECONDS = 600
+_nine_cat_cache: Optional[Dict] = None
+_nine_cat_cache_time: float = 0.0
+
+
+def _compute_fastest_growth() -> Optional[Dict]:
+    best = None
+    for ticker in _ASSET_CLASS_BASKETS["stock"] + _ASSET_CLASS_BASKETS["futures"] + _ASSET_CLASS_BASKETS["crypto"]:
+        try:
+            hist = fetch_ohlc_history(ticker, period="1mo")
+            if hist is None or hist.empty or "Close" not in hist:
+                continue
+            first_close = float(hist["Close"].iloc[0])
+            last_close = float(hist["Close"].iloc[-1])
+            if first_close <= 0:
+                continue
+            pct_change = round((last_close - first_close) / first_close * 100, 2)
+        except Exception:
+            continue
+        if best is None or pct_change > best["pct_change_1mo"]:
+            best = {
+                "ticker": ticker,
+                "label": _TICKER_LABELS.get(ticker, ticker),
+                "pct_change_1mo": pct_change,
+                "last_close": last_close,
+            }
+    return best
+
+
+def _compute_highest_yield() -> Optional[Dict]:
+    import yfinance as yf
+
+    best = None
+    for ticker in _DIVIDEND_BASKET:
+        try:
+            info = yf.Ticker(ticker).info
+            yield_raw = info.get("dividendYield") or info.get("trailingAnnualDividendYield")
+            if not yield_raw:
+                continue
+            # yfinance has changed whether this field is already a % (e.g.
+            # 3.2) or a fraction (0.032) across versions -- normalize by
+            # treating anything under 1 as a fraction.
+            yield_pct = yield_raw * 100 if yield_raw < 1 else yield_raw
+        except Exception:
+            continue
+        if best is None or yield_pct > best["dividend_yield_pct"]:
+            best = {
+                "ticker": ticker,
+                "label": _DIVIDEND_LABELS.get(ticker, ticker),
+                "dividend_yield_pct": round(yield_pct, 2),
+            }
+    return best
+
+
+def _compute_best_at_timeframe(period: str, interval: str) -> Optional[Dict]:
+    best = None
+    basket = _ASSET_CLASS_BASKETS["stock"] + _ASSET_CLASS_BASKETS["futures"] + _ASSET_CLASS_BASKETS["crypto"]
+    for ticker in basket:
+        try:
+            tech = get_technical_analysis(ticker, period=period, interval=interval)
+        except Exception:
+            tech = None
+        if not tech or "error" in tech:
+            continue
+        confluence = tech.get("confluence", {})
+        score = confluence.get("score", 0.0)
+        if best is None or abs(score) > abs(best["_score"]):
+            best = {
+                "ticker": ticker,
+                "label": _TICKER_LABELS.get(ticker, ticker),
+                "confluence_direction": confluence.get("direction"),
+                "confluence_confidence_pct": confluence.get("confidence_pct"),
+                "last_close": tech.get("last_close"),
+                "_score": score,
+            }
+    if best:
+        best.pop("_score", None)
+    return best
+
+
+def _compute_nine_categories() -> Dict:
+    pulse = _compute_pulse()
+    trending = get_trending_for_country("US")
+    signals = _compute_all_signals()
+
+    # Sector-rotation leaderboard already sorted strongest-first by
+    # _compute_pulse() -- reframe the same real data as "fund flow".
+    basket_sorted = [b for b in pulse.get("basket", []) if b.get("available")]
+    flow_in = basket_sorted[0] if basket_sorted else None
+    flow_out = basket_sorted[-1] if len(basket_sorted) > 1 else None
+
+    result = {
+        "fund_flow": {
+            "flow_in": flow_in,
+            "flow_out": flow_out,
+        } if basket_sorted else None,
+        "sentiment": {
+            "overall_sentiment": pulse.get("overall_sentiment"),
+            "overall_score": pulse.get("overall_score"),
+            "confidence_pct": pulse.get("confidence_pct"),
+            "volatility_desc": pulse.get("volatility_desc"),
+        },
+        "trending": {
+            "country": trending.get("country"),
+            "assets": trending.get("stocks", [])[:5],
+        },
+        "fastest_growth": _compute_fastest_growth(),
+        "best_opportunity": signals[0] if signals else None,
+        "highest_yield": _compute_highest_yield(),
+        "long_term": _compute_best_at_timeframe(
+            _TIMEFRAME_SCAN["long_term"]["period"], _TIMEFRAME_SCAN["long_term"]["interval"]
+        ),
+        "mid_term": _compute_best_at_timeframe(
+            _TIMEFRAME_SCAN["mid_term"]["period"], _TIMEFRAME_SCAN["mid_term"]["interval"]
+        ),
+        "short_term": _compute_best_at_timeframe(
+            _TIMEFRAME_SCAN["short_term"]["period"], _TIMEFRAME_SCAN["short_term"]["interval"]
+        ),
+        "data_source": "即市技術分析（真實價格數據，非AI猜測）",
+        "disclaimer": "呢個係整體市場技術面參考，唔係投資建議。",
+    }
+    return result
+
+
+@router.get("/opportunity-categories")
+def opportunity_categories():
+    global _nine_cat_cache, _nine_cat_cache_time
+
+    now = time.time()
+    if _nine_cat_cache is not None and (now - _nine_cat_cache_time) < _NINE_CAT_CACHE_TTL_SECONDS:
+        return {**_nine_cat_cache, "cached": True}
+
+    result = _compute_nine_categories()
+    _nine_cat_cache = result
+    _nine_cat_cache_time = now
+    return {**result, "cached": False}
