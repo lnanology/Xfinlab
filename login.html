@@ -66,6 +66,7 @@
   footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); }
 </style>
 <script src="js/i18n.js"></script>
+<script src="js/captcha-widget.js"></script>
 </head>
 <body>
 <nav>
@@ -112,6 +113,10 @@
         <label data-i18n="login_label_password">Password</label>
         <input type="password" id="regPassword" placeholder="Min 6 characters" data-i18n-placeholder="login_placeholder_minchars" autocomplete="new-password">
       </div>
+      <div class="form-group">
+        <label data-i18n="captcha_title">Slide to verify</label>
+        <div id="captchaWidget"></div>
+      </div>
       <button type="button" class="btn btn-primary" id="registerBtn" onclick="handleRegister()" data-i18n="login_btn_create">Create Account</button>
     </div>
   </div>
@@ -122,12 +127,20 @@
 const API = "https://api.xfinlab.com/api";
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
+let captchaMounted = false;
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
   hideMessages();
+  // Lazy-mount the slide-puzzle captcha only when the Register tab is
+  // actually shown, so signed-in-only visitors never trigger the
+  // /api/captcha/challenge fetch for nothing.
+  if (tab === 'register' && !captchaMounted && typeof window.XFLCaptcha !== 'undefined') {
+    window.XFLCaptcha.mount('captchaWidget');
+    captchaMounted = true;
+  }
 }
 
 function showError(msg) {
@@ -186,6 +199,9 @@ async function handleRegister() {
   if (!name || !email || !password) { showError(t('login_err_fill_fields','Please fill in all fields')); return; }
   if (password.length < 6) { showError(t('login_err_password_length','Password must be at least 6 characters')); return; }
 
+  const captchaToken = (typeof window.XFLCaptcha !== 'undefined') ? window.XFLCaptcha.getVerifyToken() : null;
+  if (!captchaToken) { showError(t('captcha_required','Please slide to verify you\'re not a robot')); return; }
+
   const btn = document.getElementById('registerBtn');
   btn.disabled = true;
   btn.textContent = t('login_creating_account','Creating account...');
@@ -194,10 +210,17 @@ async function handleRegister() {
     const res = await fetch(`${API}/auth/register`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({name, email, password})
+      body: JSON.stringify({name, email, password, captcha_token: captchaToken})
     });
     const data = await res.json();
-    if (!res.ok) { showError(data.detail || t('login_err_register_failed','Registration failed')); return; }
+    if (!res.ok) {
+      showError(data.detail || t('login_err_register_failed','Registration failed'));
+      // Captcha tokens are single-purpose/short-lived -- reset the widget
+      // so the visitor can solve a fresh challenge for their next attempt
+      // regardless of whether THIS failure was captcha-related.
+      if (typeof window.XFLCaptcha !== 'undefined') window.XFLCaptcha.reset();
+      return;
+    }
 
     localStorage.setItem('xfinlab_token', data.token);
     localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));

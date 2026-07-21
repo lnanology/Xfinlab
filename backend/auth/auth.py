@@ -21,6 +21,7 @@ from services.request_ip import get_client_ip
 from auth.email_verification import send_verification_email
 from infrastructure.event_bus import EventBus
 from services.disposable_email_domains import is_disposable_email
+from services.captcha_service import is_verify_token_valid
 
 router = APIRouter()
 
@@ -89,6 +90,15 @@ def register(user: UserRegister, request: Request):
         raise HTTPException(
             status_code=400,
             detail="Please use a permanent email address. Disposable/temporary email services are not accepted.",
+        )
+    # 2026-07-21: require a passed slide-puzzle CAPTCHA (see
+    # services/captcha_service.py + js/captcha-widget.js on login.html)
+    # -- second anti-bot layer alongside the disposable-email blocklist
+    # above and the existing per-IP rate limiter.
+    if not is_verify_token_valid(user.captcha_token):
+        raise HTTPException(
+            status_code=400,
+            detail="Please complete the slide verification before creating an account.",
         )
     conn = get_db()
     try:
