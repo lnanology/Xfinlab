@@ -318,9 +318,15 @@
   .step-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; width: 180px; min-height: 112px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
   .step-box-clickable { cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
   .step-box-clickable:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .how-bonus-row { margin-top: 12px; }
+  /* 2026-07-21: was a squarish box sitting next to a separate "+"
+     flex-item, so the pair together read as off-center under the
+     symmetric 3-step row above. Changed to one single wide rectangle
+     (icon+plus+text inline) that's centered on its own, matching how
+     the 3 steps above read as one centered group. */
+  .how-bonus-row { margin-top: 12px; display: flex; justify-content: center; }
   .step-plus { color: var(--border); font-size: 1.2rem; flex-shrink: 0; }
-  .step-box-bonus { border-style: dashed; }
+  .step-box-bonus { flex-direction: row; width: auto; min-width: 320px; max-width: 480px; min-height: auto; border-style: dashed; padding: 16px 32px; gap: 10px; }
+  .step-box-bonus .step-num { margin: 0; }
   .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(37,99,235,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; flex-shrink: 0; }
   .step-title { font-size: 0.9rem; font-weight: 600; line-height: 1.35; }
   .step-arrow { color: var(--border); font-size: 1.4rem; flex-shrink: 0; }
@@ -331,6 +337,7 @@
     .steps-row { flex-direction: column; gap: 12px; }
     .step-box { width: 100%; max-width: 280px; }
     .step-arrow { transform: rotate(90deg); }
+    .step-box-bonus { width: 100%; max-width: 320px; min-width: 0; padding: 14px 20px; }
   }
 
   /* Demo widget */
@@ -574,9 +581,12 @@
        反而會削弱onboarding轉化率。訂閱屬於retention動作，唔係啟動流程
        嘅一部分，所以用「+」連接、獨立一個bonus box，等用戶心理上覺得
        「3步已經做完，呢個係額外」，而唔係一開波就見到4步。 -->
-  <div class="steps-row how-bonus-row">
-    <div class="step-plus">+</div>
-    <div class="step-box step-box-clickable step-box-bonus" onclick="location.href='free-signals.html'"><div class="step-num">🔔</div><div class="step-title" data-i18n="how4">訂閱每日免費信號</div></div>
+  <div class="how-bonus-row">
+    <div class="step-box step-box-clickable step-box-bonus" onclick="location.href='free-signals.html'">
+      <span class="step-plus">+</span>
+      <div class="step-num">🔔</div>
+      <div class="step-title" data-i18n="how4">訂閱每日免費信號</div>
+    </div>
   </div>
 </div>
 
