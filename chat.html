@@ -234,20 +234,50 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
       <div class="welcome-logo">X<em>FIN</em>LAB</div>
       <p class="welcome-sub" data-i18n="chat_welcome_sub">機構級AI金融分析，輸入股票代號或上傳K線圖，即時獲取深度分析報告</p>
       <div class="welcome-grid">
-        <div class="wcard" onclick="sendQuick('比較兩間公司的基本面，請告訴我你想比較哪兩間公司？')">
-          <div class="wcard-icon">⚖️</div>
-          <div class="wcard-title" data-i18n="chat_wc2_title">AB公司比較</div>
-          <div class="wcard-desc" data-i18n="chat_wc2_desc">毛利率、增長率、現金流對比，附邏輯推理及風險評估</div>
+        <div class="wcard" onclick="sendQuick('分析主要板塊（科技、金融、能源、消費、醫療等）近期資金流向及輪動跡象，邊個板塊資金流入流出最明顯？')">
+          <div class="wcard-icon">💧</div>
+          <div class="wcard-title" data-i18n="chat_wc_flow_title">市場資金流向</div>
+          <div class="wcard-desc" data-i18n="chat_wc_flow_desc">板塊資金流入流出、輪動跡象分析</div>
         </div>
         <div class="wcard" onclick="sendQuick('分析現時全球市場情緒：VIX恐慌指數、標普500技術走勢、主要風險因素')">
           <div class="wcard-icon">🌐</div>
           <div class="wcard-title" data-i18n="chat_wc3_title">市場情緒分析</div>
           <div class="wcard-desc" data-i18n="chat_wc3_desc">VIX指數、大市走勢、地緣政治風險評估</div>
         </div>
-        <div class="wcard" onclick="sendQuick('請輸入一間公司名稱，我為你分析過去4季現金流健康狀況及續航能力評分')">
-          <div class="wcard-icon">💰</div>
-          <div class="wcard-title" data-i18n="chat_wc4_title">現金流評估</div>
-          <div class="wcard-desc" data-i18n="chat_wc4_desc">過去4季現金流分析，財務健康評分及增長機率</div>
+        <div class="wcard" onclick="sendQuick('而家市場最多人留意/搜尋緊邊隻資產？分析近期成交量最活躍、話題度最高嘅股票或資產')">
+          <div class="wcard-icon">🔥</div>
+          <div class="wcard-title" data-i18n="chat_wc_hot_title">熱門資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_hot_desc">近期成交量最活躍、市場焦點資產</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('邊啲資產近期升幅最快？分析近1個月表現最強勁嘅股票或資產，附漲幅數據')">
+          <div class="wcard-icon">🚀</div>
+          <div class="wcard-title" data-i18n="chat_wc_growth_title">最快增長資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_growth_desc">近1個月漲幅最強勁嘅資產排行</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('根據技術分析同Confluence Engine評分，邊個資產目前技術面機會最大？')">
+          <div class="wcard-icon">🎯</div>
+          <div class="wcard-title" data-i18n="chat_wc_best_title">最大機會資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_best_desc">技術面Confluence評分最高嘅資產</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('邊啲資產派息最高？分析高股息股票或ETF嘅殖利率同派息穩定性')">
+          <div class="wcard-icon">💵</div>
+          <div class="wcard-title" data-i18n="chat_wc_yield_title">最高收息資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_yield_desc">高股息股票/ETF殖利率排行</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('邊啲資產適合長線投資？分析週線同月線走勢，搵出長期趨勢最穩健嘅資產')">
+          <div class="wcard-icon">📈</div>
+          <div class="wcard-title" data-i18n="chat_wc_long_title">長線投資</div>
+          <div class="wcard-desc" data-i18n="chat_wc_long_desc">週線/月線趨勢最穩健嘅資產</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('邊啲資產適合中線投資？分析日線走勢，搵出中期（數星期至數月）機會')">
+          <div class="wcard-icon">📊</div>
+          <div class="wcard-title" data-i18n="chat_wc_mid_title">中線投資</div>
+          <div class="wcard-desc" data-i18n="chat_wc_mid_desc">日線走勢中期（數星期至數月）機會</div>
+        </div>
+        <div class="wcard" onclick="sendQuick('邊啲資產適合短線投資？分析1小時圖同短期動量，搵出短線（日內至數日）機會')">
+          <div class="wcard-icon">⚡</div>
+          <div class="wcard-title" data-i18n="chat_wc_short_title">短線投資</div>
+          <div class="wcard-desc" data-i18n="chat_wc_short_desc">短期動量、日內至數日機會</div>
         </div>
       </div>
     </div>
