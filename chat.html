@@ -14,8 +14,17 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="js/theme-toggle.js"></script>
 <style>
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;display:flex;flex-direction:column}
+/* 2026-07-21 fix: html,body{height:100%} doesn't account for mobile
+   browsers' dynamic viewport (address bar show/hide, on-screen keyboard) --
+   the fixed-height flex column (nav + main + input-area) could end up
+   taller than the real visible viewport on phones/tablets, and with
+   overflow:hidden on body there was no way to scroll down to reveal the
+   clipped .input-area ("入AI CHAT無CHAT框") or the whole page could shift
+   in a way that made nav feel unresponsive ("TOPBAR沒反應/TOPBAR不動").
+   100dvh tracks the browser's actual visible viewport instead; the 100%
+   fallback keeps working on older browsers that don't support dvh. */
+html,body{height:100%;height:100dvh;overflow:hidden}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;display:flex;flex-direction:column;min-height:0}
 
 /* NAV */
 nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);background:var(--bg-primary);flex-shrink:0;z-index:10}
@@ -28,7 +37,7 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 .new-chat-btn:hover{background:var(--bg-secondary)}
 
 /* MAIN */
-.main{display:flex;flex:1;overflow:hidden}
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
 
 /* SIDEBAR */
 .sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-color);display:flex;flex-direction:column;flex-shrink:0}
@@ -47,7 +56,7 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 .sb-tip{font-size:0.82rem;color:var(--text-muted);line-height:1.5;padding:8px;background:rgba(245,158,11,0.06);border-radius:6px;border-left:3px solid var(--accent-orange)}
 
 /* CHAT AREA */
-.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 
 /* WELCOME */
 .welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
@@ -62,7 +71,7 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
 .wcard-desc{font-size:0.88rem;color:var(--text-secondary);line-height:1.5}
 
 /* MESSAGES */
-.messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem}
+.messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem;min-height:0}
 .messages::-webkit-scrollbar{width:6px}
 .messages::-webkit-scrollbar-track{background:transparent}
 .messages::-webkit-scrollbar-thumb{background:var(--bg-secondary);border-radius:4px}
