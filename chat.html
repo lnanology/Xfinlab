@@ -59,7 +59,17 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 .chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 
 /* WELCOME */
-.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
+/* 2026-07-22 fix: unlike .messages, this never had its own scrollbar --
+   its parent .chat-area is overflow:hidden, so once the 9-card welcome
+   grid needed more height than the fixed 100dvh shell had left (nav now
+   2 rows tall on narrow phones + logo/subtitle + 9 cards), the excess
+   was silently clipped with literally nothing to scroll ("滑不動") and
+   the input box below it never came into view ("無CHAT"). justify-
+   content:center made it worse: a flex box shorter than its content
+   clips evenly from BOTH the top and bottom, so scrolling up didn't
+   reveal anything either. Give it its own scroll like .messages already
+   has, and stop force-centering so content simply flows from the top. */
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .welcome-logo{font-family:'DM Serif Display',serif;font-size:2.5rem;color:var(--text-primary);margin-bottom:0.5rem}
 .welcome-logo em{color:var(--accent-orange);font-style:normal}
 .welcome-sub{font-size:0.98rem;color:var(--text-secondary);margin-bottom:2rem;max-width:420px;line-height:1.8}
@@ -178,6 +188,13 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
      lang switcher) sits fixed over the bottom of the viewport and was
      cutting off the last welcome card's text on short mobile screens. */
   .messages{padding-bottom:240px}
+  /* same widget-stack clearance for the welcome screen (shown before any
+     chat message is sent) -- it was missing this padding entirely, so
+     the floating widgets covered the last row of cards. Also stop
+     force-centering on mobile: centering a box shorter than its content
+     clips evenly off BOTH ends, which combined with the missing scroll
+     made the whole grid feel frozen ("完全不能滑動"). */
+  .welcome{justify-content:flex-start;padding-bottom:240px}
 
   /* 2026-07-22 fix: this page's shell is a fixed 100dvh flex column with
      overflow:hidden on html/body (needed so only .messages scrolls, not
