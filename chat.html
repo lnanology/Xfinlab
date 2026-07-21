@@ -178,6 +178,23 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
      lang switcher) sits fixed over the bottom of the viewport and was
      cutting off the last welcome card's text on short mobile screens. */
   .messages{padding-bottom:240px}
+
+  /* 2026-07-22 fix: this page's shell is a fixed 100dvh flex column with
+     overflow:hidden on html/body (needed so only .messages scrolls, not
+     the whole page). The shared site-wide mobile nav dropdown from
+     css/style.css is position:absolute, anchored off the viewport/nav's
+     containing block -- combined with this page's own fixed-height,
+     no-page-scroll shell, that overlay kept landing somewhere
+     unreachable/untappable ("滑不下去選其他/按也沒反應/完全不能滑動"),
+     even after anchoring it to the nav (position:relative). Stop
+     fighting the overlay positioning entirely: make the dropdown part of
+     nav's own normal box (position:static) so opening it simply grows
+     nav's height and shrinks .main via flex, which this fixed-height
+     column already recalculates correctly -- guaranteed reachable and
+     tappable since nothing is absolutely positioned or off-flow. */
+  nav{flex-wrap:wrap}
+  .nav-links{position:static;width:100%;box-shadow:none;background:transparent;backdrop-filter:none;max-height:0;overflow:hidden;transition:max-height 0.3s ease}
+  .nav-links.open{max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 }
 </style>
 </head>
