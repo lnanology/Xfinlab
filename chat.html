@@ -250,47 +250,47 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
       <div class="welcome-logo">X<em>FIN</em>LAB</div>
       <p class="welcome-sub" data-i18n="chat_welcome_sub">機構級AI金融分析，輸入股票代號或上傳K線圖，即時獲取深度分析報告</p>
       <div class="welcome-grid">
-        <div class="wcard" onclick="sendQuick('分析主要板塊（科技、金融、能源、消費、醫療等）近期資金流向及輪動跡象，邊個板塊資金流入流出最明顯？')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_sector_flow','分析主要板塊（科技、金融、能源、消費、醫療等）近期資金流向及輪動跡象，邊個板塊資金流入流出最明顯？'))">
           <div class="wcard-icon">💧</div>
           <div class="wcard-title" data-i18n="chat_wc_flow_title">市場資金流向</div>
           <div class="wcard-desc" data-i18n="chat_wc_flow_desc">板塊資金流入流出、輪動跡象分析</div>
         </div>
-        <div class="wcard" onclick="sendQuick('分析現時全球市場情緒：VIX恐慌指數、標普500技術走勢、主要風險因素')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_sentiment','分析現時全球市場情緒：VIX恐慌指數、標普500技術走勢、主要風險因素'))">
           <div class="wcard-icon">🌐</div>
           <div class="wcard-title" data-i18n="chat_wc3_title">市場情緒分析</div>
           <div class="wcard-desc" data-i18n="chat_wc3_desc">VIX指數、大市走勢、地緣政治風險評估</div>
         </div>
-        <div class="wcard" onclick="sendQuick('而家市場最多人留意/搜尋緊邊隻資產？分析近期成交量最活躍、話題度最高嘅股票或資產')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_trending','而家市場最多人留意/搜尋緊邊隻資產？分析近期成交量最活躍、話題度最高嘅股票或資產'))">
           <div class="wcard-icon">🔥</div>
           <div class="wcard-title" data-i18n="chat_wc_hot_title">熱門資產</div>
           <div class="wcard-desc" data-i18n="chat_wc_hot_desc">近期成交量最活躍、市場焦點資產</div>
         </div>
-        <div class="wcard" onclick="sendQuick('邊啲資產近期升幅最快？分析近1個月表現最強勁嘅股票或資產，附漲幅數據')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_top_gainers','邊啲資產近期升幅最快？分析近1個月表現最強勁嘅股票或資產，附漲幅數據'))">
           <div class="wcard-icon">🚀</div>
           <div class="wcard-title" data-i18n="chat_wc_growth_title">最快增長資產</div>
           <div class="wcard-desc" data-i18n="chat_wc_growth_desc">近1個月漲幅最強勁嘅資產排行</div>
         </div>
-        <div class="wcard" onclick="sendQuick('根據技術分析同Confluence Engine評分，邊個資產目前技術面機會最大？')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_technical_best','根據技術分析同Confluence Engine評分，邊個資產目前技術面機會最大？'))">
           <div class="wcard-icon">🎯</div>
           <div class="wcard-title" data-i18n="chat_wc_best_title">最大機會資產</div>
           <div class="wcard-desc" data-i18n="chat_wc_best_desc">技術面Confluence評分最高嘅資產</div>
         </div>
-        <div class="wcard" onclick="sendQuick('邊啲資產派息最高？分析高股息股票或ETF嘅殖利率同派息穩定性')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_high_dividend','邊啲資產派息最高？分析高股息股票或ETF嘅殖利率同派息穩定性'))">
           <div class="wcard-icon">💵</div>
           <div class="wcard-title" data-i18n="chat_wc_yield_title">最高收息資產</div>
           <div class="wcard-desc" data-i18n="chat_wc_yield_desc">高股息股票/ETF殖利率排行</div>
         </div>
-        <div class="wcard" onclick="sendQuick('邊啲資產適合長線投資？分析週線同月線走勢，搵出長期趨勢最穩健嘅資產')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_long_term','邊啲資產適合長線投資？分析週線同月線走勢，搵出長期趨勢最穩健嘅資產'))">
           <div class="wcard-icon">📈</div>
           <div class="wcard-title" data-i18n="chat_wc_long_title">長線投資</div>
           <div class="wcard-desc" data-i18n="chat_wc_long_desc">週線/月線趨勢最穩健嘅資產</div>
         </div>
-        <div class="wcard" onclick="sendQuick('邊啲資產適合中線投資？分析日線走勢，搵出中期（數星期至數月）機會')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_mid_term','邊啲資產適合中線投資？分析日線走勢，搵出中期（數星期至數月）機會'))">
           <div class="wcard-icon">📊</div>
           <div class="wcard-title" data-i18n="chat_wc_mid_title">中線投資</div>
           <div class="wcard-desc" data-i18n="chat_wc_mid_desc">日線走勢中期（數星期至數月）機會</div>
         </div>
-        <div class="wcard" onclick="sendQuick('邊啲資產適合短線投資？分析1小時圖同短期動量，搵出短線（日內至數日）機會')">
+        <div class="wcard" onclick="sendQuick(t('chat_q_short_term','邊啲資產適合短線投資？分析1小時圖同短期動量，搵出短線（日內至數日）機會'))">
           <div class="wcard-icon">⚡</div>
           <div class="wcard-title" data-i18n="chat_wc_short_title">短線投資</div>
           <div class="wcard-desc" data-i18n="chat_wc_short_desc">短期動量、日內至數日機會</div>
@@ -303,16 +303,16 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 
     <div class="input-area">
       <div class="input-tools">
-        <button class="tool-btn" onclick="sendQuick('分析港股市場今日走勢及主要板塊表現')" data-i18n="chat_tool_hk">🇭🇰 港股</button>
-        <button class="tool-btn" onclick="sendQuick('分析美股市場今日走勢，標普500、納指、道指表現')" data-i18n="chat_tool_us">🇺🇸 美股</button>
-        <button class="tool-btn" onclick="sendQuick('分析加密貨幣市場今日走勢，BTC及ETH技術面')" data-i18n="chat_tool_crypto">🪙 加密</button>
-        <button class="tool-btn" onclick="sendQuick('分析日本市場今日走勢，日經225指數表現及主要板塊')" data-i18n="chat_tool_jp">🇯🇵 日本</button>
-        <button class="tool-btn" onclick="sendQuick('分析歐洲市場今日走勢，STOXX 600、DAX、CAC 40表現')" data-i18n="chat_tool_eu">🇪🇺 歐洲</button>
-        <button class="tool-btn" onclick="sendQuick('分析英國市場今日走勢，富時100指數表現')" data-i18n="chat_tool_uk">🇬🇧 英國</button>
-        <button class="tool-btn" onclick="sendQuick('分析澳洲市場今日走勢，澳洲標普200指數表現')" data-i18n="chat_tool_au">🇦🇺 澳洲</button>
-        <button class="tool-btn" onclick="sendQuick('分析中東市場今日走勢及主要風險因素，包括油價影響')" data-i18n="chat_tool_me">🌍 中東</button>
-        <button class="tool-btn" onclick="sendQuick('分析南美市場今日走勢，巴西、阿根廷主要指數表現')" data-i18n="chat_tool_sa">🌎 南美</button>
-        <button class="tool-btn" onclick="sendQuick('分析東南亞市場今日走勢，新加坡、印尼、泰國主要指數表現')" data-i18n="chat_tool_sea">🌏 東南亞</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_hk','分析港股市場今日走勢及主要板塊表現'))" data-i18n="chat_tool_hk">🇭🇰 港股</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_us','分析美股市場今日走勢，標普500、納指、道指表現'))" data-i18n="chat_tool_us">🇺🇸 美股</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_crypto','分析加密貨幣市場今日走勢，BTC及ETH技術面'))" data-i18n="chat_tool_crypto">🪙 加密</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_jp','分析日本市場今日走勢，日經225指數表現及主要板塊'))" data-i18n="chat_tool_jp">🇯🇵 日本</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_eu','分析歐洲市場今日走勢，STOXX 600、DAX、CAC 40表現'))" data-i18n="chat_tool_eu">🇪🇺 歐洲</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_uk','分析英國市場今日走勢，富時100指數表現'))" data-i18n="chat_tool_uk">🇬🇧 英國</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_au','分析澳洲市場今日走勢，澳洲標普200指數表現'))" data-i18n="chat_tool_au">🇦🇺 澳洲</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_me','分析中東市場今日走勢及主要風險因素，包括油價影響'))" data-i18n="chat_tool_me">🌍 中東</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_sa','分析南美市場今日走勢，巴西、阿根廷主要指數表現'))" data-i18n="chat_tool_sa">🌎 南美</button>
+        <button class="tool-btn" onclick="sendQuick(t('chat_q_sea','分析東南亞市場今日走勢，新加坡、印尼、泰國主要指數表現'))" data-i18n="chat_tool_sea">🌏 東南亞</button>
       </div>
       <div class="input-row">
         <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱…" rows="1"
