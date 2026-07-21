@@ -149,7 +149,13 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 .img-remove{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
 /* INPUT */
-.input-area{padding:12px;border-top:1px solid var(--border-color);background:var(--bg-card);flex-shrink:0}
+/* 2026-07-21 fix: input-area sat flush against the very bottom of the
+   100dvh layout, so on phones with a home-indicator/gesture bar the send
+   box felt jammed right against the physical screen edge ("個CHAT 推高
+   D" -- push the chat box up a bit). Reserve the device's safe-area
+   inset (0 on most devices, ~34px on notched iPhones) plus a touch more
+   breathing room below the input row. */
+.input-area{padding:12px 12px calc(20px + env(safe-area-inset-bottom, 0px));border-top:1px solid var(--border-color);background:var(--bg-card);flex-shrink:0}
 .input-tools{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem}
 .tool-btn{background:transparent;border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);padding:6px 10px;font-size:0.88rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:0.3rem}
 .tool-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:var(--bg-secondary)}
