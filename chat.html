@@ -168,6 +168,10 @@ nav{padding:10px 18px;display:flex;align-items:center;justify-content:space-betw
   .sidebar{display:none}
   .welcome-grid{grid-template-columns:1fr}
   .msg{max-width:95%}
+  /* 2026-07-21 fix: floating widget stack (share/TG/subscribe badge/
+     lang switcher) sits fixed over the bottom of the viewport and was
+     cutting off the last welcome card's text on short mobile screens. */
+  .messages{padding-bottom:240px}
 }
 </style>
 </head>

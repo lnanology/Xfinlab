@@ -588,6 +588,17 @@ nav {
   .container {
     padding: 1.5rem 1rem;
   }
+
+  /* 2026-07-21 fix: the floating widget stack (TG signals / subscribe
+     badge / language switcher / share widget on the right, feedback
+     widget on the left) is position:fixed with no reserved space, so
+     on short mobile viewports it visually covers real page content
+     (result cards, form dropdowns, news sections) near the bottom of
+     the screen. Reserve enough bottom padding on the main scrollable
+     containers to clear the tallest widget in the stack. */
+  .container, body > main, .page-content, .content-wrap {
+    padding-bottom: 240px;
+  }
 }
 
 /* Reusable Score Card Component */

@@ -20,6 +20,7 @@ from services.audit_log_service import log_action, count_recent_failed_logins
 from services.request_ip import get_client_ip
 from auth.email_verification import send_verification_email
 from infrastructure.event_bus import EventBus
+from services.disposable_email_domains import is_disposable_email
 
 router = APIRouter()
 
@@ -81,6 +82,14 @@ init_users_table()
 
 @router.post("/auth/register", response_model=UserResponse)
 def register(user: UserRegister, request: Request):
+    # 2026-07-21: block known disposable/temp-mail domains -- these let
+    # one person spin up unlimited throwaway inboxes and register
+    # unlimited accounts, defeating the per-account free-tier quota.
+    if is_disposable_email(user.email):
+        raise HTTPException(
+            status_code=400,
+            detail="Please use a permanent email address. Disposable/temporary email services are not accepted.",
+        )
     conn = get_db()
     try:
         hashed = hash_password(user.password)

@@ -179,11 +179,17 @@ async function runScan(){
     document.getElementById('bullPct').textContent = bullPct + '%';
     document.getElementById('bearPct').textContent = bearPct + '%';
 
+    const fmtNum = (v) => {
+      if (v == null || typeof v !== 'number' || isNaN(v)) return '-';
+      const r = Math.round(v * 100) / 100;
+      return (Number.isInteger(r) ? r.toFixed(0) : r.toFixed(2)).replace(/\.00$/, '');
+    };
+
     document.getElementById('regimeValue').textContent = d.market_regime || t('ps_regime_unknown','未知');
-    document.getElementById('riskValue').textContent = (d.risk_score != null ? d.risk_score : '-') + (d.risk_level ? ` (${d.risk_level})` : '');
-    document.getElementById('factorValue').textContent = d.factor_score != null ? d.factor_score : '-';
-    document.getElementById('newsValue').textContent = d.news_sentiment_score != null ? d.news_sentiment_score : '-';
-    document.getElementById('corrValue').textContent = d.market_correlation != null ? d.market_correlation : '-';
+    document.getElementById('riskValue').textContent = fmtNum(d.risk_score) + (d.risk_level ? ` (${d.risk_level})` : '');
+    document.getElementById('factorValue').textContent = fmtNum(d.factor_score);
+    document.getElementById('newsValue').textContent = fmtNum(d.news_sentiment_score);
+    document.getElementById('corrValue').textContent = fmtNum(d.market_correlation);
 
     const dq = d.data_quality || {};
     const dqFallback = t('ps_dq_fallback','⚠️退回預設值');
