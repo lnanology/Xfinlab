@@ -52,6 +52,8 @@ from api.decision_journal import router as decision_journal_router
 from api.agent_debate import router as agent_debate_router
 from api.historical_analog import router as historical_analog_router
 from api.captcha import router as captcha_router
+from auth.social_login import router as social_login_router
+from auth.whatsapp_auth import router as whatsapp_auth_router
 
 
 app = FastAPI(
@@ -170,6 +172,8 @@ app.include_router(decision_journal_router, prefix="/api", tags=["Decision Journ
 app.include_router(agent_debate_router, prefix="/api", tags=["Agent Debate"])
 app.include_router(historical_analog_router, prefix="/api", tags=["Historical Analog"])
 app.include_router(captcha_router, prefix="/api", tags=["Captcha"])
+app.include_router(social_login_router, prefix="/api", tags=["Social Login"])
+app.include_router(whatsapp_auth_router, prefix="/api", tags=["WhatsApp OTP"])
 
 
 # Real scheduled job for the daily Free Signals push (replaces relying

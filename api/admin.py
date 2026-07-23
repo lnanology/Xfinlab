@@ -46,6 +46,14 @@ _DEFAULT_FLAGS = {
     "chart_analysis": True,
     "telegram_bot": True,
     "referral": True,
+    # task #333: Google/LINE/WhatsApp login were all built at once per the
+    # user's own instruction ("build all 3 first, decide which to show
+    # later") -- default OFF so nothing appears on login.html until each
+    # is explicitly toggled on here (and its env vars are actually
+    # configured; see backend/auth/social_login.py + whatsapp_auth.py).
+    "google_login": False,
+    "line_login": False,
+    "whatsapp_otp": False,
 }
 
 def init_feature_flags_table():
@@ -328,6 +336,30 @@ def set_feature_flag(key: str, token: str, request: Request, body: dict = {}):
     conn.commit()
     conn.close()
     return {"status": "ok", "key": key, "enabled": enabled}
+
+
+@router.get("/auth/login-methods")
+def get_login_methods():
+    """
+    Public (no admin token) -- login.html calls this on load to decide
+    which social/OTP login buttons to render (task #333). Only ever
+    exposes the 3 boolean flags plus Google's public client_id (which is
+    NOT a secret -- Google's own docs have every "Sign in with Google"
+    web integration embed it directly in page HTML/JS). Never exposes
+    GOOGLE_CLIENT_SECRET, LINE_CHANNEL_SECRET, or WHATSAPP_ACCESS_TOKEN.
+    """
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT key, enabled FROM feature_flags WHERE key IN ('google_login','line_login','whatsapp_otp')"
+    ).fetchall()
+    conn.close()
+    flags = {r["key"]: bool(r["enabled"]) for r in rows}
+    return {
+        "google_login": flags.get("google_login", False),
+        "line_login": flags.get("line_login", False),
+        "whatsapp_otp": flags.get("whatsapp_otp", False),
+        "google_client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
+    }
 
 
 @router.get("/admin/security-scan")

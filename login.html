@@ -89,6 +89,10 @@
 <script src="js/i18n.js"></script>
 <script src="js/captcha-widget.js"></script>
 <script src="js/theme-toggle.js"></script>
+<!-- task #333: Google Identity Services -- inert until google.accounts.id.initialize()
+     is actually called (only happens if the google_login feature flag is on AND a
+     client_id is configured), so loading it unconditionally costs nothing when off. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 <nav>
@@ -142,6 +146,35 @@
         <div id="captchaWidget"></div>
       </div>
       <button type="button" class="btn btn-primary" id="registerBtn" onclick="handleRegister()" data-i18n="login_btn_create">Create Account</button>
+    </div>
+
+    <!-- task #333: Google/LINE/WhatsApp login -- each block only shows if
+         its feature flag is on AND (for Google) a client_id is actually
+         configured; see loadLoginMethods() below. Works for both the
+         Sign In and Register tabs since all 3 backends find-or-create
+         the account, so there's no need for separate widgets per tab. -->
+    <div id="socialLoginSection" style="display:none;margin-top:8px">
+      <div class="divider"><span data-i18n="login_or_divider">or</span></div>
+      <div id="googleLoginBlock" style="display:none;margin-bottom:10px;justify-content:center"></div>
+      <button type="button" id="lineLoginBtn" class="btn" style="display:none;background:#06C755;color:#fff" onclick="startLineLogin()">
+        <span data-i18n="login_line_btn">💬 Continue with LINE</span>
+      </button>
+      <div id="whatsappOtpBlock" style="display:none">
+        <div class="form-group">
+          <label data-i18n="login_whatsapp_label">WhatsApp number</label>
+          <input type="tel" id="waPhone" placeholder="+852 1234 5678" data-i18n-placeholder="login_whatsapp_placeholder" autocomplete="tel">
+        </div>
+        <button type="button" class="btn" id="waSendBtn" style="background:#25D366;color:#fff" onclick="sendWhatsAppOtp()">
+          <span data-i18n="login_whatsapp_send">📱 Send code via WhatsApp</span>
+        </button>
+        <div class="form-group" id="waCodeGroup" style="display:none">
+          <label data-i18n="login_whatsapp_code_label">Verification code</label>
+          <input type="text" id="waCode" inputmode="numeric" maxlength="6" placeholder="123456">
+        </div>
+        <button type="button" class="btn btn-primary" id="waVerifyBtn" style="display:none" onclick="verifyWhatsAppOtp()">
+          <span data-i18n="login_whatsapp_verify">Verify & Sign In</span>
+        </button>
+      </div>
     </div>
   </div>
 </main>
@@ -257,6 +290,127 @@ async function handleRegister() {
     btn.textContent = t('login_btn_create','Create Account');
   }
 }
+
+// task #333: Google/LINE/WhatsApp login. Each block only appears once
+// /api/auth/login-methods confirms its feature flag is on (all 3 default
+// OFF -- see api/admin.py's _DEFAULT_FLAGS -- until manually enabled in
+// the admin panel once the necessary env vars/console setup are done).
+function finishSocialLogin(data) {
+  localStorage.setItem('xfinlab_token', data.token);
+  localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
+  showSuccess(t('login_success_login', 'Login successful! Redirecting...'));
+  setTimeout(() => window.location.href = 'dashboard.html', 800);
+}
+
+function handleGoogleCredential(response) {
+  fetch(`${API}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential: response.credential }),
+  })
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) { showError(data.detail || t('login_err_login_failed', 'Login failed')); return; }
+      finishSocialLogin(data);
+    })
+    .catch(() => showError(t('login_err_connection', 'Connection error. Make sure API is running.')));
+}
+
+function startLineLogin() {
+  window.location.href = `${API}/auth/line/start`;
+}
+
+async function sendWhatsAppOtp() {
+  const phone = document.getElementById('waPhone').value.trim();
+  if (!phone) { showError(t('login_whatsapp_err_phone', 'Please enter your WhatsApp number')); return; }
+  const btn = document.getElementById('waSendBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/auth/whatsapp/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.detail || t('login_whatsapp_err_send', 'Could not send code')); return; }
+    showSuccess(data.message || t('login_whatsapp_sent', 'Code sent! Check WhatsApp.'));
+    document.getElementById('waCodeGroup').style.display = 'block';
+    document.getElementById('waVerifyBtn').style.display = 'block';
+  } catch (e) {
+    showError(t('login_err_connection', 'Connection error. Make sure API is running.'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function verifyWhatsAppOtp() {
+  const phone = document.getElementById('waPhone').value.trim();
+  const code = document.getElementById('waCode').value.trim();
+  if (!code) { showError(t('login_whatsapp_err_code', 'Please enter the code you received')); return; }
+  const btn = document.getElementById('waVerifyBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/auth/whatsapp/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.detail || t('login_whatsapp_err_verify', 'Verification failed')); return; }
+    finishSocialLogin(data);
+  } catch (e) {
+    showError(t('login_err_connection', 'Connection error. Make sure API is running.'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadLoginMethods() {
+  // Pick up a completed LINE redirect-flow login/error from the URL
+  // first (LINE is a full-page redirect, unlike Google's in-page popup).
+  const params = new URLSearchParams(window.location.search);
+  const socialToken = params.get('social_token');
+  const socialError = params.get('social_error');
+  if (socialToken) {
+    // We only get a bare JWT back from the redirect (no id/email/name --
+    // those would leak into browser history/referrer headers via the
+    // URL), so fetch the profile the same way an existing session would.
+    try {
+      const res = await fetch(`${API}/auth/me?token=${encodeURIComponent(socialToken)}`);
+      const profile = await res.json();
+      if (res.ok) {
+        finishSocialLogin({ token: socialToken, id: profile.id, email: profile.email, name: profile.name, plan: profile.plan });
+      }
+    } catch (e) { /* fall through to normal login form */ }
+    history.replaceState(null, '', window.location.pathname);
+  } else if (socialError) {
+    showError(t('login_line_err_' + socialError, 'LINE login failed. Please try again.'));
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  try {
+    const res = await fetch(`${API}/auth/login-methods`);
+    const cfg = await res.json();
+    let anyShown = false;
+
+    if (cfg.line_login) {
+      document.getElementById('lineLoginBtn').style.display = 'block';
+      anyShown = true;
+    }
+    if (cfg.whatsapp_otp) {
+      document.getElementById('whatsappOtpBlock').style.display = 'block';
+      anyShown = true;
+    }
+    if (cfg.google_login && cfg.google_client_id && typeof google !== 'undefined' && google.accounts) {
+      document.getElementById('googleLoginBlock').style.display = 'flex';
+      google.accounts.id.initialize({ client_id: cfg.google_client_id, callback: handleGoogleCredential });
+      google.accounts.id.renderButton(document.getElementById('googleLoginBlock'), { theme: 'outline', size: 'large', width: 280 });
+      anyShown = true;
+    }
+    if (anyShown) document.getElementById('socialLoginSection').style.display = 'block';
+  } catch (e) { /* social login section just stays hidden */ }
+}
+loadLoginMethods();
 
 // Enter key support
 document.addEventListener('keydown', e => {
