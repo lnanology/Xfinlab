@@ -404,6 +404,22 @@ def _notify_free_signals_ready(today: str, cache: Dict):
     except Exception:
         pass
 
+    # Separate idempotency key so a Telegram-side failure/misconfig never
+    # blocks (or gets blocked by) the web-push send above. Re-imports the
+    # shared push_send_log helpers independently of the block above so
+    # this doesn't rely on that try succeeding first.
+    try:
+        from services.push_service import already_sent_today, mark_sent_today
+        from services.telegram_push_service import push_daily_signals_to_telegram
+
+        tg_key = "telegram_daily_signals"
+        if already_sent_today(tg_key, today):
+            return
+        push_daily_signals_to_telegram(cache)
+        mark_sent_today(tg_key, today)
+    except Exception:
+        pass
+
 
 def _refresh_free_signals_cache():
     """Recompute the free-signals cache for "today" and fire the daily
