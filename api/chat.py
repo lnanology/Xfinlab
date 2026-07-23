@@ -48,6 +48,20 @@ async def chat(body: dict):
     # identity up front instead of leaving it to free-text guessing.
     context_note = build_context_note(query)
 
+    # 2026-07-23 follow-up ("AI而家會老實話冇即時數據...咁加入卡片比佢選擇按
+    # 所有回答無方向都要比方向用戶"): chat.html's numbered-options-cards
+    # feature (2026-07-23, "1. AAPL 2. TSLA" style choices become clickable
+    # cards) already turns any 2+-line numbered list in the answer into
+    # cards; the honesty redirect below is now phrased as exactly that kind
+    # of list, in the model's OWN language, so the redirect becomes 3
+    # clickable cards instead of a wall of prose. chat.html's
+    # resolveNavTarget() recognizes "Free Signals"/"AI Analysis"/"Chart
+    # Analysis" by name and routes those specific cards to the real page
+    # instead of re-asking the same question in chat -- so the model should
+    # keep using those exact English feature names (never translate/rename
+    # them) even when the rest of its answer is in another language.
+    NAV_CARD_NAMES = "Free Signals、AI Analysis、Chart Analysis"
+
     # 2026-07-23 fix ("打口語唔得...可以做到好似CLAUDE咁嗎", then "口語同俚語
     # 全世界都要加入"): the old prompt (a) told the model to steer any
     # non-investment question back to finance, which reads as gatekeeping/
@@ -77,9 +91,21 @@ async def chat(body: dict):
         "淨係真係有好多資訊/數字需要分項嗰陣先用列表，普通閒聊或者簡單問題就用返一兩句直接、口語化咁答。"
         "誠實好緊要：呢個chat endpoint本身冇連接即時股價/新聞數據源，如果用戶問嘅係具體、"
         "即市嘅數字（例如「而家AAPL幾多錢」「今日邊隻升得最勁」），千祈唔好夾一個聽落去好肯定嘅假數字出嚟，"
-        "要老實話畀用戶知你冇即時數據，叫佢用返Free Signals／AI Analysis／Chart Analysis呢類真係接返即市數據"
-        "嘅功能睇實際數字；一般知識性/歷史性/解釋性嘅嘢（例如點解某個指標咁計、某間公司做乜生意）就照答，"
+        "要老實話畀用戶知你冇即時數據；跟住用返用戶自己嗰種語言，"
+        "以編號列表形式（1. 2. 3.）畀返最多3個選擇，叫佢去下面3個真係接返即市數據嘅功能度睇實際數字——"
+        f"呢3個功能嘅名一定要原字照用（唔好翻譯/改寫/加多餘字）：{NAV_CARD_NAMES}，例如：\n"
+        "1. 去 Free Signals 睇每日免費即市信號\n"
+        "2. 去 AI Analysis 做完整技術分析\n"
+        "3. 去 Chart Analysis 睇即時K線走勢\n"
+        "（呢個列表格式好緊要，因為前端會將呢啲編號選項自動變成可以直接撳入去嗰功能嘅卡片，"
+        "唔好將呢3個名夾雜喺一般段落入面，一定要用返呢種獨立編號列表格式）；"
+        "一般知識性/歷史性/解釋性嘅嘢（例如點解某個指標咁計、某間公司做乜生意）就照答，"
         "唔識就話唔識，唔好靠估當肯定講畀用戶聽。"
+        "呢個原則仲要再廣泛啲：唔淨止得冇即時數據呢個情況先咁做——但凡你嘅答案冇辦法畀到用戶一個好清晰、"
+        "肯定嘅方向（例如問題太廣泛、你資訊唔夠齊全、或者答案本質上就有好多可能性），"
+        "都應該喺答完之後主動提出2-3個具體、用戶可以即刻跟住做嘅下一步方向（例如再問邊個具體問題、"
+        "去邊個功能頁睇實際數據、定係提供邊啲資訊等你再仔細答），唔好淨係留低一個冇方向、"
+        "用戶唔知點跟落去嘅答案。"
         "如果係投資問題，就保持專業準確；如果用戶嘅問題有歧義（例如唔清楚想問邊個具體資產、邊個時間框架、"
         "定係想要邊種分析角度），可以先簡短反問1-2個問題澄清，等用戶下次回覆講清楚先再詳細分析；"
         "但如果已經有足夠資訊（包括下面嘅背景資訊已經識別到具體資產），"

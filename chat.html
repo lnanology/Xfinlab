@@ -485,13 +485,26 @@ function analyzeTickerMention(ticker) {
   if (typeof isLoading !== 'undefined' && isLoading) return;
   sendQuick(`分析 ${ticker}`);
 }
+// 2026-07-23 follow-up: "CHAT 回答 所有橙色 藍色都可導航" -- ticker
+// linkification originally only ran inside the **bold** callback (orange
+// .msg-bubble strong text). But .cc-card-title/.rc-card-title (compare-
+// card and row-card titles, usually the ticker/company name itself) and
+// .msg-bubble h3 (section headers) render in the site's BLUE accent
+// colour and go through this same inlineFormat() -- they just never had
+// tickers inside **bold** markers, so the old nested-only check missed
+// them. Running linkifyTickers() on the whole string FIRST (before the
+// bold regex, which only cares about literal "**" and is unaffected by
+// the <span> markup already injected) means every inlineFormat() call
+// site -- table cells, compare/row card titles, headers, plain text --
+// picks up clickable tickers automatically, orange or blue, without
+// duplicating this logic at each call site.
+function linkifyTickers(s) {
+  return s.replace(TICKER_PAREN_RE, (full, ticker) =>
+    `<span class="chat-ticker-strong" onclick="analyzeTickerMention('${ticker}')" title="繼續問AI：分析 ${ticker}">${full}</span>`
+  );
+}
 function inlineFormat(s) {
-  return s.replace(/\*\*(.+?)\*\*/g, (_, inner) => {
-    const withTickers = inner.replace(TICKER_PAREN_RE, (full, ticker) =>
-      `<span class="chat-ticker-strong" onclick="analyzeTickerMention('${ticker}')" title="繼續問AI：分析 ${ticker}">${full}</span>`
-    );
-    return `<strong>${withTickers}</strong>`;
-  });
+  return linkifyTickers(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
 function splitCellPoints(cell) {
   // Cells commonly separate multiple points with a literal "<br>" or a
@@ -581,15 +594,38 @@ function stripOptionMarker(line) {
 function escAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+// 2026-07-23 follow-up: "AI而家會老實話冇即時數據,叫用戶用返Free Signals/
+// AI Analysis呢類真係接數據嘅功能...咁加入卡片比佢選擇按" -- the honesty
+// prompt in api/chat.py now phrases its "I don't have live data, go check
+// X" redirect as a short numbered list (see that file's updated prompt),
+// which the numbered-options-cards machinery above already turns into
+// clickable cards. But unlike a ticker follow-up ("分析 AZN"), "去睇Free
+// Signals" has no useful sendQuick() chat continuation -- that redirect's
+// whole point is to send the user to a DIFFERENT page that actually has
+// live data. So a card recognized as naming one of those real pages
+// navigates there directly instead of re-asking the same unanswerable
+// question back in chat. Any other numbered option (ticker choices,
+// "短線/長線" style questions, etc) is unaffected and still uses the
+// existing sendQuick() behaviour.
+function resolveNavTarget(label) {
+  if (/free\s*signals|免費(?:信|訊)號/i.test(label)) return 'free-signals.html';
+  if (/chart\s*analysis|圖表分析|k線分析/i.test(label)) return 'chart-analysis.html';
+  if (/ai\s*analysis|ai\s*市場分析|ai\s*分析/i.test(label)) return 'ai-analysis.html';
+  return null;
+}
 function renderOptionsBlock(optionLines) {
   const cards = optionLines.map((line, idx) => {
     const label = stripOptionMarker(line);
-    return `<div class="chat-option-card" data-option="${escAttr(label)}" onclick="sendOptionCard(this)"><span class="chat-option-num">${idx + 1}</span><span class="chat-option-text">${inlineFormat(label)}</span><span class="chat-option-arrow">›</span></div>`;
+    const navUrl = resolveNavTarget(label);
+    const navAttr = navUrl ? ` data-nav="${escAttr(navUrl)}"` : '';
+    return `<div class="chat-option-card" data-option="${escAttr(label)}"${navAttr} onclick="sendOptionCard(this)"><span class="chat-option-num">${idx + 1}</span><span class="chat-option-text">${inlineFormat(label)}</span><span class="chat-option-arrow">›</span></div>`;
   }).join('');
   return `<div class="chat-options">${cards}</div>`;
 }
 function sendOptionCard(el) {
   if (typeof isLoading !== 'undefined' && isLoading) return;
+  const navUrl = el.dataset.nav;
+  if (navUrl) { window.location.href = navUrl; return; }
   const val = el.dataset.option;
   if (val) sendQuick(val);
 }
