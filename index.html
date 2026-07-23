@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
+<link rel="icon" type="image/svg+xml" href="/img/logo-mark.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>XFINLAB — Decision Intelligence for Investors</title>
@@ -401,6 +406,15 @@
      一個「帳戶」掣，撳落/指住會滑出返一個完整嘅帳戶選單（登入緊嘅
      email/PLAN/複製推薦連結/分享XFINLAB/登出），內容同dashboard.html
      個accountBtn dropdown一致，唔再淨係得一個「帳戶」連結咁重複。 -->
+<!-- task #328: site logo, always visible regardless of login state
+     (unlike .user-topbar below, which only shows when logged in) -->
+<div style="max-width:1160px;margin:0 auto;padding:14px 24px 0">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
+    <img src="/img/logo-mark.svg" alt="XFINLAB" style="height:30px;width:auto">
+    <span style="font-weight:700;font-size:1.05rem;color:var(--text)">XFINLAB</span>
+  </a>
+</div>
+
 <div class="user-topbar" id="userTopbar" style="display:none">
   <div class="user-topbar-inner">
     <span class="user-topbar-name" id="userTopbarName">👤</span>

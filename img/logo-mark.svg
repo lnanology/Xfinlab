@@ -1,0 +1,39 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="xGrad" x1="10%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#4A90D9"/>
+      <stop offset="100%" stop-color="#1B2E63"/>
+    </linearGradient>
+    <linearGradient id="fGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#CBCBCB"/>
+      <stop offset="100%" stop-color="#707070"/>
+    </linearGradient>
+  </defs>
+
+  <!-- X shape: two diagonal bars, flat-cut ends -->
+  <polygon points="28,98 90,98 302,325 240,325" fill="url(#xGrad)"/>
+  <polygon points="302,98 240,98 28,325 90,325" fill="url(#xGrad)"/>
+
+  <!-- f shape (grey), drawn on top, overlapping right side of X -->
+  <path d="M 302 58
+           C 248 58 214 92 214 146
+           L 214 172
+           L 180 172
+           L 180 206
+           L 214 206
+           L 214 328
+           L 248 328
+           L 248 206
+           L 302 206
+           L 302 172
+           L 248 172
+           L 248 148
+           C 248 122 264 110 292 110
+           L 302 110
+           Z"
+        fill="url(#fGrad)"/>
+
+  <!-- accent wedges where the X's right diagonal crosses the f's stem -->
+  <polygon points="214,146 248,146 248,172 224,172" fill="#1FA24A"/>
+  <polygon points="222,246 262,246 240,300 214,300" fill="#D6202E"/>
+</svg>

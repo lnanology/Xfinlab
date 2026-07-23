@@ -1,0 +1,41 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="xGrad2" x1="10%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#4A90D9"/>
+      <stop offset="100%" stop-color="#1B2E63"/>
+    </linearGradient>
+    <linearGradient id="fGrad2" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#CBCBCB"/>
+      <stop offset="100%" stop-color="#707070"/>
+    </linearGradient>
+  </defs>
+
+  <g>
+    <polygon points="28,98 90,98 302,325 240,325" fill="url(#xGrad2)"/>
+    <polygon points="302,98 240,98 28,325 90,325" fill="url(#xGrad2)"/>
+    <path d="M 302 58
+             C 248 58 214 92 214 146
+             L 214 172
+             L 180 172
+             L 180 206
+             L 214 206
+             L 214 328
+             L 248 328
+             L 248 206
+             L 302 206
+             L 302 172
+             L 248 172
+             L 248 148
+             C 248 122 264 110 292 110
+             L 302 110
+             Z"
+          fill="url(#fGrad2)"/>
+    <polygon points="214,146 248,146 248,172 224,172" fill="#1FA24A"/>
+    <polygon points="222,246 262,246 240,300 214,300" fill="#D6202E"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="200" y="410" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="52" letter-spacing="1">
+    <tspan fill="#1B2E63">X</tspan><tspan fill="#F2A33C">Fin</tspan><tspan fill="#ffffff" stroke="#1B2E63" stroke-width="1.5">Lab</tspan>
+  </text>
+</svg>
