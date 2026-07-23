@@ -13,10 +13,23 @@ import re
 from fastapi import APIRouter
 
 from services.backtest_service import BacktestService
+from services.track_record_service import get_track_record
 
 router = APIRouter()
 
 _SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=^]{1,15}$")
+
+
+@router.get("/track-record")
+def track_record():
+    """Homepage 'Track Record' section data -- see
+    services/track_record_service.py's module docstring for the full
+    methodology (fixed 8-ticker basket, confluence_trend strategy, 24h
+    cache). Always returns status ok with whatever was last successfully
+    computed; symbols_tested==0 only if every backtest failed (e.g. data
+    provider outage), which the frontend should treat as "not available
+    yet" rather than an error."""
+    return {"status": "ok", "data": get_track_record()}
 
 
 @router.get("/backtest/{ticker}")

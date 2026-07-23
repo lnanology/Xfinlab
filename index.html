@@ -445,9 +445,9 @@
 <!-- Hero -->
 <div class="hero">
   <div class="hero-left">
-    <div class="hero-badge">🤖 Decision Intelligence for Investors</div>
+    <div class="hero-badge" data-i18n="hero_badge">AI that flags the risk — and admits what it doesn't know</div>
     <h1 data-i18n="hero_title">Institutional-grade <span>AI</span> Investment Research</h1>
-    <p data-i18n="hero_subtitle">Analyze Stocks, ETFs &amp; Crypto in under 60 seconds — real market data, real technical indicators, AI-powered Decision Score™.</p>
+    <p data-i18n="hero_subtitle">Know your real risk before the market teaches it to you — real backtested history, real confidence scores, and an AI that tells you when it isn't sure.</p>
 
     <div class="hero-btns">
       <a href="login.html" data-real-href="dashboard.html" class="btn-primary">Start Free</a>
@@ -488,6 +488,35 @@
     <div class="stat"><div class="stat-num">60s</div><div class="stat-label">Avg. Research Time</div></div>
     <div class="stat"><div class="stat-num">$0</div><div class="stat-label">Free to Start</div></div>
   </div>
+</div>
+
+<!-- Track Record -- honest, real-backtest counterpoint to every other AI
+     platform's unverifiable "trust us" marketing (2026-07-23 psychology
+     differentiation batch). Numbers come from api/backtest.py's
+     /api/track-record, which is services/track_record_service.py's
+     aggregate of REAL BacktestService runs over the SAME fixed 8-ticker
+     basket already used by the Market Pulse widget above -- not a basket
+     picked to make this number look good. See that service's own
+     docstring for full methodology/caveats. -->
+<div class="trust-section" id="trackRecordSection">
+  <div class="section-label" data-i18n="trackrecord_label">Track Record</div>
+  <div class="section-title" data-i18n="trackrecord_title">No hype. Just the numbers.</div>
+  <p style="color:var(--muted);font-size:0.9rem;max-width:640px;margin:0 auto 20px;text-align:center" data-i18n="trackrecord_subtitle">Our Confluence Engine's real backtested performance on historical data — not simulated, not a live trading record.</p>
+  <div class="stats" id="trackRecordStats">
+    <div class="stat">
+      <div class="stat-num" id="trStatWinRate" data-i18n="trackrecord_loading" style="font-size:1rem">…</div>
+      <div class="stat-label" data-i18n="trackrecord_winrate_label">Overall Backtested Win Rate</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="trStatTrades">—</div>
+      <div class="stat-label" data-i18n="trackrecord_trades_label">Backtested Trades</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="trStatBasket">—</div>
+      <div class="stat-label" data-i18n="trackrecord_basket_label">Assets Tested</div>
+    </div>
+  </div>
+  <p style="color:var(--muted);font-size:0.72rem;max-width:680px;margin:14px auto 0;text-align:center;line-height:1.5" data-i18n="trackrecord_disclaimer" id="trackRecordDisclaimer">Figures come from historical backtests on 8 broad-market/sector proxies (SPY, QQQ, DIA, etc.). Fees/slippage not included. Past performance doesn't guarantee future results. Not investment advice.</p>
 </div>
 
 <!-- Live AI Result -- "AI is working" showcase -->
@@ -1137,6 +1166,42 @@ async function loadMarketPulse() {
 }
 loadMarketPulse();
 setInterval(loadMarketPulse, 90000);
+
+// Track Record -- fetches api/backtest.py's /api/track-record (real
+// aggregate backtest stats, see services/track_record_service.py). No
+// polling interval: the backend itself caches for 24h, no reason to
+// re-hit it every 90s like the live Market Pulse widget above.
+async function loadTrackRecord() {
+  const winEl = document.getElementById('trStatWinRate');
+  const tradesEl = document.getElementById('trStatTrades');
+  const basketEl = document.getElementById('trStatBasket');
+  if (!winEl) return;
+  try {
+    const res = await fetch(`${API}/track-record`);
+    const json = await res.json();
+    const data = json && json.data;
+    if (!data || !data.symbols_tested) {
+      winEl.textContent = '--';
+      tradesEl.textContent = '--';
+      basketEl.textContent = '--';
+      return;
+    }
+    winEl.textContent = (data.overall_win_rate_pct != null) ? `${data.overall_win_rate_pct}%` : '--';
+    winEl.style.fontSize = '';
+    // Same fix as loadMarketPulse()'s pulseOverall element above: drop the
+    // data-i18n attribute once real data has replaced the loading
+    // placeholder, so a later-resolving I18N.apply() call can't stomp it
+    // back to the translated "loading..." text.
+    winEl.removeAttribute('data-i18n');
+    tradesEl.textContent = (data.total_trades != null) ? data.total_trades : '--';
+    basketEl.textContent = Array.isArray(data.basket) ? data.basket.length : '--';
+  } catch (e) {
+    winEl.textContent = '--';
+    if (tradesEl) tradesEl.textContent = '--';
+    if (basketEl) basketEl.textContent = '--';
+  }
+}
+loadTrackRecord();
 
 // Top Opportunity -- 3 cards, 一個asset class一個真實top pick，見
 // api/market_pulse.py 嘅 /api/top-opportunities（5分鐘後端快取）。
