@@ -54,6 +54,7 @@ from api.historical_analog import router as historical_analog_router
 from api.captcha import router as captcha_router
 from auth.social_login import router as social_login_router
 from auth.whatsapp_auth import router as whatsapp_auth_router
+from api.telegram_webhook import router as telegram_webhook_router
 
 
 app = FastAPI(
@@ -174,6 +175,7 @@ app.include_router(historical_analog_router, prefix="/api", tags=["Historical An
 app.include_router(captcha_router, prefix="/api", tags=["Captcha"])
 app.include_router(social_login_router, prefix="/api", tags=["Social Login"])
 app.include_router(whatsapp_auth_router, prefix="/api", tags=["WhatsApp OTP"])
+app.include_router(telegram_webhook_router, prefix="/api", tags=["Telegram Webhook"])
 
 
 # Real scheduled job for the daily Free Signals push (replaces relying

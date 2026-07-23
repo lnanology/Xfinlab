@@ -1,1 +1,165 @@
-!function(){var i=!1;window.renderDecisionFooter=function(e,s){try{var d="string"==typeof e?document.getElementById(e):e;if(!d)return;s=s||{},function(){if(!i){i=!0;var e=document.createElement("style");e.textContent='.xfl-df{background:var(--bg-card,#fff);border:1px solid var(--border-color,#E5E7EB);border-radius:14px;padding:1.5rem;margin:1.2rem 0;font-family:"Inter",sans-serif}.xfl-df-head{font-size:0.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-blue,#2563EB);margin-bottom:1rem}.xfl-df-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1rem;margin-bottom:1rem}.xfl-df-stat{text-align:center;padding:0.75rem 0.5rem;background:var(--bg-secondary,#F8FAFC);border-radius:10px}.xfl-df-num{font-size:1.6rem;font-weight:700;color:var(--text-primary,#111)}.xfl-df-num.risk-low{color:var(--accent-green,#16A34A)}.xfl-df-num.risk-medium{color:var(--accent-orange,#F59E0B)}.xfl-df-num.risk-high{color:var(--accent-red,#DC2626)}.xfl-df-label{font-size:0.7rem;color:var(--text-muted,#666);margin-top:.25rem}.xfl-df-section{margin-top:0.9rem}.xfl-df-section strong{display:block;font-size:0.82rem;color:var(--text-primary,#111);margin-bottom:.35rem}.xfl-df-section ul{margin:0;padding-left:1.1rem;color:var(--text-secondary,#333);font-size:0.86rem}.xfl-df-section p{margin:0;color:var(--text-secondary,#333);font-size:0.86rem;line-height:1.55}',document.head.appendChild(e)}}();var r=[];if(null!==s.decisionScore&&void 0!==s.decisionScore&&r.push('<div class="xfl-df-stat"><div class="xfl-df-num">'+s.decisionScore+'</div><div class="xfl-df-label">Decision Score™</div></div>'),null!==s.confidencePct&&void 0!==s.confidencePct){var t="function"==typeof window.xflDisplayProb?window.xflDisplayProb(s.confidencePct,s.probSeed||"confidence"):s.confidencePct;r.push('<div class="xfl-df-stat"><div class="xfl-df-num">'+t+'%</div><div class="xfl-df-label">Confidence™</div></div>')}if(s.riskLabel&&r.push('<div class="xfl-df-stat"><div class="xfl-df-num '+(("Low"===(n=s.riskLabel)?"risk-low":"Medium"===n?"risk-medium":"High"===n?"risk-high":"")+'">')+s.riskLabel+'</div><div class="xfl-df-label">RiskDNA™</div></div>'),null!==s.entryPrice&&void 0!==s.entryPrice&&r.push('<div class="xfl-df-stat"><div class="xfl-df-num">'+s.entryPrice+'</div><div class="xfl-df-label">Entry</div></div>'),null!==s.stopLoss&&void 0!==s.stopLoss&&r.push('<div class="xfl-df-stat"><div class="xfl-df-num">'+s.stopLoss+'</div><div class="xfl-df-label">Stop Loss</div></div>'),null!==s.riskReward&&void 0!==s.riskReward&&r.push('<div class="xfl-df-stat"><div class="xfl-df-num">1:'+s.riskReward+'</div><div class="xfl-df-label">Risk/Reward</div></div>'),null!==s.riskPct&&void 0!==s.riskPct&&r.push('<div class="xfl-df-stat"><div class="xfl-df-num">'+s.riskPct+'%</div><div class="xfl-df-label">Risk %</div></div>'),!(0!==r.length||s.keyReasons||s.suggestedAction||s.takeProfits&&s.takeProfits.length))return void(d.innerHTML="");var l='<div class="xfl-df">';l+='<div class="xfl-df-head">📋 Decision Report™</div>',r.length&&(l+='<div class="xfl-df-grid">'+r.join("")+"</div>"),s.takeProfits&&s.takeProfits.length&&(l+='<div class="xfl-df-section"><strong>Take Profit Targets</strong><ul>'+s.takeProfits.map(function(i,e){return"<li>TP"+(e+1)+": "+i+"</li>"}).join("")+"</ul></div>"),s.keyReasons&&s.keyReasons.length&&(l+='<div class="xfl-df-section"><strong>Key Reasons</strong><ul>'+s.keyReasons.map(function(i){return"<li>"+i+"</li>"}).join("")+"</ul></div>"),s.suggestedAction&&(l+='<div class="xfl-df-section"><strong>Suggested Action</strong><p>'+s.suggestedAction+"</p></div>"),l+="</div>",d.innerHTML=l}catch(i){}var n}}();
+/* Decision Report™ footer -- shared component used by ai-analysis.html and
+   chart-analysis.html. Renders whatever real numbers the caller has
+   (Entry/Stop/TP/Risk-Reward/Decision Score/Confidence/RiskDNA) -- never
+   fabricates a field that isn't passed in.
+
+   2026-07-23 additions (from the Decision Card psychology-design pass):
+   - Low-confidence visual treatment: when confidencePct is thin, the
+     Decision Score / Confidence stats switch to a muted style instead of
+     the default bold treatment, so a 45%-confidence call doesn't look as
+     visually "certain" as an 85%-confidence one. Trust calibration over
+     always looking confident.
+   - Invalidation condition line: a plain-language "what would prove this
+     wrong" sentence, derived from the SAME real entryPrice/stopLoss
+     numbers already being rendered (never a new fabricated number) --
+     if stopLoss sits below entryPrice this reads as a bullish setup and
+     the invalidation is "breaks below stop"; if stopLoss sits above
+     entryPrice it's a bearish setup and invalidation is "breaks above
+     stop". Callers can still pass an explicit `invalidation` string to
+     override this, but by default nothing is shown unless real entry+stop
+     numbers exist.
+*/
+!function () {
+  var styleInjected = false;
+
+  function injectStyle() {
+    if (styleInjected) return;
+    styleInjected = true;
+    var css = ''
+      + '.xfl-df{background:var(--bg-card,#fff);border:1px solid var(--border-color,#E5E7EB);border-radius:14px;padding:1.5rem;margin:1.2rem 0;font-family:"Inter",sans-serif}'
+      + '.xfl-df-head{font-size:0.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-blue,#2563EB);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem}'
+      + '.xfl-df-lowconf-badge{font-size:0.68rem;font-weight:600;letter-spacing:0;text-transform:none;color:var(--text-muted,#666);background:var(--bg-secondary,#F8FAFC);border:1px solid var(--border-color,#E5E7EB);border-radius:999px;padding:0.15rem 0.6rem}'
+      + '.xfl-df-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1rem;margin-bottom:1rem}'
+      + '.xfl-df-stat{text-align:center;padding:0.75rem 0.5rem;background:var(--bg-secondary,#F8FAFC);border-radius:10px}'
+      + '.xfl-df-num{font-size:1.6rem;font-weight:700;color:var(--text-primary,#111)}'
+      + '.xfl-df-num.risk-low{color:var(--accent-green,#16A34A)}'
+      + '.xfl-df-num.risk-medium{color:var(--accent-orange,#F59E0B)}'
+      + '.xfl-df-num.risk-high{color:var(--accent-red,#DC2626)}'
+      + '.xfl-df-num.xfl-df-muted{color:var(--text-muted,#666);font-weight:600;font-size:1.35rem}'
+      + '.xfl-df-label{font-size:0.7rem;color:var(--text-muted,#666);margin-top:.25rem}'
+      + '.xfl-df-section{margin-top:0.9rem}'
+      + '.xfl-df-section strong{display:block;font-size:0.82rem;color:var(--text-primary,#111);margin-bottom:.35rem}'
+      + '.xfl-df-section ul{margin:0;padding-left:1.1rem;color:var(--text-secondary,#333);font-size:0.86rem}'
+      + '.xfl-df-section p{margin:0;color:var(--text-secondary,#333);font-size:0.86rem;line-height:1.55}'
+      + '.xfl-df-invalidation{margin-top:0.9rem;padding:0.7rem 0.9rem;border:1px solid var(--border-color,#E5E7EB);border-left:3px solid var(--accent-orange,#F59E0B);border-radius:8px;background:var(--bg-secondary,#F8FAFC);font-size:0.82rem;color:var(--text-secondary,#333);line-height:1.5}'
+      + '.xfl-df-invalidation strong{color:var(--text-primary,#111)}';
+    var el = document.createElement('style');
+    el.textContent = css;
+    document.head.appendChild(el);
+  }
+
+  function riskClass(label) {
+    if (label === 'Low') return 'risk-low';
+    if (label === 'Medium') return 'risk-medium';
+    if (label === 'High') return 'risk-high';
+    return '';
+  }
+
+  // Default invalidation sentence derived from real entry/stop numbers.
+  // Returns null (renders nothing) if we don't have both numbers -- never
+  // guesses a level that wasn't actually computed upstream.
+  function defaultInvalidation(entryPrice, stopLoss) {
+    if (entryPrice == null || stopLoss == null) return null;
+    var entry = Number(entryPrice), stop = Number(stopLoss);
+    if (isNaN(entry) || isNaN(stop) || entry === stop) return null;
+    if (stop < entry) {
+      return '若價格跌穿 <strong>' + stopLoss + '</strong>，此偏多判斷視為失效 — 建議重新評估。';
+    }
+    return '若價格升穿 <strong>' + stopLoss + '</strong>，此偏淡判斷視為失效 — 建議重新評估。';
+  }
+
+  window.renderDecisionFooter = function (containerIdOrEl, opts) {
+    try {
+      var container = typeof containerIdOrEl === 'string'
+        ? document.getElementById(containerIdOrEl)
+        : containerIdOrEl;
+      if (!container) return;
+
+      opts = opts || {};
+      injectStyle();
+
+      var lowConfidence = typeof opts.confidencePct === 'number' && opts.confidencePct < 40;
+      var stats = [];
+
+      if (opts.decisionScore !== null && opts.decisionScore !== undefined) {
+        stats.push(
+          '<div class="xfl-df-stat"><div class="xfl-df-num' + (lowConfidence ? ' xfl-df-muted' : '') + '">'
+          + opts.decisionScore + '</div><div class="xfl-df-label">Decision Score™</div></div>'
+        );
+      }
+
+      if (opts.confidencePct !== null && opts.confidencePct !== undefined) {
+        var confDisplay = typeof window.xflDisplayProb === 'function'
+          ? window.xflDisplayProb(opts.confidencePct, opts.probSeed || 'confidence')
+          : opts.confidencePct;
+        stats.push(
+          '<div class="xfl-df-stat"><div class="xfl-df-num' + (lowConfidence ? ' xfl-df-muted' : '') + '">'
+          + confDisplay + '%</div><div class="xfl-df-label">Confidence™</div></div>'
+        );
+      }
+
+      if (opts.riskLabel) {
+        stats.push(
+          '<div class="xfl-df-stat"><div class="xfl-df-num ' + riskClass(opts.riskLabel) + '">'
+          + opts.riskLabel + '</div><div class="xfl-df-label">RiskDNA™</div></div>'
+        );
+      }
+
+      if (opts.entryPrice !== null && opts.entryPrice !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.entryPrice + '</div><div class="xfl-df-label">Entry</div></div>');
+      }
+      if (opts.stopLoss !== null && opts.stopLoss !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.stopLoss + '</div><div class="xfl-df-label">Stop Loss</div></div>');
+      }
+      if (opts.riskReward !== null && opts.riskReward !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">1:' + opts.riskReward + '</div><div class="xfl-df-label">Risk/Reward</div></div>');
+      }
+      if (opts.riskPct !== null && opts.riskPct !== undefined) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.riskPct + '%</div><div class="xfl-df-label">Risk %</div></div>');
+      }
+
+      var invalidationText = opts.invalidation !== undefined
+        ? opts.invalidation
+        : defaultInvalidation(opts.entryPrice, opts.stopLoss);
+
+      var hasAnything = stats.length || opts.keyReasons || opts.suggestedAction
+        || (opts.takeProfits && opts.takeProfits.length) || invalidationText;
+      if (!hasAnything) {
+        container.innerHTML = '';
+        return;
+      }
+
+      var html = '<div class="xfl-df">';
+      html += '<div class="xfl-df-head"><span>📋 Decision Report™</span>'
+        + (lowConfidence ? '<span class="xfl-df-lowconf-badge">信心較低 — 建議自行核實</span>' : '')
+        + '</div>';
+
+      if (stats.length) html += '<div class="xfl-df-grid">' + stats.join('') + '</div>';
+
+      if (opts.takeProfits && opts.takeProfits.length) {
+        html += '<div class="xfl-df-section"><strong>Take Profit Targets</strong><ul>'
+          + opts.takeProfits.map(function (tp, i) { return '<li>TP' + (i + 1) + ': ' + tp + '</li>'; }).join('')
+          + '</ul></div>';
+      }
+
+      if (opts.keyReasons && opts.keyReasons.length) {
+        html += '<div class="xfl-df-section"><strong>Key Reasons</strong><ul>'
+          + opts.keyReasons.map(function (r) { return '<li>' + r + '</li>'; }).join('')
+          + '</ul></div>';
+      }
+
+      if (opts.suggestedAction) {
+        html += '<div class="xfl-df-section"><strong>Suggested Action</strong><p>' + opts.suggestedAction + '</p></div>';
+      }
+
+      if (invalidationText) {
+        html += '<div class="xfl-df-invalidation">⚠ ' + invalidationText + '</div>';
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+    } catch (e) {
+      // never let a rendering bug break the page around it
+    }
+  };
+}();

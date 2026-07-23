@@ -1,3 +1,19 @@
+# 2026-07-23 note (platform audit finding): this file is superseded and NOT
+# the live Telegram bot anymore. It's a polling-mode bot (Application.
+# run_polling(), a long-running blocking loop) that needs its own process --
+# Railway's Procfile only starts `uvicorn backend.main:app` (see Procfile /
+# railway.json), so this file was never actually reachable in production;
+# nobody who ever messaged the bot's /analyze, /screener, or /portfolio
+# commands got a real reply. Also hardcodes a local Mac path (sys.path
+# below) and hits API_BASE="http://127.0.0.1:8002", a port this app doesn't
+# even run on.
+#
+# The real, live bot is now api/telegram_webhook.py -- same commands,
+# webhook-based (Telegram POSTs updates to our existing FastAPI app, no
+# second process needed), reusing the already-configured
+# TELEGRAM_BOT_TOKEN. Kept here unmodified as the original prototype rather
+# than deleted, per this repo's convention of not removing files without
+# asking.
 import os
 import sys
 sys.path.insert(0, "/Users/aj/Desktop/Xfinlab-main")
