@@ -50,8 +50,14 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 .qp-text strong{color:var(--text-primary);font-weight:600;display:block;margin-bottom:2px;font-size:0.92rem}
 .divider{border:none;border-top:1px solid var(--border-color);margin:0.5rem 0}
 .history-list{flex:1;overflow-y:auto;padding:0 12px 12px}
-.history-item{padding:8px;border-radius:8px;cursor:pointer;transition:all 0.12s;font-size:0.9rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
+.history-item{padding:8px;border-radius:8px;transition:all 0.12s;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;position:relative}
 .history-item:hover{background:var(--bg-secondary);color:var(--text-primary)}
+.history-item-text{display:block;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:20px}
+/* task #323: optional per-item delete control, hidden until hover so the
+   list doesn't look cluttered by default */
+.history-del{position:absolute;right:2px;top:50%;transform:translateY(-50%);opacity:0;transition:opacity 0.12s;background:transparent;border:none;color:var(--text-secondary);cursor:pointer;font-size:0.8rem;line-height:1;padding:3px 6px;border-radius:4px}
+.history-item:hover .history-del{opacity:1}
+.history-del:hover{color:#ef4444;background:var(--bg-card)}
 .sb-bottom{padding:12px;border-top:1px solid var(--border-color)}
 .sb-tip{font-size:0.82rem;color:var(--text-muted);line-height:1.5;padding:8px;background:rgba(245,158,11,0.06);border-radius:6px;border-left:3px solid var(--accent-orange)}
 
@@ -144,6 +150,14 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 
 .msg-time{font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;padding:0 0.2rem}
 .msg.user .msg-time{text-align:right}
+/* task #323: per-message copy/delete controls -- hidden until the
+   message is hovered/tapped so the normal chat view stays uncluttered */
+.msg-actions{display:flex;gap:4px;margin-top:2px;padding:0 0.2rem;opacity:0;transition:opacity 0.12s}
+.msg:hover .msg-actions,.msg:focus-within .msg-actions{opacity:1}
+.msg.user .msg-actions{justify-content:flex-end}
+.msg-action-btn{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
+.msg-action-btn:hover{background:var(--bg-secondary);color:var(--accent-blue)}
+@media(max-width:768px){.msg-actions{opacity:1}}
 
 /* TYPING */
 .typing{display:flex;gap:0.3rem;align-items:center;padding:0.8rem 1rem}
@@ -382,7 +396,15 @@ function addMessage(role, content, imageUrl) {
     <div>
       <div class="msg-bubble">${imgHtml}${formatMsg(content)}</div>
       <div class="msg-time">${time}</div>
+      <div class="msg-actions">
+        <button type="button" class="msg-action-btn" onclick="copyMsg(this)" title="${t('chat_msg_copy','複製')}">⧉ ${t('chat_msg_copy','複製')}</button>
+        <button type="button" class="msg-action-btn" onclick="deleteMsg(this)" title="${t('chat_msg_delete','刪除')}">✕ ${t('chat_msg_delete','刪除')}</button>
+      </div>
     </div>`;
+  // Stored as a plain data property (not string-interpolated into the HTML
+  // above) so quotes/special characters in the AI's answer can never break
+  // the markup -- copyMsg() reads this instead of re-parsing rendered HTML.
+  div.dataset.rawContent = content || '';
   msgs.appendChild(div);
   // 2026-07-23 fix: a long bot answer used to get scrolled straight to
   // its very bottom (msgs.scrollTop = msgs.scrollHeight), so the user
@@ -636,11 +658,22 @@ function addToHistory(text) {
 // question so the user can quickly re-ask it (edit or send as-is) --
 // previously these items looked clickable (cursor:pointer, hover
 // highlight in CSS) but had no click handler at all.
+// task #323: each item also gets an optional delete (✕) control so the
+// list can be pruned without clearing the whole conversation.
 function renderHistory() {
   const list = document.getElementById('historyList');
+  const delLabel = t('chat_history_delete','刪除');
   list.innerHTML = chatHistory.map((h, i) =>
-    `<div class="history-item" onclick="useHistoryItem(${i})" title="${h.full.replace(/"/g,'&quot;')}">💬 ${h.display}</div>`
+    `<div class="history-item">
+       <span class="history-item-text" onclick="useHistoryItem(${i})" title="${h.full.replace(/"/g,'&quot;')}">💬 ${h.display}</span>
+       <button type="button" class="history-del" onclick="event.stopPropagation();deleteHistoryItem(${i})" title="${delLabel}" aria-label="${delLabel}">✕</button>
+     </div>`
   ).join('');
+}
+
+function deleteHistoryItem(i) {
+  chatHistory.splice(i, 1);
+  renderHistory();
 }
 
 function useHistoryItem(i) {
@@ -653,6 +686,51 @@ function useHistoryItem(i) {
     if (typeof input.dispatchEvent === 'function') {
       input.dispatchEvent(new Event('input'));
     }
+  }
+}
+
+// task #323: copy/delete controls on individual Q&A messages.
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) { /* best-effort only */ }
+  document.body.removeChild(ta);
+}
+
+function copyMsg(btn) {
+  const msgDiv = btn.closest('.msg');
+  const text = (msgDiv && msgDiv.dataset.rawContent) ||
+    (msgDiv && msgDiv.querySelector('.msg-bubble')?.innerText) || '';
+  if (!text) return;
+  const showCopied = () => {
+    const original = btn.innerHTML;
+    btn.innerHTML = '✓ ' + t('chat_msg_copied','已複製');
+    setTimeout(() => { btn.innerHTML = original; }, 1400);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showCopied).catch(() => {
+      fallbackCopyText(text);
+      showCopied();
+    });
+  } else {
+    fallbackCopyText(text);
+    showCopied();
+  }
+}
+
+function deleteMsg(btn) {
+  const msgDiv = btn.closest('.msg');
+  if (!msgDiv) return;
+  msgDiv.remove();
+  const msgs = document.getElementById('messages');
+  if (msgs && msgs.children.length === 0) {
+    msgs.style.display = 'none';
+    document.getElementById('welcome').style.display = 'flex';
   }
 }
 
