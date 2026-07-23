@@ -84,12 +84,12 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
   <h1 class="page-title" data-i18n="news_page_title">市場新聞追蹤</h1>
   <p class="page-sub" data-i18n="news_page_sub">輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響</p>
   <div class="category-row">
-    <div class="cat-btn active" data-i18n="news_cat_all" onclick="setActive(this);loadNews('全球金融市場最新重要新聞')">🌍 全部</div>
-    <div class="cat-btn" data-i18n="news_cat_hk" onclick="setActive(this);loadNews('港股市場最新重要新聞及分析')">🇭🇰 港股</div>
-    <div class="cat-btn" data-i18n="news_cat_us" onclick="setActive(this);loadNews('美股市場最新重要新聞及分析')">🇺🇸 美股</div>
-    <div class="cat-btn" data-i18n="news_cat_crypto" onclick="setActive(this);loadNews('加密貨幣市場最新重要新聞')">🪙 加密</div>
-    <div class="cat-btn" data-i18n="news_cat_macro" onclick="setActive(this);loadNews('全球宏觀經濟最新新聞及央行政策')">📊 宏觀</div>
-    <div class="cat-btn" data-i18n="news_cat_geo" onclick="setActive(this);loadNews('地緣政治及戰爭對金融市場的最新影響')">⚠️ 地緣</div>
+    <div class="cat-btn active" data-i18n="news_cat_all" onclick="setActive(this);loadNews(t('news_topic_all','全球金融市場最新重要新聞'))">🌍 全部</div>
+    <div class="cat-btn" data-i18n="news_cat_hk" onclick="setActive(this);loadNews(t('news_topic_hk','港股市場最新重要新聞及分析'))">🇭🇰 港股</div>
+    <div class="cat-btn" data-i18n="news_cat_us" onclick="setActive(this);loadNews(t('news_topic_us','美股市場最新重要新聞及分析'))">🇺🇸 美股</div>
+    <div class="cat-btn" data-i18n="news_cat_crypto" onclick="setActive(this);loadNews(t('news_topic_crypto','加密貨幣市場最新重要新聞'))">🪙 加密</div>
+    <div class="cat-btn" data-i18n="news_cat_macro" onclick="setActive(this);loadNews(t('news_topic_macro','全球宏觀經濟最新新聞及央行政策'))">📊 宏觀</div>
+    <div class="cat-btn" data-i18n="news_cat_geo" onclick="setActive(this);loadNews(t('news_topic_geo','地緣政治及戰爭對金融市場的最新影響'))">⚠️ 地緣</div>
   </div>
   <div class="search-row">
     <input class="search-field" id="newsSearch" data-i18n-placeholder="news_search_placeholder" placeholder="搜尋股票代號或關鍵詞，例：騰訊、AAPL、加息…" onkeydown="if(event.key==='Enter')searchNews()">
@@ -114,19 +114,13 @@ function t(key, fallback){
 
 async function loadNews(topic){
   document.getElementById('newsArea').innerHTML = `<div class="loading"><div class="dot-ani"><span>${t('news_loading_ai','AI 搜尋分析中')}</span><span>.</span><span>.</span><span>.</span></div></div>`;
-  const query=`請提供關於「${topic}」的最新市場資訊分析。
-
-格式如下：
-## 📰 市場摘要
-（2-3句總結當前市況）
-
-## 🔥 重點新聞（列出5條最重要新聞，每條包含：標題、簡述、市場影響）
-
-## 📊 AI 市場影響分析
-（分析對相關股票/市場的短期影響）
-
-## ⚠️ 需要關注的風險
-（列出2-3個主要風險點）`;
+  // 2026-07-23 fix (task #317/#327): this query used to be built from a
+  // hardcoded Chinese template regardless of the UI language, so the AI
+  // always answered in Chinese even when the user was in English/other
+  // mode. news_query_template carries the same structure translated to
+  // all 46 languages, with {TOPIC} substituted in.
+  const template = t('news_query_template', '請提供關於「{TOPIC}」的最新市場資訊分析。\n\n格式如下：\n## 📰 市場摘要\n（2-3句總結當前市況）\n\n## 🔥 重點新聞（列出5條最重要新聞，每條包含：標題、簡述、市場影響）\n\n## 📊 AI 市場影響分析\n（分析對相關股票/市場的短期影響）\n\n## ⚠️ 需要關注的風險\n（列出2-3個主要風險點）');
+  const query = template.replace('{TOPIC}', topic);
   try{
     const payload = { query, user: 'xfinlab-news' };
     const res = await postApi('/api/news-denoise', payload);
@@ -143,10 +137,11 @@ async function loadNews(topic){
 function searchNews(){
   const v=document.getElementById('newsSearch').value.trim();
   if(!v)return;
-  loadNews(`${v}的最新市場新聞及影響分析`);
+  const searchTemplate = t('news_search_query_template', '{V}的最新市場新聞及影響分析');
+  loadNews(searchTemplate.replace('{V}', v));
 }
 function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
-loadNews('全球金融市場最新重要新聞');
+loadNews(t('news_topic_all','全球金融市場最新重要新聞'));
 
 function toggleNav(){
   const navLinks = document.getElementById('navLinks');
