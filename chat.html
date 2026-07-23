@@ -384,7 +384,17 @@ function addMessage(role, content, imageUrl) {
       <div class="msg-time">${time}</div>
     </div>`;
   msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  // 2026-07-23 fix: a long bot answer used to get scrolled straight to
+  // its very bottom (msgs.scrollTop = msgs.scrollHeight), so the user
+  // landed on the END of the answer and had to scroll back up to read
+  // it from the start -- right where their own question is. For bot
+  // replies, scroll so the reply's own top (i.e. right below the
+  // question that triggered it) is what comes into view instead.
+  if (role === 'bot') {
+    div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    msgs.scrollTop = msgs.scrollHeight;
+  }
   return div;
 }
 
