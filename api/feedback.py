@@ -70,7 +70,7 @@ async def submit_feedback(body: FeedbackRequest):
         </div>
         """
         EmailService.send("abcoaj888@gmail.com", f"[XFINLAB] 新反饋: {body.type}", html)
-    except:
+    except Exception:
         pass
 
     return {"status": "ok", "message": "感謝你的反饋！我們會盡快回覆。"}

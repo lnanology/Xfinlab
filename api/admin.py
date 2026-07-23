@@ -1,6 +1,5 @@
 import sqlite3
 import os
-import time
 import requests
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Request
@@ -191,7 +190,7 @@ def get_health(token: str, request: Request):
     try:
         groq_key = os.getenv("GROQ_API_KEY", "")
         results["groq_ai"] = {"status": "online" if groq_key else "offline", "detail": "API Key configured" if groq_key else "No API Key"}
-    except:
+    except Exception:
         results["groq_ai"] = {"status": "offline", "detail": "Error"}
 
     # Database

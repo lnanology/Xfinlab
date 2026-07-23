@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime
 from services.email_service import EmailService
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend", "xfinlab.db")
@@ -52,7 +52,7 @@ class EmailSequences:
             try:
                 conn.execute("INSERT INTO email_sequences (user_id, sequence_type) VALUES (?, ?)", (user_id, "day1"))
                 conn.commit()
-            except:
+            except Exception:
                 pass
             conn.close()
         return result
@@ -82,7 +82,7 @@ class EmailSequences:
             try:
                 conn.execute("INSERT INTO email_sequences (user_id, sequence_type) VALUES (?, ?)", (user_id, "day3"))
                 conn.commit()
-            except:
+            except Exception:
                 pass
             conn.close()
         return result
@@ -115,7 +115,7 @@ class EmailSequences:
             try:
                 conn.execute("INSERT INTO email_sequences (user_id, sequence_type) VALUES (?, ?)", (user_id, "day7"))
                 conn.commit()
-            except:
+            except Exception:
                 pass
             conn.close()
         return result

@@ -1,4 +1,3 @@
-import os
 import sys
 sys.path.insert(0, "/Users/aj/Desktop/Xfinlab-main")
 

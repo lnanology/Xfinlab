@@ -42,7 +42,6 @@ import math
 from typing import Dict, Optional
 
 import numpy as np
-import pandas as pd
 
 from services.technical_analysis_service import fetch_ohlc_history
 

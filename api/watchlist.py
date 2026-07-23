@@ -39,7 +39,7 @@ def get_watchlist(token: str):
                 "trend": data.get("trend", "neutral"),
                 "added_at": item["added_at"]
             })
-        except:
+        except Exception:
             results.append({
                 "ticker": item["ticker"],
                 "price": 0,

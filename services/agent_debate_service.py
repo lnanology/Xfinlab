@@ -37,7 +37,7 @@ auto-run on every search.
 
 import logging
 import os
-from typing import Dict, Optional
+from typing import Dict
 
 from ai import ai_router
 from ai.ai_router import get_ai_response

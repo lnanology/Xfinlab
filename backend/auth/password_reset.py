@@ -77,7 +77,7 @@ def forgot_password(body: ForgotPasswordRequest):
     """
     try:
         EmailService.send(body.email, "重設密碼 - XFINLAB", html)
-    except:
+    except Exception:
         pass
 
     return {"status": "ok", "message": "如果帳號存在，重設連結已發送到你的信箱"}

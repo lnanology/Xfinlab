@@ -43,7 +43,6 @@
 # Kept in the repo unmodified/unremoved per this project's convention of
 # not deleting files without asking -- but nothing in this file should be
 # assumed to be running.
-import os
 import sys
 sys.path.insert(0, "/Users/aj/Desktop/Xfinlab-main")
 

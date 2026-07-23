@@ -457,19 +457,19 @@ class BacktestService:
 
             exit_idx, exit_price, exit_reason = None, None, None
             for j in range(entry_idx, min(entry_idx + MAX_HOLD_BARS, n)):
-                h, l = highs[j], lows[j]
+                bar_high, bar_low = highs[j], lows[j]
                 if sig == "long":
-                    if l <= stop:
+                    if bar_low <= stop:
                         exit_idx, exit_price, exit_reason = j, stop, "stop"
                         break
-                    if h >= target:
+                    if bar_high >= target:
                         exit_idx, exit_price, exit_reason = j, target, "target"
                         break
                 else:
-                    if h >= stop:
+                    if bar_high >= stop:
                         exit_idx, exit_price, exit_reason = j, stop, "stop"
                         break
-                    if l <= target:
+                    if bar_low <= target:
                         exit_idx, exit_price, exit_reason = j, target, "target"
                         break
 

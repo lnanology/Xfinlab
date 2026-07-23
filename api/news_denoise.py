@@ -27,7 +27,7 @@ async def news_denoise(body: dict):
                 "conclusion": answer
             }
         }
-    except Exception as e:
+    except Exception:
         return {
             "status": "ok",
             "data": {

@@ -36,12 +36,11 @@ Honesty contract (same standard as the rest of this codebase):
     script's own docstring).
 """
 
-import json
 import logging
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Dict, Optional
 
 import joblib
 import numpy as np
@@ -136,8 +135,6 @@ def build_features(df: pd.DataFrame) -> Optional[pd.DataFrame]:
         return None
 
     closes = df["Close"].astype(float)
-    highs = df["High"].astype(float)
-    lows = df["Low"].astype(float)
     volume = df["Volume"].astype(float)
 
     rsi_14 = TechnicalAnalysisService._rsi(closes, period=14)

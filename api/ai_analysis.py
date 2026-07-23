@@ -60,7 +60,7 @@ async def ai_analysis(body: dict):
         try:
             answer = get_ai_response(prompt, max_tokens=800)
             record_ai_token_usage(user_id)
-        except:
+        except Exception:
             answer = "篩選服務暫時不可用，請稍後再試。"
         return {"status": "ok", "data": {"conclusion": answer, "analysis": answer}}
 

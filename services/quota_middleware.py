@@ -1,7 +1,6 @@
 import sqlite3
 import os
 from fastapi import HTTPException
-from services.quota_service import QuotaService
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 

@@ -1,4 +1,3 @@
-import os
 import json
 from dotenv import load_dotenv
 from ai.ai_router import get_ai_response

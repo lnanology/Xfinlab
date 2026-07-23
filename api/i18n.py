@@ -1,4 +1,3 @@
-import os
 import requests
 from fastapi import APIRouter, Request
 from services.i18n import get_translations, detect_language_from_country, SUPPORTED_LANGUAGES
@@ -15,7 +14,7 @@ def get_country_from_ip(ip: str) -> str:
         res = requests.get(f"https://ipapi.co/{ip}/country/", timeout=5)
         if res.status_code == 200:
             return res.text.strip()
-    except:
+    except Exception:
         pass
     return "US"
 

@@ -1,6 +1,8 @@
+import json
 import cv2
-import numpy as np
 from typing import Dict
+
+
 class ChartVisionEngine:
     """
     Chart Vision Engine™ 用於辨識圖表中的 K 線區域和成交量區域。
@@ -24,9 +26,6 @@ class ChartVisionEngine:
             image = cv2.imread(image_path)
             if image is None:
                 raise ValueError("無法讀取圖片，請檢查文件路徑和格式。")
-
-            # 轉換為灰度圖像
-            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
             # 輸出示例結果（暫不實際辨識）
             result = {

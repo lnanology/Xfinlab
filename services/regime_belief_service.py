@@ -144,7 +144,12 @@ def _likelihood(evidence: Dict) -> List[float]:
     bullish = _sigmoid(score / 25.0)          # 0..1, 0.5 at score=0
     strong = _sigmoid((confidence_pct - 60) / 10.0)
     high_vol = _sigmoid((volatility - 70) / 8.0)
-    low_vol = _sigmoid((30 - volatility) / 8.0)
+    # (a separate low_vol = _sigmoid((30 - volatility) / 8.0) signal was
+    # computed here but never used -- none of the 9 REGIMES below have a
+    # dedicated "low volatility" bucket; RANGING already uses (1-high_vol)
+    # as its low-volatility proxy. Removed rather than left dead, but not
+    # wired into the formula either -- that would be a real change to a
+    # live calculation, not a lint cleanup.)
     low_liq = _sigmoid((0.5 - volume_ratio) / 0.1) if volume_ratio is not None else 0.0
     neutral_dir = max(0.0, 1 - abs(2 * bullish - 1))  # peaks at bullish=0.5
 

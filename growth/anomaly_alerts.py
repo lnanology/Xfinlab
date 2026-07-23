@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timezone
 
 from services.watchlist_service import get_db

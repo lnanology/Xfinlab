@@ -1,3 +1,17 @@
+# 2026-07-23 note (platform audit finding, found via ruff): this repo-root
+# auth/password_reset.py is an orphaned duplicate of the real, live
+# backend/auth/password_reset.py. backend/main.py's `sys.path.insert(0,
+# os.path.dirname(os.path.abspath(__file__)))` adds backend/ itself to
+# sys.path, so its `from auth.password_reset import router` resolves to
+# backend/auth/password_reset.py, never this file -- confirmed via
+# `python3 -c "import auth.password_reset as pr; print(pr.__file__)"`,
+# which resolves to backend/auth/password_reset.py, not this one. This
+# file was also missing `import os` (DB_PATH below used os.path.join
+# without importing os -- would NameError if this file were ever actually
+# imported/run on its own). Fixed the missing import for hygiene, but this
+# file is not part of the live app -- left in place per this project's
+# convention of not deleting files without asking.
+import os
 import sqlite3
 import secrets
 from datetime import datetime, timedelta
@@ -74,7 +88,7 @@ def forgot_password(body: ForgotPasswordRequest):
     """
     try:
         EmailService.send(body.email, "重設密碼 - XFINLAB", html)
-    except:
+    except Exception:
         pass
 
     return {"status": "ok", "message": "如果帳號存在，重設連結已發送到你的信箱"}

@@ -20,7 +20,7 @@ async def company_compare(body: dict):
         try:
             data = market_svc.get_stock_data(s.upper())
             market_data[s] = data
-        except:
+        except Exception:
             market_data[s] = {}
 
         # 2026-07-20 addition (task #289, "加入如morningstar, 公司純利及收入"):
@@ -50,7 +50,7 @@ async def company_compare(body: dict):
     try:
         answer = get_ai_response(prompt, max_tokens=1000)
         record_ai_token_usage(user_id)
-    except:
+    except Exception:
         answer = "比較分析服務暫時不可用，請稍後再試。"
 
     return {"status": "ok", "data": {"analysis": answer, "conclusion": answer, "market_data": market_data}}

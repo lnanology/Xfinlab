@@ -1,12 +1,10 @@
 import os
-import json
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.lib.colors import HexColor, white, black
+from reportlab.lib.colors import HexColor
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
 
 # Colors
 C_BG = HexColor('#080c14')
@@ -88,8 +86,10 @@ class ReportGenerator:
         rating = analysis.get('rating', research.get('ai_recommendation', 'N/A'))
 
         def score_color(s):
-            if s >= 70: return C_GREEN
-            if s >= 45: return C_AMBER
+            if s >= 70:
+                return C_GREEN
+            if s >= 45:
+                return C_AMBER
             return C_RED
 
         score_data = [

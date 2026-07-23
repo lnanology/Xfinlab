@@ -1,5 +1,6 @@
 
-import time, random
+import time
+import random
 
 class MarketStream:
     @staticmethod

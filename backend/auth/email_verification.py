@@ -1,7 +1,6 @@
 import os
 import sqlite3
 import secrets
-from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException
 from services.email_service import EmailService
 
@@ -31,7 +30,7 @@ def init_verification_table():
     # 加 verified 欄位入 users table
     try:
         conn.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0")
-    except:
+    except Exception:
         pass
     conn.commit()
     conn.close()
@@ -62,7 +61,7 @@ def send_verification_email(user_id: int, email: str, name: str):
     """
     try:
         EmailService.send(email, "驗證你的 XFINLAB 帳號", html)
-    except:
+    except Exception:
         pass
 
 

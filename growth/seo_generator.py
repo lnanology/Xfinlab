@@ -96,7 +96,7 @@ def generate_all_pages(output_dir: str = "growth/seo/pages"):
     try:
         from services.market_data_service import MarketDataService
         market_svc = MarketDataService()
-    except:
+    except Exception:
         market_svc = None
 
     generated = []
@@ -106,7 +106,7 @@ def generate_all_pages(output_dir: str = "growth/seo/pages"):
             try:
                 data = market_svc.get_stock_data(ticker)
                 analysis = data
-            except:
+            except Exception:
                 pass
 
         html = generate_stock_page(ticker, company, analysis)

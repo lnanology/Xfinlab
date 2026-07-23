@@ -42,7 +42,7 @@ from typing import Dict, Optional
 from services.fundamentals_service import get_fundamentals
 from services.technical_analysis_service import get_technical_analysis, fetch_ohlc_history
 from services.realized_vol import annualized_volatility_pct
-from services.regime_belief_service import update_belief, REGIMES
+from services.regime_belief_service import update_belief
 
 # Regime -> {value, momentum, quality, low_vol} weight preset (each sums
 # to 1). Hand-specified from each regime's real definition (see
