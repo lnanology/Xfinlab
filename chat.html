@@ -153,6 +153,21 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 .rc-field{font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-top:0.3rem}
 .rc-field-label{font-weight:600;color:var(--text-primary);margin-right:0.3rem}
 
+/* 2026-07-23: whenever the AI gives the user 2+ numbered options
+   ("1. ... 2. ..."), each one becomes a clickable navigation card
+   instead of plain numbered text -- clicking sends that option straight
+   back as the next message (reuses the existing sendQuick()), so a
+   clarifying question or a multi-choice answer becomes a tap-through
+   flow instead of the user having to retype/copy the option. See
+   formatMsg()/pushTextSegments() below for the detection logic. */
+.chat-options{display:flex;flex-direction:column;gap:0.5rem;margin:0.6rem 0}
+.chat-option-card{display:flex;align-items:center;gap:0.6rem;border:1px solid var(--border-color);border-radius:8px;padding:0.65rem 0.9rem;cursor:pointer;transition:all 0.12s;background:var(--bg-card)}
+.chat-option-card:hover{border-color:var(--accent-blue);background:var(--bg-secondary)}
+.chat-option-card:active{transform:scale(0.98)}
+.chat-option-num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent-blue);color:#fff;font-size:0.76rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.chat-option-text{flex:1;font-size:0.9rem;line-height:1.4;color:var(--text-primary)}
+.chat-option-arrow{flex:0 0 auto;color:var(--text-muted);font-size:0.9rem}
+
 .msg-time{font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;padding:0 0.2rem}
 .msg.user .msg-time{text-align:right}
 /* task #323: per-message copy/delete controls -- hidden until the
@@ -522,6 +537,66 @@ function renderTextBlock(text) {
     .replace(/⚠️(.+)/g, '<div class="disclaimer">⚠️$1</div>')
     .replace(/\n/g, '<br>');
 }
+
+// 2026-07-23: "AI CHAT 係給人2個或以上選擇... 分別都可做成導航卡片" -- any
+// time the AI's answer offers the user 2+ numbered choices ("1. AAPL
+// 2. TSLA", "1. 短線 2. 長線" etc), each one becomes a clickable card
+// instead of plain numbered text. Matches "1." / "1)" / "1、" markers
+// (the AI's own markdown always uses Arabic numerals even in Chinese
+// replies, same as every other numbered list already seen in this
+// codebase). A single numbered line on its own is NOT converted -- that's
+// almost always just "step 1 of an explanation", not a real choice, so
+// only runs of 2+ consecutive numbered lines qualify.
+const OPTION_LINE_RE = /^\s*[\(\[]?(\d{1,2})[\.\)、][\]\)]?\s+(\S.*)$/;
+function isOptionLine(line) {
+  return OPTION_LINE_RE.test(line);
+}
+function stripOptionMarker(line) {
+  const m = line.match(OPTION_LINE_RE);
+  return m ? m[2].trim() : line.trim();
+}
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function renderOptionsBlock(optionLines) {
+  const cards = optionLines.map((line, idx) => {
+    const label = stripOptionMarker(line);
+    return `<div class="chat-option-card" data-option="${escAttr(label)}" onclick="sendOptionCard(this)"><span class="chat-option-num">${idx + 1}</span><span class="chat-option-text">${inlineFormat(label)}</span><span class="chat-option-arrow">›</span></div>`;
+  }).join('');
+  return `<div class="chat-options">${cards}</div>`;
+}
+function sendOptionCard(el) {
+  if (typeof isLoading !== 'undefined' && isLoading) return;
+  const val = el.dataset.option;
+  if (val) sendQuick(val);
+}
+// Splits a run of non-table lines into alternating 'text' and 'options'
+// sub-blocks, preserving order. A lone blank line inside an option run
+// (list items separated by a blank line) doesn't break the run.
+function pushTextSegments(blocks, textLines) {
+  let j = 0;
+  while (j < textLines.length) {
+    if (isOptionLine(textLines[j])) {
+      const optLines = [];
+      while (j < textLines.length && (isOptionLine(textLines[j]) || textLines[j].trim() === '')) {
+        if (isOptionLine(textLines[j])) optLines.push(textLines[j]);
+        j++;
+      }
+      if (optLines.length >= 2) {
+        blocks.push({ type: 'options', lines: optLines });
+      } else {
+        blocks.push({ type: 'text', lines: optLines });
+      }
+    } else {
+      const plain = [];
+      while (j < textLines.length && !isOptionLine(textLines[j])) {
+        plain.push(textLines[j]);
+        j++;
+      }
+      blocks.push({ type: 'text', lines: plain });
+    }
+  }
+}
 function formatMsg(text) {
   const lines = text.split('\n');
   const blocks = [];
@@ -541,11 +616,11 @@ function formatMsg(text) {
         textLines.push(lines[i]);
         i++;
       }
-      blocks.push({ type: 'text', lines: textLines });
+      pushTextSegments(blocks, textLines);
     }
   }
   return blocks
-    .map(b => b.type === 'table' ? renderTableBlock(b.lines) : renderTextBlock(b.lines.join('\n')))
+    .map(b => b.type === 'table' ? renderTableBlock(b.lines) : b.type === 'options' ? renderOptionsBlock(b.lines) : renderTextBlock(b.lines.join('\n')))
     .join('');
 }
 
