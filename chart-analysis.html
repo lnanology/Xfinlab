@@ -155,7 +155,7 @@
       <div class="result-row"><div class="result-label" data-i18n="ca_volume_zone">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
       <div class="result-row"><div class="result-label">RSI</div><div class="result-value" id="rsiValue">-</div></div>
       <div class="result-row"><div class="result-label">MACD</div><div class="result-value" id="macdValue">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_pattern_summary">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
+      <div class="result-row" id="patternSummaryRow"><div class="result-label" data-i18n="ca_pattern_summary">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
       <div class="result-row"><div class="result-label" data-i18n="ca_risk_tips">風險提示</div><div class="result-value" id="riskTips">-</div></div>
       <div class="result-row"><div class="result-label" data-i18n="ca_recommendation">建議</div><div class="result-value" id="recommendationValue">-</div></div>
 
@@ -445,6 +445,7 @@ function switchMode(mode) {
   if (!isSearch) {
     document.getElementById('tvChartPanel').style.display = 'none';
     document.getElementById('patternBlock').style.display = 'block';
+    document.getElementById('patternSummaryRow').style.display = 'flex';
     document.getElementById('aiCommentaryBlock').style.display = 'none';
     document.getElementById('marketStructureBlock').style.display = 'none';
     document.getElementById('mtfBlock').style.display = 'none';
@@ -494,6 +495,14 @@ async function runTickerSearch(symbolOverride){
   if (typeof window.startAiLoading === 'function') window.startAiLoading();
 
   document.getElementById('patternBlock').style.display = 'none';
+  // 2026-07-23 fix: search/no-upload mode can never actually run AI
+  // vision pattern recognition (there's no image), so this row used to
+  // just show a permanent "you need to upload a screenshot" note every
+  // single search -- which read as broken/confusing rather than
+  // informative. Hide the whole row here instead; switchMode('upload')
+  // brings it back once there's an actual image to recognize patterns
+  // from.
+  document.getElementById('patternSummaryRow').style.display = 'none';
   document.getElementById('aiCommentaryBlock').style.display = 'block';
   safeSetText('commentaryResult', '');
   document.getElementById('commentaryBtn').disabled = false;
