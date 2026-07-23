@@ -19,7 +19,7 @@ from services.news_service import NewsService
 from engines.strategy_engine import StrategyEngine
 from engines.news_engine import NewsEngine
 from engines.risk_engine import RiskEngine
-from engines.scoring_engine import ScoringEngine
+from engines.decision_engine import DecisionEngine
 
 router = APIRouter()
 
@@ -47,6 +47,7 @@ class FullAnalysisResponse(BaseModel):
 market_service = MarketDataService()
 news_service = NewsService()
 strategy_engine = StrategyEngine("strategies/AJ_Strategy_V1.json")
+decision_engine = DecisionEngine()
 
 
 # ============================================================
@@ -128,7 +129,11 @@ async def full_analysis(ticker: str, token: str = None):
     risk_score = risk_result["overall_risk"]
 
     # ── Step 6: Final Score ──────────────────────────────
-    score_result = ScoringEngine.calculate(
+    # Routed through DecisionEngine.decide_full() (which itself calls
+    # ScoringEngine.calculate() -- same formula, now centralized) so this
+    # endpoint uses the one real "decision engine" going forward instead of
+    # reaching into ScoringEngine directly. Output is unchanged.
+    score_result = decision_engine.decide_full(
         market_score=market_score,
         news_score=news_score,
         strategy_score=strategy_score,

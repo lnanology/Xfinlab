@@ -187,25 +187,50 @@ class TestEventEngine:
     def setup_method(self):
         self.engine = EventEngine()
 
+    # 2026-07-23 (platform audit finding): these 5 tests call
+    # find_similar_events()/calculate_average_reaction()/
+    # calculate_success_rate()/analyze(), which no longer exist on
+    # EventEngine after a past refactor -- they've been failing on
+    # AttributeError with nobody noticing until CI was added this
+    # session. Not restoring the underlying methods: they used to read
+    # from database/event_history.sql, whose own comment labels its rows
+    # "Sample Data" -- hand-made placeholder price reactions, not real
+    # market history. Making these tests pass again would mean reviving a
+    # feature that shows fabricated numbers as real historical fact (see
+    # engines/event_engine.py's class docstring for the full writeup).
+    # Skipped rather than deleted so the gap stays visible.
+    _SKIP_REASON = (
+        "find_similar_events/analyze/calculate_average_reaction/"
+        "calculate_success_rate were removed from EventEngine; the data "
+        "they used to read (database/event_history.sql) is labeled "
+        "sample/placeholder data, not real history -- see "
+        "engines/event_engine.py docstring"
+    )
+
+    @pytest.mark.skip(reason=_SKIP_REASON)
     def test_find_earnings_events(self):
         events = self.engine.find_similar_events("earnings")
         assert isinstance(events, list)
         assert len(events) > 0
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     def test_find_unknown_event_type(self):
         events = self.engine.find_similar_events("unknown_type")
         assert events == []
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     def test_average_reaction_empty(self):
         result = self.engine.calculate_average_reaction([])
         assert result["avg_1d"] == 0.0
         assert result["avg_7d"] == 0.0
         assert result["avg_30d"] == 0.0
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     def test_success_rate_empty(self):
         result = self.engine.calculate_success_rate([])
         assert result == 0.0
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     def test_full_analysis(self):
         result = self.engine.analyze("earnings")
         assert "historical_cases" in result

@@ -4,6 +4,15 @@ FastAPI endpoint: GET /api/analyze/{symbol}
 
 Flow:
     MarketDataService → RuleEngine → ScoreEngine → RiskEngine → DecisionEngine
+
+2026-07-23 note (platform audit finding): this file builds its own
+standalone `FastAPI()` app (see below) rather than an `APIRouter`, and is
+never imported or mounted by backend/main.py -- it is dead/unreachable
+code, superseded by api/full_analysis_v3.py (the real, live
+`/api/full-analysis/{ticker}` endpoint). Kept in the repo rather than
+deleted per this project's convention of not removing files without
+asking, but nothing here runs in production. Only tests/test_suite.py and
+the root-level test_decision.py manual script still exercise it.
 """
 
 import sys

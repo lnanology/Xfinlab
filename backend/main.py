@@ -227,6 +227,30 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+# 2026-07-23: growth/anomaly_alerts.py's check_watchlist_anomalies() existed
+# and worked, but was only ever wired into growth/scheduler.py -- a
+# standalone script (hardcoded local Mac paths, meant to be run via
+# `python growth/scheduler.py`) that Railway never starts (the Procfile
+# only runs `uvicorn backend.main:app`). That meant nobody's watchlist
+# anomaly emails were ever actually sent in production. Wiring the real
+# function in here directly, same in-process BackgroundScheduler pattern
+# as the two jobs above, at the same 30-minute cadence the dead script
+# used to target.
+def _run_watchlist_anomaly_job():
+    try:
+        from growth.anomaly_alerts import check_watchlist_anomalies
+        check_watchlist_anomalies()
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_watchlist_anomaly_job,
+    "interval",
+    minutes=30,
+    id="watchlist_anomaly_check",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

@@ -184,6 +184,16 @@ async def ai_analysis(body: dict):
     # codebase) is honestly reported as unavailable rather than guessed.
     from datetime import datetime, timezone
 
+    # 2026-07-23 note (platform audit finding): this BUY/SELL/HOLD label is
+    # a THIRD, independent rating vocabulary/threshold set, separate from
+    # engines/decision_engine.py's DecisionEngine (Strong Buy/Bullish/
+    # Neutral/Bearish) and engines/scoring_engine.py's ScoringEngine
+    # (Strong Buy/Buy/Neutral/Sell/Strong Sell) used by
+    # api/full_analysis_v3.py. All three are live/reachable simultaneously.
+    # Not unified here on purpose: this page (ai-analysis.html) is the
+    # most-visited analysis surface, so changing its rating thresholds is a
+    # product decision that changes what real users see today, not a pure
+    # refactor -- needs explicit sign-off before merging.
     if bull >= 55 and bull >= bear:
         hero_rating = "BUY"
     elif bear >= 55 and bear > bull:
