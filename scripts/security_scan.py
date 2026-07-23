@@ -42,299 +42,45 @@ Usage:
 
 Exits 0 always (this is a reporting tool, not a CI gate) -- the report
 itself flags anything that needs attention.
+
+2026-07-23 (task #326): the actual check logic now lives in
+services/security_scan_service.py as structured, importable functions
+(each returns a dict instead of just printing), so the exact same
+checks also power (a) an in-process APScheduler job that runs every 6
+hours directly on the live Railway server and persists results into
+the shared xfinlab.db, and (b) a "Run Scan Now" button + results view
+in admin.html, with a one-click "Copy Report" so a human can hand the
+whole thing to an AI assistant for remediation without re-running
+anything by hand. This script is now just a thin CLI wrapper that
+prints the same report to the terminal for the external scheduled
+task that already calls it.
 """
 import argparse
-import json
 import os
-import re
-import ssl
-import socket
-import subprocess
 import sys
-from datetime import datetime, timezone
-from urllib.parse import urlparse
 
-try:
-    import requests
-except Exception:
-    requests = None
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-DEFAULT_URL = "https://www.xfinlab.com"
-PAGES_TO_SCAN = ["/", "/dashboard.html", "/login.html", "/pricing.html"]
-
-# Files worth checking byte-for-byte against the repo -- prioritizes
-# the JS that runs on every page (most valuable injection target) plus
-# the homepage and login flow (highest-traffic, most sensitive pages).
-# Deliberately a small curated list, not every file in the repo -- this
-# runs every 6 hours, keep it fast and cheap.
-INTEGRITY_FILES = [
-    "index.html", "login.html", "dashboard.html",
-    "js/autocomplete.js", "js/i18n.js", "js/theme-toggle.js",
-    "js/nav.js", "js/share-widget.js",
-]
-
-# Known-good script/iframe source domains -- anything outside this list
-# found in a <script src="..."> or <iframe src="..."> on the live site
-# is flagged for manual review (could be a legit new addition, could be
-# an injected malicious include -- this tool can't tell the difference,
-# it just surfaces it).
-ALLOWED_EXTERNAL_DOMAINS = [
-    "fonts.googleapis.com", "fonts.gstatic.com",
-    "cdnjs.cloudflare.com", "cdn.jsdelivr.net",
-    "www.googletagmanager.com", "www.google-analytics.com",
-    "t.me", "api.qrserver.com",
-    "xfinlab.com", "www.xfinlab.com", "api.xfinlab.com",
-]
-
-SUSPICIOUS_PATTERNS = [
-    (r"eval\s*\(\s*atob\s*\(", "obfuscated eval(atob(...)) -- classic malware-injection pattern"),
-    (r"document\.write\s*\(\s*unescape\s*\(", "document.write(unescape(...)) -- classic obfuscated injection"),
-    (r"fromCharCode\s*\([^)]{80,}\)", "very long String.fromCharCode(...) chain -- often obfuscated payload"),
-    (r"<iframe[^>]+style=[\"'][^\"']*display\s*:\s*none", "hidden iframe (display:none) -- common malware/spam-injection technique"),
-    (r"<iframe[^>]+style=[\"'][^\"']*(width|height)\s*:\s*0", "zero-size iframe -- common malware/spam-injection technique"),
-]
-
-REQUIRED_HEADERS = {
-    "strict-transport-security": "HSTS missing -- browsers won't be forced to use HTTPS on repeat visits",
-    "x-content-type-options": "X-Content-Type-Options missing -- allows MIME-sniffing attacks",
-    "x-frame-options": "X-Frame-Options missing -- page can be framed/clickjacked by other sites (unless CSP frame-ancestors covers it)",
-    "content-security-policy": "Content-Security-Policy missing -- no defense-in-depth against injected scripts",
-}
-
-
-def _extract_external_srcs(html):
-    srcs = re.findall(r'(?:src|href)=["\']((?:https?:)?//[^"\']+)["\']', html)
-    domains = set()
-    for s in srcs:
-        s = s if s.startswith("http") else "https:" + s
-        try:
-            domains.add(urlparse(s).netloc)
-        except Exception:
-            pass
-    return domains
-
-
-def check_headers(base_url):
-    print("\n=== 1. Security Headers ===")
-    if requests is None:
-        print("  SKIP: `requests` not installed.")
-        return
-    try:
-        res = requests.get(base_url, timeout=15)
-    except Exception as e:
-        print(f"  ERROR: could not fetch {base_url}: {e}")
-        return
-    headers_lower = {k.lower(): v for k, v in res.headers.items()}
-    any_missing = False
-    for h, why in REQUIRED_HEADERS.items():
-        if h in headers_lower:
-            print(f"  OK   {h}: {headers_lower[h][:80]}")
-        else:
-            any_missing = True
-            print(f"  MISSING  {h} -- {why}")
-    if not any_missing:
-        print("  All standard hardening headers present.")
-
-
-def check_ssl(base_url):
-    print("\n=== 2. SSL Certificate ===")
-    host = urlparse(base_url).netloc or base_url
-    try:
-        ctx = ssl.create_default_context()
-        with socket.create_connection((host, 443), timeout=10) as sock:
-            with ctx.wrap_socket(sock, server_hostname=host) as ssock:
-                cert = ssock.getpeercert()
-                version = ssock.version()
-        not_after = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z").replace(tzinfo=timezone.utc)
-        days_left = (not_after - datetime.now(timezone.utc)).days
-        print(f"  TLS version negotiated: {version}")
-        print(f"  Certificate expires: {not_after.date()} ({days_left} days left)")
-        if days_left < 14:
-            print(f"  WARNING: certificate expires soon ({days_left} days) -- renew now")
-        if version in ("TLSv1", "TLSv1.1"):
-            print(f"  WARNING: outdated TLS version negotiated ({version})")
-    except Exception as e:
-        print(f"  ERROR: could not check SSL for {host}: {e}")
-
-
-def check_dependencies(repo_root):
-    print("\n=== 3. Dependency CVE Scan (pip-audit) ===")
-    req_path = os.path.join(repo_root, "requirements.txt")
-    if not os.path.exists(req_path):
-        print(f"  SKIP: no requirements.txt found at {req_path}")
-        return
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip_audit", "-r", req_path, "-f", "json"],
-            capture_output=True, text=True, timeout=180,
-        )
-        if result.returncode not in (0, 1):
-            print(f"  ERROR running pip-audit: {result.stderr[:500]}")
-            return
-        data = json.loads(result.stdout or "[]")
-        # pip-audit's JSON shape varies by version: either a top-level
-        # list of {name, version, vulns:[...]} or {"dependencies": [...]}
-        deps = data.get("dependencies", data) if isinstance(data, dict) else data
-        found = False
-        for dep in deps:
-            vulns = dep.get("vulns") or []
-            if vulns:
-                found = True
-                print(f"  VULNERABLE  {dep.get('name')} {dep.get('version')}:")
-                for v in vulns:
-                    print(f"      {v.get('id')} -- fixed in {v.get('fix_versions')}")
-        if not found:
-            print("  No known CVEs found in requirements.txt.")
-    except FileNotFoundError:
-        print("  SKIP: pip-audit not installed. Install with: pip install pip-audit --break-system-packages")
-    except Exception as e:
-        print(f"  ERROR: {e}")
-
-
-def check_suspicious_content(base_url):
-    print("\n=== 4. Suspicious Content / Injected Script Scan ===")
-    if requests is None:
-        print("  SKIP: `requests` not installed.")
-        return
-    any_flag = False
-    for page in PAGES_TO_SCAN:
-        url = base_url.rstrip("/") + page
-        try:
-            res = requests.get(url, timeout=15)
-            html = res.text
-        except Exception as e:
-            print(f"  ERROR fetching {url}: {e}")
-            continue
-
-        for pattern, why in SUSPICIOUS_PATTERNS:
-            if re.search(pattern, html, re.IGNORECASE):
-                any_flag = True
-                print(f"  FLAG  {page}: {why}")
-
-        external_domains = _extract_external_srcs(html)
-        unknown = [d for d in external_domains if not any(d == a or d.endswith("." + a) for a in ALLOWED_EXTERNAL_DOMAINS)]
-        if unknown:
-            any_flag = True
-            print(f"  FLAG  {page}: unrecognized external script/iframe domain(s): {', '.join(unknown)}")
-
-    if not any_flag:
-        print(f"  No suspicious patterns or unknown external domains found across {len(PAGES_TO_SCAN)} pages.")
-
-
-def check_safe_browsing(base_url):
-    print("\n=== 5. Malicious-Site Flag Check (Google Safe Browsing) ===")
-    api_key = os.getenv("GOOGLE_SAFE_BROWSING_API_KEY")
-    if not api_key:
-        print("  SKIP: GOOGLE_SAFE_BROWSING_API_KEY not set.")
-        print("  Get a free key: https://developers.google.com/safe-browsing/v4/get-started")
-        return
-    if requests is None:
-        print("  SKIP: `requests` not installed.")
-        return
-    try:
-        payload = {
-            "client": {"clientId": "xfinlab-security-watch", "clientVersion": "1.0"},
-            "threatInfo": {
-                "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
-                "platformTypes": ["ANY_PLATFORM"],
-                "threatEntryTypes": ["URL"],
-                "threatEntries": [{"url": base_url}],
-            },
-        }
-        res = requests.post(
-            f"https://safebrowsing.googleapis.com/v4/threatMatches:find?key={api_key}",
-            json=payload, timeout=15,
-        )
-        data = res.json()
-        if data.get("matches"):
-            print(f"  ALERT: Google Safe Browsing has flagged this URL: {data['matches']}")
-        else:
-            print("  Clean -- not flagged by Google Safe Browsing.")
-    except Exception as e:
-        print(f"  ERROR: {e}")
-
-
-def check_file_integrity(base_url, repo_root):
-    print("\n=== 6. File Integrity Check (live site vs. git HEAD) ===")
-    if requests is None:
-        print("  SKIP: `requests` not installed.")
-        return
-
-    any_flag = False
-    checked_count = 0
-    for rel_path in INTEGRITY_FILES:
-        local_path = os.path.join(repo_root, rel_path)
-        if not os.path.exists(local_path):
-            print(f"  SKIP  {rel_path}: not found in local repo copy")
-            continue
-
-        with open(local_path, "rb") as f:
-            local_bytes = f.read()
-
-        url = base_url.rstrip("/") + "/" + rel_path
-        try:
-            res = requests.get(url, timeout=15)
-            live_bytes = res.content
-        except Exception as e:
-            print(f"  ERROR fetching {url}: {e}")
-            continue
-
-        checked_count += 1
-        if live_bytes == local_bytes:
-            print(f"  OK    {rel_path}: matches git HEAD exactly")
-        else:
-            any_flag = True
-            # Show a rough size delta and a short snippet of the first
-            # differing region -- not a full diff (this is a quick pulse
-            # check, not a diffing tool), just enough to tell at a
-            # glance whether this looks like a normal deploy lag
-            # (e.g. whitespace/comment changes) or something alarming
-            # (injected <script>/<iframe> that isn't in the repo at all).
-            size_delta = len(live_bytes) - len(local_bytes)
-            print(f"  FLAG  {rel_path}: live version differs from git HEAD (size delta: {size_delta:+d} bytes)")
-            try:
-                live_text = live_bytes.decode("utf-8", errors="replace")
-                local_text = local_bytes.decode("utf-8", errors="replace")
-                # Find the first differing line for a quick pointer --
-                # cheap alternative to a full line-by-line diff.
-                live_lines = live_text.splitlines()
-                local_lines = local_text.splitlines()
-                for i, (a, b) in enumerate(zip(live_lines, local_lines)):
-                    if a != b:
-                        print(f"        first differing line ({i + 1}): repo={b[:100]!r} live={a[:100]!r}")
-                        break
-                else:
-                    if len(live_lines) != len(local_lines):
-                        print(f"        line count differs: repo={len(local_lines)} live={len(live_lines)}")
-            except Exception:
-                pass
-
-    if checked_count == 0:
-        print(f"  Could not fetch any of the {len(INTEGRITY_FILES)} files to compare (network/connectivity issue) -- integrity NOT verified this run.")
-    elif not any_flag:
-        print(f"  All {checked_count}/{len(INTEGRITY_FILES)} successfully-fetched files match git HEAD exactly.")
-    else:
-        print("  NOTE: a mismatch can also just mean the live deploy hasn't picked up")
-        print("  the latest git push yet -- check deploy timestamps before assuming tampering.")
+from services.security_scan_service import DEFAULT_URL, run_and_save
 
 
 def main():
     parser = argparse.ArgumentParser(description="XFINLAB periodic security watch")
     parser.add_argument("--url", default=DEFAULT_URL)
     parser.add_argument("--repo-root", default=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    parser.add_argument("--no-save", action="store_true", help="Print only, don't persist to xfinlab.db")
     args = parser.parse_args()
 
-    print(f"XFINLAB Security Watch -- {datetime.now(timezone.utc).isoformat()}")
-    print(f"Target: {args.url}")
+    print(f"XFINLAB Security Watch -- target: {args.url}")
 
-    check_headers(args.url)
-    check_ssl(args.url)
-    check_dependencies(args.repo_root)
-    check_suspicious_content(args.url)
-    check_safe_browsing(args.url)
-    check_file_integrity(args.url, args.repo_root)
+    if args.no_save:
+        from services.security_scan_service import run_full_scan
+        result = run_full_scan(base_url=args.url, repo_root=args.repo_root)
+    else:
+        result = run_and_save(base_url=args.url, repo_root=args.repo_root)
 
-    print("\n=== Done ===")
+    print(result["report_text"])
+    print("=== Done ===")
 
 
 if __name__ == "__main__":

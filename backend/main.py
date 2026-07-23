@@ -196,6 +196,33 @@ _push_scheduler.add_job(
     id="daily_free_signals_push",
     replace_existing=True,
 )
+
+# 2026-07-23 (task #326): the security watch previously only ran from an
+# external Cowork scheduled task calling scripts/security_scan.py against
+# THIS repo's local checkout -- its findings never touched the live
+# Railway server or its real xfinlab.db, so there was no way to see a
+# scan's results from the admin panel. Running it here too means the
+# scan executes on the actual live server, against the actual live site,
+# and persists into the same Litestream-backed DB the admin API reads
+# from (services/security_scan_service.py). The external scheduled task
+# can stay as a separate periodic chat-facing digest; this is what
+# powers the in-app "Security Scan" admin page.
+def _run_security_scan_job():
+    try:
+        from services.security_scan_service import run_and_save
+        run_and_save()
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_security_scan_job,
+    "cron",
+    hour="*/6",
+    minute=15,
+    id="security_scan_watch",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

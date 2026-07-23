@@ -328,3 +328,38 @@ def set_feature_flag(key: str, token: str, request: Request, body: dict = {}):
     conn.commit()
     conn.close()
     return {"status": "ok", "key": key, "enabled": enabled}
+
+
+@router.get("/admin/security-scan")
+def get_security_scan(token: str, request: Request):
+    """
+    Task #326: surfaces the security watch (scripts/security_scan.py /
+    services/security_scan_service.py) in the admin panel, instead of it
+    only ever existing as terminal output from the external 6-hourly
+    scheduled task. Returns the most recent scan result already
+    persisted into xfinlab.db by the in-process APScheduler job
+    (backend/main.py) or a prior manual run -- this is intentionally
+    fast/read-only, it does NOT run a fresh scan on every page load.
+    """
+    verify_admin(token, "get_security_scan", request)
+    from services.security_scan_service import get_latest_scan_result, get_scan_history
+    latest = get_latest_scan_result()
+    if latest is None:
+        return {"status": "no_data", "result": None, "history": []}
+    return {"status": "ok", "result": latest, "history": get_scan_history(limit=10)}
+
+
+@router.post("/admin/security-scan/run")
+def run_security_scan_now(token: str, request: Request):
+    """
+    Manual "Run Scan Now" trigger for the admin panel. Runs synchronously
+    (skips the slow pip-audit dependency scan so this stays fast enough
+    for a single HTTP request -- the in-process 6-hourly job still runs
+    the full scan including dependency CVEs) and persists the result
+    like every other run, so it immediately shows up in get_security_scan
+    and in the history list too.
+    """
+    verify_admin(token, "run_security_scan_now", request)
+    from services.security_scan_service import run_and_save
+    result = run_and_save(skip_dependency_scan=True)
+    return {"status": "ok", "result": result}

@@ -185,6 +185,7 @@
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
     <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> Audit Log</div>
+    <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> Security Scan</div>
     <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> Feedback</div>
 
     <div class="sidebar-footer">
@@ -393,6 +394,28 @@
         <div class="panel-title">Recent Activity</div>
         <div id="auditLogTable"><div class="empty"><span class="spinner"></span></div></div>
         <button class="btn btn-sm btn-purple" onclick="loadAuditLog()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Security Scan (task #326) -->
+    <div class="page" id="page-security">
+      <div class="page-title">Security Scan</div>
+      <div class="page-sub">Headers, SSL, dependency CVEs, injected code & live-vs-git file integrity -- runs automatically every 6 hours</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Latest Scan</span>
+          <span id="secScanMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="secScanSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-purple" onclick="loadSecurityScan()">🔄 Refresh</button>
+          <button class="btn btn-sm btn-green" id="secScanRunBtn" onclick="runSecurityScanNow()">▶ Run Scan Now</button>
+          <button class="btn btn-sm btn-amber" id="secScanCopyBtn" onclick="copySecurityReport()">⧉ Copy Report</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Recent Runs</div>
+        <div id="secScanHistory"><div class="empty">No history yet</div></div>
       </div>
     </div>
 
@@ -706,6 +729,119 @@ function showPage(name) {
   if (name === 'trending') loadStats();
   if (name === 'flags') loadFlags();
   if (name === 'auditlog') loadAuditLog();
+  if (name === 'security') loadSecurityScan();
+}
+
+// task #326: Security Scan panel -- surfaces services/security_scan_service.py's
+// latest persisted result (from the in-process 6-hourly APScheduler job in
+// backend/main.py) plus a manual "Run Scan Now" trigger and a one-click
+// "Copy Report" so the full plain-text report can be pasted straight into
+// an AI assistant for remediation.
+let _lastSecurityScanText = '';
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadSecurityScan() {
+  document.getElementById('secScanSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('secScanMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/security-scan?token=${adminToken}`);
+    const data = await res.json();
+    renderSecurityScan(data);
+  } catch (e) {
+    document.getElementById('secScanSummary').innerHTML = '<div class="empty">Failed to load security scan data</div>';
+  }
+}
+
+function renderSecurityScan(data) {
+  if (!data || data.status === 'no_data' || !data.result) {
+    document.getElementById('secScanSummary').innerHTML = '<div class="empty">No scan has run yet — click "Run Scan Now" or wait for the next 6-hourly check.</div>';
+    document.getElementById('secScanHistory').innerHTML = '<div class="empty">No history yet</div>';
+    _lastSecurityScanText = '';
+    return;
+  }
+  const r = data.result;
+  _lastSecurityScanText = r.report_text || '';
+  document.getElementById('secScanMeta').textContent = new Date(r.timestamp).toLocaleString();
+  const overallOk = !r.any_flags;
+
+  const checksHtml = (r.checks || []).map(c => {
+    const unknown = c.ok === null;
+    const ok = c.ok === true;
+    const dotClass = unknown ? '' : (ok ? 'health-online' : 'health-offline');
+    const dotStyle = unknown ? 'style="background:var(--muted)"' : '';
+    const statusLabel = unknown ? 'Skipped' : (ok ? 'OK' : 'Flagged');
+    const statusColor = unknown ? 'var(--muted)' : (ok ? 'var(--green)' : 'var(--red)');
+    const findingsHtml = (c.findings || []).map(f => `[${f.level}] ${escapeHtml(f.message)}`).join('<br>');
+    return `<div class="health-item">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="health-dot ${dotClass}" ${dotStyle}></span>
+          <span>${escapeHtml(c.name)}</span>
+        </div>
+        <div style="font-size:0.75rem;font-weight:600;color:${statusColor}">${statusLabel}</div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);padding:0 0 10px 18px;line-height:1.6">${findingsHtml}</div>`;
+  }).join('');
+
+  document.getElementById('secScanSummary').innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="health-dot ${overallOk ? 'health-online' : 'health-offline'}"></span>
+        <span>Overall Status</span>
+      </div>
+      <div style="font-size:0.8rem;font-weight:600;color:${overallOk ? 'var(--green)' : 'var(--red)'}">${overallOk ? 'Clean' : 'Issues Found'}</div>
+    </div>
+    ${checksHtml}`;
+
+  document.getElementById('secScanHistory').innerHTML = (data.history || []).map(h => `
+    <div class="content-item">
+      <div style="font-size:0.78rem">${new Date(h.created_at).toLocaleString()}</div>
+      <span style="font-size:0.72rem;color:${h.any_flags ? 'var(--red)' : 'var(--green)'}">${h.any_flags ? '⚠️ Issues' : '✅ Clean'}</span>
+    </div>`).join('') || '<div class="empty">No history yet</div>';
+}
+
+async function runSecurityScanNow() {
+  const btn = document.getElementById('secScanRunBtn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  try {
+    await fetch(`${API}/admin/security-scan/run?token=${adminToken}`, { method: 'POST' });
+    await loadSecurityScan();
+  } catch (e) {
+    alert('Scan failed to run.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+function copySecurityReport() {
+  if (!_lastSecurityScanText) { alert('No report to copy yet.'); return; }
+  const btn = document.getElementById('secScanCopyBtn');
+  const original = btn.textContent;
+  const finish = () => {
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = _lastSecurityScanText;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { /* best-effort only */ }
+    document.body.removeChild(ta);
+    finish();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(_lastSecurityScanText).then(finish).catch(fallback);
+  } else {
+    fallback();
+  }
 }
 
 function logout() {
