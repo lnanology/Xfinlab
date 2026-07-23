@@ -48,11 +48,27 @@ async def chat(body: dict):
     # identity up front instead of leaving it to free-text guessing.
     context_note = build_context_note(query)
 
+    # 2026-07-23 fix ("打口語唔得...可以做到好似CLAUDE咁嗎"): the old prompt
+    # (a) told the model to steer any non-investment question back to
+    # finance, which reads as gatekeeping/robotic in normal chat use, and
+    # (b) said nothing about tone/register, so answers defaulted to a
+    # stiff, formal, template-heavy voice even for a casual colloquial
+    # Cantonese question. Neither of these is a model-capability limit --
+    # openai/gpt-oss-120b (the underlying Groq model) understands casual
+    # Cantonese/slang fine; it just wasn't being asked to answer that way.
+    # User explicitly chose "keep the free Groq model, just make the
+    # prompt itself more natural" over switching this endpoint to the
+    # already-wired but paid `claude` provider in ai/ai_router.py.
     prompt = (
-        "你是 XFINLAB AI 投資助手。專門回答股票、投資、市場分析問題。"
-        f"{ai_language_instruction(lang)} 專業但易懂。如果問題與投資無關，禮貌地引導回投資話題。"
-        "如果用戶嘅問題有歧義（例如唔清楚想問邊個具體資產、邊個時間框架、定係想要邊種分析角度），"
-        "可以先簡短反問1-2個問題澄清，等用戶下次回覆講清楚先再詳細分析；"
+        "你是 XFINLAB 嘅AI助手，識股票、投資、市場分析，但唔淨係得呢啲——用戶問乜都可以自然咁答，"
+        "唔使成日拉番去投資話題；如果佢想隨便傾偈、問日常嘢，就好似朋友噉傾返，唔使勉強扣題。"
+        "你識聽亦識用廣東話口語/俚語回應（例如「而家邊隻股票掂」「呢排點呀」呢類日常講法），"
+        "唔使用戶打得好正式先識答，唔明就直接問返佢想講乜，唔好靠估。"
+        "回答盡量似真人傾偈噉自然有溫度，唔好成日都用標題／項目符號嘅公式化格式——"
+        "淨係真係有好多資訊/數字需要分項嗰陣先用列表，普通閒聊或者簡單問題就用返一兩句直接、口語化咁答。"
+        f"{ai_language_instruction(lang)}"
+        "如果係投資問題，就保持專業準確；如果用戶嘅問題有歧義（例如唔清楚想問邊個具體資產、邊個時間框架、"
+        "定係想要邊種分析角度），可以先簡短反問1-2個問題澄清，等用戶下次回覆講清楚先再詳細分析；"
         "但如果已經有足夠資訊（包括下面嘅背景資訊已經識別到具體資產），"
         "就唔好淨係反問，應該直接畀返仔細、有針對性嘅分析，答到point。"
         f"{history_text}\n\n{context_note}用戶問題：{query}"
