@@ -1,0 +1,58 @@
+name: CI
+
+# Keeps "keep go build" (Railway deploy stability) honest: every push/PR to
+# main gets a syntax + smoke-test check *before* it can silently break prod.
+# This does NOT deploy anything -- Railway still auto-deploys off main on its
+# own trigger, same as today. This just gives you (and Claude) a visible
+# red/green signal before that happens.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # Hard gate: catches syntax errors / bad merges before they ever reach
+      # Railway. Cheap, deterministic, cannot be flaky.
+      - name: Syntax check (py_compile)
+        run: |
+          find . -name "*.py" -not -path "./.git/*" -print0 \
+            | xargs -0 python -m py_compile
+
+      # Hard gate: boots the real FastAPI app in-process (same backend.main
+      # that Railway runs) and hits "/" + "/docs". If this fails, the app
+      # would fail to start on Railway too.
+      - name: App boot smoke test
+        run: pytest tests/test_level1.py -v
+
+      # Informational only: engine unit tests (RuleEngine/ScoreEngine/
+      # RiskEngine/DecisionEngine/EventEngine) are offline and safe, but
+      # TestCryptoService in the same file calls a live external crypto price
+      # API -- that can legitimately fail on rate limits/network hiccups
+      # unrelated to any real bug, so this step is non-blocking by design.
+      - name: Engine unit tests (non-blocking)
+        run: pytest tests/test_suite.py -v
+        continue-on-error: true
+
+      # Informational only: requirements-dev.txt already lists ruff but
+      # nothing has ever run it -- surfacing it now without blocking merges,
+      # since the existing codebase hasn't been linted before and a hard
+      # gate here would likely flag a lot of pre-existing, non-urgent style
+      # issues rather than new bugs.
+      - name: Lint (non-blocking)
+        run: ruff check . || true
+        continue-on-error: true
