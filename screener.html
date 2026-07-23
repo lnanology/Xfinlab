@@ -189,25 +189,22 @@ async function doScreen(){
   document.getElementById('resultCard').className='result-card show';
   document.getElementById('resultTitle').textContent=t('sc_analyzing_title','AI 篩選分析中...');
   document.getElementById('resultContent').innerHTML=`<div class="loading-text"><div class="dot-ani">${t('sc_loading','AI 智能篩選中')}<span>.</span><span>.</span><span>.</span></div></div>`;
-  const query=`請根據以下條件篩選推薦股票：
-市場：${market}
-行業：${sector}
-市值：${cap}
-增長率：${growth}
-估值：${value}
-風險：${risk}
-
-請提供：
-## 🎯 篩選結果（推薦5-8隻股票）
-每隻股票包含：代號、公司名、核心理由（2句）、風險提示
-
-## 📊 行業分析
-當前該條件下最值得關注的行業趨勢
-
-## ⚠️ 整體風險提示
-目前市場環境下的主要風險因素`;
+  // 2026-07-23 fix (task #317/#327): this used to be one hardcoded
+  // Chinese template regardless of UI language. sc_query_template
+  // carries the exact same structure translated to all 46 languages,
+  // with {MARKET}/{SECTOR}/{CAP}/{GROWTH}/{VALUE}/{RISK} substituted in
+  // (the filter values themselves stay as the option's underlying
+  // value -- same short category words the backend/rule engine already
+  // expects -- only the surrounding instructional text is translated).
+  const scTemplate = t('sc_query_template', '請根據以下條件篩選推薦股票：\n市場：{MARKET}\n行業：{SECTOR}\n市值：{CAP}\n增長率：{GROWTH}\n估值：{VALUE}\n風險：{RISK}\n\n請提供：\n## 🎯 篩選結果（推薦5-8隻股票）\n每隻股票包含：代號、公司名、核心理由（2句）、風險提示\n\n## 📊 行業分析\n當前該條件下最值得關注的行業趨勢\n\n## ⚠️ 整體風險提示\n目前市場環境下的主要風險因素');
+  const query = scTemplate
+    .replace('{MARKET}', market).replace('{SECTOR}', sector).replace('{CAP}', cap)
+    .replace('{GROWTH}', growth).replace('{VALUE}', value).replace('{RISK}', risk);
   try{
-    const payload = { query, user: 'xfinlab-screener', filters: { market, sector, cap, growth, value, risk } };
+    const payload = {
+      query, user: 'xfinlab-screener', filters: { market, sector, cap, growth, value, risk },
+      lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined
+    };
     const res = await postApi('/api/ai-analysis', payload);
     const answer = res?.data?.conclusion || res?.data?.analysis || res?.answer || '';
     if(answer){

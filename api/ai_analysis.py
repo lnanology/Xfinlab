@@ -8,7 +8,7 @@ from engines.risk_engine import RiskEngine
 from engines.news_engine import NewsEngine
 from backend.alpha.regime_detector import RegimeDetector
 from services.fundamentals_service import get_fundamentals
-from services.i18n import get_translations
+from services.i18n import get_translations, ai_language_instruction
 from services.smart_beta_service import get_smart_beta
 from services.fractal_regime_service import detect_transition_signal as detect_fractal_transition
 from services.direction_probability_service import get_direction_probability
@@ -45,10 +45,17 @@ async def ai_analysis(body: dict):
     if filters and not symbols:
         from ai.ai_router import get_ai_response
         user_id = check_token_budget(token)
+        # 2026-07-23 fix (task #317/#327): this always hard-forced
+        # "Respond in Traditional Chinese." regardless of `lang` -- unlike
+        # api/chat.py (which already used ai_language_instruction), the
+        # screener ignored the UI's selected language entirely, so an
+        # English-mode user still got a Chinese screening result. Reuses
+        # the exact same helper chat.py uses, keyed off the same `lang`
+        # the frontend already sends everywhere else.
         prompt = (
             f"You are a stock screener AI. Based on these filters: {filters}. "
             f"Recommend 5-8 stocks with ticker, company name, reason (2 sentences), risk. "
-            f"Query: {query}. Respond in Traditional Chinese."
+            f"Query: {query}. {ai_language_instruction(lang)}"
         )
         try:
             answer = get_ai_response(prompt, max_tokens=800)
