@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from ai.ai_router import get_ai_response
 from services.i18n import ai_language_instruction
+from services.ticker_shorthand import build_context_note
 
 router = APIRouter()
 
@@ -41,10 +42,20 @@ async def chat(body: dict):
             f"用戶：{turn['query']}\n助手：{turn['answer']}" for turn in recent
         )
 
+    # 2026-07-23 fix: "打HK50都唔知係期貨" -- there was no lookup anywhere
+    # for CFD-style index/futures shorthand (HK50/US30/NAS100/etc.), so
+    # the model had to guess blind. This gives it the actual asset
+    # identity up front instead of leaving it to free-text guessing.
+    context_note = build_context_note(query)
+
     prompt = (
         "你是 XFINLAB AI 投資助手。專門回答股票、投資、市場分析問題。"
         f"{ai_language_instruction(lang)} 專業但易懂。如果問題與投資無關，禮貌地引導回投資話題。"
-        f"{history_text}\n\n用戶問題：{query}"
+        "如果用戶嘅問題有歧義（例如唔清楚想問邊個具體資產、邊個時間框架、定係想要邊種分析角度），"
+        "可以先簡短反問1-2個問題澄清，等用戶下次回覆講清楚先再詳細分析；"
+        "但如果已經有足夠資訊（包括下面嘅背景資訊已經識別到具體資產），"
+        "就唔好淨係反問，應該直接畀返仔細、有針對性嘅分析，答到point。"
+        f"{history_text}\n\n{context_note}用戶問題：{query}"
     )
 
     from services.quota_middleware import check_token_budget, record_ai_token_usage
