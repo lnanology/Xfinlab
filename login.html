@@ -19,6 +19,7 @@
     --surface: #FFFFFF;
     --border: #000000;
     --accent: #2563EB;
+    --accent-rgb: 37,99,235;
     --accent-text: #FFFFFF;
     --green: #16A34A;
     --red: #DC2626;
@@ -35,6 +36,7 @@
     --surface: #0d1525;
     --border: #1e2d45;
     --accent: #00d4ff;
+    --accent-rgb: 0,212,255;
     --accent-text: #000000;
     --green: #10b981;
     --red: #ef4444;
@@ -75,6 +77,8 @@
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
   .error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 16px; display: none; }
   .success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 16px; display: none; }
+  /* task #321: points-to-upgrade hint shown above login/register forms */
+  .points-hint { background: rgba(var(--accent-rgb),0.08); border: 1px solid rgba(var(--accent-rgb),0.25); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.78rem; line-height: 1.5; margin-bottom: 16px; }
   .divider { text-align: center; color: var(--muted); font-size: 0.78rem; margin: 20px 0; position: relative; }
   .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
   .divider span { background: var(--surface); padding: 0 12px; position: relative; }
@@ -99,6 +103,8 @@
       <button type="button" class="tab active" onclick="switchTab('login')" data-i18n="login_tab_signin">Sign In</button>
       <button type="button" class="tab" onclick="switchTab('register')" data-i18n="login_tab_register">Register</button>
     </div>
+
+    <div class="points-hint" data-i18n="login_points_hint">💡 免費用戶：使用AI功能可儲積分，7日內夠500分即自動升級Basic方案7日！</div>
 
     <div id="errorMsg" class="error"></div>
     <div id="successMsg" class="success"></div>
