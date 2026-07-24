@@ -479,6 +479,9 @@ const FLAGS_DESC = {
   chart_analysis: 'AI Chart image analysis',
   telegram_bot: 'Telegram bot commands',
   referral: 'Referral reward system',
+  google_login: 'Show "Sign in with Google" on login page (needs GOOGLE_CLIENT_ID env var)',
+  line_login: 'Show "Login with LINE" on login page',
+  whatsapp_otp: 'Show WhatsApp OTP login option',
 };
 
 // Auto login
@@ -652,11 +655,21 @@ async function loadAuditLog() {
 }
 
 async function loadFlags() {
+  document.getElementById('flagsList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
   try {
     const res = await fetch(`${API}/admin/feature-flags?token=${adminToken}`);
     const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('flagsList').innerHTML = `<div class="empty">Failed to load feature flags (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
     const flags = data.flags || {};
-    document.getElementById('flagsList').innerHTML = Object.entries(flags).map(([key, val]) => `
+    const entries = Object.entries(flags);
+    if (entries.length === 0) {
+      document.getElementById('flagsList').innerHTML = '<div class="empty">No feature flags found in the database yet.</div>';
+      return;
+    }
+    document.getElementById('flagsList').innerHTML = entries.map(([key, val]) => `
       <div class="flag-item">
         <div>
           <div class="flag-name">${key.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
@@ -667,7 +680,9 @@ async function loadFlags() {
           <span class="toggle-label">${val?'ON':'OFF'}</span>
         </div>
       </div>`).join('');
-  } catch(e) {}
+  } catch(e) {
+    document.getElementById('flagsList').innerHTML = '<div class="empty">Connection error loading feature flags</div>';
+  }
 }
 
 async function toggleFlag(key, toggleEl) {
