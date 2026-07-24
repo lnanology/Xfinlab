@@ -54,6 +54,28 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
 .disclaimer{font-size:0.72rem;color:var(--text-muted);margin-top:1rem}
 
+.gm-section{margin-top:2.4rem;padding-top:2rem;border-top:1px solid var(--border-color)}
+.gm-title{font-size:1.1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.3rem}
+.gm-sub{font-size:0.8rem;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.6}
+.gm-region-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.3rem}
+.gm-region-btn{padding:0.35rem 0.9rem;border:1px solid var(--border-color);border-radius:20px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer;transition:all 0.2s;background:transparent}
+.gm-region-btn:hover,.gm-region-btn.active{background:rgba(37,99,235,0.1);border-color:var(--accent-blue);color:var(--accent-blue)}
+.gm-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem 1.4rem}
+.gm-stats-row{display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1rem}
+.gm-stat{background:var(--bg-secondary);border-radius:8px;padding:0.5rem 0.9rem;font-size:0.78rem;color:var(--text-secondary)}
+.gm-stat b{color:var(--text-primary);font-size:0.9rem}
+.gm-label{font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-blue);margin:0.9rem 0 0.4rem;font-weight:600}
+.gm-ai-text{font-size:0.85rem;color:var(--text-secondary);line-height:1.7}
+.gm-headline{font-size:0.82rem;color:var(--text-secondary);padding:0.4rem 0;border-bottom:1px solid var(--border-color)}
+.gm-headline:last-child{border-bottom:none}
+.gm-headline a{color:var(--text-primary);text-decoration:none}
+.gm-headline a:hover{color:var(--accent-blue)}
+.gm-muted{font-size:0.8rem;color:var(--text-muted)}
+.gm-sentiment-badge{display:inline-block;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:600}
+.gm-sentiment-badge.pos{background:rgba(16,185,129,0.12);color:#10b981}
+.gm-sentiment-badge.neg{background:rgba(239,68,68,0.12);color:#ef4444}
+.gm-sentiment-badge.neu{background:rgba(148,163,184,0.12);color:var(--text-muted)}
+
 .footer{padding:16px;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
 
 @media(max-width:768px){
@@ -101,6 +123,24 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <button class="search-btn" onclick="searchNews()" data-i18n="news_search_btn">🔍 AI 搜尋分析</button>
   </div>
   <div id="newsArea"><div class="loading"><div class="dot-ani"><span data-i18n="news_loading">載入中</span><span>.</span><span>.</span><span>.</span></div></div></div>
+
+  <div class="gm-section">
+    <div class="gm-title" data-i18n="gm_title">🌍 全球市場概況</div>
+    <div class="gm-sub" data-i18n="gm_sub">涵蓋美/歐/日/韓/中/港/台/東南亞/中東/南美 — 宏觀數據 + 新聞 + AI概況評語（非即市股價分析）</div>
+    <div class="gm-region-row" id="gmRegionRow">
+      <div class="gm-region-btn active" data-region="hk" data-i18n="gm_region_hk" onclick="setGmActive(this);loadGlobalMacro('hk')">🇭🇰 香港</div>
+      <div class="gm-region-btn" data-region="tw" data-i18n="gm_region_tw" onclick="setGmActive(this);loadGlobalMacro('tw')">🇹🇼 台灣</div>
+      <div class="gm-region-btn" data-region="china" data-i18n="gm_region_china" onclick="setGmActive(this);loadGlobalMacro('china')">🇨🇳 中國</div>
+      <div class="gm-region-btn" data-region="us" data-i18n="gm_region_us" onclick="setGmActive(this);loadGlobalMacro('us')">🇺🇸 美國</div>
+      <div class="gm-region-btn" data-region="europe" data-i18n="gm_region_europe" onclick="setGmActive(this);loadGlobalMacro('europe')">🇪🇺 歐洲</div>
+      <div class="gm-region-btn" data-region="japan" data-i18n="gm_region_japan" onclick="setGmActive(this);loadGlobalMacro('japan')">🇯🇵 日本</div>
+      <div class="gm-region-btn" data-region="korea" data-i18n="gm_region_korea" onclick="setGmActive(this);loadGlobalMacro('korea')">🇰🇷 韓國</div>
+      <div class="gm-region-btn" data-region="sea" data-i18n="gm_region_sea" onclick="setGmActive(this);loadGlobalMacro('sea')">🌏 東南亞</div>
+      <div class="gm-region-btn" data-region="me" data-i18n="gm_region_me" onclick="setGmActive(this);loadGlobalMacro('me')">🕌 中東</div>
+      <div class="gm-region-btn" data-region="latam" data-i18n="gm_region_latam" onclick="setGmActive(this);loadGlobalMacro('latam')">🌎 南美</div>
+    </div>
+    <div id="gmArea"><div class="loading"><div class="dot-ani"><span data-i18n="gm_loading">AI 分析中</span><span>.</span><span>.</span><span>.</span></div></div></div>
+  </div>
 </div>
 
 <footer class="footer">
@@ -147,6 +187,67 @@ function searchNews(){
 }
 function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
 loadNews(t('news_topic_all','全球金融市場最新重要新聞'));
+
+function setGmActive(btn){document.querySelectorAll('.gm-region-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function escHtml(s){return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+async function loadGlobalMacro(region){
+  const area = document.getElementById('gmArea');
+  area.innerHTML = `<div class="loading"><div class="dot-ani"><span>${t('gm_loading','AI 分析中')}</span><span>.</span><span>.</span><span>.</span></div></div>`;
+  try{
+    const uiLang = (typeof I18N !== 'undefined' && I18N.currentLang) ? I18N.currentLang : 'zh-HK';
+    const res = await getApi(`/api/global-macro/${region}?lang=${encodeURIComponent(uiLang)}`);
+    const d = res.data || res;
+    if (!d || d.available === false) {
+      area.innerHTML = `<div class="gm-muted">${escHtml(d && d.message || t('gm_error','載入失敗，請稍後再試'))}</div>`;
+      return;
+    }
+
+    let statsHtml = '';
+    if (d.macro && d.macro.available) {
+      const ind = d.macro.indicators || {};
+      const rows = [];
+      if (ind.gdp_growth_pct) rows.push(`<div class="gm-stat">GDP <b>${ind.gdp_growth_pct.value}%</b> <span class="gm-muted">(${ind.gdp_growth_pct.year})</span></div>`);
+      if (ind.inflation_pct) rows.push(`<div class="gm-stat">${t('gm_inflation','通脹')} <b>${ind.inflation_pct.value}%</b> <span class="gm-muted">(${ind.inflation_pct.year})</span></div>`);
+      if (ind.unemployment_pct) rows.push(`<div class="gm-stat">${t('gm_unemployment','失業率')} <b>${ind.unemployment_pct.value}%</b> <span class="gm-muted">(${ind.unemployment_pct.year})</span></div>`);
+      statsHtml = rows.length ? `<div class="gm-stats-row">${rows.join('')}</div>` : `<div class="gm-muted">${t('gm_no_macro','呢個地區暫時冇公開宏觀數據')}</div>`;
+    } else {
+      statsHtml = `<div class="gm-muted">${escHtml((d.macro && d.macro.message) || t('gm_no_macro','呢個地區暫時冇公開宏觀數據'))}</div>`;
+    }
+
+    let sentimentHtml = '';
+    if (d.sentiment && d.sentiment.available) {
+      const cls = d.sentiment.label === 'Positive' ? 'pos' : d.sentiment.label === 'Negative' ? 'neg' : 'neu';
+      sentimentHtml = `<div class="gm-label">${t('gm_sentiment_label','新聞情緒')}</div><span class="gm-sentiment-badge ${cls}">${d.sentiment.avg_score}/100 · ${d.sentiment.label}</span>`;
+    }
+
+    let aiHtml = '';
+    if (d.ai_commentary) {
+      aiHtml = `<div class="gm-label">${t('gm_ai_label','AI 概況評語')}</div><div class="gm-ai-text">${escHtml(d.ai_commentary)}</div>`;
+    }
+
+    const items = (d.news && d.news.items) || [];
+    let headlinesHtml = `<div class="gm-label">${t('gm_headlines_label','相關頭條')}</div>`;
+    if (items.length) {
+      headlinesHtml += items.map(h => `<div class="gm-headline"><a href="${escHtml(h.link)}" target="_blank" rel="noopener">${escHtml(h.title)}</a></div>`).join('');
+    } else {
+      headlinesHtml += `<div class="gm-muted">${t('gm_no_headlines','暫時未有相關頭條')}</div>`;
+    }
+
+    area.innerHTML = `
+      <div class="gm-card">
+        ${statsHtml}
+        ${sentimentHtml}
+        ${aiHtml}
+        ${headlinesHtml}
+        <div class="disclaimer">${t('gm_disclaimer','宏觀數據為年度數字，新聞及AI評語僅供背景參考，並非即市股價分析或投資建議。')}</div>
+      </div>`;
+  } catch(e) {
+    area.innerHTML = `<div class="gm-muted">${t('gm_error','載入失敗，請稍後再試')}</div>`;
+  }
+}
+loadGlobalMacro('hk');
 
 function toggleNav(){
   const navLinks = document.getElementById('navLinks');
