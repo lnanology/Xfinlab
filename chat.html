@@ -67,7 +67,36 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 .sb-tip{font-size:0.82rem;color:var(--text-muted);line-height:1.5;padding:8px;background:rgba(245,158,11,0.06);border-radius:6px;border-left:3px solid var(--accent-orange)}
 
 /* CHAT AREA */
+/* 2026-07-24 fix: .chat-area's direct children now carry explicit `order`
+   values so the 14-button .input-tools row can be repositioned per
+   breakpoint via CSS alone (no DOM move needed): desktop keeps it below
+   the input row (order:4, closest to the input as a secondary shortcut
+   row); the mobile media query further down overrides it to order:0 so
+   it renders above the welcome/messages content instead -- see that
+   query for the full reasoning. */
 .chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.welcome,.messages{order:2}
+.img-preview{order:3}
+.input-area{order:4}
+.input-tools{order:5}
+
+/* 2026-07-24 fix ("信號框擋左" -- the fixed bottom-right "🎯 訂閱每日信號"
+   badge (js/free-signals-badge.js) and the "TG Signals" widget both float
+   OVER the bottom-right corner of the viewport, which is exactly where
+   this page's pinned input row/messages live since .chat-area spans the
+   full remaining width next to the sidebar. On desktop the chat column
+   needs to stay narrower than that badge stack so its content (message
+   bubbles, mic/send buttons, hint text) never renders underneath it.
+   --fsb-clearance is computed in JS (see updateBadgeClearance() below)
+   from the ACTUAL rendered width of whichever badge is wider, re-measured
+   on load/resize/language-change (translated label text length varies a
+   lot per language) -- the 190px fallback only applies before that JS
+   has run once. Mobile is deliberately excluded: its floating-widget
+   clearance is handled separately (padding-bottom, see existing mobile
+   query) since badges reflow differently on narrow screens. */
+@media(min-width:769px){
+  .chat-area{padding-right:var(--fsb-clearance, 190px);transition:padding-right 0.15s ease}
+}
 
 /* WELCOME */
 /* 2026-07-22 fix: unlike .messages, this never had its own scrollbar --
@@ -205,7 +234,13 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
    inset (0 on most devices, ~34px on notched iPhones) plus a touch more
    breathing room below the input row. */
 .input-area{padding:12px 12px calc(20px + env(safe-area-inset-bottom, 0px));border-top:1px solid var(--border-color);background:var(--bg-card);flex-shrink:0}
-.input-tools{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem}
+/* 2026-07-24 fix: now a direct .chat-area child (see .chat-area rule
+   above) instead of nested inside .input-area, so it needs its own
+   horizontal padding to match (previously inherited from .input-area's
+   padding) and its own background/border since it's no longer visually
+   grouped with the input row on mobile (see mobile query for the
+   top-of-page treatment). */
+.input-tools{display:flex;flex-wrap:wrap;gap:0.4rem;padding:0.6rem 12px;flex-shrink:0}
 .tool-btn{background:transparent;border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);padding:6px 10px;font-size:0.88rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:0.3rem}
 .tool-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:var(--bg-secondary)}
 .input-box{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.95rem;outline:none;resize:none;min-height:44px;max-height:120px;transition:border-color 0.12s;line-height:1.6}
@@ -223,6 +258,15 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
   .sidebar{display:none}
   .welcome-grid{grid-template-columns:1fr}
   .msg{max-width:95%}
+  /* 2026-07-24 fix ("手機版14個要係CHAT上面"): move the 14 market-shortcut
+     buttons to the very top of .chat-area (above welcome/messages, right
+     under nav) instead of sitting near the input row -- on a short mobile
+     screen the quick-category chips work better as the first thing seen,
+     scrolling with a border under them so they read as a distinct strip,
+     while the actual input row (order:4, unchanged) stays pinned at the
+     bottom regardless. */
+  .input-tools{order:0;border-bottom:1px solid var(--border-color);padding:0.6rem 12px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .input-tools::-webkit-scrollbar{display:none}
   /* 2026-07-21 fix: floating widget stack (share/TG/subscribe badge/
      lang switcher) sits fixed over the bottom of the viewport and was
      cutting off the last welcome card's text on short mobile screens. */
@@ -340,36 +384,40 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
     <div class="messages" id="messages" style="display:none;"></div>
     <div class="img-preview" id="imgPreview" style="display:none;"></div>
 
+    <!-- 2026-07-24 fix: .input-tools pulled out to be a direct sibling of
+         .input-area (both inside the flex-column .chat-area) instead of
+         nested inside it, purely so CSS `order` can reposition it per
+         breakpoint: desktop keeps it below the input row (closer to the
+         input, as secondary shortcuts), mobile moves it ABOVE the
+         messages/welcome content entirely (order:0, see mobile media
+         query below) since on a short mobile screen the quick-category
+         chips work better as the first thing seen, with the actual input
+         row pinned at the very bottom regardless. -->
+    <div class="input-tools" id="inputTools">
+      <!-- task #324: reordered + expanded to 14 categories (加密/美國/歐洲/
+           英國/香港/台灣/日本/韓國/澳洲/中東/東南亞/南美洲/印度/俄羅斯) -->
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_crypto','分析加密貨幣市場今日走勢，BTC及ETH技術面'))" data-i18n="chat_tool_crypto">🪙 加密</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_us','分析美股市場今日走勢，標普500、納指、道指表現'))" data-i18n="chat_tool_us">🇺🇸 美股</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_eu','分析歐洲市場今日走勢，STOXX 600、DAX、CAC 40表現'))" data-i18n="chat_tool_eu">🇪🇺 歐洲</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_uk','分析英國市場今日走勢，富時100指數表現'))" data-i18n="chat_tool_uk">🇬🇧 英國</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_hk','分析港股市場今日走勢及主要板塊表現'))" data-i18n="chat_tool_hk">🇭🇰 港股</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_tw','分析台股市場今日走勢及主要板塊表現'))" data-i18n="chat_tool_tw">🇹🇼 台灣</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_jp','分析日本市場今日走勢，日經225指數表現及主要板塊'))" data-i18n="chat_tool_jp">🇯🇵 日本</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_kr','分析韓國市場今日走勢，KOSPI指數表現及主要板塊'))" data-i18n="chat_tool_kr">🇰🇷 韓國</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_au','分析澳洲市場今日走勢，澳洲標普200指數表現'))" data-i18n="chat_tool_au">🇦🇺 澳洲</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_me','分析中東市場今日走勢及主要風險因素，包括油價影響'))" data-i18n="chat_tool_me">🌍 中東</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_sea','分析東南亞市場今日走勢，新加坡、印尼、泰國主要指數表現'))" data-i18n="chat_tool_sea">🌏 東南亞</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_sa','分析南美市場今日走勢，巴西、阿根廷主要指數表現'))" data-i18n="chat_tool_sa">🌎 南美</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_india','分析印度市場今日走勢，SENSEX及NIFTY指數表現'))" data-i18n="chat_tool_india">🇮🇳 印度</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_russia','分析俄羅斯市場今日走勢及主要風險因素'))" data-i18n="chat_tool_russia">🇷🇺 俄羅斯</button>
+    </div>
+
     <div class="input-area">
-      <!-- 2026-07-24 fix: swapped order so the actual text input + mic +
-           send button come first (immediately below the chat/messages
-           area), with the 14 market-shortcut buttons underneath -- the
-           input row is the primary action, the shortcuts are secondary
-           quick-fill helpers, so this puts the primary control closest
-           to the conversation it's replying to. -->
       <div class="input-row">
         <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱…" rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)" data-i18n-placeholder="chat_input_placeholder"></textarea>
         <button type="button" class="send-btn" id="micBtn" onclick="toggleVoiceInput()" style="display:none;background:var(--bg-secondary,#131c2e);color:var(--text-primary,#e2e8f0)" data-i18n-title="chat_mic_title" title="語音輸入">🎤</button>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
-      </div>
-      <div class="input-tools">
-        <!-- task #324: reordered + expanded to 14 categories (加密/美國/歐洲/
-             英國/香港/台灣/日本/韓國/澳洲/中東/東南亞/南美洲/印度/俄羅斯) -->
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_crypto','分析加密貨幣市場今日走勢，BTC及ETH技術面'))" data-i18n="chat_tool_crypto">🪙 加密</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_us','分析美股市場今日走勢，標普500、納指、道指表現'))" data-i18n="chat_tool_us">🇺🇸 美股</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_eu','分析歐洲市場今日走勢，STOXX 600、DAX、CAC 40表現'))" data-i18n="chat_tool_eu">🇪🇺 歐洲</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_uk','分析英國市場今日走勢，富時100指數表現'))" data-i18n="chat_tool_uk">🇬🇧 英國</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_hk','分析港股市場今日走勢及主要板塊表現'))" data-i18n="chat_tool_hk">🇭🇰 港股</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_tw','分析台股市場今日走勢及主要板塊表現'))" data-i18n="chat_tool_tw">🇹🇼 台灣</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_jp','分析日本市場今日走勢，日經225指數表現及主要板塊'))" data-i18n="chat_tool_jp">🇯🇵 日本</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_kr','分析韓國市場今日走勢，KOSPI指數表現及主要板塊'))" data-i18n="chat_tool_kr">🇰🇷 韓國</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_au','分析澳洲市場今日走勢，澳洲標普200指數表現'))" data-i18n="chat_tool_au">🇦🇺 澳洲</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_me','分析中東市場今日走勢及主要風險因素，包括油價影響'))" data-i18n="chat_tool_me">🌍 中東</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_sea','分析東南亞市場今日走勢，新加坡、印尼、泰國主要指數表現'))" data-i18n="chat_tool_sea">🌏 東南亞</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_sa','分析南美市場今日走勢，巴西、阿根廷主要指數表現'))" data-i18n="chat_tool_sa">🌎 南美</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_india','分析印度市場今日走勢，SENSEX及NIFTY指數表現'))" data-i18n="chat_tool_india">🇮🇳 印度</button>
-        <button class="tool-btn" onclick="sendQuick(t('chat_q_russia','分析俄羅斯市場今日走勢及主要風險因素'))" data-i18n="chat_tool_russia">🇷🇺 俄羅斯</button>
       </div>
       <div class="input-hint" data-i18n="chat_disclaimer">⚠️ 分析僅供參考，不構成投資建議</div>
     </div>
@@ -781,7 +829,42 @@ window.addEventListener('DOMContentLoaded', () => {
     const micBtn = document.getElementById('micBtn');
     if (micBtn) micBtn.style.display = '';
   }
+
+  updateBadgeClearance();
+  window.addEventListener('resize', debounce(updateBadgeClearance, 200));
+  // js/i18n.js dispatches this after translations (re-)apply, e.g. on
+  // language switch -- the floating badge's label length varies a lot
+  // per language ("🎯 訂閱每日信號" vs a longer English/German phrase), so
+  // the reserved clearance must be re-measured, not assumed fixed.
+  window.addEventListener('i18nApplied', updateBadgeClearance);
+  // js/free-signals-badge.js injects #freeSignalsBadge lazily (its own
+  // DOMContentLoaded listener, registered via a separate <script> tag) --
+  // registration order between two separate listeners on the same event
+  // isn't guaranteed to put ours second, so re-check shortly after too.
+  setTimeout(updateBadgeClearance, 400);
 });
+
+function debounce(fn, ms) {
+  let h;
+  return (...args) => { clearTimeout(h); h = setTimeout(() => fn(...args), ms); };
+}
+
+// 2026-07-24 fix ("信號框擋左" -- see .chat-area's CSS comment above for
+// the full problem statement): measures whichever fixed bottom-right
+// floating widget is currently wider (#freeSignalsBadge / #tgWidget) and
+// exposes that as --fsb-clearance so .chat-area can reserve exactly
+// enough right-side padding to clear it, regardless of which language's
+// (much longer or shorter) label text is currently showing.
+function updateBadgeClearance() {
+  try {
+    const candidates = ['freeSignalsBadge', 'tgWidget'].map(id => document.getElementById(id)).filter(Boolean);
+    if (!candidates.length) return;
+    const widest = Math.max(...candidates.map(el => el.getBoundingClientRect().width || 0));
+    if (widest > 0) {
+      document.documentElement.style.setProperty('--fsb-clearance', Math.ceil(widest + 40) + 'px');
+    }
+  } catch (e) { /* non-critical cosmetic clearance -- fail silently, CSS fallback still applies */ }
+}
 
 // Speech-to-text: reuses the same locale->BCP-47 mapping as playback
 // (ttsLangCode(), defined further down) since recognition and synthesis
