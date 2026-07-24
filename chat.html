@@ -368,6 +368,7 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 
 <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
 
+<script src="js/autocomplete.js"></script>
 <script src="js/nav.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
@@ -740,6 +741,19 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   const qParam = params.get('q');
   if (qParam) sendQuick(qParam);
+
+  // 2026-07-24 ("打HK50 CH50呢D搜不到"): #inputBox never had js/
+  // autocomplete.js wired to it at all -- every other search box on the
+  // site (ai-analysis.html, chart-analysis.html, dashboard.html etc) has
+  // this, chat.html simply never got it. Uses the new wordMode (matches
+  // the trailing alnum run being typed, e.g. "打HK50" -> "HK50", instead
+  // of the whole message or a comma-separated list like other pages) so
+  // it works inside a natural-language sentence, and dropUp (dropdown
+  // opens ABOVE the box, not below) since #inputBox sits at the very
+  // bottom of the viewport -- a downward dropdown would render off-screen.
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#inputBox', { wordMode: true, dropUp: true, rotatePlaceholder: false });
+  }
 });
 
 async function sendMessage() {

@@ -32,6 +32,14 @@ INDEX_FUTURES_SHORTHAND = {
     "FRA40": ("法國CAC40指數期貨（CAC 40 Futures）", "CAC 40 futures"),
     "EU50": ("歐洲STOXX50指數期貨（Euro Stoxx 50 Futures）", "Euro Stoxx 50 futures"),
     "CHINA50": ("富時中國A50指數期貨（FTSE China A50 Futures）", "FTSE China A50 futures"),
+    # 2026-07-24 follow-up ("CH50 呢D 搜不到"): CH50 is the same FTSE China
+    # A50 futures product as CHINA50 above, just a shorter broker-code
+    # spelling some CFD platforms use -- added as its own key (not merely
+    # an alias) so detect_index_futures()'s single case-insensitive scan
+    # still catches it directly.
+    "CH50": ("富時中國A50指數期貨（FTSE China A50 Futures）", "FTSE China A50 futures"),
+    "USOIL": ("美國WTI原油期貨（WTI Crude Oil Futures）", "WTI crude oil futures"),
+    "UKOIL": ("英國布蘭特原油期貨（Brent Crude Oil Futures）", "Brent crude oil futures"),
 }
 
 _PATTERN = re.compile(
