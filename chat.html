@@ -110,8 +110,18 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
    content:center made it worse: a flex box shorter than its content
    clips evenly from BOTH the top and bottom, so scrolling up didn't
    reveal anything either. Give it its own scroll like .messages already
-   has, and stop force-centering so content simply flows from the top. */
-.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch}
+   has, and stop force-centering so content simply flows from the top.
+   2026-07-24 fix ("上面9個卡片上面 我睇唔到XFINLAB"): that centering fix
+   was only ever applied inside the mobile media query below -- this
+   base rule (which desktop also uses) still had justify-content:center,
+   so the exact same top/bottom clipping bug described above was still
+   live on desktop any time the welcome-logo + welcome-sub + 9-card grid
+   needed more height than a shorter/laptop-height browser window had
+   available: the "XFINLAB" wordmark and subtitle sit at the very top of
+   that centered block, so they were the first thing to get clipped off
+   with no way to scroll up to them. Removing the centering here (not
+   just on mobile) fixes it identically on desktop. */
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem;text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .welcome-logo{font-family:'DM Serif Display',serif;font-size:2.5rem;color:var(--text-primary);margin-bottom:0.5rem}
 .welcome-logo em{color:var(--accent-orange);font-style:normal}
 .welcome-sub{font-size:0.98rem;color:var(--text-secondary);margin-bottom:2rem;max-width:420px;line-height:1.8}
@@ -274,14 +284,12 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
      longer, instead of a fixed 4 that would force-wrap long text. */
   #inputTools.mobile-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:0.5rem;padding:0 0 1.5rem;margin-top:0.8rem;width:100%;max-width:760px}
   #inputTools.mobile-card-grid .tool-btn{flex-direction:column;justify-content:center;text-align:center;padding:10px 4px;border-radius:8px;font-size:0.76rem;line-height:1.3;white-space:normal;gap:0.2rem;min-height:56px}
-  /* stop force-centering .welcome on mobile: centering a box shorter
-     than its content clips evenly off BOTH ends, which combined with the
-     missing scroll made the whole grid feel frozen ("完全不能滑動"). Actual
-     bottom clearance for the docked widget bar is set further down
+  /* .welcome's justify-content:flex-start now lives in the base rule
+     above (applies to every breakpoint, not just mobile) -- bottom
+     clearance for the docked widget bar is set further down
      (.messages/.welcome padding-bottom, next to #mobileWidgetDock) now
      that the floating widgets are consolidated into one slim bar instead
      of a tall corner stack. */
-  .welcome{justify-content:flex-start}
 
   /* 2026-07-22 fix: this page's shell is a fixed 100dvh flex column with
      overflow:hidden on html/body (needed so only .messages scrolls, not
