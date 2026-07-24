@@ -486,8 +486,34 @@ const FLAGS_DESC = {
 
 // Auto login
 window.addEventListener('DOMContentLoaded', () => {
-  if (adminToken) initAdmin();
+  if (adminToken) { initAdmin(); return; }
+  tryReuseMainSiteSession();
 });
+
+// AJ's request: clicking "Admin Panel" from the main site's Account flyout
+// (js/nav.js, only shown when logged in as ADMIN_EMAIL) should land straight
+// in the dashboard -- no second login screen. The main site's login already
+// issues a JWT (localStorage 'xfinlab_token') signed the exact same way
+// admin endpoints verify (backend/auth/jwt_handler.py's verify_token(), same
+// secret for both). So if that token's owner is already the admin account,
+// it's already a fully valid admin token -- we just haven't tried it here
+// yet. Silently attempts it once; falls through to the normal login form
+// (untouched) if there's no main-site session, the email doesn't match, or
+// the token's expired/invalid for any reason.
+async function tryReuseMainSiteSession() {
+  try {
+    const mainToken = localStorage.getItem('xfinlab_token');
+    let mainUser = {};
+    try { mainUser = JSON.parse(localStorage.getItem('xfinlab_user') || '{}'); } catch (e) {}
+    if (!mainToken || mainUser.email !== 'abcoaj888@gmail.com') return;
+    const res = await fetch(`${API}/admin/stats?token=${mainToken}`);
+    if (!res.ok) return;
+    adminToken = mainToken;
+    localStorage.setItem('xfinlab_admin_token', adminToken);
+    document.getElementById('sidebarEmail').textContent = mainUser.email;
+    initAdmin();
+  } catch (e) {}
+}
 
 async function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
