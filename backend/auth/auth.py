@@ -22,6 +22,7 @@ from auth.email_verification import send_verification_email
 from infrastructure.event_bus import EventBus
 from services.disposable_email_domains import is_disposable_email
 from services.captcha_service import is_verify_token_valid
+from services.risk_score_service import compute_registration_risk, record_device_fingerprint
 
 router = APIRouter()
 
@@ -76,6 +77,17 @@ def init_users_table():
             created_at TEXT DEFAULT (datetime('now'))
         )
     """)
+    # 2026-07-24 anti-abuse batch: marks an account produced by a
+    # medium-risk registration (services/risk_score_service.py's "flag"
+    # tier -- e.g. same device fingerprint reused several times, or
+    # several signups from the same IP within the hour). Same guarded
+    # ALTER TABLE pattern already used by backend/auth/email_verification.
+    # py for email_verified -- try/except so re-running this on a DB that
+    # already has the column is a silent no-op, not a crash.
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN risk_flagged INTEGER DEFAULT 0")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 
@@ -100,23 +112,59 @@ def register(user: UserRegister, request: Request):
             status_code=400,
             detail="Please complete the slide verification before creating an account.",
         )
+
+    # 2026-07-24 anti-abuse batch ("仲有4層完全未做 係免費就去做啦"): combine
+    # MX-record deliverability + device-fingerprint reuse + same-IP
+    # registration frequency into one risk score (services/risk_score_
+    # service.py) rather than each being its own separate gate. A
+    # confirmed high-risk attempt (score>=70 -- e.g. a domain that can't
+    # receive mail at all) is rejected outright, same tier as the
+    # disposable-email/captcha checks above; a medium-risk one (40-69) is
+    # still allowed to register but gets flagged so login() below requires
+    # email verification first.
+    client_ip = get_client_ip(request)
+    risk = compute_registration_risk(user.email, client_ip, user.device_fingerprint)
+    if risk["action"] == "reject":
+        raise HTTPException(
+            status_code=403,
+            detail="We couldn't verify this email address is able to receive mail, or this registration matched several risk signals. Please use a permanent, working email address.",
+        )
+    risk_flagged = 1 if risk["action"] == "flag" else 0
+
     conn = get_db()
     try:
         hashed = hash_password(user.password)
         cursor = conn.execute(
-            "INSERT INTO users (email, password, name) VALUES (?, ?, ?)",
-            (user.email, hashed, user.name)
+            "INSERT INTO users (email, password, name, risk_flagged) VALUES (?, ?, ?, ?)",
+            (user.email, hashed, user.name, risk_flagged)
         )
         conn.commit()
         user_id = cursor.lastrowid
-        token = create_access_token({"sub": user.email, "id": user_id})
+        # 2026-07-24: a risk-flagged account does NOT get a usable token at
+        # registration time -- see UserResponse.requires_verification's
+        # docstring for why this is the only real enforcement point for a
+        # stateless JWT. The account still gets created (so the emailed
+        # verification link in send_verification_email() below has a real
+        # user_id to attach to), just without an immediately-usable session.
+        token = "" if risk_flagged else create_access_token({"sub": user.email, "id": user_id})
         EventBus.publish("user_registered", {
             "user_id": user_id,
             "email": user.email,
             "name": user.name,
-            "ip": get_client_ip(request),
+            "ip": client_ip,
         })
-        return UserResponse(id=user_id, email=user.email, name=user.name, plan="free", token=token)
+        # Recorded AFTER the insert succeeds so a duplicate-email failure
+        # below (IntegrityError) never records a fingerprint for an
+        # account that doesn't actually exist. Also logs the risk score/
+        # reasons onto the existing audit trail (reuses log_action() --
+        # no new table needed just to keep this visible for later review).
+        record_device_fingerprint(user.device_fingerprint, user.email)
+        if risk["reasons"]:
+            log_action(user_id, f"register_risk_score:{risk['score']}:{','.join(risk['reasons'])}", client_ip)
+        return UserResponse(
+            id=user_id, email=user.email, name=user.name, plan="free", token=token,
+            requires_verification=bool(risk_flagged),
+        )
     except sqlite3.IntegrityError:
         raise HTTPException(status_code=400, detail="Email already registered")
     finally:
@@ -150,6 +198,22 @@ def login(user: UserLogin, request: Request):
         # successful logins.
         log_action(None, f"login_failed:{user.email}", get_client_ip(request))
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    # 2026-07-24 anti-abuse batch: a risk-flagged account (services/
+    # risk_score_service.py's "flag" tier at registration -- see
+    # register()) never got a usable token at signup time; it can only
+    # log in for real once the emailed verification link has been
+    # clicked (row["email_verified"], set by backend/auth/email_
+    # verification.py's verify_email()). This is the actual enforcement
+    # point -- see UserResponse.requires_verification's docstring for why
+    # withholding-the-token is the only mechanism that works for a
+    # stateless JWT. Password check above still runs FIRST so this never
+    # leaks "this email is flagged" to someone who doesn't already know
+    # the correct password.
+    if row["risk_flagged"] and not row["email_verified"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email address before logging in. Check your inbox for the verification link, or use the resend option.",
+        )
     token = create_access_token({"sub": row["email"], "id": row["id"]})
     log_action(row["id"], "login", get_client_ip(request))
     return UserResponse(id=row["id"], email=row["email"], name=row["name"], plan=row["plan"], token=token)

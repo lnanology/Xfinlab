@@ -93,6 +93,7 @@
 </style>
 <script src="js/i18n.js"></script>
 <script src="js/captcha-widget.js"></script>
+<script src="js/device-fingerprint.js"></script>
 <script src="js/theme-toggle.js"></script>
 <!-- task #333: Google Identity Services -- inert until google.accounts.id.initialize()
      is actually called (only happens if the google_login feature flag is on AND a
@@ -264,6 +265,13 @@ async function handleRegister() {
   const captchaToken = (typeof window.XFLCaptcha !== 'undefined') ? window.XFLCaptcha.getVerifyToken() : null;
   if (!captchaToken) { showError(t('captcha_required','Please slide to verify you\'re not a robot')); return; }
 
+  // 2026-07-24 anti-abuse batch: self-hosted device fingerprint (js/
+  // device-fingerprint.js) sent alongside the registration so services/
+  // risk_score_service.py can spot the same browser being reused across
+  // several signups. Best-effort -- XFLFingerprint.get() always resolves
+  // (never rejects), and an empty string just means "no signal" server-side.
+  const deviceFingerprint = (typeof window.XFLFingerprint !== 'undefined') ? await window.XFLFingerprint.get() : '';
+
   const btn = document.getElementById('registerBtn');
   btn.disabled = true;
   btn.textContent = t('login_creating_account','Creating account...');
@@ -272,7 +280,7 @@ async function handleRegister() {
     const res = await fetch(`${API}/auth/register`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({name, email, password, captcha_token: captchaToken})
+      body: JSON.stringify({name, email, password, captcha_token: captchaToken, device_fingerprint: deviceFingerprint})
     });
     const data = await res.json();
     if (!res.ok) {
@@ -280,6 +288,19 @@ async function handleRegister() {
       // Captcha tokens are single-purpose/short-lived -- reset the widget
       // so the visitor can solve a fresh challenge for their next attempt
       // regardless of whether THIS failure was captcha-related.
+      if (typeof window.XFLCaptcha !== 'undefined') window.XFLCaptcha.reset();
+      return;
+    }
+
+    // 2026-07-24: a risk-flagged registration (services/risk_score_
+    // service.py) comes back with requires_verification=true and a
+    // deliberately empty token -- there is nothing usable to log in
+    // with yet, so don't touch localStorage or redirect to the
+    // dashboard. The account exists and a verification email was sent
+    // (same email_verification.py flow as every other registration);
+    // the person just has to click that link before they can sign in.
+    if (data.requires_verification) {
+      showSuccess(t('login_success_register_verify_required', 'Account created! Please check your email and click the verification link before signing in.'));
       if (typeof window.XFLCaptcha !== 'undefined') window.XFLCaptcha.reset();
       return;
     }

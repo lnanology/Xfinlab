@@ -19,3 +19,4 @@ pywebpush
 scikit-learn
 joblib
 Pillow
+dnspython

@@ -1082,7 +1082,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Backtested Trades",
         "trackrecord_basket_label": "Assets Tested",
         "trackrecord_loading": "Crunching real backtest data...",
-        "trackrecord_disclaimer": "Figures come from historical backtests on 8 broad-market/sector proxies (SPY, QQQ, DIA, etc.). Fees/slippage not included. Past performance doesn't guarantee future results. Not investment advice."
+        "trackrecord_disclaimer": "Figures come from historical backtests on 8 broad-market/sector proxies (SPY, QQQ, DIA, etc.). Fees/slippage not included. Past performance doesn't guarantee future results. Not investment advice.",
+        "login_success_register_verify_required": "Account created! Please check your email and click the verification link before signing in."
     },
     "es": {
         "push_guest_title": "Recibe alertas gratis de Top Opportunity",
@@ -2046,7 +2047,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Operaciones probadas",
         "trackrecord_basket_label": "Activos probados",
         "trackrecord_loading": "Procesando datos reales de backtest...",
-        "trackrecord_disclaimer": "Las cifras provienen de backtests históricos sobre 8 proxies de mercado/sector (SPY, QQQ, DIA, etc.). No incluye comisiones/deslizamiento. El rendimiento pasado no garantiza resultados futuros. No es asesoría de inversión."
+        "trackrecord_disclaimer": "Las cifras provienen de backtests históricos sobre 8 proxies de mercado/sector (SPY, QQQ, DIA, etc.). No incluye comisiones/deslizamiento. El rendimiento pasado no garantiza resultados futuros. No es asesoría de inversión.",
+        "login_success_register_verify_required": "¡Cuenta creada! Por favor revisa tu correo y haz clic en el enlace de verificación antes de iniciar sesión."
     },
     "fr": {
         "push_guest_title": "Recevez des alertes Top Opportunity gratuites",
@@ -3010,7 +3012,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Transactions testées",
         "trackrecord_basket_label": "Actifs testés",
         "trackrecord_loading": "Calcul des vraies données de backtest...",
-        "trackrecord_disclaimer": "Les chiffres proviennent de backtests historiques sur 8 indices de marché/secteur (SPY, QQQ, DIA, etc.). Frais/slippage non inclus. Les performances passées ne garantissent pas les résultats futurs. Ceci n'est pas un conseil en investissement."
+        "trackrecord_disclaimer": "Les chiffres proviennent de backtests historiques sur 8 indices de marché/secteur (SPY, QQQ, DIA, etc.). Frais/slippage non inclus. Les performances passées ne garantissent pas les résultats futurs. Ceci n'est pas un conseil en investissement.",
+        "login_success_register_verify_required": "Compte créé ! Veuillez consulter votre e-mail et cliquer sur le lien de vérification avant de vous connecter."
     },
     "de": {
         "push_guest_title": "Kostenlose Top-Opportunity-Benachrichtigungen erhalten",
@@ -3974,7 +3977,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Getestete Trades",
         "trackrecord_basket_label": "Getestete Anlagen",
         "trackrecord_loading": "Echte Backtest-Daten werden berechnet...",
-        "trackrecord_disclaimer": "Zahlen stammen aus historischen Backtests von 8 Markt-/Sektor-Proxys (SPY, QQQ, DIA usw.). Gebühren/Slippage nicht enthalten. Vergangene Performance ist keine Garantie für zukünftige Ergebnisse. Keine Anlageberatung."
+        "trackrecord_disclaimer": "Zahlen stammen aus historischen Backtests von 8 Markt-/Sektor-Proxys (SPY, QQQ, DIA usw.). Gebühren/Slippage nicht enthalten. Vergangene Performance ist keine Garantie für zukünftige Ergebnisse. Keine Anlageberatung.",
+        "login_success_register_verify_required": "Konto erstellt! Bitte prüfen Sie Ihre E-Mails und klicken Sie auf den Bestätigungslink, bevor Sie sich anmelden."
     },
     "it": {
         "push_guest_title": "Ricevi avvisi gratuiti su Top Opportunity",
@@ -4938,7 +4942,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Operazioni testate",
         "trackrecord_basket_label": "Asset testati",
         "trackrecord_loading": "Elaborazione dati reali di backtest...",
-        "trackrecord_disclaimer": "I dati provengono da backtest storici su 8 proxy di mercato/settore (SPY, QQQ, DIA, ecc.). Commissioni/slippage non inclusi. Le performance passate non garantiscono risultati futuri. Non è consulenza di investimento."
+        "trackrecord_disclaimer": "I dati provengono da backtest storici su 8 proxy di mercato/settore (SPY, QQQ, DIA, ecc.). Commissioni/slippage non inclusi. Le performance passate non garantiscono risultati futuri. Non è consulenza di investimento.",
+        "login_success_register_verify_required": "Account creato! Controlla la tua email e clicca sul link di verifica prima di accedere."
     },
     "pt": {
         "push_guest_title": "Receba alertas gratuitos de Top Opportunity",
@@ -5902,7 +5907,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Operações testadas",
         "trackrecord_basket_label": "Ativos testados",
         "trackrecord_loading": "A processar dados reais de backtest...",
-        "trackrecord_disclaimer": "Os números vêm de backtests históricos sobre 8 proxies de mercado/setor (SPY, QQQ, DIA, etc.). Taxas/slippage não incluídos. Desempenho passado não garante resultados futuros. Não é aconselhamento de investimento."
+        "trackrecord_disclaimer": "Os números vêm de backtests históricos sobre 8 proxies de mercado/setor (SPY, QQQ, DIA, etc.). Taxas/slippage não incluídos. Desempenho passado não garante resultados futuros. Não é aconselhamento de investimento.",
+        "login_success_register_verify_required": "Conta criada! Verifique seu e-mail e clique no link de verificação antes de entrar."
     },
     "ru": {
         "push_guest_title": "Получайте бесплатные уведомления Top Opportunity",
@@ -6866,7 +6872,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Протестировано сделок",
         "trackrecord_basket_label": "Протестировано активов",
         "trackrecord_loading": "Обработка реальных данных бэктеста...",
-        "trackrecord_disclaimer": "Цифры получены из исторических бэктестов на 8 рыночных/секторальных индексах (SPY, QQQ, DIA и др.). Комиссии/проскальзывание не учтены. Прошлые результаты не гарантируют будущих. Это не инвестиционная рекомендация."
+        "trackrecord_disclaimer": "Цифры получены из исторических бэктестов на 8 рыночных/секторальных индексах (SPY, QQQ, DIA и др.). Комиссии/проскальзывание не учтены. Прошлые результаты не гарантируют будущих. Это не инвестиционная рекомендация.",
+        "login_success_register_verify_required": "Аккаунт создан! Пожалуйста, проверьте почту и перейдите по ссылке подтверждения, прежде чем входить."
     },
     "nl": {
         "push_guest_title": "Ontvang gratis Top Opportunity-meldingen",
@@ -7830,7 +7837,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Geteste trades",
         "trackrecord_basket_label": "Geteste activa",
         "trackrecord_loading": "Echte backtestdata wordt verwerkt...",
-        "trackrecord_disclaimer": "Cijfers komen uit historische backtests op 8 markt-/sectorproxy's (SPY, QQQ, DIA, enz.). Kosten/slippage niet inbegrepen. Resultaten uit het verleden garanderen geen toekomstige resultaten. Geen beleggingsadvies."
+        "trackrecord_disclaimer": "Cijfers komen uit historische backtests op 8 markt-/sectorproxy's (SPY, QQQ, DIA, enz.). Kosten/slippage niet inbegrepen. Resultaten uit het verleden garanderen geen toekomstige resultaten. Geen beleggingsadvies.",
+        "login_success_register_verify_required": "Account aangemaakt! Controleer je e-mail en klik op de verificatielink voordat je inlogt."
     },
     "pl": {
         "push_guest_title": "Otrzymuj darmowe powiadomienia Top Opportunity",
@@ -8794,7 +8802,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Przetestowane transakcje",
         "trackrecord_basket_label": "Testowane aktywa",
         "trackrecord_loading": "Przetwarzanie rzeczywistych danych backtestu...",
-        "trackrecord_disclaimer": "Dane pochodzą z historycznych backtestów na 8 indeksach rynkowych/sektorowych (SPY, QQQ, DIA itd.). Nie uwzględniono opłat/poślizgu cenowego. Wyniki historyczne nie gwarantują przyszłych rezultatów. To nie jest porada inwestycyjna."
+        "trackrecord_disclaimer": "Dane pochodzą z historycznych backtestów na 8 indeksach rynkowych/sektorowych (SPY, QQQ, DIA itd.). Nie uwzględniono opłat/poślizgu cenowego. Wyniki historyczne nie gwarantują przyszłych rezultatów. To nie jest porada inwestycyjna.",
+        "login_success_register_verify_required": "Konto utworzone! Sprawdź swoją pocztę i kliknij link weryfikacyjny przed zalogowaniem."
     },
     "ro": {
         "push_guest_title": "Primește alerte gratuite Top Opportunity",
@@ -9758,7 +9767,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Tranzacții testate",
         "trackrecord_basket_label": "Active testate",
         "trackrecord_loading": "Se procesează date reale de backtest...",
-        "trackrecord_disclaimer": "Cifrele provin din backtesturi istorice pe 8 indici de piață/sector (SPY, QQQ, DIA etc.). Comisioanele/slippage-ul nu sunt incluse. Performanța trecută nu garantează rezultate viitoare. Nu este consultanță de investiții."
+        "trackrecord_disclaimer": "Cifrele provin din backtesturi istorice pe 8 indici de piață/sector (SPY, QQQ, DIA etc.). Comisioanele/slippage-ul nu sunt incluse. Performanța trecută nu garantează rezultate viitoare. Nu este consultanță de investiții.",
+        "login_success_register_verify_required": "Cont creat! Verifică-ți e-mailul și accesează linkul de verificare înainte de a te autentifica."
     },
     "uk": {
         "push_guest_title": "Отримуйте безкоштовні сповіщення Top Opportunity",
@@ -10722,7 +10732,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Протестовано угод",
         "trackrecord_basket_label": "Протестовано активів",
         "trackrecord_loading": "Обробка реальних даних бектесту...",
-        "trackrecord_disclaimer": "Цифри отримані з історичних бектестів на 8 ринкових/секторальних індексах (SPY, QQQ, DIA тощо). Комісії/прослизання не враховані. Минулі результати не гарантують майбутніх. Це не інвестиційна порада."
+        "trackrecord_disclaimer": "Цифри отримані з історичних бектестів на 8 ринкових/секторальних індексах (SPY, QQQ, DIA тощо). Комісії/прослизання не враховані. Минулі результати не гарантують майбутніх. Це не інвестиційна порада.",
+        "login_success_register_verify_required": "Обліковий запис створено! Перевірте пошту та перейдіть за посиланням підтвердження, перш ніж увійти."
     },
     "sr": {
         "push_guest_title": "Добијте бесплатна Top Opportunity обавештења",
@@ -11686,7 +11697,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Testirane transakcije",
         "trackrecord_basket_label": "Testirana imovina",
         "trackrecord_loading": "Obrada pravih podataka bektesta...",
-        "trackrecord_disclaimer": "Brojke potiču od istorijskih bektestova na 8 tržišnih/sektorskih indeksa (SPY, QQQ, DIA itd.). Naknade/proklizavanje nisu uključeni. Prošli rezultati ne garantuju buduće. Ovo nije investicioni savet."
+        "trackrecord_disclaimer": "Brojke potiču od istorijskih bektestova na 8 tržišnih/sektorskih indeksa (SPY, QQQ, DIA itd.). Naknade/proklizavanje nisu uključeni. Prošli rezultati ne garantuju buduće. Ovo nije investicioni savet.",
+        "login_success_register_verify_required": "Nalog je kreiran! Proverite svoj imejl i kliknite na link za potvrdu pre prijave."
     },
     "zh-TW": {
         "push_guest_title": "免費取得Top Opportunity通知",
@@ -12733,7 +12745,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "回測交易次數",
         "trackrecord_basket_label": "測試資產組合",
         "trackrecord_loading": "計算真實回測數據中...",
-        "trackrecord_disclaimer": "數字來自對SPY、QQQ、DIA等8個大盤/板塊指數的歷史回測，未計手續費/滑點，過去表現不代表未來，並非投資建議。"
+        "trackrecord_disclaimer": "數字來自對SPY、QQQ、DIA等8個大盤/板塊指數的歷史回測，未計手續費/滑點，過去表現不代表未來，並非投資建議。",
+        "login_success_register_verify_required": "帳號已建立！請檢查你的電郵並點擊驗證連結，先驗證先可以登入。"
     },
     "zh-HK": {
         "push_guest_title": "免費取得Top Opportunity通知",
@@ -13780,7 +13793,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "回測交易次數",
         "trackrecord_basket_label": "測試資產組合",
         "trackrecord_loading": "計緊真實回測數據...",
-        "trackrecord_disclaimer": "數字來自對SPY、QQQ、DIA等8個大盤/板塊指數嘅歷史回測，未計手續費/滑點，過去表現不代表未來，並非投資建議。"
+        "trackrecord_disclaimer": "數字來自對SPY、QQQ、DIA等8個大盤/板塊指數嘅歷史回測，未計手續費/滑點，過去表現不代表未來，並非投資建議。",
+        "login_success_register_verify_required": "帳號已建立！請check返你個email，撳個驗證連結先，先至可以登入。"
     },
     "zh-CN": {
         "push_guest_title": "免费获取Top Opportunity通知",
@@ -14827,7 +14841,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "回测交易次数",
         "trackrecord_basket_label": "测试资产组合",
         "trackrecord_loading": "计算真实回测数据中...",
-        "trackrecord_disclaimer": "数字来自对SPY、QQQ、DIA等8个大盘/板块指数的历史回测，未计手续费/滑点，过去表现不代表未来，并非投资建议。"
+        "trackrecord_disclaimer": "数字来自对SPY、QQQ、DIA等8个大盘/板块指数的历史回测，未计手续费/滑点，过去表现不代表未来，并非投资建议。",
+        "login_success_register_verify_required": "账号已创建！请检查你的邮箱并点击验证链接，验证后才能登录。"
     },
     "ja": {
         "push_guest_title": "無料でTop Opportunity通知を受け取る",
@@ -15791,7 +15806,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "バックテスト取引数",
         "trackrecord_basket_label": "テスト対象資産",
         "trackrecord_loading": "実際のバックテストデータを計算中...",
-        "trackrecord_disclaimer": "数値はSPY、QQQ、DIAなど8つの市場・セクター指数の過去データによるバックテストに基づきます。手数料・スリッページは含まれません。過去の実績は将来を保証するものではなく、投資助言ではありません。"
+        "trackrecord_disclaimer": "数値はSPY、QQQ、DIAなど8つの市場・セクター指数の過去データによるバックテストに基づきます。手数料・スリッページは含まれません。過去の実績は将来を保証するものではなく、投資助言ではありません。",
+        "login_success_register_verify_required": "アカウントを作成しました！ログインする前に、メールを確認して認証リンクをクリックしてください。"
     },
     "ko": {
         "push_guest_title": "무료 Top Opportunity 알림 받기",
@@ -16755,7 +16771,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "백테스트 거래 수",
         "trackrecord_basket_label": "테스트 자산",
         "trackrecord_loading": "실제 백테스트 데이터 계산 중...",
-        "trackrecord_disclaimer": "수치는 SPY, QQQ, DIA 등 8개 주요 시장/섹터 지수의 과거 데이터 백테스트에서 산출되었습니다. 수수료/슬리피지는 포함되지 않았습니다. 과거 성과가 미래 결과를 보장하지 않으며, 투자 조언이 아닙니다."
+        "trackrecord_disclaimer": "수치는 SPY, QQQ, DIA 등 8개 주요 시장/섹터 지수의 과거 데이터 백테스트에서 산출되었습니다. 수수료/슬리피지는 포함되지 않았습니다. 과거 성과가 미래 결과를 보장하지 않으며, 투자 조언이 아닙니다.",
+        "login_success_register_verify_required": "계정이 생성되었습니다! 로그인하기 전에 이메일을 확인하고 인증 링크를 클릭해주세요."
     },
     "hi": {
         "push_guest_title": "मुफ़्त Top Opportunity अलर्ट पाएं",
@@ -17719,7 +17736,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "परीक्षित ट्रेड्स",
         "trackrecord_basket_label": "परीक्षित संपत्तियां",
         "trackrecord_loading": "असली बैकटेस्ट डेटा प्रोसेस हो रहा है...",
-        "trackrecord_disclaimer": "आंकड़े SPY, QQQ, DIA जैसे 8 प्रमुख बाज़ार/सेक्टर सूचकांकों के ऐतिहासिक बैकटेस्ट से लिए गए हैं। फीस/स्लिपेज शामिल नहीं है। पिछला प्रदर्शन भविष्य के परिणामों की गारंटी नहीं देता। यह निवेश सलाह नहीं है।"
+        "trackrecord_disclaimer": "आंकड़े SPY, QQQ, DIA जैसे 8 प्रमुख बाज़ार/सेक्टर सूचकांकों के ऐतिहासिक बैकटेस्ट से लिए गए हैं। फीस/स्लिपेज शामिल नहीं है। पिछला प्रदर्शन भविष्य के परिणामों की गारंटी नहीं देता। यह निवेश सलाह नहीं है।",
+        "login_success_register_verify_required": "खाता बन गया! लॉगिन करने से पहले कृपया अपना ईमेल जांचें और सत्यापन लिंक पर क्लिक करें।"
     },
     "ar": {
         "push_guest_title": "احصل على تنبيهات Top Opportunity مجانًا",
@@ -18683,7 +18701,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "الصفقات المختبرة",
         "trackrecord_basket_label": "الأصول المختبرة",
         "trackrecord_loading": "جارٍ معالجة بيانات الاختبار التاريخي الحقيقية...",
-        "trackrecord_disclaimer": "الأرقام مستخلصة من اختبارات تاريخية على 8 مؤشرات سوقية/قطاعية (SPY وQQQ وDIA وغيرها). لا تشمل الرسوم/الانزلاق السعري. الأداء السابق لا يضمن نتائج مستقبلية. هذه ليست نصيحة استثمارية."
+        "trackrecord_disclaimer": "الأرقام مستخلصة من اختبارات تاريخية على 8 مؤشرات سوقية/قطاعية (SPY وQQQ وDIA وغيرها). لا تشمل الرسوم/الانزلاق السعري. الأداء السابق لا يضمن نتائج مستقبلية. هذه ليست نصيحة استثمارية.",
+        "login_success_register_verify_required": "تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني والنقر على رابط التحقق قبل تسجيل الدخول."
     },
     "id": {
         "push_guest_title": "Dapatkan notifikasi Top Opportunity gratis",
@@ -19647,7 +19666,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Transaksi yang diuji",
         "trackrecord_basket_label": "Aset yang diuji",
         "trackrecord_loading": "Memproses data backtest nyata...",
-        "trackrecord_disclaimer": "Angka berasal dari backtest historis pada 8 proksi pasar/sektor (SPY, QQQ, DIA, dll). Biaya/slippage tidak termasuk. Kinerja masa lalu tidak menjamin hasil masa depan. Bukan nasihat investasi."
+        "trackrecord_disclaimer": "Angka berasal dari backtest historis pada 8 proksi pasar/sektor (SPY, QQQ, DIA, dll). Biaya/slippage tidak termasuk. Kinerja masa lalu tidak menjamin hasil masa depan. Bukan nasihat investasi.",
+        "login_success_register_verify_required": "Akun dibuat! Silakan periksa email Anda dan klik tautan verifikasi sebelum masuk."
     },
     "th": {
         "push_guest_title": "รับการแจ้งเตือน Top Opportunity ฟรี",
@@ -20611,7 +20631,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "จำนวนการซื้อขายที่ทดสอบ",
         "trackrecord_basket_label": "สินทรัพย์ที่ทดสอบ",
         "trackrecord_loading": "กำลังประมวลผลข้อมูลการทดสอบย้อนหลังจริง...",
-        "trackrecord_disclaimer": "ตัวเลขมาจากการทดสอบย้อนหลังบนดัชนีตลาด/กลุ่มอุตสาหกรรม 8 รายการ (SPY, QQQ, DIA ฯลฯ) ไม่รวมค่าธรรมเนียม/สลิปเพจ ผลงานในอดีตไม่รับประกันผลลัพธ์ในอนาคต ไม่ใช่คำแนะนำการลงทุน"
+        "trackrecord_disclaimer": "ตัวเลขมาจากการทดสอบย้อนหลังบนดัชนีตลาด/กลุ่มอุตสาหกรรม 8 รายการ (SPY, QQQ, DIA ฯลฯ) ไม่รวมค่าธรรมเนียม/สลิปเพจ ผลงานในอดีตไม่รับประกันผลลัพธ์ในอนาคต ไม่ใช่คำแนะนำการลงทุน",
+        "login_success_register_verify_required": "สร้างบัญชีสำเร็จแล้ว! กรุณาตรวจสอบอีเมลและคลิกลิงก์ยืนยันก่อนเข้าสู่ระบบ"
     },
     "vi": {
         "push_guest_title": "Nhận thông báo Top Opportunity miễn phí",
@@ -21575,7 +21596,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Giao dịch đã kiểm tra",
         "trackrecord_basket_label": "Tài sản được kiểm tra",
         "trackrecord_loading": "Đang xử lý dữ liệu backtest thực...",
-        "trackrecord_disclaimer": "Số liệu đến từ các backtest lịch sử trên 8 chỉ số thị trường/ngành (SPY, QQQ, DIA, v.v.). Không bao gồm phí/trượt giá. Hiệu suất trong quá khứ không đảm bảo kết quả tương lai. Đây không phải lời khuyên đầu tư."
+        "trackrecord_disclaimer": "Số liệu đến từ các backtest lịch sử trên 8 chỉ số thị trường/ngành (SPY, QQQ, DIA, v.v.). Không bao gồm phí/trượt giá. Hiệu suất trong quá khứ không đảm bảo kết quả tương lai. Đây không phải lời khuyên đầu tư.",
+        "login_success_register_verify_required": "Đã tạo tài khoản! Vui lòng kiểm tra email và nhấp vào liên kết xác minh trước khi đăng nhập."
     },
     "tr": {
         "push_guest_title": "Ücretsiz Top Opportunity bildirimleri alın",
@@ -22539,7 +22561,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Test edilen işlemler",
         "trackrecord_basket_label": "Test edilen varlıklar",
         "trackrecord_loading": "Gerçek backtest verileri işleniyor...",
-        "trackrecord_disclaimer": "Rakamlar SPY, QQQ, DIA gibi 8 piyasa/sektör endeksi üzerindeki geçmiş backtestlerden alınmıştır. Ücretler/kayma dahil değildir. Geçmiş performans gelecekteki sonuçları garanti etmez. Yatırım tavsiyesi değildir."
+        "trackrecord_disclaimer": "Rakamlar SPY, QQQ, DIA gibi 8 piyasa/sektör endeksi üzerindeki geçmiş backtestlerden alınmıştır. Ücretler/kayma dahil değildir. Geçmiş performans gelecekteki sonuçları garanti etmez. Yatırım tavsiyesi değildir.",
+        "login_success_register_verify_required": "Hesap oluşturuldu! Giriş yapmadan önce lütfen e-postanızı kontrol edin ve doğrulama bağlantısına tıklayın."
     },
     "fa": {
         "push_guest_title": "هشدارهای رایگان Top Opportunity دریافت کنید",
@@ -23503,7 +23526,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "معاملات آزمایش‌شده",
         "trackrecord_basket_label": "دارایی‌های آزمایش‌شده",
         "trackrecord_loading": "در حال پردازش داده‌های واقعی بک‌تست...",
-        "trackrecord_disclaimer": "این اعداد از بک‌تست‌های تاریخی روی ۸ شاخص بازار/بخش (SPY، QQQ، DIA و غیره) به‌دست آمده‌اند. کارمزد/لغزش قیمت لحاظ نشده است. عملکرد گذشته تضمینی برای نتایج آینده نیست و این توصیه سرمایه‌گذاری نیست."
+        "trackrecord_disclaimer": "این اعداد از بک‌تست‌های تاریخی روی ۸ شاخص بازار/بخش (SPY، QQQ، DIA و غیره) به‌دست آمده‌اند. کارمزد/لغزش قیمت لحاظ نشده است. عملکرد گذشته تضمینی برای نتایج آینده نیست و این توصیه سرمایه‌گذاری نیست.",
+        "login_success_register_verify_required": "حساب کاربری ساخته شد! لطفاً ایمیل خود را بررسی کنید و پیش از ورود روی لینک تأیید کلیک کنید."
     },
     "ur": {
         "push_guest_title": "مفت Top Opportunity الرٹس حاصل کریں",
@@ -24467,7 +24491,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "ٹیسٹ شدہ ٹریڈز",
         "trackrecord_basket_label": "ٹیسٹ شدہ اثاثے",
         "trackrecord_loading": "حقیقی بیک ٹیسٹ ڈیٹا پر کارروائی ہو رہی ہے...",
-        "trackrecord_disclaimer": "اعداد و شمار 8 بڑے مارکیٹ/سیکٹر انڈیکس (SPY، QQQ، DIA وغیرہ) پر تاریخی بیک ٹیسٹ سے حاصل کیے گئے ہیں۔ فیس/سلپیج شامل نہیں۔ ماضی کی کارکردگی مستقبل کے نتائج کی ضمانت نہیں دیتی۔ یہ سرمایہ کاری کا مشورہ نہیں ہے۔"
+        "trackrecord_disclaimer": "اعداد و شمار 8 بڑے مارکیٹ/سیکٹر انڈیکس (SPY، QQQ، DIA وغیرہ) پر تاریخی بیک ٹیسٹ سے حاصل کیے گئے ہیں۔ فیس/سلپیج شامل نہیں۔ ماضی کی کارکردگی مستقبل کے نتائج کی ضمانت نہیں دیتی۔ یہ سرمایہ کاری کا مشورہ نہیں ہے۔",
+        "login_success_register_verify_required": "اکاؤنٹ بن گیا! لاگ اِن کرنے سے پہلے براہ کرم اپنا ای میل چیک کریں اور تصدیقی لنک پر کلک کریں۔"
     },
     "bn": {
         "push_guest_title": "বিনামূল্যে Top Opportunity সতর্কতা পান",
@@ -25431,7 +25456,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "পরীক্ষিত ট্রেড",
         "trackrecord_basket_label": "পরীক্ষিত সম্পদ",
         "trackrecord_loading": "প্রকৃত ব্যাকটেস্ট ডেটা প্রক্রিয়াকরণ হচ্ছে...",
-        "trackrecord_disclaimer": "সংখ্যাগুলি SPY, QQQ, DIA-এর মতো ৮টি প্রধান বাজার/সেক্টর সূচকের ঐতিহাসিক ব্যাকটেস্ট থেকে নেওয়া। ফি/স্লিপেজ অন্তর্ভুক্ত নয়। অতীত পারফরম্যান্স ভবিষ্যতের ফলাফলের নিশ্চয়তা দেয় না। এটি বিনিয়োগ পরামর্শ নয়।"
+        "trackrecord_disclaimer": "সংখ্যাগুলি SPY, QQQ, DIA-এর মতো ৮টি প্রধান বাজার/সেক্টর সূচকের ঐতিহাসিক ব্যাকটেস্ট থেকে নেওয়া। ফি/স্লিপেজ অন্তর্ভুক্ত নয়। অতীত পারফরম্যান্স ভবিষ্যতের ফলাফলের নিশ্চয়তা দেয় না। এটি বিনিয়োগ পরামর্শ নয়।",
+        "login_success_register_verify_required": "অ্যাকাউন্ট তৈরি হয়েছে! লগইন করার আগে দয়া করে আপনার ইমেইল চেক করুন এবং যাচাইকরণ লিঙ্কে ক্লিক করুন।"
     },
     "tl": {
         "push_guest_title": "Kumuha ng libreng Top Opportunity alerts",
@@ -26395,7 +26421,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Na-test na mga trade",
         "trackrecord_basket_label": "Na-test na mga asset",
         "trackrecord_loading": "Pinoproseso ang tunay na backtest data...",
-        "trackrecord_disclaimer": "Ang mga numero ay mula sa historical backtest sa 8 market/sector proxies (SPY, QQQ, DIA, atbp). Hindi kasama ang bayad/slippage. Ang nakaraang performance ay hindi ginagarantiyahan ang hinaharap. Hindi ito payo sa pamumuhunan."
+        "trackrecord_disclaimer": "Ang mga numero ay mula sa historical backtest sa 8 market/sector proxies (SPY, QQQ, DIA, atbp). Hindi kasama ang bayad/slippage. Ang nakaraang performance ay hindi ginagarantiyahan ang hinaharap. Hindi ito payo sa pamumuhunan.",
+        "login_success_register_verify_required": "Nagawa na ang account! Pakisuri ang iyong email at i-click ang verification link bago mag-sign in."
     },
     "ms": {
         "push_guest_title": "Dapatkan makluman Top Opportunity percuma",
@@ -27359,7 +27386,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Dagangan diuji",
         "trackrecord_basket_label": "Aset diuji",
         "trackrecord_loading": "Memproses data backtest sebenar...",
-        "trackrecord_disclaimer": "Angka diperoleh daripada backtest sejarah ke atas 8 proksi pasaran/sektor (SPY, QQQ, DIA, dll). Yuran/slippage tidak termasuk. Prestasi lampau tidak menjamin hasil masa depan. Bukan nasihat pelaburan."
+        "trackrecord_disclaimer": "Angka diperoleh daripada backtest sejarah ke atas 8 proksi pasaran/sektor (SPY, QQQ, DIA, dll). Yuran/slippage tidak termasuk. Prestasi lampau tidak menjamin hasil masa depan. Bukan nasihat pelaburan.",
+        "login_success_register_verify_required": "Akaun berjaya dibuat! Sila semak e-mel anda dan klik pautan pengesahan sebelum log masuk."
     },
     "sw": {
         "push_guest_title": "Pata arifa za bure za Top Opportunity",
@@ -28323,7 +28351,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Biashara zilizojaribiwa",
         "trackrecord_basket_label": "Mali zilizojaribiwa",
         "trackrecord_loading": "Inachakata data halisi ya backtest...",
-        "trackrecord_disclaimer": "Namba zinatokana na backtest za kihistoria kwenye viashiria 8 vya soko/sekta (SPY, QQQ, DIA, n.k). Ada/slippage hazijajumuishwa. Utendaji wa zamani hauhakikishi matokeo ya baadaye. Hii sio ushauri wa uwekezaji."
+        "trackrecord_disclaimer": "Namba zinatokana na backtest za kihistoria kwenye viashiria 8 vya soko/sekta (SPY, QQQ, DIA, n.k). Ada/slippage hazijajumuishwa. Utendaji wa zamani hauhakikishi matokeo ya baadaye. Hii sio ushauri wa uwekezaji.",
+        "login_success_register_verify_required": "Akaunti imeundwa! Tafadhali angalia barua pepe yako na ubofye kiungo cha uthibitisho kabla ya kuingia."
     },
     "ne": {
         "push_guest_title": "निःशुल्क Top Opportunity सूचनाहरू प्राप्त गर्नुहोस्",
@@ -29287,7 +29316,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "परीक्षण गरिएका ट्रेडहरू",
         "trackrecord_basket_label": "परीक्षण गरिएका सम्पत्तिहरू",
         "trackrecord_loading": "वास्तविक ब्याकटेस्ट डेटा प्रशोधन हुँदैछ...",
-        "trackrecord_disclaimer": "यी संख्याहरू SPY, QQQ, DIA जस्ता ८ वटा प्रमुख बजार/क्षेत्र सूचकांकहरूको ऐतिहासिक ब्याकटेस्टबाट लिइएको हो। शुल्क/स्लिपेज समावेश छैन। विगतको प्रदर्शनले भविष्यको नतिजा ग्यारेन्टी गर्दैन। यो लगानी सल्लाह होइन।"
+        "trackrecord_disclaimer": "यी संख्याहरू SPY, QQQ, DIA जस्ता ८ वटा प्रमुख बजार/क्षेत्र सूचकांकहरूको ऐतिहासिक ब्याकटेस्टबाट लिइएको हो। शुल्क/स्लिपेज समावेश छैन। विगतको प्रदर्शनले भविष्यको नतिजा ग्यारेन्टी गर्दैन। यो लगानी सल्लाह होइन।",
+        "login_success_register_verify_required": "खाता बनियो! लगइन गर्नु अघि कृपया आफ्नो इमेल जाँच गर्नुहोस् र प्रमाणीकरण लिंकमा क्लिक गर्नुहोस्।"
     },
     "mr": {
         "push_guest_title": "मोफत Top Opportunity सूचना मिळवा",
@@ -30251,7 +30281,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "चाचणी केलेले व्यवहार",
         "trackrecord_basket_label": "चाचणी केलेली मालमत्ता",
         "trackrecord_loading": "खरा बॅकटेस्ट डेटा प्रक्रिया होत आहे...",
-        "trackrecord_disclaimer": "आकडे SPY, QQQ, DIA सारख्या ८ प्रमुख बाजार/क्षेत्र निर्देशांकांच्या ऐतिहासिक बॅकटेस्टवरून आले आहेत. फी/स्लिपेज समाविष्ट नाही. भूतकाळातील कामगिरी भविष्यातील निकालांची हमी देत नाही. ही गुंतवणूक सल्ला नाही."
+        "trackrecord_disclaimer": "आकडे SPY, QQQ, DIA सारख्या ८ प्रमुख बाजार/क्षेत्र निर्देशांकांच्या ऐतिहासिक बॅकटेस्टवरून आले आहेत. फी/स्लिपेज समाविष्ट नाही. भूतकाळातील कामगिरी भविष्यातील निकालांची हमी देत नाही. ही गुंतवणूक सल्ला नाही.",
+        "login_success_register_verify_required": "खाते तयार झाले! लॉगिन करण्यापूर्वी कृपया तुमचा ईमेल तपासा आणि पडताळणी लिंकवर क्लिक करा."
     },
     "te": {
         "push_guest_title": "ఉచిత Top Opportunity హెచ్చరికలు పొందండి",
@@ -31215,7 +31246,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "పరీక్షించిన ట్రేడ్లు",
         "trackrecord_basket_label": "పరీక్షించిన ఆస్తులు",
         "trackrecord_loading": "నిజమైన బ్యాక్‌టెస్ట్ డేటాను ప్రాసెస్ చేస్తోంది...",
-        "trackrecord_disclaimer": "సంఖ్యలు SPY, QQQ, DIA వంటి 8 ప్రధాన మార్కెట్/సెక్టార్ సూచికల చారిత్రక బ్యాక్‌టెస్ట్ నుండి వచ్చాయి. రుసుము/స్లిప్పేజ్ చేర్చబడలేదు. గత పనితీరు భవిష్యత్ ఫలితాలకు హామీ ఇవ్వదు. ఇది పెట్టుబడి సలహా కాదు."
+        "trackrecord_disclaimer": "సంఖ్యలు SPY, QQQ, DIA వంటి 8 ప్రధాన మార్కెట్/సెక్టార్ సూచికల చారిత్రక బ్యాక్‌టెస్ట్ నుండి వచ్చాయి. రుసుము/స్లిప్పేజ్ చేర్చబడలేదు. గత పనితీరు భవిష్యత్ ఫలితాలకు హామీ ఇవ్వదు. ఇది పెట్టుబడి సలహా కాదు.",
+        "login_success_register_verify_required": "ఖాతా సృష్టించబడింది! లాగిన్ కాకముందు దయచేసి మీ ఇమెయిల్‌ను తనిఖీ చేసి ధృవీకరణ లింక్‌పై క్లిక్ చేయండి."
     },
     "ta": {
         "push_guest_title": "இலவச Top Opportunity எச்சரிக்கைகளைப் பெறுங்கள்",
@@ -32179,7 +32211,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "சோதிக்கப்பட்ட வர்த்தகங்கள்",
         "trackrecord_basket_label": "சோதிக்கப்பட்ட சொத்துக்கள்",
         "trackrecord_loading": "உண்மையான பேக்டெஸ்ட் தரவை செயலாக்குகிறது...",
-        "trackrecord_disclaimer": "எண்கள் SPY, QQQ, DIA போன்ற 8 முக்கிய சந்தை/துறை குறியீடுகளின் வரலாற்று பேக்டெஸ்டிலிருந்து பெறப்பட்டவை. கட்டணம்/சறுக்கல் சேர்க்கப்படவில்லை. கடந்தகால செயல்திறன் எதிர்கால முடிவுகளுக்கு உத்தரவாதம் அளிக்காது. இது முதலீட்டு ஆலோசனை அல்ல."
+        "trackrecord_disclaimer": "எண்கள் SPY, QQQ, DIA போன்ற 8 முக்கிய சந்தை/துறை குறியீடுகளின் வரலாற்று பேக்டெஸ்டிலிருந்து பெறப்பட்டவை. கட்டணம்/சறுக்கல் சேர்க்கப்படவில்லை. கடந்தகால செயல்திறன் எதிர்கால முடிவுகளுக்கு உத்தரவாதம் அளிக்காது. இது முதலீட்டு ஆலோசனை அல்ல.",
+        "login_success_register_verify_required": "கணக்கு உருவாக்கப்பட்டது! உள்நுழையும் முன் உங்கள் மின்னஞ்சலைச் சரிபார்த்து சரிபார்ப்பு இணைப்பைக் கிளிக் செய்யவும்."
     },
     "gu": {
         "push_guest_title": "મફત Top Opportunity ચેતવણીઓ મેળવો",
@@ -33143,7 +33176,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "પરીક્ષણ કરેલા ટ્રેડ",
         "trackrecord_basket_label": "પરીક્ષણ કરેલી અસ્કયામતો",
         "trackrecord_loading": "સાચો બેકટેસ્ટ ડેટા પ્રોસેસ થઈ રહ્યો છે...",
-        "trackrecord_disclaimer": "આંકડા SPY, QQQ, DIA જેવા 8 મુખ્ય બજાર/ક્ષેત્ર સૂચકાંકોના ઐતિહાસિક બેકટેસ્ટમાંથી લેવામાં આવ્યા છે. ફી/સ્લિપેજનો સમાવેશ થતો નથી. ભૂતકાળનું પ્રદર્શન ભવિષ્યના પરિણામોની ખાતરી આપતું નથી. આ રોકાણ સલાહ નથી."
+        "trackrecord_disclaimer": "આંકડા SPY, QQQ, DIA જેવા 8 મુખ્ય બજાર/ક્ષેત્ર સૂચકાંકોના ઐતિહાસિક બેકટેસ્ટમાંથી લેવામાં આવ્યા છે. ફી/સ્લિપેજનો સમાવેશ થતો નથી. ભૂતકાળનું પ્રદર્શન ભવિષ્યના પરિણામોની ખાતરી આપતું નથી. આ રોકાણ સલાહ નથી.",
+        "login_success_register_verify_required": "એકાઉન્ટ બની ગયું! લોગિન કરતા પહેલા કૃપા કરી તમારો ઈમેલ ચેક કરો અને વેરિફિકેશન લિંક પર ક્લિક કરો."
     },
     "pa": {
         "push_guest_title": "ਮੁਫ਼ਤ Top Opportunity ਚੇਤਾਵਨੀਆਂ ਪ੍ਰਾਪਤ ਕਰੋ",
@@ -34107,7 +34141,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "ਪਰਖੇ ਗਏ ਵਪਾਰ",
         "trackrecord_basket_label": "ਪਰਖੀਆਂ ਗਈਆਂ ਸੰਪਤੀਆਂ",
         "trackrecord_loading": "ਅਸਲ ਬੈਕਟੈਸਟ ਡੇਟਾ ਪ੍ਰੋਸੈਸ ਹੋ ਰਿਹਾ ਹੈ...",
-        "trackrecord_disclaimer": "ਅੰਕੜੇ SPY, QQQ, DIA ਵਰਗੇ 8 ਪ੍ਰਮੁੱਖ ਬਾਜ਼ਾਰ/ਸੈਕਟਰ ਸੂਚਕਾਂਕਾਂ ਦੇ ਇਤਿਹਾਸਕ ਬੈਕਟੈਸਟ ਤੋਂ ਲਏ ਗਏ ਹਨ। ਫੀਸ/ਸਲਿਪੇਜ ਸ਼ਾਮਲ ਨਹੀਂ। ਪਿਛਲੀ ਕਾਰਗੁਜ਼ਾਰੀ ਭਵਿੱਖ ਦੇ ਨਤੀਜਿਆਂ ਦੀ ਗਰੰਟੀ ਨਹੀਂ ਦਿੰਦੀ। ਇਹ ਨਿਵੇਸ਼ ਸਲਾਹ ਨਹੀਂ ਹੈ।"
+        "trackrecord_disclaimer": "ਅੰਕੜੇ SPY, QQQ, DIA ਵਰਗੇ 8 ਪ੍ਰਮੁੱਖ ਬਾਜ਼ਾਰ/ਸੈਕਟਰ ਸੂਚਕਾਂਕਾਂ ਦੇ ਇਤਿਹਾਸਕ ਬੈਕਟੈਸਟ ਤੋਂ ਲਏ ਗਏ ਹਨ। ਫੀਸ/ਸਲਿਪੇਜ ਸ਼ਾਮਲ ਨਹੀਂ। ਪਿਛਲੀ ਕਾਰਗੁਜ਼ਾਰੀ ਭਵਿੱਖ ਦੇ ਨਤੀਜਿਆਂ ਦੀ ਗਰੰਟੀ ਨਹੀਂ ਦਿੰਦੀ। ਇਹ ਨਿਵੇਸ਼ ਸਲਾਹ ਨਹੀਂ ਹੈ।",
+        "login_success_register_verify_required": "ਖਾਤਾ ਬਣ ਗਿਆ! ਲੌਗਇਨ ਕਰਨ ਤੋਂ ਪਹਿਲਾਂ ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੀ ਈਮੇਲ ਚੈੱਕ ਕਰੋ ਅਤੇ ਪੁਸ਼ਟੀਕਰਨ ਲਿੰਕ 'ਤੇ ਕਲਿੱਕ ਕਰੋ।"
     },
     "ml": {
         "push_guest_title": "സൗജന്യ Top Opportunity അലേർട്ടുകൾ നേടുക",
@@ -35071,7 +35106,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "പരീക്ഷിച്ച ട്രേഡുകൾ",
         "trackrecord_basket_label": "പരീക്ഷിച്ച ആസ്തികൾ",
         "trackrecord_loading": "യഥാർത്ഥ ബാക്ക്‌ടെസ്റ്റ് ഡാറ്റ പ്രോസസ്സ് ചെയ്യുന്നു...",
-        "trackrecord_disclaimer": "കണക്കുകൾ SPY, QQQ, DIA പോലുള്ള 8 പ്രധാന വിപണി/മേഖലാ സൂചികകളുടെ ചരിത്രപരമായ ബാക്ക്‌ടെസ്റ്റിൽ നിന്നാണ്. ഫീസ്/സ്ലിപ്പേജ് ഉൾപ്പെടുത്തിയിട്ടില്ല. മുൻകാല പ്രകടനം ഭാവി ഫലങ്ങൾക്ക് ഉറപ്പ് നൽകുന്നില്ല. ഇത് നിക്ഷേപ ഉപദേശമല്ല."
+        "trackrecord_disclaimer": "കണക്കുകൾ SPY, QQQ, DIA പോലുള്ള 8 പ്രധാന വിപണി/മേഖലാ സൂചികകളുടെ ചരിത്രപരമായ ബാക്ക്‌ടെസ്റ്റിൽ നിന്നാണ്. ഫീസ്/സ്ലിപ്പേജ് ഉൾപ്പെടുത്തിയിട്ടില്ല. മുൻകാല പ്രകടനം ഭാവി ഫലങ്ങൾക്ക് ഉറപ്പ് നൽകുന്നില്ല. ഇത് നിക്ഷേപ ഉപദേശമല്ല.",
+        "login_success_register_verify_required": "അക്കൗണ്ട് സൃഷ്ടിച്ചു! ലോഗിൻ ചെയ്യുന്നതിന് മുമ്പ് നിങ്ങളുടെ ഇമെയിൽ പരിശോധിച്ച് സ്ഥിരീകരണ ലിങ്കിൽ ക്ലിക്ക് ചെയ്യുക."
     },
     "kn": {
         "push_guest_title": "ಉಚಿತ Top Opportunity ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯಿರಿ",
@@ -36035,7 +36071,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "ಪರೀಕ್ಷಿಸಿದ ವಹಿವಾಟುಗಳು",
         "trackrecord_basket_label": "ಪರೀಕ್ಷಿಸಿದ ಸ್ವತ್ತುಗಳು",
         "trackrecord_loading": "ನಿಜವಾದ ಬ್ಯಾಕ್‌ಟೆಸ್ಟ್ ಡೇಟಾವನ್ನು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ...",
-        "trackrecord_disclaimer": "ಸಂಖ್ಯೆಗಳು SPY, QQQ, DIA ನಂತಹ 8 ಪ್ರಮುಖ ಮಾರುಕಟ್ಟೆ/ವಲಯ ಸೂಚ್ಯಂಕಗಳ ಐತಿಹಾಸಿಕ ಬ್ಯಾಕ್‌ಟೆಸ್ಟ್‌ನಿಂದ ಬಂದಿವೆ. ಶುಲ್ಕ/ಸ್ಲಿಪೇಜ್ ಸೇರಿಲ್ಲ. ಹಿಂದಿನ ಕಾರ್ಯಕ್ಷಮತೆ ಭವಿಷ್ಯದ ಫಲಿತಾಂಶಗಳನ್ನು ಖಾತರಿಪಡಿಸುವುದಿಲ್ಲ. ಇದು ಹೂಡಿಕೆ ಸಲಹೆಯಲ್ಲ."
+        "trackrecord_disclaimer": "ಸಂಖ್ಯೆಗಳು SPY, QQQ, DIA ನಂತಹ 8 ಪ್ರಮುಖ ಮಾರುಕಟ್ಟೆ/ವಲಯ ಸೂಚ್ಯಂಕಗಳ ಐತಿಹಾಸಿಕ ಬ್ಯಾಕ್‌ಟೆಸ್ಟ್‌ನಿಂದ ಬಂದಿವೆ. ಶುಲ್ಕ/ಸ್ಲಿಪೇಜ್ ಸೇರಿಲ್ಲ. ಹಿಂದಿನ ಕಾರ್ಯಕ್ಷಮತೆ ಭವಿಷ್ಯದ ಫಲಿತಾಂಶಗಳನ್ನು ಖಾತರಿಪಡಿಸುವುದಿಲ್ಲ. ಇದು ಹೂಡಿಕೆ ಸಲಹೆಯಲ್ಲ.",
+        "login_success_register_verify_required": "ಖಾತೆ ರಚಿಸಲಾಗಿದೆ! ಲಾಗಿನ್ ಮಾಡುವ ಮೊದಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಪರಿಶೀಲನಾ ಲಿಂಕ್ ಕ್ಲಿಕ್ ಮಾಡಿ."
     },
     "or": {
         "push_guest_title": "ମାଗଣା Top Opportunity ସତର୍କତା ପାଆନ୍ତୁ",
@@ -36999,7 +37036,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "ପରୀକ୍ଷିତ ଟ୍ରେଡ୍",
         "trackrecord_basket_label": "ପରୀକ୍ଷିତ ସମ୍ପତ୍ତି",
         "trackrecord_loading": "ପ୍ରକୃତ ବ୍ୟାକଟେଷ୍ଟ ତଥ୍ୟ ପ୍ରକ୍ରିୟାକରଣ ହେଉଛି...",
-        "trackrecord_disclaimer": "ସଂଖ୍ୟାଗୁଡ଼ିକ SPY, QQQ, DIA ପରି 8ଟି ମୁଖ୍ୟ ବଜାର/ସେକ୍ଟର ସୂଚକାଙ୍କର ଐତିହାସିକ ବ୍ୟାକଟେଷ୍ଟରୁ ଆସିଛି। ଫି/ସ୍ଲିପେଜ୍ ଅନ୍ତର୍ଭୁକ୍ତ ନାହିଁ। ଅତୀତର କାର୍ଯ୍ୟଦକ୍ଷତା ଭବିଷ୍ୟତର ଫଳାଫଳକୁ ଗ୍ୟାରେଣ୍ଟି ଦିଏ ନାହିଁ। ଏହା ବିନିଯୋଗ ପରାମର୍ଶ ନୁହେଁ।"
+        "trackrecord_disclaimer": "ସଂଖ୍ୟାଗୁଡ଼ିକ SPY, QQQ, DIA ପରି 8ଟି ମୁଖ୍ୟ ବଜାର/ସେକ୍ଟର ସୂଚକାଙ୍କର ଐତିହାସିକ ବ୍ୟାକଟେଷ୍ଟରୁ ଆସିଛି। ଫି/ସ୍ଲିପେଜ୍ ଅନ୍ତର୍ଭୁକ୍ତ ନାହିଁ। ଅତୀତର କାର୍ଯ୍ୟଦକ୍ଷତା ଭବିଷ୍ୟତର ଫଳାଫଳକୁ ଗ୍ୟାରେଣ୍ଟି ଦିଏ ନାହିଁ। ଏହା ବିନିଯୋଗ ପରାମର୍ଶ ନୁହେଁ।",
+        "login_success_register_verify_required": "ଖାତା ତିଆରି ହେଲା! ଲଗଇନ୍ କରିବା ପୂର୍ବରୁ ଦୟାକରି ଆପଣଙ୍କ ଇମେଲ୍ ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ଯାଞ୍ଚ ଲିଙ୍କ୍‌ରେ କ୍ଲିକ୍ କରନ୍ତୁ।"
     },
     "ps": {
         "push_guest_title": "وړیا Top Opportunity خبرتیاوې ترلاسه کړئ",
@@ -37963,7 +38001,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "ازموینه شوي سودې",
         "trackrecord_basket_label": "ازموینه شوي شتمنۍ",
         "trackrecord_loading": "ریښتینې بیک ټیسټ معلومات پروسس کیږي...",
-        "trackrecord_disclaimer": "شمېرې د 8 لویو بازار/سکتور شاخصونو (SPY, QQQ, DIA، او نور) د تاریخي بیک ټیسټ څخه دي. فیس/سلیپیج شامل نه دي. تیر فعالیت راتلونکي پایلې تضمین نه کوي. دا د پانګونې مشوره نه ده."
+        "trackrecord_disclaimer": "شمېرې د 8 لویو بازار/سکتور شاخصونو (SPY, QQQ, DIA، او نور) د تاریخي بیک ټیسټ څخه دي. فیس/سلیپیج شامل نه دي. تیر فعالیت راتلونکي پایلې تضمین نه کوي. دا د پانګونې مشوره نه ده.",
+        "login_success_register_verify_required": "حساب جوړ شو! مهرباني وکړئ لهننوتلو دمخه خپل بریښنالیک وګورئ او د تایید لینک باندې کلیک وکړئ."
     },
     "ha": {
         "push_guest_title": "Sami sanarwar Top Opportunity kyauta",
@@ -38927,7 +38966,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Ciniki da aka gwada",
         "trackrecord_basket_label": "Kadarorin da aka gwada",
         "trackrecord_loading": "Ana sarrafa bayanan gwajin baya na gaske...",
-        "trackrecord_disclaimer": "Lambobin sun fito ne daga gwajin baya na tarihi akan manyan alamomin kasuwa/sashe guda 8 (SPY, QQQ, DIA, da sauransu). Ba a haɗa kuɗaɗe/zamewa ba. Aikin da ya gabata ba ya tabbatar da sakamako na gaba. Wannan ba shawarar zuba jari ba ce."
+        "trackrecord_disclaimer": "Lambobin sun fito ne daga gwajin baya na tarihi akan manyan alamomin kasuwa/sashe guda 8 (SPY, QQQ, DIA, da sauransu). Ba a haɗa kuɗaɗe/zamewa ba. Aikin da ya gabata ba ya tabbatar da sakamako na gaba. Wannan ba shawarar zuba jari ba ce.",
+        "login_success_register_verify_required": "An kirkiro asusun! Da fatan za ka duba imel dinka ka danna hanyar tabbatarwa kafin ka shiga."
     },
     "ku": {
         "push_guest_title": "Hişyariyên Top Opportunity belaş bistîne",
@@ -39891,7 +39931,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Bazirganiyên ceribandî",
         "trackrecord_basket_label": "Sermayeyên ceribandî",
         "trackrecord_loading": "Daneyên backtest ên rastîn tên pêvajokirin...",
-        "trackrecord_disclaimer": "Hejmar ji backtestên dîrokî yên li ser 8 nîşanek bazar/sektor (SPY, QQQ, DIA, hwd) tên. Heq/lezbûn nayê de. Performansa berê encamên pêşerojê nade garantîkirin. Ev şîreta veberhênanê nîne."
+        "trackrecord_disclaimer": "Hejmar ji backtestên dîrokî yên li ser 8 nîşanek bazar/sektor (SPY, QQQ, DIA, hwd) tên. Heq/lezbûn nayê de. Performansa berê encamên pêşerojê nade garantîkirin. Ev şîreta veberhênanê nîne.",
+        "login_success_register_verify_required": "Hesab hate afirandin! Ji kerema xwe berî têketinê e-nameya xwe kontrol bike û li ser lînka pejirandinê bitikîne."
     },
     "si": {
         "push_guest_title": "නොමිලේ Top Opportunity ඇඟවීම් ලබා ගන්න",
@@ -40855,7 +40896,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "පරීක්ෂා කළ ගනුදෙනු",
         "trackrecord_basket_label": "පරීක්ෂා කළ වත්කම්",
         "trackrecord_loading": "සැබෑ ආපසු පරීක්ෂණ දත්ත සැකසෙමින්...",
-        "trackrecord_disclaimer": "ඉලක්කම් SPY, QQQ, DIA වැනි ප්‍රධාන වෙළඳපොළ/අංශ දර්ශක 8ක ඓතිහාසික ආපසු පරීක්ෂණවලින් ලබාගත්තකි. ගාස්තු/ස්ලිපේජ් ඇතුළත් නොවේ. අතීත කාර්යසාධනය අනාගත ප්‍රතිඵල සහතික නොකරයි. මෙය ආයෝජන උපදෙස් නොවේ."
+        "trackrecord_disclaimer": "ඉලක්කම් SPY, QQQ, DIA වැනි ප්‍රධාන වෙළඳපොළ/අංශ දර්ශක 8ක ඓතිහාසික ආපසු පරීක්ෂණවලින් ලබාගත්තකි. ගාස්තු/ස්ලිපේජ් ඇතුළත් නොවේ. අතීත කාර්යසාධනය අනාගත ප්‍රතිඵල සහතික නොකරයි. මෙය ආයෝජන උපදෙස් නොවේ.",
+        "login_success_register_verify_required": "ගිණුම සාදන ලදී! පිවිසීමට පෙර කරුණාකර ඔබේ විද්‍යුත් තැපෑල පරීක්ෂා කර තහවුරු කිරීමේ සබැඳිය ක්ලික් කරන්න."
     },
     "uz": {
         "push_guest_title": "Bepul Top Opportunity bildirishnomalarini oling",
@@ -41819,7 +41861,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Sinovdan o'tgan savdolar",
         "trackrecord_basket_label": "Sinovdan o'tgan aktivlar",
         "trackrecord_loading": "Haqiqiy backtest ma'lumotlari qayta ishlanmoqda...",
-        "trackrecord_disclaimer": "Raqamlar SPY, QQQ, DIA kabi 8 ta yirik bozor/sektor indekslari bo'yicha tarixiy backtestdan olingan. Komissiya/slippage kiritilmagan. O'tmishdagi natijalar kelajakdagi natijalarni kafolatlamaydi. Bu investitsiya maslahati emas."
+        "trackrecord_disclaimer": "Raqamlar SPY, QQQ, DIA kabi 8 ta yirik bozor/sektor indekslari bo'yicha tarixiy backtestdan olingan. Komissiya/slippage kiritilmagan. O'tmishdagi natijalar kelajakdagi natijalarni kafolatlamaydi. Bu investitsiya maslahati emas.",
+        "login_success_register_verify_required": "Hisob yaratildi! Tizimga kirishdan oldin elektron pochtangizni tekshiring va tasdiqlash havolasini bosing."
     },
     "az": {
         "push_guest_title": "Pulsuz Top Opportunity bildirişlərini əldə edin",
@@ -42783,7 +42826,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Test edilmiş əməliyyatlar",
         "trackrecord_basket_label": "Test edilmiş aktivlər",
         "trackrecord_loading": "Real backtest məlumatları emal olunur...",
-        "trackrecord_disclaimer": "Rəqəmlər SPY, QQQ, DIA kimi 8 əsas bazar/sektor indeksi üzərində tarixi backtestdən əldə edilib. Komissiya/sürüşmə daxil deyil. Keçmiş performans gələcək nəticələri təmin etmir. Bu investisiya məsləhəti deyil."
+        "trackrecord_disclaimer": "Rəqəmlər SPY, QQQ, DIA kimi 8 əsas bazar/sektor indeksi üzərində tarixi backtestdən əldə edilib. Komissiya/sürüşmə daxil deyil. Keçmiş performans gələcək nəticələri təmin etmir. Bu investisiya məsləhəti deyil.",
+        "login_success_register_verify_required": "Hesab yaradıldı! Daxil olmazdan əvvəl zəhmət olmasa e-poçtunuzu yoxlayın və təsdiq linkinə klikləyin."
     },
     "jv": {
         "push_guest_title": "Entuk pemberitahuan Top Opportunity gratis",
@@ -43747,7 +43791,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Transaksi sing dites",
         "trackrecord_basket_label": "Aset sing dites",
         "trackrecord_loading": "Ngolah data backtest nyata...",
-        "trackrecord_disclaimer": "Angka kasebut asale saka backtest sejarah ing 8 proxy pasar/sektor (SPY, QQQ, DIA, lsp). Biaya/slippage ora kalebu. Kinerja sing wis kepungkur ora njamin asil ing mangsa ngarep. Iki dudu saran investasi."
+        "trackrecord_disclaimer": "Angka kasebut asale saka backtest sejarah ing 8 proxy pasar/sektor (SPY, QQQ, DIA, lsp). Biaya/slippage ora kalebu. Kinerja sing wis kepungkur ora njamin asil ing mangsa ngarep. Iki dudu saran investasi.",
+        "login_success_register_verify_required": "Akun wis digawe! Mangga priksa email panjenengan lan klik tautan verifikasi sadurunge mlebu."
     },
     "su": {
         "push_guest_title": "Kéngingkeun iber Top Opportunity gratis",
@@ -44711,7 +44756,8 @@ TRANSLATIONS = {
         "trackrecord_trades_label": "Transaksi anu diuji",
         "trackrecord_basket_label": "Aset anu diuji",
         "trackrecord_loading": "Ngolah data backtest nyata...",
-        "trackrecord_disclaimer": "Angka asalna tina backtest sajarah dina 8 indeks pasar/sektor (SPY, QQQ, DIA, jsb). Biaya/slippage teu kaasup. Kinerja baheula henteu ngajamin hasil kahareup. Ieu sanés naséhat investasi."
+        "trackrecord_disclaimer": "Angka asalna tina backtest sajarah dina 8 indeks pasar/sektor (SPY, QQQ, DIA, jsb). Biaya/slippage teu kaasup. Kinerja baheula henteu ngajamin hasil kahareup. Ieu sanés naséhat investasi.",
+        "login_success_register_verify_required": "Akun parantos didamel! Mangga parios email anjeun sareng klik tautan verifikasi sateuacan asup."
     }
 }
 
