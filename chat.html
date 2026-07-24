@@ -205,7 +205,7 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
    inset (0 on most devices, ~34px on notched iPhones) plus a touch more
    breathing room below the input row. */
 .input-area{padding:12px 12px calc(20px + env(safe-area-inset-bottom, 0px));border-top:1px solid var(--border-color);background:var(--bg-card);flex-shrink:0}
-.input-tools{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem}
+.input-tools{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem}
 .tool-btn{background:transparent;border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);padding:6px 10px;font-size:0.88rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:0.3rem}
 .tool-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:var(--bg-secondary)}
 .input-box{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.95rem;outline:none;resize:none;min-height:44px;max-height:120px;transition:border-color 0.12s;line-height:1.6}
@@ -341,6 +341,18 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
     <div class="img-preview" id="imgPreview" style="display:none;"></div>
 
     <div class="input-area">
+      <!-- 2026-07-24 fix: swapped order so the actual text input + mic +
+           send button come first (immediately below the chat/messages
+           area), with the 14 market-shortcut buttons underneath -- the
+           input row is the primary action, the shortcuts are secondary
+           quick-fill helpers, so this puts the primary control closest
+           to the conversation it's replying to. -->
+      <div class="input-row">
+        <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱…" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)" data-i18n-placeholder="chat_input_placeholder"></textarea>
+        <button type="button" class="send-btn" id="micBtn" onclick="toggleVoiceInput()" style="display:none;background:var(--bg-secondary,#131c2e);color:var(--text-primary,#e2e8f0)" data-i18n-title="chat_mic_title" title="語音輸入">🎤</button>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
       <div class="input-tools">
         <!-- task #324: reordered + expanded to 14 categories (加密/美國/歐洲/
              英國/香港/台灣/日本/韓國/澳洲/中東/東南亞/南美洲/印度/俄羅斯) -->
@@ -358,12 +370,6 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
         <button class="tool-btn" onclick="sendQuick(t('chat_q_sa','分析南美市場今日走勢，巴西、阿根廷主要指數表現'))" data-i18n="chat_tool_sa">🌎 南美</button>
         <button class="tool-btn" onclick="sendQuick(t('chat_q_india','分析印度市場今日走勢，SENSEX及NIFTY指數表現'))" data-i18n="chat_tool_india">🇮🇳 印度</button>
         <button class="tool-btn" onclick="sendQuick(t('chat_q_russia','分析俄羅斯市場今日走勢及主要風險因素'))" data-i18n="chat_tool_russia">🇷🇺 俄羅斯</button>
-      </div>
-      <div class="input-row">
-        <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱…" rows="1"
-          onkeydown="handleKey(event)" oninput="autoResize(this)" data-i18n-placeholder="chat_input_placeholder"></textarea>
-        <button type="button" class="send-btn" id="micBtn" onclick="toggleVoiceInput()" style="display:none;background:var(--bg-secondary,#131c2e);color:var(--text-primary,#e2e8f0)" data-i18n-title="chat_mic_title" title="語音輸入">🎤</button>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
       </div>
       <div class="input-hint" data-i18n="chat_disclaimer">⚠️ 分析僅供參考，不構成投資建議</div>
     </div>
