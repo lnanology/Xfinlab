@@ -179,7 +179,10 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 .msg.user .msg-actions{justify-content:flex-end}
 .msg-action-btn{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
 .msg-action-btn:hover{background:var(--bg-secondary);color:var(--accent-blue)}
+.msg-action-btn.speaking{color:var(--accent-orange,#f59e0b);background:var(--bg-secondary)}
 @media(max-width:768px){.msg-actions{opacity:1}}
+#micBtn.mic-recording{background:var(--accent-red,#DC2626)!important;color:#fff!important;animation:xfl-mic-pulse 1.2s ease-in-out infinite}
+@keyframes xfl-mic-pulse{0%,100%{opacity:1}50%{opacity:0.55}}
 
 /* TYPING */
 .typing{display:flex;gap:0.3rem;align-items:center;padding:0.8rem 1rem}
@@ -359,6 +362,7 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
       <div class="input-row">
         <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱…" rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)" data-i18n-placeholder="chat_input_placeholder"></textarea>
+        <button type="button" class="send-btn" id="micBtn" onclick="toggleVoiceInput()" style="display:none;background:var(--bg-secondary,#131c2e);color:var(--text-primary,#e2e8f0)" data-i18n-title="chat_mic_title" title="語音輸入">🎤</button>
         <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
       </div>
       <div class="input-hint" data-i18n="chat_disclaimer">⚠️ 分析僅供參考，不構成投資建議</div>
@@ -420,12 +424,21 @@ function addMessage(role, content, imageUrl) {
   const time = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit',minute:'2-digit'});
   const avatarText = role === 'bot' ? 'XFL' : t('chat_avatar_me','我');
   let imgHtml = imageUrl ? `<img src="${imageUrl}" style="max-width:200px;border-radius:4px;margin-bottom:0.5rem;display:block;">` : '';
+  // 2026-07-24 ("加播放文字"): only bot replies get a "read aloud" button --
+  // there's no point letting the user TTS-play back their own typed
+  // question. Uses the same dataset.rawContent plain-text source copyMsg()
+  // already relies on, so speakMsg() never has to re-parse rendered HTML
+  // (markdown tables, ticker spans, etc).
+  const speakBtnHtml = role === 'bot'
+    ? `<button type="button" class="msg-action-btn" onclick="speakMsg(this)" title="${t('chat_msg_speak','播放')}">🔊 <span class="speak-label">${t('chat_msg_speak','播放')}</span></button>`
+    : '';
   div.innerHTML = `
     <div class="msg-avatar">${avatarText}</div>
     <div>
       <div class="msg-bubble">${imgHtml}${formatMsg(content)}</div>
       <div class="msg-time">${time}</div>
       <div class="msg-actions">
+        ${speakBtnHtml}
         <button type="button" class="msg-action-btn" onclick="copyMsg(this)" title="${t('chat_msg_copy','複製')}">⧉ ${t('chat_msg_copy','複製')}</button>
         <button type="button" class="msg-action-btn" onclick="deleteMsg(this)" title="${t('chat_msg_delete','刪除')}">✕ ${t('chat_msg_delete','刪除')}</button>
       </div>
@@ -754,7 +767,63 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof autoAttachTickerAutocomplete === 'function') {
     autoAttachTickerAutocomplete('#inputBox', { wordMode: true, dropUp: true, rotatePlaceholder: false });
   }
+
+  // 2026-07-24 ("加錄音出字"): only show the mic button when the browser
+  // actually supports SpeechRecognition -- Safari/iOS and some in-app
+  // webviews don't, and a dead button is worse than no button.
+  if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+    const micBtn = document.getElementById('micBtn');
+    if (micBtn) micBtn.style.display = '';
+  }
 });
+
+// Speech-to-text: reuses the same locale->BCP-47 mapping as playback
+// (ttsLangCode(), defined further down) since recognition and synthesis
+// both key off XFINLAB's current UI language the same way.
+let _recognition = null;
+let _recognizing = false;
+function toggleVoiceInput() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  const micBtn = document.getElementById('micBtn');
+  if (_recognizing) {
+    if (_recognition) _recognition.stop();
+    return;
+  }
+  const input = document.getElementById('inputBox');
+  const baseText = input.value ? input.value.replace(/\s+$/, '') + ' ' : '';
+  _recognition = new SR();
+  _recognition.lang = ttsLangCode();
+  _recognition.interimResults = true;
+  _recognition.continuous = false;
+  _recognizing = true;
+  micBtn.classList.add('mic-recording');
+  micBtn.textContent = '⏺';
+  _recognition.onresult = (e) => {
+    let transcript = '';
+    for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+    input.value = baseText + transcript;
+    autoResize(input);
+  };
+  _recognition.onerror = () => {
+    _recognizing = false;
+    micBtn.classList.remove('mic-recording');
+    micBtn.textContent = '🎤';
+  };
+  _recognition.onend = () => {
+    _recognizing = false;
+    micBtn.classList.remove('mic-recording');
+    micBtn.textContent = '🎤';
+    input.focus();
+  };
+  try {
+    _recognition.start();
+  } catch (e) {
+    _recognizing = false;
+    micBtn.classList.remove('mic-recording');
+    micBtn.textContent = '🎤';
+  }
+}
 
 async function sendMessage() {
   if (isLoading) return;
@@ -880,6 +949,65 @@ function copyMsg(btn) {
     fallbackCopyText(text);
     showCopied();
   }
+}
+
+// 2026-07-24 ("加播放文字"): text-to-speech playback for AI replies, using
+// the browser-native Web Speech API (SpeechSynthesis) -- no backend/API
+// cost, works offline-ish once the voice is downloaded by the OS/browser.
+// Maps XFINLAB's own locale codes (js/i18n.js's I18N.currentLang, e.g.
+// "zh-HK"/"zh-TW"/"zh-CN") to the BCP-47 tags speechSynthesis actually
+// expects; most already match directly, a handful (en/ja/ko/es/etc, which
+// XFINLAB stores as the bare 2-letter code) need the full region suffix or
+// most engines won't pick a voice for them at all.
+const TTS_LANG_MAP = {
+  en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', es: 'es-ES', fr: 'fr-FR', de: 'de-DE',
+  it: 'it-IT', pt: 'pt-PT', ru: 'ru-RU', nl: 'nl-NL', pl: 'pl-PL', tr: 'tr-TR',
+  ar: 'ar-SA', hi: 'hi-IN', id: 'id-ID', th: 'th-TH', vi: 'vi-VN', ro: 'ro-RO',
+  uk: 'uk-UA', fa: 'fa-IR', ur: 'ur-PK', bn: 'bn-BD', ms: 'ms-MY',
+};
+function ttsLangCode() {
+  const cur = (typeof I18N !== 'undefined' && I18N.currentLang) || 'zh-HK';
+  if (cur.startsWith('zh')) return cur; // zh-HK / zh-TW / zh-CN already valid BCP-47
+  return TTS_LANG_MAP[cur] || cur;
+}
+let _currentUtterance = null;
+function speakMsg(btn) {
+  if (typeof window.speechSynthesis === 'undefined') {
+    alert(t('chat_tts_unsupported','此瀏覽器不支援語音播放'));
+    return;
+  }
+  const msgDiv = btn.closest('.msg');
+  const text = (msgDiv && msgDiv.dataset.rawContent) ||
+    (msgDiv && msgDiv.querySelector('.msg-bubble')?.innerText) || '';
+  if (!text) return;
+  const label = btn.querySelector('.speak-label');
+  // Toggle off: tapping the same message's button again while it's
+  // speaking just stops it, rather than restarting from the top.
+  if (_currentUtterance && btn.classList.contains('speaking')) {
+    window.speechSynthesis.cancel();
+    return;
+  }
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.msg-action-btn.speaking').forEach(b => {
+    b.classList.remove('speaking');
+    const l = b.querySelector('.speak-label');
+    if (l) l.textContent = t('chat_msg_speak','播放');
+  });
+  // Strip markdown table pipes/asterisks so playback doesn't read out
+  // raw "|" and "**" punctuation -- listeners just want the words.
+  const clean = text.replace(/\|/g, ' ').replace(/\*\*/g, '').replace(/[#>_`]/g, '');
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = ttsLangCode();
+  utter.rate = 1.0;
+  _currentUtterance = utter;
+  btn.classList.add('speaking');
+  if (label) label.textContent = t('chat_msg_stop','停止');
+  utter.onend = utter.onerror = () => {
+    btn.classList.remove('speaking');
+    if (label) label.textContent = t('chat_msg_speak','播放');
+    _currentUtterance = null;
+  };
+  window.speechSynthesis.speak(utter);
 }
 
 function deleteMsg(btn) {
