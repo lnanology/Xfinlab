@@ -274,17 +274,14 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
      longer, instead of a fixed 4 that would force-wrap long text. */
   #inputTools.mobile-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:0.5rem;padding:0 0 1.5rem;margin-top:0.8rem;width:100%;max-width:760px}
   #inputTools.mobile-card-grid .tool-btn{flex-direction:column;justify-content:center;text-align:center;padding:10px 4px;border-radius:8px;font-size:0.76rem;line-height:1.3;white-space:normal;gap:0.2rem;min-height:56px}
-  /* 2026-07-21 fix: floating widget stack (share/TG/subscribe badge/
-     lang switcher) sits fixed over the bottom of the viewport and was
-     cutting off the last welcome card's text on short mobile screens. */
-  .messages{padding-bottom:240px}
-  /* same widget-stack clearance for the welcome screen (shown before any
-     chat message is sent) -- it was missing this padding entirely, so
-     the floating widgets covered the last row of cards. Also stop
-     force-centering on mobile: centering a box shorter than its content
-     clips evenly off BOTH ends, which combined with the missing scroll
-     made the whole grid feel frozen ("完全不能滑動"). */
-  .welcome{justify-content:flex-start;padding-bottom:240px}
+  /* stop force-centering .welcome on mobile: centering a box shorter
+     than its content clips evenly off BOTH ends, which combined with the
+     missing scroll made the whole grid feel frozen ("完全不能滑動"). Actual
+     bottom clearance for the docked widget bar is set further down
+     (.messages/.welcome padding-bottom, next to #mobileWidgetDock) now
+     that the floating widgets are consolidated into one slim bar instead
+     of a tall corner stack. */
+  .welcome{justify-content:flex-start}
 
   /* 2026-07-22 fix: this page's shell is a fixed 100dvh flex column with
      overflow:hidden on html/body (needed so only .messages scrolls, not
@@ -302,6 +299,48 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
   nav{flex-wrap:wrap}
   .nav-links{position:static;width:100%;box-shadow:none;background:transparent;backdrop-filter:none;max-height:0;overflow:hidden;transition:max-height 0.3s ease}
   .nav-links.open{max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+  /* 2026-07-24 fix ("CHAT下面個輸入 放錄音旁 自動調整"): css/style.css's
+     shared .input-row rule force-stacks into a column on mobile
+     (flex-direction:column;align-items:stretch) -- that's meant for
+     other pages' filter/search rows, but on chat.html it splits the
+     textarea, mic button and send button onto 3 separate lines instead
+     of keeping them side by side. This inline <style> loads after
+     css/style.css so an equal-specificity override here wins; keep the
+     row layout and let the textarea (flex:1, see .input-box below)
+     auto-shrink/grow beside the two fixed-size round buttons instead. */
+  .input-row{flex-direction:row;align-items:center;flex-wrap:nowrap}
+  .input-box{flex:1;min-width:0}
+
+  /* 2026-07-24 fix ("分享 語言 跟 積分 Feedback 橙色預訂每日信號 藍色TG
+     signal 6個係下面 3 3"): these 6 widgets are each injected
+     independently (share-widget.js, i18n.js's language switcher,
+     points-badge.js, plus the inline #fbWidget/#tgWidget blocks further
+     down this file) as separate position:fixed elements scattered across
+     corners -- on narrow screens they overlapped each other and the
+     points badge in particular sat right over the input area ("唔好比積分
+     擋住"). dockMobileWidgets() (below, in the main script block)
+     physically moves all 6 into #mobileWidgetDock, a single bar pinned
+     to the very bottom of the screen, laid out here as 3 columns x 2
+     rows. The !important overrides neutralize each widget's own inline
+     position/inset styles so they behave as normal grid items instead of
+     still trying to float independently. Desktop is untouched; widgets
+     keep their original fixed corners there. */
+  #mobileWidgetDock{position:fixed;left:0;right:0;bottom:0;z-index:1000;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:var(--bg-card);border-top:1px solid var(--border-color);box-shadow:0 -4px 16px rgba(0,0,0,0.15)}
+  #mobileWidgetDock>*{position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;margin:0!important}
+  #mobileWidgetDock button,#mobileWidgetDock>a{font-size:0.64rem!important;padding:6px 2px!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;max-width:100%;border-radius:8px!important;box-shadow:none!important;width:100%!important;text-align:center!important}
+  /* the popover panels (feedback form, TG channel links, share menu,
+     language list) still need to open as an overlay, not squashed inside
+     their now tiny grid cell -- float them centered just above the dock
+     instead of anchored to their (shrunk) parent widget. */
+  #tgPanel,#fbPanel,#sharePanel,#langSwitcher>div:last-child{position:fixed!important;left:50%!important;right:auto!important;bottom:96px!important;top:auto!important;transform:translateX(-50%);width:min(280px,88vw)!important;z-index:1001!important}
+  /* reserve clearance above the docked bar so the input row (and the
+     last message/card behind it) never renders underneath it -- replaces
+     the old, much larger .messages/.welcome padding-bottom below, which
+     was sized for the previous corner-stacked widgets. */
+  .input-area{margin-bottom:100px}
+  .messages{padding-bottom:110px}
+  .welcome{padding-bottom:110px}
 }
 </style>
 </head>
@@ -839,7 +878,43 @@ window.addEventListener('DOMContentLoaded', () => {
 
   positionInputTools();
   window.addEventListener('resize', debounce(positionInputTools, 200));
+  dockMobileWidgets();
+  window.addEventListener('resize', debounce(dockMobileWidgets, 200));
 });
+
+// 2026-07-24 fix ("分享 語言 跟 積分 Feedback 橙色預訂每日信號 藍色TG
+// signal 6個係下面 3 3"): moves the 6 independently-injected floating
+// widgets into #mobileWidgetDock (styling in the mobile media query
+// above) on phones/small tablets. Some of these are appended
+// asynchronously by their own script (points-badge.js waits on a fetch;
+// i18n.js's language switcher waits on the translations request), so
+// this can't just run once on DOMContentLoaded -- a MutationObserver on
+// document.body catches each widget the moment it actually appears,
+// however late that is, without needing to poll.
+const MOBILE_DOCK_IDS = ['tgWidget', 'fbWidget', 'xflPointsBadge', 'shareWidget', 'langSwitcher', 'freeSignalsBadge'];
+function dockMobileWidgets() {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  let dock = document.getElementById('mobileWidgetDock');
+  if (isMobile) {
+    if (!dock) {
+      dock = document.createElement('div');
+      dock.id = 'mobileWidgetDock';
+      document.body.appendChild(dock);
+    }
+    MOBILE_DOCK_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.parentElement !== dock) dock.appendChild(el);
+    });
+  } else if (dock) {
+    // crossed back to desktop width (e.g. rotating a tablet) -- restore
+    // each widget as a direct body child so it goes back to its own
+    // original fixed corner instead of staying grid-docked.
+    Array.from(dock.children).forEach(el => document.body.appendChild(el));
+  }
+}
+if (document.body) {
+  new MutationObserver(debounce(dockMobileWidgets, 150)).observe(document.body, { childList: true });
+}
 
 function debounce(fn, ms) {
   let h;
