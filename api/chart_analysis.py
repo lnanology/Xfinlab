@@ -14,11 +14,21 @@ router = APIRouter()
 # --- Security limits ---
 MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8MB, after base64 decoding
 
-# Ticker symbols only -- letters, digits, dot, dash, equals (covers
-# AAPL, 0700.HK, ES=F, BTC-USD etc.). Validated BEFORE anything touches
-# yfinance/Alpaca so junk input is rejected cheaply, before any network
-# call is made.
-_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=]{1,12}$")
+# Ticker symbols only -- letters, digits, dot, dash, equals, caret (covers
+# AAPL, 0700.HK, ES=F, BTC-USD, ^HSI/^GSPC/^DJI/^VIX/^TNX etc.). Validated
+# BEFORE anything touches yfinance/Alpaca so junk input is rejected
+# cheaply, before any network call is made.
+#
+# 2026-07-25 fix ("期貨無既... 指 債 ETF... 所有資產可見"): this regex was
+# missing "^", the standard yfinance prefix for every world index (^HSI,
+# ^GSPC, ^DJI, ^IXIC, ^N225, ^FTSE...), VIX (^VIX), and Treasury-yield
+# "bond" tickers (^TNX/^TYX/^FVX) -- so every one of those, whether typed
+# directly or auto-filled from autocomplete.js's own `api` field (which
+# already uses these exact ^-prefixed tickers for HK50/US30/SPX500/etc),
+# was silently rejected here with "代號格式無效" before ever reaching
+# yfinance. api/backtest.py's own _SYMBOL_RE already included "^" --
+# this brings the other two copies in line with it.
+_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=^]{1,12}$")
 
 # --- AI response cache (Security & Operations Layer, Phase 4 -- cost-free
 # version) ---

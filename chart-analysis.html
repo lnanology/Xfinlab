@@ -627,15 +627,27 @@ document.getElementById('tickerSearchInput').addEventListener('keydown', (e) => 
 // only happens on submit). Reuses the already-translated topopp_class_*
 // labels (stock/futures/crypto) from the homepage's Top Opportunity
 // section instead of adding new i18n keys for the same three concepts.
+//
+// 2026-07-25 fix ("包括 股 指 債 ETF 外匯 商品 所有資產可見"): every
+// "^"-prefixed ticker (world indices ^HSI/^GSPC/^DJI/^VIX, and Treasury-
+// yield "bond" tickers ^TNX/^TYX/^FVX/^IRX) used to fall through to the
+// generic "Stocks" label since this only ever checked for "=" (futures)
+// or "-" (crypto) -- misleading for e.g. ^HSI, which isn't a stock at
+// all. Added ca_tf-adjacent topopp_class_index/topopp_class_bond keys so
+// these show their real class instead.
+const _YIELD_TICKERS = ['^TNX', '^TYX', '^FVX', '^IRX'];
 function detectAssetPreview(raw){
   const s = (raw || '').trim();
   if (!s) return null;
   const normalized = normalizeGlobalTicker(s);
   let classKey;
-  if (normalized.includes('=')) classKey = 'topopp_class_futures';
+  if (_YIELD_TICKERS.includes(normalized)) classKey = 'topopp_class_bond';
+  else if (normalized.startsWith('^')) classKey = 'topopp_class_index';
+  else if (normalized.includes('=')) classKey = 'topopp_class_futures';
   else if (normalized.includes('-')) classKey = 'topopp_class_crypto';
   else classKey = 'topopp_class_stock';
-  const classLabel = t(classKey, {topopp_class_futures:'Futures', topopp_class_crypto:'Crypto', topopp_class_stock:'Stocks'}[classKey]);
+  const fallbacks = {topopp_class_futures:'Futures', topopp_class_crypto:'Crypto', topopp_class_stock:'Stocks', topopp_class_index:'Index', topopp_class_bond:'Bond Yield'};
+  const classLabel = t(classKey, fallbacks[classKey]);
   return `→ ${normalized} · ${classLabel}`;
 }
 

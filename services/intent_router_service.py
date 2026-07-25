@@ -62,7 +62,10 @@ _KEYWORDS = [
 ]
 
 # Same ticker-format guard used elsewhere (api/anomaly.py, api/chart_analysis.py).
-_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=]{1,12}$")
+# Includes "^" (2026-07-25 fix, see chart_analysis.py's _SYMBOL_RE comment)
+# so world indices/VIX/Treasury-yield tickers (^HSI, ^GSPC, ^VIX, ^TNX etc.)
+# aren't rejected.
+_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=^]{1,12}$")
 
 
 def _extract_ticker(text: str):
@@ -71,7 +74,7 @@ def _extract_ticker(text: str):
     chars) -- false negatives (missing a ticker) are fine, since the
     page the user lands on still has its own search box; false
     positives (treating a random word as a ticker) are worse."""
-    for token in re.findall(r"[A-Za-z0-9.\-]{1,12}", text):
+    for token in re.findall(r"[A-Za-z0-9.\-^]{1,12}", text):
         candidate = token.upper().strip(".-")
         if candidate and _SYMBOL_RE.match(candidate) and any(c.isalnum() for c in candidate):
             # Skip obviously-not-a-ticker all-lowercase common words that

@@ -8,8 +8,11 @@ from services.anomaly_history_service import scan_last_30_days
 router = APIRouter()
 
 # Same ticker-format guard used by api/chart_analysis.py -- reject junk
-# input cheaply before it ever reaches market_data_service.
-_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=]{1,12}$")
+# input cheaply before it ever reaches market_data_service. Includes "^"
+# (2026-07-25 fix, see chart_analysis.py's _SYMBOL_RE comment) so world
+# indices/VIX/Treasury-yield tickers (^HSI, ^GSPC, ^VIX, ^TNX etc.) aren't
+# rejected before ever reaching yfinance.
+_SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=^]{1,12}$")
 
 
 @router.get("/anomaly")
