@@ -220,31 +220,55 @@ function renderAnomalyResult(ticker, result) {
 
 function renderAnomalyHistory(ticker, data) {
   const flagged = data.flagged || [];
-  const heading = `<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:18px 0 10px" data-i18n="anom_history_title">過去30日成交量異常</div>`;
+  // 2026-07-25 fix (task #414): these had data-i18n tags but were never
+  // actually translated -- I18N.apply() only scans [data-i18n] elements
+  // ONCE, right after i18n.js's initial fetch resolves (see js/i18n.js's
+  // init()); it never re-runs on HTML injected later via innerHTML, which
+  // is exactly how this whole block is inserted. Using this file's own
+  // t() helper (same pattern as every other dynamic string on this page)
+  // resolves the translation at render time instead, so it actually shows
+  // the right language regardless of when this function runs.
+  const heading = `<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:18px 0 10px">${t('anom_history_title', '過去30日成交量異常')}</div>`;
 
   if (!flagged.length) {
-    return `${heading}<div class="empty-box" data-i18n="anom_history_empty">過去30日未發現明顯成交量或價格異常</div>`;
+    return `${heading}<div class="empty-box">${t('anom_history_empty', '過去30日未發現明顯成交量或價格異常')}</div>`;
   }
 
-  const days = flagged.map(day => {
-    const anomalyLines = (day.anomalies || []).map(a =>
-      `<div class="anomaly-detail">· ${a.detail}</div>`
-    ).join('');
+  // 2026-07-25 fix (task #414, "duplicated bilingual event descriptions"):
+  // this line used to be followed by `anomalyLines` -- each of
+  // day.anomalies[].detail from engines/anomaly_engine.py, e.g. "Volume
+  // 4.65x above average" -- which restated the EXACT SAME volume-ratio/
+  // price-change numbers already in the summary line below, just in
+  // hardcoded English while the summary line itself was hardcoded
+  // Chinese. That looked like the same event described twice in two
+  // different languages stacked on top of each other. The summary line
+  // is now translated via anom_history_summary (46 languages) and the
+  // now-redundant anomalyLines block is removed -- severity/volume/price
+  // are already fully conveyed by the summary line + badge, so nothing
+  // substantive is lost.
+  const summaryTemplate = t('anom_history_summary', '成交量 {volume}（平均 {avg}，{ratio}x）· 價格變化 {pct}%');
+  const marketCloseLabel = t('anom_history_market_close', '收市 (Market Close)');
 
+  const days = flagged.map(day => {
     const newsLines = (day.news || []).length
       ? (day.news || []).map(n => n.url
           ? `<div class="anomaly-detail" style="margin-top:4px">📰 <a href="${n.url}" target="_blank" rel="noopener" style="color:var(--accent-blue);text-decoration:none">${n.title}</a>${n.source ? ` — ${n.source}` : ''}</div>`
           : `<div class="anomaly-detail" style="margin-top:4px">📰 ${n.title}${n.source ? ` — ${n.source}` : ''}</div>`
         ).join('')
-      : `<div class="anomaly-detail" style="margin-top:4px;opacity:0.7" data-i18n="anom_history_no_news">暫無相關新聞</div>`;
+      : `<div class="anomaly-detail" style="margin-top:4px;opacity:0.7">${t('anom_history_no_news', '暫無相關新聞')}</div>`;
+
+    const summary = summaryTemplate
+      .replace('{volume}', Number(day.volume).toLocaleString())
+      .replace('{avg}', Number(day.avg_volume).toLocaleString())
+      .replace('{ratio}', day.volume_ratio)
+      .replace('{pct}', day.price_change_pct);
 
     return `
       <div class="anomaly-item">
         <div class="anomaly-icon">📅</div>
         <div style="flex:1">
-          <div class="anomaly-type severity-${day.severity || 'NONE'}">${day.date} · ${day.time} <span class="badge badge-${day.severity || 'NONE'}" style="margin-left:6px">${day.severity || 'NONE'}</span></div>
-          <div class="anomaly-detail">成交量 ${Number(day.volume).toLocaleString()}（平均 ${Number(day.avg_volume).toLocaleString()}，${day.volume_ratio}x）· 價格變化 ${day.price_change_pct}%</div>
-          ${anomalyLines}
+          <div class="anomaly-type severity-${day.severity || 'NONE'}">${day.date} · ${marketCloseLabel} <span class="badge badge-${day.severity || 'NONE'}" style="margin-left:6px">${day.severity || 'NONE'}</span></div>
+          <div class="anomaly-detail">${summary}</div>
           ${newsLines}
         </div>
       </div>`;
