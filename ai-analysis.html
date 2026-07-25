@@ -82,7 +82,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
 <script src="js/free-signals-badge.js"></script>
-<script src="js/tradingview-widget.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <meta name="description" content="Instant AI stock analysis. Market scores, risk & investment ratings.">
 <meta property="og:title" content="AI Stock Analysis — XFINLAB">
 <meta property="og:description" content="Instant AI stock analysis. Market scores, risk & investment ratings.">
@@ -161,9 +161,9 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <!-- Layer 3: AI Summary (1-minute read) -->
     <div class="ai-summary-box" id="aiSummaryBox" style="display:none"></div>
 
-    <div class="panel" id="tvChartPanel" style="display:none">
-      <h4 style="margin-top:0" data-i18n="ca_tv_title">TradingView 圖表</h4>
-      <div id="tvChartContainer" style="height:500px"></div>
+    <div class="panel" id="klineChartPanel" style="display:none">
+      <h4 style="margin-top:0" data-i18n="ca_tv_title">K線圖</h4>
+      <div id="klineChart" style="height:420px"></div>
     </div>
 
     <!-- Layer 4: interactive accordion modules (5-minute deep dive) -->
@@ -457,6 +457,65 @@ function renderShippingProxy(sp){
   combinedEl.className = '';
 }
 
+// 2026-07-25 ("自行建可顯示任何資產嘅K線圖，不用TradingView"): self-hosted
+// candlestick chart (Lightweight Charts, free/open-source, no API key)
+// instead of the TradingView iframe embed, using the real OHLC bars the
+// backend already fetches for decision_levels/confluence above (see
+// api/ai_analysis.py's tech_ohlc) -- renders for any symbol this page can
+// analyze, with no TradingView EXCHANGE:SYMBOL mapping dependency.
+let klineChart = null;
+let klineSeries = null;
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function ensureKlineChart() {
+  const container = document.getElementById('klineChart');
+  if (!container) return;
+  if (klineChart) { klineChart.remove(); klineChart = null; klineSeries = null; }
+  klineChart = LightweightCharts.createChart(container, {
+    layout: { background: { color: 'transparent' }, textColor: cssVar('--text-secondary', '#94a3b8') },
+    grid: {
+      vertLines: { color: 'rgba(148,163,184,0.08)' },
+      horzLines: { color: 'rgba(148,163,184,0.08)' },
+    },
+    timeScale: { borderVisible: false },
+    rightPriceScale: { borderVisible: false },
+    autoSize: true,
+  });
+  klineSeries = klineChart.addCandlestickSeries({
+    upColor: cssVar('--accent-green', '#16A34A'),
+    downColor: cssVar('--accent-red', '#DC2626'),
+    borderVisible: false,
+    wickUpColor: cssVar('--accent-green', '#16A34A'),
+    wickDownColor: cssVar('--accent-red', '#DC2626'),
+  });
+}
+
+function renderKlineChart(ohlc, decisionLevels) {
+  if (!klineSeries || !ohlc || !ohlc.length) return;
+  klineSeries.setData(ohlc.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+
+  (klineSeries._xflLines || []).forEach(l => klineSeries.removePriceLine(l));
+  klineSeries._xflLines = [];
+  const tr = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+  const addLine = (price, color, title) => {
+    if (price == null || isNaN(price)) return;
+    klineSeries._xflLines.push(klineSeries.createPriceLine({
+      price, color, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: true, title,
+    }));
+  };
+  if (decisionLevels) {
+    addLine(decisionLevels.entry, cssVar('--accent-blue', '#2563EB'), tr('ca_reco_entry', '進場'));
+    addLine(decisionLevels.stop_loss, cssVar('--accent-red', '#DC2626'), tr('ca_reco_stop', '止損'));
+    (decisionLevels.take_profits || []).forEach((tp, i) => addLine(tp, cssVar('--accent-green', '#16A34A'), `${tr('ca_reco_tp', '目標')}${i + 1}`));
+  }
+  klineChart.timeScale().fitContent();
+}
+
 async function runAnalysis(){
   const input=document.getElementById('symbolInput').value.trim();
   if(!input){alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_alert_no_symbol'])||'請輸入至少一個代號');return}
@@ -468,12 +527,16 @@ async function runAnalysis(){
     const data = result.data;
     const scores = data.scores;
     const probs = data.probabilities;
-    // TradingView chart -- shown for the first symbol searched, purely as
-    // a familiar professional-grade visual reference alongside the scores
-    // below (see js/tradingview-widget.js for the symbol-mapping limits).
-    if (typeof window.renderTradingViewWidget === 'function' && symbols.length) {
-      document.getElementById('tvChartPanel').style.display = 'block';
-      window.renderTradingViewWidget('tvChartContainer', symbols[0]);
+    // 2026-07-25 fix ("自行建可顯示任何資產嘅K線圖，不用TradingView"): see
+    // ensureKlineChart()/renderKlineChart() above -- real OHLC bars for
+    // the first symbol searched, with the same real entry/stop/take-
+    // profit levels overlaid as price lines.
+    if (data.ohlc && data.ohlc.length) {
+      document.getElementById('klineChartPanel').style.display = 'block';
+      ensureKlineChart();
+      renderKlineChart(data.ohlc, data.decision_levels);
+    } else {
+      document.getElementById('klineChartPanel').style.display = 'none';
     }
 
     document.getElementById('fundScore').textContent = scores.fund + '/100';

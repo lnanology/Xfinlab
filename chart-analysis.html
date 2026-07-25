@@ -66,7 +66,7 @@
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
 <script src="js/free-signals-badge.js"></script>
-<script src="js/tradingview-widget.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
 
@@ -142,9 +142,9 @@
     </div>
   </div>
 
-  <div class="panel" id="tvChartPanel" style="display:none">
-    <h4 style="margin-top:0" data-i18n="ca_tv_title">TradingView 圖表</h4>
-    <div id="tvChartContainer" style="height:500px"></div>
+  <div class="panel" id="klineChartPanel" style="display:none">
+    <h4 style="margin-top:0" data-i18n="ca_tv_title">K線圖</h4>
+    <div id="klineChart" style="height:420px"></div>
   </div>
 
   <div class="analysis-section single-col" id="analysisSection">
@@ -402,6 +402,73 @@ function normalizeGlobalTicker(raw) {
 
 let currentSearchSymbol = null;
 
+// 2026-07-25 ("自行建可顯示任何資產嘅K線圖，不用TradingView"): self-hosted
+// candlestick chart using Lightweight Charts (a free, open-source,
+// no-API-key charting library) instead of the TradingView iframe embed.
+// Renders straight from res.ohlc -- the same real historical data already
+// driving the Support/Resistance/RSI/MACD numbers below -- so it works
+// for literally any ticker this page's /api/chart-search endpoint can
+// resolve, with no dependency on matching TradingView's own
+// EXCHANGE:SYMBOL naming convention.
+let klineChart = null;
+let klineSeries = null;
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function ensureKlineChart() {
+  const container = document.getElementById('klineChart');
+  if (!container) return;
+  if (klineChart) { klineChart.remove(); klineChart = null; klineSeries = null; }
+  klineChart = LightweightCharts.createChart(container, {
+    layout: { background: { color: 'transparent' }, textColor: cssVar('--text3', '#94a3b8') },
+    grid: {
+      vertLines: { color: 'rgba(148,163,184,0.08)' },
+      horzLines: { color: 'rgba(148,163,184,0.08)' },
+    },
+    timeScale: { borderVisible: false },
+    rightPriceScale: { borderVisible: false },
+    autoSize: true,
+  });
+  klineSeries = klineChart.addCandlestickSeries({
+    upColor: cssVar('--green', '#16A34A'),
+    downColor: cssVar('--red', '#DC2626'),
+    borderVisible: false,
+    wickUpColor: cssVar('--green', '#16A34A'),
+    wickDownColor: cssVar('--red', '#DC2626'),
+  });
+}
+
+function renderKlineChart(res) {
+  if (!klineSeries) return;
+  klineSeries.setData(res.ohlc.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+
+  // Overlay the same real support/resistance/entry/stop/take-profit
+  // levels shown as text in the result rows below, directly on the chart
+  // as horizontal price lines -- previously these only existed as
+  // numbers, now they're visible against the actual price action.
+  (klineSeries._xflLines || []).forEach(l => klineSeries.removePriceLine(l));
+  klineSeries._xflLines = [];
+  const addLine = (price, color, title) => {
+    if (price == null || isNaN(price)) return;
+    klineSeries._xflLines.push(klineSeries.createPriceLine({
+      price, color, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: true, title,
+    }));
+  };
+  if (res.support && res.support.level != null) addLine(res.support.level, cssVar('--green', '#16A34A'), t('ca_support', '支撐位'));
+  if (res.resistance && res.resistance.level != null) addLine(res.resistance.level, cssVar('--red', '#DC2626'), t('ca_resistance', '阻力位'));
+  const dl = res.decision_levels;
+  if (dl) {
+    addLine(dl.entry, cssVar('--accent-blue', '#2563EB'), t('ca_reco_entry', '進場'));
+    addLine(dl.stop_loss, cssVar('--red', '#DC2626'), t('ca_reco_stop', '止損'));
+    (dl.take_profits || []).forEach((tp, i) => addLine(tp, cssVar('--green', '#16A34A'), `${t('ca_reco_tp', '目標')}${i + 1}`));
+  }
+  klineChart.timeScale().fitContent();
+}
+
 // Defensive DOM helper -- every "分析失敗" crash reported so far traced
 // back to a plain `document.getElementById(id).textContent = ...` call
 // throwing "Cannot set properties of null" when some element wasn't
@@ -448,7 +515,7 @@ function switchMode(mode) {
   if (analysisSide) analysisSide.style.display = isSearch ? 'none' : 'block';
   if (analysisSection) analysisSection.classList.toggle('single-col', isSearch);
   if (!isSearch) {
-    document.getElementById('tvChartPanel').style.display = 'none';
+    document.getElementById('klineChartPanel').style.display = 'none';
     document.getElementById('patternBlock').style.display = 'block';
     document.getElementById('patternSummaryRow').style.display = 'flex';
     document.getElementById('aiCommentaryBlock').style.display = 'none';
@@ -525,16 +592,22 @@ async function runTickerSearch(symbolOverride){
     currentSearchSymbol = symbol;
     trackEvent('search', {ticker: symbol, mode: 'chart_search'});
 
-    // 2026-07-19 fix: this page used to show TWO charts side by side --
-    // this custom lightweight-charts candlestick panel AND the
-    // TradingView widget below. Feedback was that having both was
-    // confusing/redundant. Kept TradingView (familiar professional
-    // interface); the real OHLC bars (res.ohlc) still drive the actual
-    // Support/Resistance/RSI/MACD numbers below same as before, they're
-    // just no longer ALSO rendered as a separate chart.
-    if (typeof window.renderTradingViewWidget === 'function') {
-      document.getElementById('tvChartPanel').style.display = 'block';
-      window.renderTradingViewWidget('tvChartContainer', symbol);
+    // 2026-07-25 fix ("自行建可顯示任何資產嘅K線圖，不用TradingView"):
+    // back to a self-hosted chart instead of the TradingView iframe embed
+    // (which needed a correct EXCHANGE:SYMBOL mapping and silently showed
+    // a plain notice for anything that didn't map, e.g. indices/continuous
+    // futures/forex -- see js/tradingview-widget.js history). This reuses
+    // the exact real OHLC bars (res.ohlc) already fetched for every
+    // ticker XFINLAB supports, so it renders for ANY asset this page can
+    // search, with no third-party symbol-mapping dependency at all. Also
+    // overlays the same real support/resistance/entry/stop/take-profit
+    // levels shown as text below directly onto the chart as price lines.
+    if (res.ohlc && res.ohlc.length) {
+      document.getElementById('klineChartPanel').style.display = 'block';
+      ensureKlineChart();
+      renderKlineChart(res);
+    } else {
+      document.getElementById('klineChartPanel').style.display = 'none';
     }
 
     safeSetText('dataSourceTag', t('ca_data_source_search','（支撐/阻力/RSI/MACD 來自真實歷史數據）'));

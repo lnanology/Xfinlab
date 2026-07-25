@@ -164,6 +164,7 @@ async def ai_analysis(body: dict):
     tech_trend = None
     tech_support = None
     tech_resistance = None
+    tech_ohlc = None
     try:
         tech = get_technical_analysis(symbol)
         if tech and "error" not in tech:
@@ -173,6 +174,13 @@ async def ai_analysis(body: dict):
             tech_trend = tech.get("trend")
             tech_support = tech.get("support")
             tech_resistance = tech.get("resistance")
+            # 2026-07-25 ("自行建可顯示任何資產嘅K線圖，不用TradingView"):
+            # this was already being fetched for decision_levels/confluence
+            # above -- just wasn't forwarded to the frontend before, since
+            # this page only ever showed the TradingView iframe (which
+            # needs no OHLC data of its own). Now that ai-analysis.html
+            # draws its own candlestick chart, it needs the same real bars.
+            tech_ohlc = tech.get("ohlc")
     except Exception:
         pass
 
@@ -378,6 +386,7 @@ async def ai_analysis(body: dict):
             "symbol": symbol,
             "price": market.get("price", 0),
             "decision_levels": decision_levels,
+            "ohlc": tech_ohlc,
             "hero": {
                 "rating": hero_rating,
                 "stars": hero_stars,
