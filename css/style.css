@@ -225,16 +225,27 @@ nav {
    onto .nav-links' wrapped row (wrong, and specifically what put the
    search icon alone on the far left of a second row instead of next to
    Light/Account) depended on injection timing and was inconsistent page
-   to page. Pinning all three to the same explicit order here -- lower
-   than .xfl-nav-wrapped's order:3, so they always share the logo's row
-   instead of following .nav-links onto its own wrapped line -- makes
-   this deterministic regardless of which script's inline style (if any)
-   set something different. !important is necessary since inline styles
-   from the JS that creates these elements would otherwise win. */
-#xflGSearchBtn,
-#themeToggleBtn,
-#xflSettingsWrap {
+   to page. Pinning all four (AI Chat added 2026-07-25, "TOPBAR 右邊放
+   AI CHAT，放大鏡，換底色，ACCOUNT 所有頁統一咁做") to explicit,
+   sequential order values here -- all lower than .xfl-nav-wrapped's
+   order:3, so they always share the logo's row instead of following
+   .nav-links onto its own wrapped line -- makes this deterministic
+   regardless of which script's inline style (if any) set something
+   different, AND keeps them in the exact left-to-right sequence asked
+   for (Chat, Search, Theme, Account) instead of relying on injection
+   order. !important is necessary since inline styles from the JS that
+   creates these elements would otherwise win. */
+#xflChatBtn {
   order: 1 !important;
+}
+#xflGSearchBtn {
+  order: 2 !important;
+}
+#themeToggleBtn {
+  order: 3 !important;
+}
+#xflSettingsWrap {
+  order: 4 !important;
 }
 
 .nav-links.open {
