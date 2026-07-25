@@ -36,6 +36,8 @@
   .btn { background: var(--accent); color: var(--accent-text); padding: 12px 32px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block; }
   .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  footer { padding: 1.6rem; border-top: 1px solid var(--border); text-align: center; font-size: 0.85rem; color: var(--muted); }
+  footer a { color: var(--accent); text-decoration: none; }
 </style>
 <script src="js/theme-toggle.js"></script>
 </head>
@@ -48,6 +50,8 @@
     <div class="desc">請稍候，正在驗證你的電郵地址</div>
   </div>
 </main>
+
+<footer>XFINLAB © 2026 · 驗證電郵 · <a href="privacy.html">私隱政策</a></footer>
 
 <script>
 const API = "https://api.xfinlab.com/api";
