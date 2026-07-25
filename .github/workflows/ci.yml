@@ -56,3 +56,17 @@ jobs:
       - name: Lint (non-blocking)
         run: ruff check . || true
         continue-on-error: true
+
+      # 2026-07-26: BDD scenarios (Given/When/Then, via pytest-bdd -- already
+      # added to requirements-dev.txt above, no other change needed here).
+      # Covers: i18n translation-table coverage (regression guard for the
+      # "some languages missing a key" bug class fixed twice this session),
+      # admin-endpoint auth rejection (read-only, confirms task #182's
+      # verify_admin() gate is still in place -- never touches real
+      # credentials or weakens the gate), and app health. Starts
+      # non-blocking like the two steps above, since this is brand new and
+      # still small -- can flip to a hard gate once it's grown real
+      # coverage and proven itself flake-free.
+      - name: BDD scenarios (non-blocking)
+        run: pytest tests/step_defs/ -v
+        continue-on-error: true
