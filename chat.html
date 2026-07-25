@@ -268,6 +268,7 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 
 @media(max-width:768px){
   .sidebar{display:none}
+  #newChatBtnMobile{display:block!important;margin:6px 12px;width:calc(100% - 24px)}
   .welcome-grid{grid-template-columns:1fr}
   .msg{max-width:95%}
   /* 2026-07-24 fix ("14個直接放短線投資卡片下面，接住滑落去，用細卡片排
@@ -372,12 +373,27 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
     <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
     <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
     <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
-    <button class="new-chat-btn" onclick="newChat()" data-i18n="chat_new_chat">＋ 新對話</button>
+    <!-- 2026-07-25 fix: the real "+New Chat" button now lives in .sidebar
+         (see below), but .sidebar is display:none on mobile (<=768px, see
+         the @media(max-width:768px) block below), which would leave mobile
+         users with no way to start a new chat at all. This duplicate stays
+         hidden on desktop (id="newChatBtnMobile", display:none inline) and
+         is only shown by the existing mobile media query below, so it
+         surfaces inside the hamburger dropdown instead. -->
+    <button class="new-chat-btn" id="newChatBtnMobile" onclick="newChat()" data-i18n="chat_new_chat" style="display:none;">＋ 新對話</button>
   </div>
 </nav>
 
 <div class="main">
   <div class="sidebar">
+    <!-- 2026-07-25 fix ("new chat 放Recent Chats上面，Recent Chats推落一行"):
+         used to sit inside .nav-links, crowding the already-wide topbar
+         (12 page links) and contributing to #xflTopRightGroup wrapping
+         onto its own line -- see the #xflTopRightGroup fix in
+         css/style.css below. Moved here, above the "Recent Chats" label,
+         so it reads as the sidebar's own primary action instead of just
+         another topbar link. -->
+    <button class="new-chat-btn" onclick="newChat()" data-i18n="chat_new_chat" style="margin:12px 1rem 0.8rem;width:calc(100% - 2rem);">＋ 新對話</button>
     <div class="sb-label" style="padding:0 1rem;" data-i18n="chat_recent_label">最近對話</div>
     <div class="history-list" id="historyList"></div>
   </div>

@@ -246,6 +246,18 @@ nav {
   gap: 8px;
   flex-wrap: wrap;
   flex-shrink: 0;
+  /* 2026-07-25 fix ("放大鏡 LIGHT ACCOUNT放右邊"): on pages with a long
+     .nav-links row (e.g. chat.html's 12 links), .nav-links alone can fill
+     the whole first line, leaving no room for this wrapper on that same
+     line -- <nav>'s flex-wrap then drops it alone onto its own 2nd line.
+     A lone flex item on a `justify-content: space-between` line resolves
+     to flex-start (left edge), which is exactly the "左邊" bug reported
+     here. margin-left:auto claims all remaining free space on ITS side
+     regardless of how many other items share that line, so this wrapper
+     always hugs the right edge whether it's sharing the logo's row or
+     wrapped onto its own -- no visual change on pages where it already
+     fit on the first row. */
+  margin-left: auto;
 }
 .nav-links.open {
   /* 2026-07-19 fix: was a fixed 320px cap left over from when the nav
