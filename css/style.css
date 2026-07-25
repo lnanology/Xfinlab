@@ -217,40 +217,35 @@ nav {
 
 /* 2026-07-25 fix (task #417 follow-up, "右邊導航排 放大鏡 LIGHT ACCOUNT
    放右上角" landing inconsistently across pages): the search icon
-   (js/nav.js), theme toggle (js/theme-toggle.js) and Account widget
-   (js/nav.js) are each injected by a DIFFERENT script as a plain
-   sibling of .nav-links inside <nav>, and only theme-toggle.js ever set
-   an inline `order` on itself -- so whether these three ended up grouped
-   together on the same row as the logo (correct) or got dragged down
-   onto .nav-links' wrapped row (wrong, and specifically what put the
-   search icon alone on the far left of a second row instead of next to
-   Light/Account) depended on injection timing and was inconsistent page
-   to page.
+   (js/nav.js), theme toggle (js/theme-toggle.js), AI Chat (js/nav.js)
+   and Account widget (js/nav.js) used to each be injected as a plain,
+   SEPARATE sibling of .nav-links directly inside <nav>. Two attempts at
+   fixing their row placement via `order` (distinct 1/2/3/4 values, then
+   a shared order:1) both missed the actual bug: with 4+ separate flex
+   items sharing <nav>'s `justify-content: space-between`, the row
+   distributes equal gaps across ALL of them, spreading search / chat /
+   theme / account out across the full row width instead of grouping
+   them tightly on the right ("TOPBAR 右邊放 AI CHAT，放大鏡，換底色，
+   ACCOUNT" means grouped together, not evenly spread).
 
-   2026-07-25 follow-up fix: a first attempt here gave these four
-   (AI Chat added same day, "TOPBAR 右邊放 AI CHAT，放大鏡，換底色，
-   ACCOUNT 所有頁統一咁做") DISTINCT sequential order values
-   (1/2/3/4) to control their exact left-to-right sequence -- but
-   themeToggleBtn's order:3 collided with .nav-links.xfl-nav-wrapped's
-   order:3 directly above. Flex resolves order ties by DOM/source
-   order, and .nav-links (an original HTML child, so earlier in that
-   tied group) sorted before themeToggleBtn and forced its own full-
-   width line (flex-basis:100%) first -- pushing themeToggleBtn (and
-   anything ordered after it, i.e. Account) onto a THIRD line below
-   nav-links instead of staying on the logo's row. Confirmed live via
-   screenshots: chat+search stayed grouped (order 1/2, safely below 3)
-   but Light+Account landed on their own row underneath the nav-links
-   row. Fix: give all four the SAME order value, so they form one tied
-   group that resolves entirely by DOM order among themselves -- the
-   exact visual sequence among the four is secondary to them reliably
-   sharing one row, which is the actual ask. !important remains
-   necessary since inline styles from the JS that creates these
-   elements would otherwise win. */
-#xflChatBtn,
-#xflGSearchBtn,
-#themeToggleBtn,
-#xflSettingsWrap {
-  order: 1 !important;
+   2026-07-25 real fix: js/nav.js and js/theme-toggle.js now insert all
+   four buttons into one shared wrapper, #xflTopRightGroup (created by
+   whichever script runs first), instead of as direct children of
+   <nav>. That wrapper is itself a single flex item of <nav>, so
+   space-between only ever sees {logo, .nav-links, this one wrapper} --
+   and the wrapper's own internal flex + small gap keeps the four
+   buttons visually grouped together, in a fixed left-to-right order
+   (Chat -> Search -> Theme -> Account) maintained by insertion position,
+   not by `order`. No `order` override is needed here any more: the
+   wrapper's default order (0) already sorts before
+   .nav-links.xfl-nav-wrapped's order:3, so it reliably stays on the
+   logo's row with no collision risk. */
+#xflTopRightGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .nav-links.open {
   /* 2026-07-19 fix: was a fixed 320px cap left over from when the nav
