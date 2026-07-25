@@ -121,8 +121,12 @@
   .search-input:focus { outline: none; border-color: var(--accent); }
   .search-btn { background: var(--accent); color: var(--accent-text); border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s; }
   .search-btn:hover { opacity: 0.85; }
-  .hero-ask-ai { display: inline-block; margin-top: 12px; font-size: 0.85rem; color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--border); transition: color 0.2s, border-color 0.2s; }
-  .hero-ask-ai:hover { color: var(--accent); border-color: var(--accent); }
+  .ask-ai-bar { max-width: 480px; display: flex; gap: 8px; margin-top: 10px; }
+  .ask-ai-input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; font-family: 'Inter', sans-serif; transition: border-color 0.2s; }
+  .ask-ai-input:focus { outline: none; border-color: var(--accent); }
+  .ask-ai-btn { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; white-space: nowrap; transition: border-color 0.2s, color 0.2s; }
+  .ask-ai-btn:hover { border-color: var(--accent); color: var(--accent); }
+  @media (max-width: 860px) { .ask-ai-bar { margin: 10px auto 0; } }
 
   /* Hero Live AI Result card -- real data via /api/hero-showcase, not mockup */
   .ai-result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 26px 28px; }
@@ -471,13 +475,17 @@
     </div>
       <button class="search-btn" onclick="goAnalyze()"><span data-i18n="hero_btn">分析 →</span></button>
     </div>
-    <!-- 2026-07-25 ("首頁個AI CHAT 放去 分析按鈕 下面"): a lightweight
-         entry point right under the hero search+analyze row, for anyone
-         who'd rather ask a free-text question than type a ticker into
-         the search box above. Links to chat.html with no ?q= prefill --
-         unlike the ai-analysis.html/screener.html "唔明？直接問AI" links,
-         there's no analysis result yet to attach as context this early. -->
-    <a href="chat.html" class="hero-ask-ai" data-i18n="hero_ask_ai">💬 直接問AI</a>
+    <!-- 2026-07-25 ("要好似分析按鈕咁比人打字輸入"): upgraded from a plain
+         link to an input+button row matching .search-bar's own shape --
+         type a free-text question here instead of a ticker, hits Enter
+         or the button, lands in chat.html with the question auto-sent
+         via its existing ?q= handler (same mechanism as goAnalyze() above
+         handing off to ai-analysis.html?symbols=...). -->
+    <div class="ask-ai-bar">
+      <input class="ask-ai-input" id="heroAskAi" data-i18n-placeholder="hero_ask_ai_placeholder" placeholder="直接問AI，例如：邊隻股票值博率最高？"
+        onkeydown="if(event.key==='Enter') goAskAi()">
+      <button class="ask-ai-btn" onclick="goAskAi()"><span data-i18n="hero_ask_ai">💬 直接問AI</span></button>
+    </div>
   </div>
 
   <div class="hero-right">
@@ -914,6 +922,15 @@ function goAnalyze() {
 document.getElementById('heroTicker').addEventListener('input', function() {
   this.value = this.value.toUpperCase();
 });
+
+function goAskAi() {
+  const q = document.getElementById('heroAskAi').value.trim();
+  if (!q) { alert('請輸入你想問嘅問題'); return; }
+  // chat.html's existing ?q= handler (see chat.html's DOMContentLoaded
+  // listener) prefills #inputBox and auto-sends -- same mechanism the
+  // ai-analysis.html/screener.html "唔明？直接問AI" links use.
+  window.location.href = `chat.html?q=${encodeURIComponent(q)}`;
+}
 
 // Ticker marquee -- 指數/股票/期貨/加密貨幣混合，見api/market.py嘅
 // /api/market/{symbol}（通用yfinance pass-through，乜symbol格式都食到）。
