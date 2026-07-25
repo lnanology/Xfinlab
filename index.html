@@ -1077,11 +1077,49 @@ const SECTOR_RELATED = {
 // 前端每90秒refetch一次 -- 因為後端本身有5分鐘快取，呢個唔會加重
 // Alpaca/yfinance call量，淨係俾其他訪客共享緊嘅快取結果有機會被
 // 睇到更新，畀個「即時」感覺更真實。
-const PULSE_LABEL_KEYS = {'美股大盤':'pulse1','科技股':'pulse2','道瓊工業':'pulse3','小型股':'pulse4','科技板塊':'pulse5','金融板塊':'pulse6','能源板塊':'pulse7','加密貨幣':'pulse8'};
+// 2026-07-25 fix ("全部都係語言不統一，卡片唔係英文"): this map only ever
+// covered the 8 tickers in api/market_pulse.py's _PULSE_LABELS (the
+// Today's AI Outlook basket). api/market_pulse.py's /api/top-opportunities
+// and /api/opportunity-categories endpoints reuse the SAME tickers under a
+// DIFFERENT Chinese label dict (_TICKER_LABELS -- e.g. SPY is "美股大盤"
+// in the pulse basket but "標普500" as a top-opportunity/nine-category
+// pick), plus entirely new tickers (futures ES=F/CL=F/GC=F, ETH-USD, and
+// the 10-ticker dividend basket for "Highest Yield Assets") that had NO
+// label translation at all -- every card built from these (Top
+// Opportunity's 3 cards, and 5 of the Market Opportunity Board's 9 cards:
+// fund flow, fastest growth, best opportunity, highest yield, long/mid/
+// short-term) rendered the raw backend Chinese label untranslated
+// regardless of UI language. Merged into one map covering every distinct
+// label string either backend dict can send.
+const PULSE_LABEL_KEYS = {
+  '美股大盤':'pulse1','科技股':'pulse2','道瓊工業':'pulse3','小型股':'pulse4',
+  '科技板塊':'pulse5','金融板塊':'pulse6','能源板塊':'pulse7','加密貨幣':'pulse8',
+  '標普500':'tl_spy500','納指100':'tl_qqq100','羅素2000小型股':'tl_iwm_smallcap',
+  '標普500期貨':'tl_es_futures','原油期貨':'tl_cl_futures','黃金期貨':'tl_gc_futures',
+  '比特幣':'tl_btc','以太幣':'tl_eth',
+  'Schwab美股高股息ETF':'tl_schd','Vanguard高股息ETF':'tl_vym','JPMorgan股息收益ETF':'tl_jepi',
+  '埃克森美孚':'tl_xom','強生':'tl_jnj','可口可樂':'tl_ko','輝瑞':'tl_pfe','奧馳亞':'tl_mo',
+};
 function trPulseLabel(label) {
   const key = PULSE_LABEL_KEYS[label];
   if (key && typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) return I18N.translations[key];
   return label;
+}
+
+// 2026-07-25 fix (same complaint as above): api/market_pulse.py's overall
+// market-sentiment volatility_desc ("市場分歧大"/"中等波動"/"市場方向一致"/
+// "數據不足") was never translated ANYWHERE it's used -- inserted as raw
+// template text in both loadMarketPulse()'s summary line and
+// loadNineCategories()'s sentiment card.
+const VOLATILITY_KEYS = {
+  '市場分歧大': 'idx_vol_high_divergence',
+  '中等波動': 'idx_vol_medium',
+  '市場方向一致': 'idx_vol_aligned',
+  '數據不足': 'idx_dir_insufficient',
+};
+function trVolatility(raw) {
+  const key = VOLATILITY_KEYS[raw];
+  return key ? t(key, raw) : raw;
 }
 
 // Shared translation for the Confluence Engine's raw Chinese direction
@@ -1106,7 +1144,7 @@ async function loadMarketPulse() {
     const overallEl = document.getElementById('pulseOverall');
     if (overallEl) {
       const _overallConf = (data.confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(data.confidence_pct, 'pulse-overall') : data.confidence_pct;
-      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · Confidence ${_overallConf != null ? _overallConf + '%' : '--'} · ${data.volatility_desc}`;
+      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · Confidence ${_overallConf != null ? _overallConf + '%' : '--'} · ${trVolatility(data.volatility_desc)}`;
       // 2026-07-19 fix: this element keeps its static data-i18n="outlook_loading"
       // attribute even after we overwrite its innerHTML with real data --
       // I18N.apply() only looks at the attribute, not at whether the
@@ -1239,7 +1277,7 @@ async function loadTopOpportunities() {
         </div>` : '';
       return `<a class="top-opp-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
         <div class="top-opp-class">${classLabel}</div>
-        <div class="top-opp-ticker">${item.label}（${item.ticker}）</div>
+        <div class="top-opp-ticker">${trPulseLabel(item.label)}（${item.ticker}）</div>
         <div class="top-opp-price">$${item.price}</div>
         <div class="top-opp-dir ${dirClass}">${trDirection(item.confluence_direction)}</div>
         ${metaHtml}
@@ -1283,15 +1321,15 @@ async function loadNineCategories() {
     // 1. 市場資金流向
     const flow = d.fund_flow;
     cards.push(nineCatCard('<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c4 5 7 8.6 7 12.5a7 7 0 1 1-14 0c0-3.9 3-7.5 7-12.5z"/></svg>', 'nine_flow_title', '市場資金流向',
-      flow && flow.flow_in ? `${flow.flow_in.label}（${flow.flow_in.ticker}）` : null,
-      flow && flow.flow_out ? `${t('idx_flow_out_label','最弱')}: ${flow.flow_out.label}` : '',
+      flow && flow.flow_in ? `${trPulseLabel(flow.flow_in.label)}（${flow.flow_in.ticker}）` : null,
+      flow && flow.flow_out ? `${t('idx_flow_out_label','最弱')}: ${trPulseLabel(flow.flow_out.label)}` : '',
       flow && flow.flow_in ? NINE_CAT_HREF(flow.flow_in.ticker) : null));
 
     // 2. 市場情緒分析
     const sent = d.sentiment;
     cards.push(nineCatCard('🌐', 'nine_sentiment_title', '市場情緒分析',
-      sent && sent.overall_sentiment ? sent.overall_sentiment : null,
-      sent && sent.volatility_desc ? sent.volatility_desc : '', null));
+      sent && sent.overall_sentiment ? trDirection(sent.overall_sentiment) : null,
+      sent && sent.volatility_desc ? trVolatility(sent.volatility_desc) : '', null));
 
     // 3. 熱門資產
     const trending = d.trending;
@@ -1303,21 +1341,21 @@ async function loadNineCategories() {
     // 4. 最快增長資產
     const growth = d.fastest_growth;
     cards.push(nineCatCard('🚀', 'nine_growth_title', '最快增長資產',
-      growth ? `${growth.label}（${growth.ticker}）` : null,
-      growth ? `${growth.pct_change_1mo > 0 ? '+' : ''}${growth.pct_change_1mo}% (1${t('idx_month_short','個月')})` : '',
+      growth ? `${trPulseLabel(growth.label)}（${growth.ticker}）` : null,
+      growth && growth.pct_change_1mo != null ? `${growth.pct_change_1mo > 0 ? '+' : ''}${growth.pct_change_1mo}% (1${t('idx_month_short','個月')})` : '',
       growth ? NINE_CAT_HREF(growth.ticker) : null));
 
     // 5. 最大機會資產
     const best = d.best_opportunity;
     cards.push(nineCatCard('🎯', 'nine_best_title', '最大機會資產',
-      best ? `${best.label}（${best.ticker}）` : null,
+      best ? `${trPulseLabel(best.label)}（${best.ticker}）` : null,
       best ? nineCatDir(best.confluence_direction) : '',
       best ? NINE_CAT_HREF(best.ticker) : null));
 
     // 6. 最高收息資產
     const yieldItem = d.highest_yield;
     cards.push(nineCatCard('💵', 'nine_yield_title', '最高收息資產',
-      yieldItem ? `${yieldItem.label}（${yieldItem.ticker}）` : null,
+      yieldItem ? `${trPulseLabel(yieldItem.label)}（${yieldItem.ticker}）` : null,
       yieldItem ? `${t('idx_yield_label','殖利率')}: ${yieldItem.dividend_yield_pct}%` : '',
       yieldItem ? NINE_CAT_HREF(yieldItem.ticker) : null));
 
@@ -1328,7 +1366,7 @@ async function loadNineCategories() {
       const key = entry[0], icon = entry[1], titleKey = entry[2], fallback = entry[3];
       const item = d[key];
       cards.push(nineCatCard(icon, titleKey, fallback,
-        item ? `${item.label}（${item.ticker}）` : null,
+        item ? `${trPulseLabel(item.label)}（${item.ticker}）` : null,
         item ? nineCatDir(item.confluence_direction) : '',
         item ? NINE_CAT_HREF(item.ticker) : null));
     });
@@ -1340,6 +1378,26 @@ async function loadNineCategories() {
 }
 loadNineCategories();
 setInterval(loadNineCategories, 600000);
+
+// 2026-07-25 fix ("全部都係語言不統一"): all three loaders above call t()/
+// trDirection()/trPulseLabel()/trVolatility() the MOMENT their fetch
+// resolves, which races js/i18n.js's own (separate, independently-timed)
+// translations fetch -- whichever happens to resolve first. If i18n hasn't
+// loaded yet at that instant, every label/sentiment/volatility string on
+// these cards falls back to its raw Chinese default and STAYS that way
+// until the next scheduled refetch (90s/5min/10min later) happens to win
+// the race instead. Re-running all three once i18n actually finishes
+// loading (js/i18n.js dispatches 'i18nApplied' after its fetch resolves)
+// guarantees a self-correcting pass shortly after page load, the same
+// pattern nav.js's search/theme/account buttons already use for their own
+// text. Cheap to re-run: all three endpoints are backend-cached (5-10 min
+// TTL), so this is just a re-render off effectively the same data, not a
+// fresh computation.
+document.addEventListener('i18nApplied', function() {
+  loadMarketPulse();
+  loadTopOpportunities();
+  loadNineCategories();
+});
 
 // Daily Experience: personalized AI Watchlist / Anomaly Detection Radar nested inside
 // the same Today's AI Outlook box. Reuses /api/screener and /api/anomaly

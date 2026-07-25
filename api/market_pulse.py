@@ -525,7 +525,18 @@ def _compute_fastest_growth() -> Optional[Dict]:
                 continue
             first_close = float(hist["Close"].iloc[0])
             last_close = float(hist["Close"].iloc[-1])
-            if first_close <= 0:
+            # 2026-07-25 fix: `x <= 0` is always False when x is NaN (a
+            # stray NaN Close row occasionally survives yfinance/Alpaca
+            # history without raising), so this guard alone didn't catch a
+            # NaN first/last close -- pct_change then computed as NaN too.
+            # Previously that silently 500'd the WHOLE /opportunity-
+            # categories request (services/safe_json.py's SafeJSONResponse
+            # now converts it to null instead, which is safe for the
+            # response but showed up as a literal "null%" on this one
+            # homepage card while every other card loaded fine). Filtering
+            # NaN explicitly here keeps this candidate out of the running
+            # entirely, same as any other bad-data ticker.
+            if first_close != first_close or last_close != last_close or first_close <= 0:
                 continue
             pct_change = round((last_close - first_close) / first_close * 100, 2)
         except Exception:
