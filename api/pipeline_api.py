@@ -61,7 +61,24 @@ def _fetch_real_pipeline_inputs(ticker: str):
     snapshot = get_stock_data(ticker)
     snapshot_ok = isinstance(snapshot, dict) and "error" not in snapshot
 
-    prices = _price_series(ticker) or [100.0, 101.0, 102.0]
+    # 2026-07-25 fix (task #413, "Scan failed: Failed to fetch"): this used
+    # to call _price_series(ticker) unconditionally, which does its OWN
+    # separate fetch_ohlc_history() network round-trip for the SAME ticker
+    # get_technical_analysis() just fetched two lines above (it already
+    # returns real OHLC bars as tech["ohlc"]) -- a fully redundant fetch on
+    # every single /pipeline/{ticker} call, on top of the get_stock_data()
+    # .info call and the SPY correlation fetch below (4 external calls
+    # total when 3 would do). Reusing tech["ohlc"]'s close prices when
+    # available removes that duplicate round-trip, cutting this already
+    # slow multi-source endpoint's latency by roughly a third -- real
+    # contributor to it timing out ("Failed to fetch") under normal
+    # yfinance/Alpaca response times. Falls back to the original fetch
+    # only when tech itself failed (e.g. insufficient history), so
+    # behavior for that edge case is unchanged.
+    if tech_ok and tech.get("ohlc"):
+        prices = [bar["close"] for bar in tech["ohlc"]] or [100.0, 101.0, 102.0]
+    else:
+        prices = _price_series(ticker) or [100.0, 101.0, 102.0]
     volatility = _realized_volatility_0_100(prices)
 
     news_data = []

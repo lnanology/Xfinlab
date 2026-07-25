@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from services.market_data_service import MarketDataService
 from services.news_service import NewsService
-from services.technical_analysis_service import get_technical_analysis
+from services.technical_analysis_service import get_technical_analysis_raw_and_translated
 from engines.rule_engine import RuleEngine
 from engines.score_engine import ScoreEngine
 from engines.risk_engine import RiskEngine
@@ -171,18 +171,33 @@ async def ai_analysis(body: dict):
     # fabricated level).
     decision_levels = None
     confluence = None
+    confluence_raw = None
     market_structure = None
     tech_trend = None
     tech_support = None
     tech_resistance = None
     tech_ohlc = None
+    tech_raw = None
     try:
         # 2026-07-25 fix (task #409): pass lang through so the confluence
         # engine's dynamic signal strings (bullish_signals/bearish_signals,
         # feeding this page's "reasons"/decision-report content) translate
         # the same way the dashboard fields a few lines below already do,
         # instead of leaking raw Chinese into an English-mode page.
-        tech = get_technical_analysis(symbol, lang=lang)
+        #
+        # 2026-07-25 fix (task #412): switched from get_technical_analysis()
+        # to get_technical_analysis_raw_and_translated(), which returns BOTH
+        # the translated dict (`tech`, used for display exactly as before)
+        # AND the untranslated original (`tech_raw`). Two things downstream
+        # -- RegimeDetector.classify()'s trend_direction and, via
+        # get_smart_beta(), regime_belief_service.py's evidence scoring --
+        # do an exact-match comparison against the Chinese literals
+        # '偏多'/'偏空'. Feeding them the translated ("Bullish"/"Bearish")
+        # value silently broke both (always scoring/classifying neutral)
+        # for every non-Chinese-language request since task #409 shipped --
+        # a real regression, not a hypothetical one. `tech_raw` fixes that
+        # without a second network fetch.
+        tech_raw, tech = get_technical_analysis_raw_and_translated(symbol, lang=lang)
         if tech and "error" not in tech:
             decision_levels = tech.get("decision_levels")
             confluence = tech.get("confluence")
@@ -197,6 +212,8 @@ async def ai_analysis(body: dict):
             # needs no OHLC data of its own). Now that ai-analysis.html
             # draws its own candlestick chart, it needs the same real bars.
             tech_ohlc = tech.get("ohlc")
+        if tech_raw and "error" not in tech_raw:
+            confluence_raw = tech_raw.get("confluence")
     except Exception:
         pass
 
@@ -245,10 +262,16 @@ async def ai_analysis(body: dict):
         structure_event = None
         if market_structure and market_structure.get("events"):
             structure_event = market_structure["events"][0].get("type")
+        # 2026-07-25 fix (task #412): use confluence_raw (untranslated),
+        # not `confluence` -- RegimeDetector.classify() exact-matches
+        # trend_direction against the Chinese literals '偏多'/'偏空' (see
+        # backend/alpha/regime_detector.py); feeding it the English-
+        # translated value silently classified every non-Chinese request
+        # as neutral/RANGING regardless of the real signal.
         regime_result = RegimeDetector.classify({
             "volatility": volatility,
-            "trend_direction": confluence.get("direction") if confluence else None,
-            "trend_confidence_pct": confluence.get("confidence_pct") if confluence else None,
+            "trend_direction": confluence_raw.get("direction") if confluence_raw else None,
+            "trend_confidence_pct": confluence_raw.get("confidence_pct") if confluence_raw else None,
             "volume_ratio": volume_ratio,
             "structure_event": structure_event,
             "hurst_signal": hurst_signal,
@@ -363,7 +386,24 @@ async def ai_analysis(body: dict):
     # genuinely unavailable) never breaks the rest of an otherwise
     # working analysis.
     try:
-        smart_beta = get_smart_beta(symbol, current_price=market.get("price"))
+        # 2026-07-25 fix (task #412): pass the already-fetched tech_raw/
+        # fundamentals through instead of letting get_smart_beta() re-fetch
+        # both from scratch (plus a third redundant OHLC-history fetch it
+        # used to do internally for the exact same symbol/period/interval)
+        # -- see services/smart_beta_service.py's docstring. Deliberately
+        # `tech_raw` (untranslated), not the display `tech`: get_smart_beta
+        # feeds confluence.direction into services/regime_belief_service.py,
+        # which -- like RegimeDetector.classify() above -- exact-matches
+        # against the Chinese '偏多'/'偏空' literals. get_smart_beta's own
+        # response never surfaces that raw confluence text to the user
+        # (its factor labels are fixed English strings), so using the
+        # untranslated version here is both correct and safe.
+        smart_beta = get_smart_beta(
+            symbol,
+            current_price=market.get("price"),
+            tech=tech_raw,
+            fundamentals=fundamentals,
+        )
     except Exception:
         smart_beta = None
 

@@ -20,6 +20,7 @@ genuinely need a "human eye" — visual pattern recognition (雙頂/雙底/
 頭肩頂底/三角收斂 etc.) — never for numeric price levels.
 """
 
+import copy
 import logging
 import os
 import re
@@ -1211,7 +1212,49 @@ def get_technical_analysis(
     symbol: str, period: str = "6mo", interval: str = "1d", lang: Optional[str] = None
 ) -> Dict:
     tech = technical_service.get_analysis(symbol, period, interval)
-    return translate_technical_analysis(tech, lang)
+    is_zh_or_none = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
+    if is_zh_or_none or not tech or "error" in tech:
+        return tech
+    # 2026-07-25 fix (task #412): translate a DEEP COPY, never the dict
+    # technical_service.get_analysis() just returned, so any caller that
+    # also needs the original Chinese-keyed values (e.g. to feed backend/
+    # alpha/regime_detector.py's or services/regime_belief_service.py's
+    # exact-match '偏多'/'偏空' comparisons) can still get them via
+    # get_technical_analysis_raw_and_translated() below without a second
+    # network fetch. Return value for existing callers is unchanged.
+    return translate_technical_analysis(copy.deepcopy(tech), lang)
+
+
+def get_technical_analysis_raw_and_translated(
+    symbol: str, period: str = "6mo", interval: str = "1d", lang: Optional[str] = None
+):
+    """
+    2026-07-25 fix (task #412, ai-analysis.html "Analysis failed" +
+    silent regime-classification regression): api/ai_analysis.py feeds
+    get_technical_analysis()'s confluence.direction into TWO Chinese-
+    keyed exact-match comparisons -- backend/alpha/regime_detector.py's
+    RegimeDetector.classify() ('偏多'/'偏空') and, via
+    services/smart_beta_service.py's get_smart_beta(), services/
+    regime_belief_service.py's identical pattern. Since task #409 made
+    get_technical_analysis(..., lang=lang) translate confluence.direction
+    to "Bullish"/"Bearish" for non-Chinese requests, both comparisons
+    silently fell through to their neutral/zero branch instead of using
+    the real signal, for every non-Chinese-language analysis -- a subtle
+    regression, not a crash, so it was easy to miss.
+
+    Returns (raw, translated): `raw` keeps the original Chinese-keyed
+    values for any such internal logic; `translated` is the exact same
+    dict get_technical_analysis() would return, for whatever goes
+    straight into a JSON response. Both come from a SINGLE underlying
+    fetch, so using both costs nothing extra over calling
+    get_technical_analysis() alone.
+    """
+    raw = technical_service.get_analysis(symbol, period, interval)
+    is_zh_or_none = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
+    if is_zh_or_none or not raw or "error" in raw:
+        return raw, raw
+    translated = translate_technical_analysis(copy.deepcopy(raw), lang)
+    return raw, translated
 
 
 def fetch_ohlc_history(symbol: str, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:

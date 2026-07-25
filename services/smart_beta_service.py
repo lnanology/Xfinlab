@@ -39,6 +39,8 @@ rather than defaulted to a fabricated mid-point score.
 
 from typing import Dict, Optional
 
+import pandas as pd
+
 from services.fundamentals_service import get_fundamentals
 from services.technical_analysis_service import get_technical_analysis, fetch_ohlc_history
 from services.realized_vol import annualized_volatility_pct
@@ -75,16 +77,45 @@ def _rescale(v: float, lo: float, hi: float, invert: bool = False) -> float:
     return round(100 - pct, 1) if invert else round(pct, 1)
 
 
-def get_smart_beta(symbol: str, current_price: Optional[float] = None) -> Dict:
+def get_smart_beta(
+    symbol: str,
+    current_price: Optional[float] = None,
+    tech: Optional[Dict] = None,
+    fundamentals: Optional[Dict] = None,
+) -> Dict:
+    """
+    2026-07-25 fix (task #412, "Analysis failed" on ai-analysis.html): its
+    only caller (api/ai_analysis.py) already fetches get_technical_analysis
+    (for its own decision-levels/confluence fields) and get_fundamentals
+    (for its own dashboard valuation field) BEFORE calling this -- this
+    function was silently re-fetching BOTH from scratch (plus a THIRD
+    separate fetch_ohlc_history() call just for the volatility calc, of
+    the exact same symbol/period/interval as the tech fetch), tripling the
+    real network round-trips this one field alone needed. `tech` and
+    `fundamentals` are now optional pass-throughs -- when the caller
+    already has them, this reuses them instead of refetching; any other
+    caller that doesn't pass them keeps the exact original behavior.
+    """
     symbol = (symbol or "").upper().strip()
 
-    tech = get_technical_analysis(symbol)
+    fetched_tech_here = tech is None
+    if tech is None:
+        tech = get_technical_analysis(symbol)
     tech_ok = bool(tech) and "error" not in tech
     confluence = tech.get("confluence", {}) if tech_ok else {}
 
-    fundamentals = get_fundamentals(symbol, current_price=current_price or (tech.get("last_close") if tech_ok else None))
+    if fundamentals is None:
+        fundamentals = get_fundamentals(symbol, current_price=current_price or (tech.get("last_close") if tech_ok else None))
 
-    df = fetch_ohlc_history(symbol) if tech_ok else None
+    # Reconstruct the tiny DataFrame annualized_volatility_pct() needs
+    # (just a 'Close' column) from tech['ohlc']'s already-fetched bars
+    # instead of a 4th network round-trip for identical data.
+    if tech_ok and tech.get("ohlc"):
+        df = pd.DataFrame({"Close": [bar["close"] for bar in tech["ohlc"]]})
+    elif fetched_tech_here and tech_ok:
+        df = fetch_ohlc_history(symbol)
+    else:
+        df = None
     vol_pct = annualized_volatility_pct(df)
 
     factors: Dict[str, Dict] = {}
