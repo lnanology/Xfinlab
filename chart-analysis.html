@@ -58,6 +58,9 @@
 @media(max-width:520px){.upload-area{padding:1rem}.uploader{flex-direction:column}.preview-area{width:100%}}
 .mode-tab{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.5rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.85rem;font-family:inherit}
 .mode-tab.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
+.tf-btn{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.3rem 0.7rem;border-radius:5px;cursor:pointer;font-size:0.78rem;font-family:inherit}
+.tf-btn.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
+.tf-btn:disabled{opacity:0.5;cursor:not-allowed}
 .btn-secondary:disabled{opacity:0.5;cursor:not-allowed}
 </style>
 <script src="js/nav.js"></script>
@@ -143,8 +146,11 @@
   </div>
 
   <div class="panel" id="klineChartPanel" style="display:none">
-    <h4 style="margin-top:0" data-i18n="ca_tv_title">K線圖</h4>
-    <div id="klineChart" style="height:420px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem">
+      <h4 style="margin:0" data-i18n="ca_tv_title">K線圖</h4>
+      <div id="klineTfRow" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+    <div id="klineChart" style="height:460px"></div>
   </div>
 
   <div class="analysis-section single-col" id="analysisSection">
@@ -412,16 +418,43 @@ let currentSearchSymbol = null;
 // EXCHANGE:SYMBOL naming convention.
 let klineChart = null;
 let klineSeries = null;
+let klineVolumeSeries = null;
+let klineCurrentSymbol = null;
 
 function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
 
+// 2026-07-25 ("時間選擇 年月日4小時1小時30分鐘15分鐘1分鐘"): timeframe
+// selector for the self-hosted chart. "年"(Yearly) and "4小時"(4-Hour) have
+// NO native bar on either yfinance or Alpaca (see the "never fabricate
+// data" comment in services/technical_analysis_service.py) -- fabricating
+// them by resampling finer candles would mean presenting synthetic bars as
+// if they were real exchange-published ones, which this codebase
+// deliberately never does. Per user's own resolution ("如實用最近似原生
+// 框架代替"), Yearly is honestly replaced with Quarterly (3mo bars, the
+// coarsest real bar above Monthly) and 4-Hour is dropped since 1-Hour
+// already covers that need -- every button below maps to a REAL
+// exchange-published bar size, none synthesized. period/interval pairs
+// reuse the exact combos already proven safe elsewhere in this codebase
+// (see MULTI_TIMEFRAMES in technical_analysis_service.py) wherever one
+// already exists, to stay well inside yfinance's per-interval lookback
+// caps (1m~7d, 15m/30m~60d, 1h~2y, 1d/1mo/3mo effectively uncapped).
+const KLINE_TIMEFRAMES = [
+  { period: '10y', interval: '3mo', i18n: 'ca_tf_quarter', fallback: '季度' },
+  { period: '10y', interval: '1mo', i18n: 'ca_tf_month', fallback: '月' },
+  { period: '6mo', interval: '1d', i18n: 'ca_tf_day', fallback: '日', isDefault: true },
+  { period: '5d', interval: '1h', i18n: 'ca_tf_hour', fallback: '1小時' },
+  { period: '1mo', interval: '30m', i18n: 'ca_tf_30m', fallback: '30分鐘' },
+  { period: '1mo', interval: '15m', i18n: 'ca_tf_15m', fallback: '15分鐘' },
+  { period: '5d', interval: '1m', i18n: 'ca_tf_1m', fallback: '1分鐘' },
+];
+
 function ensureKlineChart() {
   const container = document.getElementById('klineChart');
   if (!container) return;
-  if (klineChart) { klineChart.remove(); klineChart = null; klineSeries = null; }
+  if (klineChart) { klineChart.remove(); klineChart = null; klineSeries = null; klineVolumeSeries = null; }
   klineChart = LightweightCharts.createChart(container, {
     layout: { background: { color: 'transparent' }, textColor: cssVar('--text3', '#94a3b8') },
     grid: {
@@ -429,7 +462,7 @@ function ensureKlineChart() {
       horzLines: { color: 'rgba(148,163,184,0.08)' },
     },
     timeScale: { borderVisible: false },
-    rightPriceScale: { borderVisible: false },
+    rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.28 } },
     autoSize: true,
   });
   klineSeries = klineChart.addCandlestickSeries({
@@ -439,11 +472,70 @@ function ensureKlineChart() {
     wickUpColor: cssVar('--green', '#16A34A'),
     wickDownColor: cssVar('--red', '#DC2626'),
   });
+  // 成交量 (volume): plotted as a histogram sharing the same chart/time
+  // axis but pinned to its own bottom price scale (scaleMargins) so it
+  // reads as a separate pane under the candles rather than overlapping
+  // them -- the standard Lightweight Charts volume-pane idiom.
+  klineVolumeSeries = klineChart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'kline-volume',
+  });
+  klineChart.priceScale('kline-volume').applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
+}
+
+function buildKlineTfButtons(symbol) {
+  const row = document.getElementById('klineTfRow');
+  if (!row) return;
+  row.innerHTML = '';
+  KLINE_TIMEFRAMES.forEach(tf => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tf-btn' + (tf.isDefault ? ' active' : '');
+    btn.textContent = t(tf.i18n, tf.fallback);
+    btn.onclick = () => setKlineTimeframe(symbol, tf, btn);
+    row.appendChild(btn);
+  });
+}
+
+async function setKlineTimeframe(symbol, tf, btnEl) {
+  if (!klineSeries || !klineVolumeSeries) return;
+  const row = document.getElementById('klineTfRow');
+  if (row) Array.from(row.children).forEach(b => { b.classList.remove('active'); b.disabled = true; });
+  if (btnEl) btnEl.classList.add('active');
+  try {
+    const resp = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}?period=${encodeURIComponent(tf.period)}&interval=${encodeURIComponent(tf.interval)}`);
+    const json = await resp.json();
+    if (json.status === 'ok' && json.data && json.data.ohlc && json.data.ohlc.length) {
+      // Only the candle/volume data changes with the timeframe -- the
+      // support/resistance/entry/stop/take-profit price lines stay as
+      // originally computed (they're a longer-horizon trade plan, not
+      // something that should jump around every time someone peeks at a
+      // 1-minute view).
+      setKlineOhlcData(json.data.ohlc);
+    }
+  } catch (e) {
+    console.error('[chart-analysis] timeframe switch failed', e);
+  } finally {
+    if (row) Array.from(row.children).forEach(b => { b.disabled = false; });
+  }
+}
+
+function setKlineOhlcData(ohlc) {
+  if (!klineSeries || !klineVolumeSeries) return;
+  klineSeries.setData(ohlc.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+  klineVolumeSeries.setData(ohlc.map(b => ({
+    time: b.time,
+    value: b.volume || 0,
+    color: b.close >= b.open ? cssVar('--green', '#16A34A') : cssVar('--red', '#DC2626'),
+  })));
+  klineChart.timeScale().fitContent();
 }
 
 function renderKlineChart(res) {
   if (!klineSeries) return;
-  klineSeries.setData(res.ohlc.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+  klineCurrentSymbol = currentSearchSymbol;
+  setKlineOhlcData(res.ohlc);
+  buildKlineTfButtons(klineCurrentSymbol);
 
   // Overlay the same real support/resistance/entry/stop/take-profit
   // levels shown as text in the result rows below, directly on the chart

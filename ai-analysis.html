@@ -163,7 +163,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
     <div class="panel" id="klineChartPanel" style="display:none">
       <h4 style="margin-top:0" data-i18n="ca_tv_title">K線圖</h4>
-      <div id="klineChart" style="height:420px"></div>
+      <div id="klineChart" style="height:460px"></div>
     </div>
 
     <!-- Layer 4: interactive accordion modules (5-minute deep dive) -->
@@ -465,6 +465,7 @@ function renderShippingProxy(sp){
 // analyze, with no TradingView EXCHANGE:SYMBOL mapping dependency.
 let klineChart = null;
 let klineSeries = null;
+let klineVolumeSeries = null;
 
 function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -474,7 +475,7 @@ function cssVar(name, fallback) {
 function ensureKlineChart() {
   const container = document.getElementById('klineChart');
   if (!container) return;
-  if (klineChart) { klineChart.remove(); klineChart = null; klineSeries = null; }
+  if (klineChart) { klineChart.remove(); klineChart = null; klineSeries = null; klineVolumeSeries = null; }
   klineChart = LightweightCharts.createChart(container, {
     layout: { background: { color: 'transparent' }, textColor: cssVar('--text-secondary', '#94a3b8') },
     grid: {
@@ -482,7 +483,7 @@ function ensureKlineChart() {
       horzLines: { color: 'rgba(148,163,184,0.08)' },
     },
     timeScale: { borderVisible: false },
-    rightPriceScale: { borderVisible: false },
+    rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.28 } },
     autoSize: true,
   });
   klineSeries = klineChart.addCandlestickSeries({
@@ -492,11 +493,24 @@ function ensureKlineChart() {
     wickUpColor: cssVar('--accent-green', '#16A34A'),
     wickDownColor: cssVar('--accent-red', '#DC2626'),
   });
+  // 成交量 (volume) histogram pane, same idiom as chart-analysis.html.
+  klineVolumeSeries = klineChart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'kline-volume',
+  });
+  klineChart.priceScale('kline-volume').applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
 }
 
 function renderKlineChart(ohlc, decisionLevels) {
   if (!klineSeries || !ohlc || !ohlc.length) return;
   klineSeries.setData(ohlc.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+  if (klineVolumeSeries) {
+    klineVolumeSeries.setData(ohlc.map(b => ({
+      time: b.time,
+      value: b.volume || 0,
+      color: b.close >= b.open ? cssVar('--accent-green', '#16A34A') : cssVar('--accent-red', '#DC2626'),
+    })));
+  }
 
   (klineSeries._xflLines || []).forEach(l => klineSeries.removePriceLine(l));
   klineSeries._xflLines = [];

@@ -360,23 +360,38 @@ class TechnicalAnalysisService:
     # ---- charting ----
 
     @staticmethod
-    def _ohlc_series(df: pd.DataFrame, max_bars: int = 120) -> List[Dict]:
+    def _ohlc_series(df: pd.DataFrame, max_bars: int = 300) -> List[Dict]:
         """
-        Real OHLC bars (most recent `max_bars`) for client-side candlestick
-        rendering (search-by-ticker flow, no screenshot needed). Capped at
-        120 bars to keep the payload small and the chart fast to draw --
-        plenty for visual pattern context without shipping the whole
-        history over the wire.
+        Real OHLC(+volume) bars (most recent `max_bars`) for client-side
+        candlestick rendering (search-by-ticker flow, no screenshot
+        needed). Capped to keep the payload small and the chart fast to
+        draw -- plenty for visual pattern context without shipping the
+        whole history over the wire.
+
+        2026-07-25 fix ("時間選擇...4小時1小時...30分鐘15分鐘...1分鐘"):
+        `time` used to be a plain "%Y-%m-%d" date string, which only
+        works for daily-or-coarser bars -- every intraday bar on the same
+        calendar day would collapse onto that one date, silently
+        corrupting the chart the moment a user picked an intraday
+        interval (1m/15m/30m/1h). Unix epoch seconds work correctly for
+        every interval Lightweight Charts supports (intraday through
+        monthly), so this switches to that uniformly instead of branching
+        on interval. Bumped max_bars 120->300: intraday intervals return
+        many more bars per day than daily bars do, so 120 was too shallow
+        to fill even the shortest allowed intraday lookback window (e.g.
+        5d of 1h bars alone is ~35 bars, but a fuller 1mo of 15m bars is
+        several hundred).
         """
         tail = df.tail(max_bars)
         out = []
         for idx, row in tail.iterrows():
             out.append({
-                "time": idx.strftime("%Y-%m-%d"),
+                "time": int(idx.timestamp()),
                 "open": round(float(row["Open"]), 4),
                 "high": round(float(row["High"]), 4),
                 "low": round(float(row["Low"]), 4),
                 "close": round(float(row["Close"]), 4),
+                "volume": float(row["Volume"]) if "Volume" in row and row["Volume"] == row["Volume"] else None,
             })
         return out
 
