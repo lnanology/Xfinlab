@@ -91,7 +91,18 @@ async def ai_analysis(body: dict):
     total_score = score_result["total_score"]
 
     # News
-    news = news_svc.get_company_news(symbol)
+    # 2026-07-25 fix: this was the only one of this endpoint's ~8 external
+    # data calls NOT wrapped in try/except (smart_beta, direction_probability,
+    # shipping_proxy, hurst_signal, regime_result, tech are all guarded a few
+    # lines below) -- NewsService only catches requests.RequestException
+    # internally, so any other failure (e.g. a malformed/rate-limited
+    # response body) would propagate all the way up and 500 the whole
+    # analysis for an otherwise-fine symbol. Falling back to an empty list
+    # matches NewsService's own "network failed" behavior.
+    try:
+        news = news_svc.get_company_news(symbol)
+    except Exception:
+        news = []
     news_result = NewsEngine.analyze([
         {"title": a["title"], "summary": a["title"]}
         for a in news[:5]
@@ -166,7 +177,12 @@ async def ai_analysis(body: dict):
     tech_resistance = None
     tech_ohlc = None
     try:
-        tech = get_technical_analysis(symbol)
+        # 2026-07-25 fix (task #409): pass lang through so the confluence
+        # engine's dynamic signal strings (bullish_signals/bearish_signals,
+        # feeding this page's "reasons"/decision-report content) translate
+        # the same way the dashboard fields a few lines below already do,
+        # instead of leaking raw Chinese into an English-mode page.
+        tech = get_technical_analysis(symbol, lang=lang)
         if tech and "error" not in tech:
             decision_levels = tech.get("decision_levels")
             confluence = tech.get("confluence")
@@ -244,7 +260,14 @@ async def ai_analysis(body: dict):
     # services/fundamentals_service.py's real SEC EDGAR data (US-listed
     # SEC filers only; non-US tickers/no-match honestly still report
     # unavailable, never a guessed P/E).
-    fundamentals = get_fundamentals(symbol, current_price=market.get("price") or None)
+    # 2026-07-25 fix: same "only unguarded external call" issue as the news
+    # fetch above -- get_fundamentals() is internally safe against network
+    # failures, but wrapping it here too means a future change inside it can
+    # never take down this whole endpoint for a symbol it doesn't recognize.
+    try:
+        fundamentals = get_fundamentals(symbol, current_price=market.get("price") or None)
+    except Exception:
+        fundamentals = {"status": "error", "available": False, "message": "暫時無法取得估值數據"}
     if fundamentals.get("available") and fundamentals.get("pe_ratio") is not None:
         valuation_display = f"P/E {fundamentals['pe_ratio']}"
     elif fundamentals.get("available"):

@@ -41,6 +41,19 @@
 .dot-ani span:nth-child(2){animation-delay:0.2s;}
 .dot-ani span:nth-child(3){animation-delay:0.4s;}
 @keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+/* 2026-07-25 fix (task #405): the AI screening result is a markdown table
+   (代號/公司名稱/核心理由/風險提示) -- fmt() used to just \n->br the whole
+   response, so it rendered as one unbroken line of raw "| 0700.HK | ... |"
+   pipe text. Reuses the exact same table-detection + row-card approach
+   already shipped on company-compare.html/news-denoise.html (task #283)
+   instead of a third hand-rolled parser for the same problem shape. */
+.analysis-text .sc-card{border:1px solid var(--border);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem;background:var(--navy3);}
+.analysis-text .sc-card-title{color:var(--blue2);font-weight:700;font-size:1rem;margin-bottom:0.4rem;}
+.analysis-text .sc-field{font-size:0.85rem;line-height:1.6;color:var(--text2);margin-top:0.3rem;}
+.analysis-text .sc-field-label{font-weight:600;color:var(--text);margin-right:0.3rem;}
+.analysis-text table{width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:0.85rem;}
+.analysis-text table th,.analysis-text table td{border:1px solid var(--border);padding:0.5rem 0.6rem;text-align:left;}
+.analysis-text table th{background:var(--navy3);color:var(--blue);}
 </style>
 <script src="js/nav.js"></script>
 <script src="js/i18n.js"></script>
@@ -228,7 +241,51 @@ async function doScreen(){
   }catch(e){document.getElementById('resultContent').innerHTML=`<p style="color:var(--accent-red)">${t('sc_error_msg','篩選出現問題，請稍後重試。')}</p>`;}
   document.getElementById('screenBtn').disabled=false;
 }
-function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
+// 2026-07-25 fix (task #405): table-aware formatter, ported from
+// company-compare.html's formatAnalysis()/cc* helpers (task #283) -- same
+// "代號/公司名/理由/風險" row shape the screener prompt asks the AI for.
+function scIsTableRow(line){const t=line.trim();return t.startsWith('|')&&t.endsWith('|')&&t.length>1;}
+function scIsTableSeparator(line){const t=line.trim();return t.includes('-')&&/^\|?[\s:|-]+\|?$/.test(t);}
+function scSplitTableRow(line){let t=line.trim();if(t.startsWith('|'))t=t.slice(1);if(t.endsWith('|'))t=t.slice(0,-1);return t.split('|').map(c=>c.trim());}
+function scEscape(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function scInlineFormat(s){return scEscape(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+function scRenderRowCard(header,row){
+  let primaryIdx=header.findIndex(h=>/代號|代码|ticker|symbol/i.test(h));
+  if(primaryIdx===-1)primaryIdx=0;
+  const fields=row.map((cell,i)=>i===primaryIdx?null:
+    `<div class="sc-field"><span class="sc-field-label">${scInlineFormat(header[i])}：</span>${scInlineFormat(cell)}</div>`
+  ).filter(Boolean).join('');
+  return `<div class="sc-card"><div class="sc-card-title">${scInlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+}
+function scRenderTableBlock(tableLines){
+  const header=scSplitTableRow(tableLines[0]);
+  const rows=tableLines.slice(2).map(scSplitTableRow).filter(r=>r.length===header.length);
+  if(header.length>2)return rows.map(r=>scRenderRowCard(header,r)).join('');
+  const theadHtml=`<tr>${header.map(h=>`<th>${scInlineFormat(h)}</th>`).join('')}</tr>`;
+  const tbodyHtml=rows.map(r=>`<tr>${r.map(c=>`<td>${scInlineFormat(c)}</td>`).join('')}</tr>`).join('');
+  return `<table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;
+}
+function scRenderTextBlock(text){
+  return scInlineFormat(text).replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');
+}
+function fmt(text){
+  const lines=text.split('\n');
+  const blocks=[];
+  let i=0;
+  while(i<lines.length){
+    if(scIsTableRow(lines[i])&&scIsTableSeparator(lines[i+1]||'')){
+      const tableLines=[lines[i],lines[i+1]];
+      i+=2;
+      while(i<lines.length&&scIsTableRow(lines[i])){tableLines.push(lines[i]);i++;}
+      blocks.push({type:'table',lines:tableLines});
+    }else{
+      const textLines=[];
+      while(i<lines.length&&!(scIsTableRow(lines[i])&&scIsTableSeparator(lines[i+1]||''))){textLines.push(lines[i]);i++;}
+      blocks.push({type:'text',lines:textLines});
+    }
+  }
+  return blocks.map(b=>b.type==='table'?scRenderTableBlock(b.lines):scRenderTextBlock(b.lines.join('\n'))).join('');
+}
 
 // Share System: a link with the same filter params (?market=...&sector=...)
 // prefills every dropdown and re-runs the same real screening query.

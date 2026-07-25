@@ -376,7 +376,7 @@ def _ttl_cache_set(store: dict, key: str, value, max_entries: int) -> None:
 
 
 @router.get("/chart-search/{symbol}")
-def chart_search(symbol: str, period: str = "6mo", interval: str = "1d"):
+def chart_search(symbol: str, period: str = "6mo", interval: str = "1d", lang: str = None):
     """
     Global-ticker-search chart analysis -- the "type a ticker, no
     screenshot" flow. Returns real OHLC bars (for client-side candlestick
@@ -390,12 +390,17 @@ def chart_search(symbol: str, period: str = "6mo", interval: str = "1d"):
     if not symbol or not _SYMBOL_RE.match(symbol):
         return {"status": "error", "message": "代號格式無效，請重新輸入。"}
 
-    cache_key = f"{symbol}|{period}|{interval}"
+    # 2026-07-25 fix (task #409): cache key includes lang so an English
+    # request never serves back a Chinese-cached response (or vice versa)
+    # -- get_technical_analysis's translation happens once per fetch, not
+    # per read, so the cache would otherwise "freeze" whichever language
+    # requested it first for every other language until the TTL expires.
+    cache_key = f"{symbol}|{period}|{interval}|{lang or ''}"
     cached = _ttl_cache_get(_CHART_SEARCH_CACHE, cache_key, _CHART_SEARCH_CACHE_TTL_SECONDS)
     if cached is not None:
         return {"status": "ok", "data": {**cached, "cached": True}}
 
-    tech = get_technical_analysis(symbol, period, interval)
+    tech = get_technical_analysis(symbol, period, interval, lang=lang)
     if not tech or "error" in tech:
         return {"status": "error", "message": (tech or {}).get("error") or f"攞唔到 {symbol} 嘅數據"}
 
@@ -469,7 +474,7 @@ _MTF_CACHE_MAX_ENTRIES = 200
 
 
 @router.get("/chart-search/{symbol}/multi-timeframe")
-def chart_search_multi_timeframe(symbol: str):
+def chart_search_multi_timeframe(symbol: str, lang: str = None):
     """
     Optional, user-triggered multi-timeframe alignment check -- compares
     Weekly/Daily/1-Hour trend + confluence direction for the same symbol.
@@ -480,11 +485,12 @@ def chart_search_multi_timeframe(symbol: str):
     if not symbol or not _SYMBOL_RE.match(symbol):
         return {"status": "error", "message": "代號格式無效，請重新輸入。"}
 
-    cached = _ttl_cache_get(_MTF_CACHE, symbol, _MTF_CACHE_TTL_SECONDS)
+    cache_key = f"{symbol}|{lang or ''}"
+    cached = _ttl_cache_get(_MTF_CACHE, cache_key, _MTF_CACHE_TTL_SECONDS)
     if cached is not None:
         return {"status": "ok", "data": {**cached, "cached": True}}
 
-    result = get_multi_timeframe_analysis(symbol)
+    result = get_multi_timeframe_analysis(symbol, lang=lang)
     if not result:
         return {"status": "error", "message": f"攞唔到 {symbol} 嘅多時間框架數據"}
 

@@ -57,10 +57,22 @@ class MarketDataService:
                 )
 
                 # Sentiment
-                recommendation = (
-                    info.get("recommendationKey", "hold")
-                    .lower()
-                )
+                # 2026-07-25 fix: indices/ETFs/other symbols with no analyst
+                # coverage (e.g. ^GSPC, ^HSI, ^VIX, bond-yield tickers) come
+                # back from yfinance with "recommendationKey" PRESENT but set
+                # to None, not absent -- so `.get("recommendationKey",
+                # "hold")` returned None (the default only applies when the
+                # key is missing entirely), and `.lower()` on None raised
+                # AttributeError. That got caught by this function's own
+                # retry loop, but silently burned all 3 retries (with a 1s
+                # sleep between each) on every single request for these
+                # symbols before finally giving up and returning an "error"
+                # dict -- adding several seconds of pure waste to an already
+                # slow multi-service /api/ai-analysis call, and a real risk
+                # of that endpoint's overall response time tipping past a
+                # proxy/browser timeout ("Analysis failed, please try again
+                # later") purely because of this one field.
+                recommendation = (info.get("recommendationKey") or "hold").lower()
 
                 sentiment = (
                     "bullish"

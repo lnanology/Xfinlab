@@ -503,7 +503,8 @@ async function setKlineTimeframe(symbol, tf, btnEl) {
   if (row) Array.from(row.children).forEach(b => { b.classList.remove('active'); b.disabled = true; });
   if (btnEl) btnEl.classList.add('active');
   try {
-    const resp = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}?period=${encodeURIComponent(tf.period)}&interval=${encodeURIComponent(tf.interval)}`);
+    const _sklang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const resp = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}?period=${encodeURIComponent(tf.period)}&interval=${encodeURIComponent(tf.interval)}${_sklang ? '&lang=' + encodeURIComponent(_sklang) : ''}`);
     const json = await resp.json();
     if (json.status === 'ok' && json.data && json.data.ohlc && json.data.ohlc.length) {
       // Only the candle/volume data changes with the timeframe -- the
@@ -686,7 +687,13 @@ async function runTickerSearch(symbolOverride){
   hideSearchError();
 
   try {
-    const response = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}`);
+    // 2026-07-25 fix (task #409): pass the site's selected UI language
+    // through so the confluence engine's dynamic signal strings (RSI/MACD/
+    // support-resistance descriptions etc, shown right below in the "AI
+    // Analysis Result" table) translate instead of always coming back
+    // hardcoded Chinese regardless of language.
+    const _calang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}${_calang ? '?lang=' + encodeURIComponent(_calang) : ''}`);
     const json = await response.json();
     if(json.status !== 'ok'){
       throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
@@ -887,7 +894,8 @@ async function requestMultiTimeframe(){
   btn.disabled = true;
   btn.textContent = t('ca_mtf_loading','查詢緊...');
   try {
-    const response = await fetch(`${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/multi-timeframe`);
+    const _mtflang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/multi-timeframe${_mtflang ? '?lang=' + encodeURIComponent(_mtflang) : ''}`);
     const json = await response.json();
     if(json.status !== 'ok'){
       throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));

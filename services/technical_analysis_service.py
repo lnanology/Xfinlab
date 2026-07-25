@@ -1046,7 +1046,16 @@ MULTI_TIMEFRAMES = [
 ]
 
 
-def get_multi_timeframe_analysis(symbol: str) -> Optional[Dict]:
+_ALIGNMENT_EN = {
+    "全部時間框架一致偏多": "All timeframes agree: bullish",
+    "全部時間框架一致偏空": "All timeframes agree: bearish",
+    "多數時間框架偏多，但有分歧": "Majority of timeframes bullish, but some disagreement",
+    "多數時間框架偏空，但有分歧": "Majority of timeframes bearish, but some disagreement",
+    "時間框架訊號分歧，中性": "Timeframes disagree, neutral",
+}
+
+
+def get_multi_timeframe_analysis(symbol: str, lang: Optional[str] = None) -> Optional[Dict]:
     """
     Fetches the SAME real get_technical_analysis() output at 3 different
     timeframes and summarises whether they agree. Deliberately a separate,
@@ -1056,6 +1065,9 @@ def get_multi_timeframe_analysis(symbol: str) -> Optional[Dict]:
     """
     results = []
     for tf in MULTI_TIMEFRAMES:
+        # Deliberately NOT passing lang here -- the bullish/bearish tally
+        # below compares against the Chinese "偏多"/"偏空" literals, so
+        # translating per-timeframe first would silently break that count.
         r = get_technical_analysis(symbol, period=tf["period"], interval=tf["interval"])
         if r and "error" not in r:
             results.append({
@@ -1083,13 +1095,123 @@ def get_multi_timeframe_analysis(symbol: str) -> Optional[Dict]:
     else:
         alignment = "時間框架訊號分歧，中性"
 
+    # 2026-07-25 fix (task #409): translate the display fields only AFTER
+    # the Chinese-keyed tally above, same reasoning as translate_
+    # technical_analysis() elsewhere in this file -- Chinese/no-lang
+    # callers get the exact original strings back, unchanged.
+    if lang and lang not in ("zh-HK", "zh-TW", "zh-CN"):
+        alignment = _ALIGNMENT_EN.get(alignment, alignment)
+        for r in results:
+            r["trend"] = _EN_FIXED.get(r["trend"], r["trend"])
+            r["confluence_direction"] = _EN_FIXED.get(r["confluence_direction"], r["confluence_direction"])
+
     return {"timeframes": results, "alignment": alignment}
 
 
+# 2026-07-25 fix (task #409, "AI Analysis Result mixed-language content"):
+# every field below (trend/macd.trend/volume_desc/confluence.direction/
+# confluence.confidence/confluence.bullish_signals+bearish_signals/
+# indicators.ichimoku.cloud_position) is generated as hardcoded Chinese
+# deep inside get_analysis()/_confluence() above, with zero awareness of
+# the site's selected UI language -- so an English-mode user still saw raw
+# Chinese strings like "MACD柱狀圖轉正（金叉）" or "現價貼近支撐位，反彈機會"
+# mixed into an otherwise-English-labelled "AI Analysis Result" table on
+# both chart-analysis.html and ai-analysis.html. Translating INSIDE
+# _confluence()/get_analysis() would mean touching every one of their ~5
+# other existing consumers (market_pulse, hero_showcase, pipeline_api,
+# public_demo) that all expect the original Chinese strings -- so this is
+# a pure additive post-processing translation layer instead, applied only
+# by callers that already have a `lang` (api/chart_analysis.py's
+# /chart-search endpoints, api/ai_analysis.py), matching the same
+# Chinese-default / English-when-non-Chinese split already used for
+# ai_analysis.py's dashboard fields (see its `is_zh_default` / `dir_map`).
+# Scope: covers every string this page's own screenshot showed leaking
+# Chinese. Full 46-language coverage of the confluence signal vocabulary
+# is a larger follow-up (this only ever had a Chinese/English split, same
+# as ai_analysis.py's existing dashboard translation).
+_EN_FIXED = {
+    "上升": "Rising", "下降": "Falling",
+    "金叉/看漲": "Golden cross / bullish", "死叉/看跌": "Death cross / bearish",
+    "偏多": "Bullish", "偏空": "Bearish",
+    "訊號分歧，中性": "Mixed signals, neutral", "數據不足": "Insufficient data",
+    "高": "High", "中": "Medium", "低": "Low",
+    "成交量數據不足": "Insufficient volume data",
+    "雲上（偏多結構）": "Above cloud (bullish structure)",
+    "雲下（偏空結構）": "Below cloud (bearish structure)",
+    "雲內（盤整）": "Inside cloud (consolidation)",
+    "趨勢（高於MA50）": "Trend (above MA50)",
+    "趨勢（低於MA50）": "Trend (below MA50)",
+    "MACD柱狀圖轉正（金叉）": "MACD histogram turned positive (golden cross)",
+    "MACD柱狀圖轉負（死叉）": "MACD histogram turned negative (death cross)",
+    "現價貼近支撐位，反彈機會": "Price near support, possible bounce",
+    "現價貼近阻力位，回落風險": "Price near resistance, pullback risk",
+    "現價企穩0.618回調位之上": "Price holding above the 0.618 retracement",
+    "現價跌穿0.618回調位，結構轉弱": "Price broke below the 0.618 retracement, structure weakening",
+    "現價觸及布林上軌，超買風險": "Price touching upper Bollinger Band, overbought risk",
+    "現價觸及布林下軌，超賣反彈機會": "Price touching lower Bollinger Band, oversold bounce opportunity",
+    "OBV成交量動能上升，資金流入": "OBV volume momentum rising, capital inflow",
+    "OBV成交量動能下降，資金流出": "OBV volume momentum falling, capital outflow",
+    "SuperTrend看多（收於支撐線之上）": "SuperTrend bullish (closed above support line)",
+    "SuperTrend看空（收於阻力線之下）": "SuperTrend bearish (closed below resistance line)",
+    "現價企穩Ichimoku雲之上，結構偏多": "Price holding above the Ichimoku cloud, bullish structure",
+    "現價跌穿Ichimoku雲之下，結構偏空": "Price broke below the Ichimoku cloud, bearish structure",
+    "現價創20日新高，Donchian突破訊號": "Price made a 20-day high, Donchian breakout signal",
+    "現價創20日新低，Donchian破位訊號": "Price made a 20-day low, Donchian breakdown signal",
+    "現價突破Keltner上軌，強勢延續": "Price broke above the Keltner upper band, strength continuation",
+    "現價跌穿Keltner下軌，弱勢延續": "Price broke below the Keltner lower band, weakness continuation",
+}
+# RSI signals carry an interpolated numeric value (f"RSI過熱（{rsi}，≥70）"
+# etc) so they can't be a plain dict lookup -- matched by regex instead.
+_RSI_RE = re.compile(r"^RSI(過熱|超賣|偏多|偏空)（([\d.\-]+)，(.+)）$")
+_RSI_EN = {"過熱": "overheated", "超賣": "oversold", "偏多": "bullish", "偏空": "bearish"}
+
+
+def _translate_signal(s: str) -> str:
+    if s in _EN_FIXED:
+        return _EN_FIXED[s]
+    m = _RSI_RE.match(s)
+    if m:
+        return f"RSI {_RSI_EN.get(m.group(1), m.group(1))} ({m.group(2)}, {m.group(3)})"
+    return s  # unmapped signal (new/rare) -- honestly left as-is, never guessed
+
+
+def translate_technical_analysis(tech: Dict, lang: Optional[str]) -> Dict:
+    """Best-effort EN translation of get_technical_analysis()'s dynamic
+    Chinese fields, applied only when `lang` is set and non-Chinese.
+    Returns `tech` unchanged (same object) for Chinese/no-lang callers --
+    zero behavior change for every consumer that doesn't pass lang."""
+    if not tech or "error" in tech or not lang or lang in ("zh-HK", "zh-TW", "zh-CN"):
+        return tech
+    if tech.get("trend") in _EN_FIXED:
+        tech["trend"] = _EN_FIXED[tech["trend"]]
+    macd = tech.get("macd")
+    if macd and macd.get("trend") in _EN_FIXED:
+        macd["trend"] = _EN_FIXED[macd["trend"]]
+    if tech.get("volume_desc") in _EN_FIXED:
+        tech["volume_desc"] = _EN_FIXED[tech["volume_desc"]]
+    elif tech.get("volume_desc", "").startswith("最近成交量為20日均量嘅"):
+        m = re.match(r"最近成交量為20日均量嘅([\d.]+)倍(（放量）)?", tech["volume_desc"])
+        if m:
+            tech["volume_desc"] = f"Recent volume is {m.group(1)}x the 20-day average" + (" (volume surge)" if m.group(2) else "")
+    confluence = tech.get("confluence")
+    if confluence:
+        for field in ("direction", "confidence"):
+            if confluence.get(field) in _EN_FIXED:
+                confluence[field] = _EN_FIXED[confluence[field]]
+        for field in ("bullish_signals", "bearish_signals"):
+            if confluence.get(field):
+                confluence[field] = [_translate_signal(s) for s in confluence[field]]
+    ichimoku = (tech.get("indicators") or {}).get("ichimoku")
+    if ichimoku and ichimoku.get("cloud_position") in _EN_FIXED:
+        ichimoku["cloud_position"] = _EN_FIXED[ichimoku["cloud_position"]]
+    return tech
+
+
 def get_technical_analysis(
-    symbol: str, period: str = "6mo", interval: str = "1d"
+    symbol: str, period: str = "6mo", interval: str = "1d", lang: Optional[str] = None
 ) -> Dict:
-    return technical_service.get_analysis(symbol, period, interval)
+    tech = technical_service.get_analysis(symbol, period, interval)
+    return translate_technical_analysis(tech, lang)
 
 
 def fetch_ohlc_history(symbol: str, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:

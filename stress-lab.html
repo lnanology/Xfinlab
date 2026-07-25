@@ -227,6 +227,32 @@ function formatCurrency(n){return '$'+n.toLocaleString();}
 
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
+// 2026-07-25 fix (task #408): sub2008/rec2008/sub2020/rec2020/sub2022/
+// rec2022 were only ever set (via t()) inside runStressTest(), which only
+// fires on the "開始模擬" button click -- before that, they showed their
+// raw hardcoded Chinese placeholder text ("帳面剩餘：-" / "回本時間：-")
+// no matter what UI language was selected, while the sibling scenario
+// titles (data-i18n="sl_scenario_a" etc) already translated correctly on
+// page load. Setting the same placeholder text through t() immediately
+// closes that gap without waiting for a simulation run.
+function initScenarioPlaceholders(){
+  ['2008','2020','2022'].forEach(function(key){
+    var sub = document.getElementById('sub'+key);
+    var rec = document.getElementById('rec'+key);
+    if (sub) sub.textContent = t('sl_remaining_label','帳面剩餘：') + '-';
+    if (rec) rec.textContent = t('sl_recovery_label','回本時間：') + '-';
+  });
+}
+// js/i18n.js fetches the active language asynchronously and only
+// populates I18N.translations (then fires "i18nApplied") once that
+// resolves -- calling this immediately here would race the fetch and
+// always read the empty {} default, silently keeping the Chinese
+// fallback regardless of the real selected language. Also run once
+// synchronously in case i18n.js isn't present/loaded (still gives the
+// pre-existing Chinese placeholder, i.e. no regression).
+initScenarioPlaceholders();
+document.addEventListener('i18nApplied', initScenarioPlaceholders);
+
 // 2026-07-11 fix: 呢個function之前call緊 /api/stress-lab，但backend
 // 個endpoint返嘅shape係 {analysis, conclusion, scenario}（一段AI文字），
 // 完全冇呢度期望嘅 scenarios/psych 結構 -- 即係話呢個function
