@@ -1087,16 +1087,46 @@ setInterval(rotateHeroResult, 10000);
 // MarketDataService/yfinance pipeline冇專門驗證過期貨代號，寧願淨係
 // 用文字提及，唔好整一個可能撞API錯誤嘅假link。淨係股票/ETF/加密貨幣
 // 先連去ai-analysis.html做真實分析（同支援?symbols=prefill+autorun）。
+// 2026-07-25 fix ("其他語言出現灰字 用英文 重有中文"): `note` used to be one
+// hardcoded Chinese sentence per ticker, inserted raw regardless of UI
+// language (see buildSectorNote() below, which now composes it from
+// already-translated fragments -- the index/sector/coin names reuse the
+// SAME i18n keys PULSE_LABEL_KEYS/trPulseLabel already translate
+// elsewhere on this page, e.g. tl_spy500/pulse3/pulse5-7/tl_eth -- so
+// these notes stay consistent with the rest of the page instead of
+// needing a second, separately-maintained translation of the same names).
+// Official fund names ("...Select Sector SPDR") are a fund's own legal
+// name, not a translatable phrase, and futures/ETF codes (ES/MES etc.)
+// are ticker symbols -- both stay literal in every language, same as
+// they always have even in the original Chinese-only note text.
 const SECTOR_RELATED = {
-  'SPY': { note: '追蹤標普500指數，相關期貨 ES/MES', tickers: ['VOO', 'AAPL', 'MSFT'] },
-  'QQQ': { note: '追蹤納斯達克100指數，相關期貨 NQ/MNQ', tickers: ['AAPL', 'MSFT', 'NVDA'] },
-  'DIA': { note: '追蹤道瓊工業指數，相關期貨 YM/MYM', tickers: ['AAPL', 'MSFT', 'JPM'] },
-  'IWM': { note: '追蹤羅素2000小型股指數，相關期貨 RTY/M2K，相關ETF VTWO', tickers: ['VTWO'] },
-  'XLK': { note: 'Technology Select Sector SPDR，科技板塊代表性成分股', tickers: ['AAPL', 'MSFT', 'NVDA'] },
-  'XLF': { note: 'Financial Select Sector SPDR，金融板塊代表性成分股', tickers: ['JPM', 'BAC', 'WFC'] },
-  'XLE': { note: 'Energy Select Sector SPDR，能源板塊代表性成分股', tickers: ['XOM', 'CVX'] },
-  'BTC-USD': { note: '加密貨幣代表，相關幣種 ETH-USD', tickers: ['ETH-USD', 'COIN', 'MSTR'] },
+  'SPY': { kind: 'index', indexKey: 'tl_spy500', futures: 'ES/MES', tickers: ['VOO', 'AAPL', 'MSFT'] },
+  'QQQ': { kind: 'index', indexKey: 'tl_qqq100', futures: 'NQ/MNQ', tickers: ['AAPL', 'MSFT', 'NVDA'] },
+  'DIA': { kind: 'index', indexKey: 'pulse3', futures: 'YM/MYM', tickers: ['AAPL', 'MSFT', 'JPM'] },
+  'IWM': { kind: 'index', indexKey: 'tl_iwm_smallcap', futures: 'RTY/M2K', etf: 'VTWO', tickers: ['VTWO'] },
+  'XLK': { kind: 'sector', fund: 'Technology Select Sector SPDR', sectorKey: 'pulse5', tickers: ['AAPL', 'MSFT', 'NVDA'] },
+  'XLF': { kind: 'sector', fund: 'Financial Select Sector SPDR', sectorKey: 'pulse6', tickers: ['JPM', 'BAC', 'WFC'] },
+  'XLE': { kind: 'sector', fund: 'Energy Select Sector SPDR', sectorKey: 'pulse7', tickers: ['XOM', 'CVX'] },
+  'BTC-USD': { kind: 'crypto', coinKey: 'tl_eth', tickers: ['ETH-USD', 'COIN', 'MSTR'] },
 };
+function buildSectorNote(rel) {
+  if (!rel) return '';
+  if (rel.kind === 'index') {
+    let out = t('sr_tpl_tracks_futures', 'Tracks the {index} index; related futures {futures}')
+      .replace('{index}', t(rel.indexKey, rel.indexKey)).replace('{futures}', rel.futures);
+    if (rel.etf) out += t('sr_tpl_etf_suffix', ', related ETF {etf}').replace('{etf}', rel.etf);
+    return out;
+  }
+  if (rel.kind === 'sector') {
+    return t('sr_tpl_sector_holdings', '{fund}, representative {sector} holdings')
+      .replace('{fund}', rel.fund).replace('{sector}', t(rel.sectorKey, rel.sectorKey));
+  }
+  if (rel.kind === 'crypto') {
+    return t('sr_tpl_crypto', 'Represents crypto assets; related coin {coin}')
+      .replace('{coin}', t(rel.coinKey, rel.coinKey));
+  }
+  return '';
+}
 
 // Live Market Pulse -- 見api/market_pulse.py, 5分鐘後端快取，basket已經
 // 按confluence_score由強到弱排序（sector rotation leaderboard）。
@@ -1146,6 +1176,27 @@ const VOLATILITY_KEYS = {
 function trVolatility(raw) {
   const key = VOLATILITY_KEYS[raw];
   return key ? t(key, raw) : raw;
+}
+
+// 2026-07-25 fix ("其他語言出現灰字...加翻譯"): api/market_pulse.py's
+// volume_desc is a Chinese sentence with a real interpolated ratio number
+// (services/technical_analysis_service.py's volume_desc, e.g. "最近成交
+// 量為20日均量嘅1.21倍"或"...（放量）") -- can't be a plain PULSE_LABEL_KEYS-
+// style dict lookup since the number changes per ticker/request. Regex-
+// extract the ratio and (optional) surge flag client-side, then rebuild
+// using a translated template with a {ratio} placeholder, so this reaches
+// real 46-language coverage instead of the raw Chinese string (or the
+// separate EN-only regex fix already in technical_analysis_service.py,
+// which market_pulse.py never even calls).
+const _VOLUME_DESC_RE = /^最近成交量為20日均量嘅([\d.]+)倍(（放量）)?$/;
+function trVolumeDesc(raw) {
+  if (!raw) return raw;
+  if (raw === '成交量數據不足') return t('idx_volume_insufficient', raw);
+  const m = raw.match(_VOLUME_DESC_RE);
+  if (!m) return raw;
+  let out = t('idx_volume_desc_template', '最近成交量為20日均量嘅{ratio}倍').replace('{ratio}', m[1]);
+  if (m[2]) out += t('idx_volume_desc_surge_suffix', '（放量）');
+  return out;
 }
 
 // Shared translation for the Confluence Engine's raw Chinese direction
@@ -1200,7 +1251,7 @@ async function loadMarketPulse() {
         const related = SECTOR_RELATED[b.ticker];
         const relatedHtml = related ? `
           <div class="pulse-card-related">
-            <div class="pulse-card-related-note">${related.note}</div>
+            <div class="pulse-card-related-note">${buildSectorNote(related)}</div>
             <div class="pulse-card-related-chips">
               ${related.tickers.map(t => `<a class="pulse-chip" href="ai-analysis.html?symbols=${encodeURIComponent(t)}&assetType=auto" onclick="event.stopPropagation()">${t}</a>`).join('')}
             </div>
@@ -1214,7 +1265,7 @@ async function loadMarketPulse() {
         const bDispConf = (b.confluence_confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(b.confluence_confidence_pct, b.ticker + 'prob') : b.confluence_confidence_pct;
         const metaHtml = (b.volume_desc || bDispConf != null) ? `
             <div class="pulse-card-meta">
-              ${b.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${b.volume_desc}</span>` : ''}
+              ${b.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${trVolumeDesc(b.volume_desc)}</span>` : ''}
               ${bDispConf != null ? `<span>${t('idx_prob_label','機率')}: ${bDispConf}%</span>` : ''}
             </div>` : '';
         return `<div class="pulse-card${topClass}">
@@ -1298,7 +1349,7 @@ async function loadTopOpportunities() {
       const itemDispConf = (item.confluence_confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(item.confluence_confidence_pct, item.ticker + 'prob') : item.confluence_confidence_pct;
       const metaHtml = (item.volume_desc || itemDispConf != null) ? `
         <div class="top-opp-meta">
-          ${item.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${item.volume_desc}</span>` : ''}
+          ${item.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${trVolumeDesc(item.volume_desc)}</span>` : ''}
           ${itemDispConf != null ? `<span>${t('idx_prob_label','機率')}: ${itemDispConf}%</span>` : ''}
         </div>` : '';
       return `<a class="top-opp-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
