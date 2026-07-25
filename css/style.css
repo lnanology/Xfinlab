@@ -215,6 +215,28 @@ nav {
   order: 3;
 }
 
+/* 2026-07-25 fix (task #417 follow-up, "右邊導航排 放大鏡 LIGHT ACCOUNT
+   放右上角" landing inconsistently across pages): the search icon
+   (js/nav.js), theme toggle (js/theme-toggle.js) and Account widget
+   (js/nav.js) are each injected by a DIFFERENT script as a plain
+   sibling of .nav-links inside <nav>, and only theme-toggle.js ever set
+   an inline `order` on itself -- so whether these three ended up grouped
+   together on the same row as the logo (correct) or got dragged down
+   onto .nav-links' wrapped row (wrong, and specifically what put the
+   search icon alone on the far left of a second row instead of next to
+   Light/Account) depended on injection timing and was inconsistent page
+   to page. Pinning all three to the same explicit order here -- lower
+   than .xfl-nav-wrapped's order:3, so they always share the logo's row
+   instead of following .nav-links onto its own wrapped line -- makes
+   this deterministic regardless of which script's inline style (if any)
+   set something different. !important is necessary since inline styles
+   from the JS that creates these elements would otherwise win. */
+#xflGSearchBtn,
+#themeToggleBtn,
+#xflSettingsWrap {
+  order: 1 !important;
+}
+
 .nav-links.open {
   /* 2026-07-19 fix: was a fixed 320px cap left over from when the nav
      only had 5-6 links -- most pages now carry 9-10 links (~52px each

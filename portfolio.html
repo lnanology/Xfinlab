@@ -115,8 +115,16 @@ async function loadPortfolioAllocation() {
   const btn = document.getElementById('loadBtn');
   const content = document.getElementById('portfolioContent');
   btn.disabled = true;
+  // 2026-07-25 fix (same root cause as anomaly.html's task #414 follow-up):
+  // this auto-fires (see "auto-run once on load" below) synchronously while
+  // the page is still parsing, guaranteed to run before js/i18n.js's async
+  // fetch resolves -- so this t() call always falls back to the Chinese
+  // default on that first auto-run. data-i18n means the next I18N.apply()
+  // call retroactively corrects it while this loading state is still on
+  // screen (this endpoint's real fetch is comparatively slow).
+  btn.setAttribute('data-i18n', 'port_loading');
   btn.textContent = t('port_loading', '計算緊...');
-  content.innerHTML = `<div class="empty-box">${t('port_loading', '計算緊...')}</div>`;
+  content.innerHTML = `<div class="empty-box" data-i18n="port_loading">${t('port_loading', '計算緊...')}</div>`;
 
   try {
     const token = localStorage.getItem('xfinlab_token');
@@ -137,6 +145,7 @@ async function loadPortfolioAllocation() {
     content.innerHTML = `<div class="empty-box">${t('port_load_error','載入失敗，請重試')}</div>`;
   } finally {
     btn.disabled = false;
+    btn.setAttribute('data-i18n', 'port_load_btn');
     btn.textContent = t('port_load_btn', '計算配置');
   }
 }

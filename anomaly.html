@@ -135,8 +135,25 @@ async function runAnomalyScan() {
   const content = document.getElementById('anomalyContent');
   const badge = document.getElementById('overallSeverityBadge');
   btn.disabled = true;
+  // 2026-07-25 fix (task #414 follow-up, "英文題示中文字"): runAnomalyScan()
+  // auto-fires once at the bottom of this inline script (see below), which
+  // runs SYNCHRONOUSLY while the page is still parsing -- guaranteed to
+  // execute before js/i18n.js's DOMContentLoaded-triggered async fetch has
+  // any chance to resolve. So this t() call always falls back to the
+  // Chinese default on that first auto-run, every single time, regardless
+  // of network speed -- not a rare race, a deterministic one. The real
+  // page content (data-i18n elements) gets fixed automatically once
+  // I18N.apply() runs and translations arrive, but this loading text was
+  // plain textContent with no such hook, so it stayed Chinese for as long
+  // as the anomaly fetch below was still in flight. Tagging both elements
+  // with data-i18n means the next I18N.apply() call (i18n's own fetch is
+  // small/fast; this endpoint's real market-data fetch is comparatively
+  // slow, so apply() very likely still runs while this text is on screen)
+  // retroactively corrects it, same as every other dynamic loading label
+  // on this page already relies on.
+  btn.setAttribute('data-i18n', 'anom_scanning');
   btn.textContent = t('anom_scanning', '掃描緊...');
-  content.innerHTML = `<div class="empty-box">${t('anom_scanning', '掃描緊...')}</div>`;
+  content.innerHTML = `<div class="empty-box" data-i18n="anom_scanning">${t('anom_scanning', '掃描緊...')}</div>`;
 
   try {
     const token = localStorage.getItem('xfinlab_token');
@@ -163,6 +180,7 @@ async function runAnomalyScan() {
     content.innerHTML = `<div class="empty-box">${t('anom_scan_error','掃描失敗，請重試')}</div>`;
   } finally {
     btn.disabled = false;
+    btn.setAttribute('data-i18n', 'anom_scan_btn');
     btn.textContent = t('anom_scan_btn', '開始掃描');
   }
 }
