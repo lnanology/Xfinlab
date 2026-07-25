@@ -121,6 +121,8 @@
   .search-input:focus { outline: none; border-color: var(--accent); }
   .search-btn { background: var(--accent); color: var(--accent-text); border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s; }
   .search-btn:hover { opacity: 0.85; }
+  .hero-ask-ai { display: inline-block; margin-top: 12px; font-size: 0.85rem; color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--border); transition: color 0.2s, border-color 0.2s; }
+  .hero-ask-ai:hover { color: var(--accent); border-color: var(--accent); }
 
   /* Hero Live AI Result card -- real data via /api/hero-showcase, not mockup */
   .ai-result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 26px 28px; }
@@ -469,6 +471,13 @@
     </div>
       <button class="search-btn" onclick="goAnalyze()"><span data-i18n="hero_btn">分析 →</span></button>
     </div>
+    <!-- 2026-07-25 ("首頁個AI CHAT 放去 分析按鈕 下面"): a lightweight
+         entry point right under the hero search+analyze row, for anyone
+         who'd rather ask a free-text question than type a ticker into
+         the search box above. Links to chat.html with no ?q= prefill --
+         unlike the ai-analysis.html/screener.html "唔明？直接問AI" links,
+         there's no analysis result yet to attach as context this early. -->
+    <a href="chat.html" class="hero-ask-ai" data-i18n="hero_ask_ai">💬 直接問AI</a>
   </div>
 
   <div class="hero-right">
