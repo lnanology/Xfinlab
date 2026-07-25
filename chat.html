@@ -602,10 +602,32 @@ function splitTableRow(line) {
 // sendQuick() -- same interaction model as the numbered-options cards
 // above, chosen over navigating away to ai-analysis.html so the user
 // never loses their current chat.
-const TICKER_PAREN_RE = /[\(（]\s*([A-Z]{1,6}(?:\.[A-Z]{1,3})?)\s*[\)）]/g;
+const TICKER_PAREN_RE_SRC = '[\\(（]\\s*([A-Z]{1,6}(?:\\.[A-Z]{1,3})?)\\s*[\\)）]';
 function analyzeTickerMention(ticker) {
   if (typeof isLoading !== 'undefined' && isLoading) return;
   sendQuick(`分析 ${ticker}`);
+}
+// 2026-07-25: "CHAT 加入顯示回答如有資產文字或相似代號 技術指標 經濟指標
+// 公司名...加入導航跟當句主題再搜" -- besides (TICKER) parentheticals, the
+// AI's prose also names indices/exchanges/technical indicators/economic
+// institutions/company names in plain running text with no parens at all
+// (e.g. "VIX 急升", "MACD 出現黃金交叉", "ECB 議息"), and these should be
+// clickable too, re-querying the AI using that exact term as the new
+// topic -- same interaction model as ticker mentions. This is a closed
+// vocabulary (not a generic bare-word match) so ordinary English words
+// don't get wrongly linkified. Longest-first ordering so "S&P 500" wins
+// over any shorter overlapping match.
+const TERM_LIST = [
+  'S&P 500', 'STOXX 600', 'CAC 40', 'DAX', 'VIX', 'CBOE',
+  'MACD', 'EMA', 'RSI',
+  'ECB', 'Volkswagen', 'BMW'
+];
+const TERM_RE_SRC = '(' + TERM_LIST.slice().sort((a, b) => b.length - a.length)
+  .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'))
+  .join('|') + ')(?![A-Za-z0-9])';
+function analyzeTermMention(term) {
+  if (typeof isLoading !== 'undefined' && isLoading) return;
+  sendQuick(`分析 ${term}`);
 }
 // 2026-07-23 follow-up: "CHAT 回答 所有橙色 藍色都可導航" -- ticker
 // linkification originally only ran inside the **bold** callback (orange
@@ -620,10 +642,18 @@ function analyzeTickerMention(ticker) {
 // site -- table cells, compare/row card titles, headers, plain text --
 // picks up clickable tickers automatically, orange or blue, without
 // duplicating this logic at each call site.
+// The ticker-paren match and the closed-vocabulary term match are combined
+// into ONE regex/replace pass (rather than two chained .replace() calls)
+// so the second pass can never re-scan HTML markup the first pass already
+// injected (e.g. a ticker equal to a term name, like BMW, would otherwise
+// get its own onclick/title attribute text re-matched and mangled).
+const LINKIFY_RE = new RegExp(TICKER_PAREN_RE_SRC + '|' + TERM_RE_SRC, 'g');
 function linkifyTickers(s) {
-  return s.replace(TICKER_PAREN_RE, (full, ticker) =>
-    `<span class="chat-ticker-strong" onclick="analyzeTickerMention('${ticker}')" title="繼續問AI：分析 ${ticker}">${full}</span>`
-  );
+  return s.replace(LINKIFY_RE, (full, ticker, term) => {
+    const key = ticker || term;
+    const handler = ticker ? 'analyzeTickerMention' : 'analyzeTermMention';
+    return `<span class="chat-ticker-strong" onclick="${handler}('${key.replace(/'/g, "\\'")}')" title="繼續問AI：分析 ${key}">${full}</span>`;
+  });
 }
 function inlineFormat(s) {
   return linkifyTickers(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
