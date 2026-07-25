@@ -9,6 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from services.request_ip import get_client_ip
+from services.safe_json import SafeJSONResponse
 from api.market import router as market_router
 from api.analyze import router as analyze_router
 from api.event import router as event_router
@@ -60,7 +61,11 @@ from api.telegram_webhook import router as telegram_webhook_router
 
 app = FastAPI(
     title="XFINLAB API",
-    version="1.0.0"
+    version="1.0.0",
+    # See services/safe_json.py: makes every endpoint that returns a plain
+    # dict/list immune to the NaN/Infinity-crashes-JSON-encoding bug
+    # confirmed live on GET /api/pipeline/{ticker} (2026-07-25).
+    default_response_class=SafeJSONResponse,
 )
 
 # One-time, idempotent: merges any users stranded in the legacy
