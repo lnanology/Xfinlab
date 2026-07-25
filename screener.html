@@ -171,6 +171,13 @@ function toggleNav(){
   <div class="result-card" id="resultCard">
     <div class="result-title" id="resultTitle" data-i18n="sc_result_title_default">篩選結果</div>
     <div class="analysis-text" id="resultContent"></div>
+    <!-- 2026-07-25 ("唔明？直接問AI"): same pattern as ai-analysis.html's
+         quick-actions link -- hands the filter context straight to
+         chat.html's existing ?q= auto-send instead of leaving the user to
+         retype the whole screening context from scratch in a blank chat. -->
+    <div id="scAskAiRow" style="display:none;margin-top:0.8rem">
+      <a id="scAskAi" href="chat.html" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:0.5rem 0.9rem;border-radius:8px;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem">🤖 唔明？直接問AI</a>
+    </div>
     <div style="font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;" data-i18n="sc_disclaimer">⚠️ 以上篩選結果由AI生成，僅供參考，不構成投資建議。</div>
   </div>
   <div id="shareBar"></div>
@@ -227,6 +234,10 @@ async function doScreen(){
     if(answer){
       document.getElementById('resultTitle').textContent=`${market} · ${sector} · ${risk} ${t('sc_result_title_suffix','篩選結果')}`;
       document.getElementById('resultContent').innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
+
+      const scAskQ = `我啱啱用篩選器搵咗呢啲條件：市場${market}、行業${sector}、市值${cap}、增長率${growth}、估值${value}、風險${risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？`;
+      document.getElementById('scAskAi').href = `chat.html?q=${encodeURIComponent(scAskQ)}`;
+      document.getElementById('scAskAiRow').style.display = 'block';
 
       if (typeof window.renderShareBar === 'function') {
         const params = new URLSearchParams({ market, sector, cap, growth, value, risk });

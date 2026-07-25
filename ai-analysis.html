@@ -333,6 +333,13 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       <button id="qaWatchlist" type="button">☆ 加入Watchlist</button>
       <button id="qaJournal" type="button">📓 加入Decision Journal</button>
       <a href="free-signals.html">🔔 設定Alert</a>
+      <!-- 2026-07-25 ("唔明？直接問AI"): a low-friction fallback for anyone
+           who read the result above but doesn't know what to do with it --
+           hands the ticker + rating straight to chat.html's existing
+           ?q= auto-send (see chat.html's DOMContentLoaded handler), so
+           the question lands already loaded with context instead of the
+           user having to re-type the ticker from scratch in a blank chat. -->
+      <a id="qaAskAi" href="chat.html">🤖 唔明？直接問AI</a>
     </div>
   </div>
 
@@ -702,6 +709,10 @@ async function runAnalysis(){
     if (symbols.length) {
       qa.style.display = 'flex';
       document.getElementById('qaCompare').href = `company-compare.html?a=${encodeURIComponent(symbols[0])}`;
+      const askAiQ = hero.rating
+        ? `我啱啱睇咗 ${symbols[0]} 嘅AI分析，評級係「${hero.rating}」，可唔可以用簡單啲嘅講法再解釋一次點解係咁評級？`
+        : `我啱啱搵咗 ${symbols[0]} 嘅AI分析，可唔可以再簡單解釋一次依家嘅情況？`;
+      document.getElementById('qaAskAi').href = `chat.html?q=${encodeURIComponent(askAiQ)}`;
       const qaWatchlist = document.getElementById('qaWatchlist');
       qaWatchlist.onclick = () => {
         if (typeof window.xflAddToWatchlist === 'function') {
