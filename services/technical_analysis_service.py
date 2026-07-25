@@ -1176,6 +1176,35 @@ def _translate_signal(s: str) -> str:
     return s  # unmapped signal (new/rare) -- honestly left as-is, never guessed
 
 
+# 2026-07-25 fix (task #415, chart-analysis.html "Market Structure" panel
+# showing raw Chinese BOS/CHOCH/liquidity-sweep text in English mode): each
+# of _market_structure()'s event `detail` strings interpolates a real swing
+# price level, so -- same reasoning as _RSI_RE above -- they can't be a
+# plain dict lookup either. One regex per template, matched in order.
+_MARKET_STRUCTURE_PATTERNS = [
+    (re.compile(r"^價格企穩突破前高 ([\d.\-]+)，確認上升結構延續$"),
+     lambda m: f"Price holding above prior high {m.group(1)}, confirming uptrend structure continuation"),
+    (re.compile(r"^價格企穩跌穿前低 ([\d.\-]+)，確認下降結構延續$"),
+     lambda m: f"Price holding below prior low {m.group(1)}, confirming downtrend structure continuation"),
+    (re.compile(r"^價格突破前高 ([\d.\-]+)，下降結構出現轉勢跡象$"),
+     lambda m: f"Price broke above prior high {m.group(1)} -- early sign the downtrend structure may be reversing"),
+    (re.compile(r"^價格跌穿前低 ([\d.\-]+)，上升結構出現轉勢跡象$"),
+     lambda m: f"Price broke below prior low {m.group(1)} -- early sign the uptrend structure may be reversing"),
+    (re.compile(r"^高位插針掃過前高 ([\d.\-]+) 後收返落嚟，疑似掃流動性$"),
+     lambda m: f"Wick swept above prior high {m.group(1)} then closed back below -- possible liquidity sweep"),
+    (re.compile(r"^低位插針穿過前低 ([\d.\-]+) 後收返上去，疑似掃流動性$"),
+     lambda m: f"Wick swept below prior low {m.group(1)} then closed back above -- possible liquidity sweep"),
+]
+
+
+def _translate_market_structure_detail(s: str) -> str:
+    for pattern, build in _MARKET_STRUCTURE_PATTERNS:
+        m = pattern.match(s)
+        if m:
+            return build(m)
+    return s  # unmapped/new template -- honestly left as-is, never guessed
+
+
 def translate_technical_analysis(tech: Dict, lang: Optional[str]) -> Dict:
     """Best-effort EN translation of get_technical_analysis()'s dynamic
     Chinese fields, applied only when `lang` is set and non-Chinese.
@@ -1205,6 +1234,15 @@ def translate_technical_analysis(tech: Dict, lang: Optional[str]) -> Dict:
     ichimoku = (tech.get("indicators") or {}).get("ichimoku")
     if ichimoku and ichimoku.get("cloud_position") in _EN_FIXED:
         ichimoku["cloud_position"] = _EN_FIXED[ichimoku["cloud_position"]]
+    # 2026-07-25 fix (task #415): translate Market Structure Engine's
+    # BOS/CHOCH/liquidity-sweep event descriptions the same way confluence
+    # signals are handled above -- these were still leaking raw Chinese
+    # into chart-analysis.html's Market Structure panel in English mode.
+    market_structure = tech.get("market_structure")
+    if market_structure and market_structure.get("events"):
+        for event in market_structure["events"]:
+            if event.get("detail"):
+                event["detail"] = _translate_market_structure_detail(event["detail"])
     return tech
 
 

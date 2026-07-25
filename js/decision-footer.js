@@ -55,6 +55,19 @@
     return '';
   }
 
+  // 2026-07-25 fix (task #416): this used to be hardcoded Chinese
+  // regardless of the site's selected UI language, so an English-mode
+  // page still showed a raw Chinese warning sentence underneath an
+  // otherwise-English Decision Report. Reads from the SAME I18N.
+  // translations dict every other shared JS widget on the site already
+  // uses (see js/points-badge.js's tr() helper) -- I18N.apply() has
+  // already resolved these to the current language by the time this
+  // runs, so a plain lookup with the original Chinese text as fallback
+  // is enough; no separate per-language dict needed here.
+  function tr(key, fallback) {
+    return (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+  }
+
   // Default invalidation sentence derived from real entry/stop numbers.
   // Returns null (renders nothing) if we don't have both numbers -- never
   // guesses a level that wasn't actually computed upstream.
@@ -62,10 +75,11 @@
     if (entryPrice == null || stopLoss == null) return null;
     var entry = Number(entryPrice), stop = Number(stopLoss);
     if (isNaN(entry) || isNaN(stop) || entry === stop) return null;
+    var level = '<strong>' + stopLoss + '</strong>';
     if (stop < entry) {
-      return '若價格跌穿 <strong>' + stopLoss + '</strong>，此偏多判斷視為失效 — 建議重新評估。';
+      return tr('decision_invalidation_bullish', '若價格跌穿 {level}，此偏多判斷視為失效 — 建議重新評估。').replace('{level}', level);
     }
-    return '若價格升穿 <strong>' + stopLoss + '</strong>，此偏淡判斷視為失效 — 建議重新評估。';
+    return tr('decision_invalidation_bearish', '若價格升穿 {level}，此偏淡判斷視為失效 — 建議重新評估。').replace('{level}', level);
   }
 
   window.renderDecisionFooter = function (containerIdOrEl, opts) {
@@ -131,7 +145,7 @@
 
       var html = '<div class="xfl-df">';
       html += '<div class="xfl-df-head"><span>📋 Decision Report™</span>'
-        + (lowConfidence ? '<span class="xfl-df-lowconf-badge">信心較低 — 建議自行核實</span>' : '')
+        + (lowConfidence ? '<span class="xfl-df-lowconf-badge">' + tr('decision_lowconf_badge', '信心較低 — 建議自行核實') + '</span>' : '')
         + '</div>';
 
       if (stats.length) html += '<div class="xfl-df-grid">' + stats.join('') + '</div>';
