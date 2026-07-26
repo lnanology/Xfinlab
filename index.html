@@ -452,7 +452,15 @@
         `if(document.getElementById("userTopbar"))return`, and the shared
         chat-button auto-injector already skips index.html by filename, so
         neither can double-inject here. -->
-<nav style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:center;justify-content:space-between;gap:12px">
+<!-- 2026-07-26 fix: css/style.css has a global `nav { border-bottom:... }`
+     rule (used site-wide as the divider under function pages' nav-links
+     row) that this <nav> inherited the moment it was promoted from a
+     plain <div> -- causing a full-bleed line right under the logo,
+     separate from/above the ticker-section border already handled above.
+     Overridden inline since this page's nav intentionally has no visible
+     divider of its own (the ticker-section right below already provides
+     one). -->
+<nav style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:none">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
     <img src="/img/logo-mark.png" alt="XFINLAB" style="height:42px;width:auto">
     <span style="font-weight:700;font-size:1.15rem;letter-spacing:0.01em">
