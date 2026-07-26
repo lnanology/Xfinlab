@@ -88,7 +88,7 @@
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
   /* Logged-in top bar -- 淨係isLoggedIn()先顯示，見initUserTopbar() */
-  .user-topbar { background: var(--surface); border-bottom: 1px solid var(--border); }
+  .user-topbar { background: var(--surface); }
   .user-topbar-inner { max-width: 1160px; margin: 0 auto; padding: 8px 24px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
   .user-topbar-name { font-size: 0.82rem; color: var(--text); font-weight: 600; margin-right: auto; }
   .user-topbar-btn { background: transparent; border: 1px solid var(--border); color: var(--label); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; text-decoration: none; font-family: inherit; transition: border-color 0.2s, color 0.2s; }
@@ -451,7 +451,7 @@
   <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
     <img src="/img/logo-mark.png" alt="XFINLAB" style="height:42px;width:auto">
     <span style="font-weight:700;font-size:1.15rem;letter-spacing:0.01em">
-      <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#000;background:#fff;border:1.5px solid #000;border-radius:4px;padding:0 4px;">LAB</span>
+      <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#fff;-webkit-text-stroke:1.2px #000;paint-order:stroke fill;">LAB</span>
     </span>
   </a>
   <span class="nav-right" style="display:none"></span>
