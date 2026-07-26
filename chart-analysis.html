@@ -522,6 +522,23 @@ async function setKlineTimeframe(symbol, tf, btnEl) {
       // something that should jump around every time someone peeks at a
       // 1-minute view).
       setKlineOhlcData(json.data.ohlc);
+
+      // 2026-07-26 fix ("不同時間都加入PATTERN"): patterns are DIFFERENT
+      // from support/resistance/decision-levels above -- a "double top" on
+      // the daily chart and one on the 15-minute chart are genuinely
+      // different shapes on different swing points, so unlike the
+      // longer-horizon trade plan, patterns SHOULD be recomputed per
+      // timeframe. json.data.patterns/pattern_points here are already
+      // freshly computed by services/chart_pattern_service.py for this
+      // exact period/interval (chart-search always computes them, see
+      // technical_analysis_service.get_analysis()) -- just wire them in.
+      const tfPatterns = json.data.patterns || {};
+      const tfPatternCount = Object.values(tfPatterns).filter(p => p === '可能').length;
+      safeSetText('patternSummary', tfPatternCount > 0
+        ? t('ca_pattern_detected_search','根據真實走勢幾何運算，偵測到若干可能型態')
+        : t('ca_pattern_not_detected_search','根據真實走勢幾何運算，未偵測到明顯型態'));
+      renderPatternDetails(tfPatterns);
+      drawPatternOverlays(json.data.pattern_points || {});
     }
   } catch (e) {
     console.error('[chart-analysis] timeframe switch failed', e);
