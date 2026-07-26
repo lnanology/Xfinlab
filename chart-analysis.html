@@ -97,7 +97,15 @@
   <h1 class="page-title" data-i18n="ca_title">AI K線圖分析</h1>
   <p class="page-sub" data-i18n="ca_sub_search">打入任何全球代號，AI 即刻用真實歷史數據畫出K線圖同技術分析。</p>
 
-  <div class="mode-tabs" id="modeTabs" style="display:none;gap:0.5rem;margin-bottom:0.8rem">
+  <!-- 2026-07-26 fix: this tab bar (the only way to reach upload mode, and
+       therefore the only way to reach Pattern Details -- AI-vision pattern
+       recognition needs an actual screenshot, it can't run on ticker-
+       search data) used to default to display:none and only reveal itself
+       behind a ?mode=upload URL param "for developers". That effectively
+       removed the upload feature from the real UI ("而家無上載圖片功能"
+       complaint) -- there was no visible link/button to ever add that
+       param. Visible by default again so both modes are reachable. -->
+  <div class="mode-tabs" id="modeTabs" style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
     <button type="button" class="mode-tab" id="tabSearch" onclick="switchMode('search')" data-i18n="ca_mode_search">🔍 搜尋代號（免上傳）</button>
     <button type="button" class="mode-tab" id="tabUpload" onclick="switchMode('upload')" data-i18n="ca_mode_upload">📷 上傳截圖</button>
   </div>
@@ -987,10 +995,9 @@ async function requestBacktestCompare(){
   const urlSymbol = params.get('symbol');
   const urlMode = params.get('mode');
   if (urlMode === 'upload') {
-    // 上傳截圖功能保留，但預設收埋唔顯示個tab bar；淨係加咗
-    // ?mode=upload先至顯示返個tab（等有需要嘅人／開發者可以照舊用）。
-    const modeTabs = document.getElementById('modeTabs');
-    if (modeTabs) modeTabs.style.display = 'flex';
+    // 2026-07-26: modeTabs is visible by default now (see markup above),
+    // so this branch just needs to preselect the upload tab when linked
+    // to directly -- no longer needs to force-unhide anything.
     switchMode('upload');
   } else {
     switchMode('search');
