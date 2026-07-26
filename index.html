@@ -377,6 +377,11 @@
   .price-mini-name { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
   .price-mini-amount { font-size: 1.6rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
   .price-mini-desc { font-size: 0.78rem; color: var(--muted); }
+  /* 2026-07-26 fix: Pro's promo price ($29->$18) also needs to match here,
+     not just on pricing.html -- otherwise this card and the pricing page
+     would show two different Pro prices, the same kind of cross-page
+     inconsistency fixed elsewhere this session. */
+  .price-mini-strike { font-size: 0.95rem; font-weight: 600; color: var(--muted); text-decoration: line-through; margin-right: 4px; }
 
   /* FAQ */
   .faq-section { max-width: 760px; margin: 0 auto; padding: 60px 24px; }
@@ -697,7 +702,7 @@
     </a>
     <a class="price-mini featured" href="pricing.html" style="text-decoration:none;color:inherit;cursor:pointer">
       <div class="price-mini-name" data-i18n="pricing_pro_name">Pro</div>
-      <div class="price-mini-amount">$29<span data-i18n="idx_per_month">/月</span></div>
+      <div class="price-mini-amount"><span class="price-mini-strike">$29</span>$18<span data-i18n="idx_per_month">/月</span></div>
       <div class="price-mini-desc" data-i18n="price3_desc">全功能＋異常雷達</div>
     </a>
     <a class="price-mini" href="pricing.html" style="text-decoration:none;color:inherit;cursor:pointer">
