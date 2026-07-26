@@ -19,6 +19,12 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="js/theme-toggle.js"></script>
 <script src="js/nav.js"></script>
+<!-- 2026-07-26 fix: js/nav.js's gs() (global search icon injector) silently
+     bails if window.searchAssets isn't defined -- this page never included
+     autocomplete.js, so the 🔍 icon never appeared in the shared topbar
+     cluster while every other main page had it. Include-only; nothing on
+     this page auto-attaches to specific input ids from it. -->
+<script src="js/autocomplete.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/ai-loading.js"></script>

@@ -168,6 +168,10 @@
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/nav.js"></script>
+<!-- 2026-07-26 fix: same missing-autocomplete.js root cause as news.html/
+     portfolio.html -- js/nav.js's gs() bails without window.searchAssets,
+     so this page's shared topbar was missing the 🔍 icon. -->
+<script src="js/autocomplete.js"></script>
 <meta name="description" content="Free, Basic $10/mo, Pro from $18/mo (intro price), plus Pro+/Professional/Enterprise plans. AI investment research pricing.">
 <meta property="og:title" content="Pricing — XFINLAB AI Platform">
 <meta property="og:description" content="Free, Basic $10/mo, Pro from $18/mo (intro price), plus Pro+/Professional/Enterprise plans. AI investment research pricing.">

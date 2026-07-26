@@ -56,6 +56,11 @@
 .analysis-text table th{background:var(--navy3);color:var(--blue);}
 </style>
 <script src="js/nav.js"></script>
+<!-- 2026-07-26 fix: same missing-autocomplete.js root cause as news.html/
+     portfolio.html/pricing.html -- js/nav.js's gs() bails without
+     window.searchAssets, so this page's shared topbar was missing the 🔍
+     icon. -->
+<script src="js/autocomplete.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/quota.js"></script>
