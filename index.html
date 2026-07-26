@@ -428,20 +428,34 @@
      個accountBtn dropdown一致，唔再淨係得一個「帳戶」連結咁重複。 -->
 <!-- task #328: site logo, always visible regardless of login state
      (unlike .user-topbar below, which only shows when logged in) -->
-<div style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:center;justify-content:space-between;gap:12px">
+<!-- 2026-07-26 fixes:
+     1) Logo enlarged (30px -> 42px) + wordmark split into a 3-part
+        colored mark (X=blue accent, FIN=amber accent, LAB=black-border/
+        white-fill badge) per explicit request.
+     2) Top "💬 AI對話" link removed (tucked away) -- redundant with the
+        hero's own "💬 直接問AI" bar right below, and cuts one more
+        competing action from above the fold (same CRO reasoning as the
+        hero-CTA declutter done earlier).
+     3) Promoted this row to a real <nav> with a hidden .nav-right marker
+        so js/nav.js's/js/theme-toggle.js's shared xflGroupInsert() logic
+        (used site-wide to place the search icon + theme toggle) finds an
+        actual <nav> here instead of falling back to two INDEPENDENT
+        fixed-position floating buttons (the "隔離" search icon (JavaScript-only-symbol/magnifying-glass)/dark-toggle
+        complaint) -- they now land together in one #xflTopRightGroup
+        cluster, same as every other page. Safe: the shared account-widget
+        auto-injector already bails out on this page via
+        `if(document.getElementById("userTopbar"))return`, and the shared
+        chat-button auto-injector already skips index.html by filename, so
+        neither can double-inject here. -->
+<nav style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:center;justify-content:space-between;gap:12px">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
-    <img src="/img/logo-mark.png" alt="XFINLAB" style="height:30px;width:auto">
-    <span style="font-weight:700;font-size:1.05rem;color:var(--text)">XFINLAB</span>
+    <img src="/img/logo-mark.png" alt="XFINLAB" style="height:42px;width:auto">
+    <span style="font-weight:700;font-size:1.15rem;letter-spacing:0.01em">
+      <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#000;background:#fff;border:1.5px solid #000;border-radius:4px;padding:0 4px;">LAB</span>
+    </span>
   </a>
-  <!-- 2026-07-25 fix (task #417, "所有頁都加個CHAT按鈕導航"): index.html has
-       always been the one page site-wide without a Chat entry point in its
-       topbar (every function page's shared nav already has one -- see
-       ai-analysis.html etc). Kept as a plain top-right link here rather
-       than pulling in the full shared nav-links row, since this page's
-       topbar is intentionally a bespoke marketing layout (logo + login-
-       only account widget), not the standard tool-page nav structure. -->
-  <a href="chat.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-card,#fff);border:1px solid var(--border-color,var(--border));color:var(--text);padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0" data-i18n="nav_chat">💬 AI對話</a>
-</div>
+  <span class="nav-right" style="display:none"></span>
+</nav>
 
 <div class="user-topbar" id="userTopbar" style="display:none">
   <div class="user-topbar-inner">
