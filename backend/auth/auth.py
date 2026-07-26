@@ -161,6 +161,17 @@ def register(user: UserRegister, request: Request):
         record_device_fingerprint(user.device_fingerprint, user.email)
         if risk["reasons"]:
             log_action(user_id, f"register_risk_score:{risk['score']}:{','.join(risk['reasons'])}", client_ip)
+        # 2026-07-26 referral system: apply the referral reward if a code
+        # was carried through (see UserRegister.ref_code + login.html
+        # reading `?ref=`). Deliberately fail-open -- a bad/expired/
+        # missing code, or any unexpected error in the referral service,
+        # must never block or fail an otherwise-successful registration.
+        if user.ref_code:
+            try:
+                from services.referral_service import ReferralService
+                ReferralService.use_code(user.ref_code, user_id)
+            except Exception:
+                pass
         return UserResponse(
             id=user_id, email=user.email, name=user.name, plan="free", token=token,
             requires_verification=bool(risk_flagged),

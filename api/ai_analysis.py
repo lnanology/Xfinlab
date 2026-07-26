@@ -41,6 +41,22 @@ async def ai_analysis(body: dict):
     is_zh_default = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
     dir_tr = get_translations(lang) if not is_zh_default else None
 
+    # 2026-07-26 product decision: Smart Beta / Scenario Lab / Market Regime
+    # probability are "advanced engine" fields reserved for Pro tier and
+    # above (see services/quota_middleware.py's ADVANCED_ENGINE_PLANS).
+    # Computed as normal below regardless of plan (so a gating bug here can
+    # never break the rest of an otherwise-working analysis for anyone),
+    # then swapped for a locked placeholder just before the response is
+    # returned -- Free/Basic users still get the full core analysis
+    # (dashboard/hero/fundamentals/etc.), only these 3 fields are redacted.
+    from services.quota_middleware import is_advanced_engine_plan
+    is_pro_plan = is_advanced_engine_plan(token)
+    _locked_advanced_engine = {
+        "locked": True,
+        "required_plan": "pro",
+        "upgrade_url": "https://xfinlab.com/pricing.html",
+    }
+
     # Screener mode
     if filters and not symbols:
         from ai.ai_router import get_ai_response
@@ -457,19 +473,19 @@ async def ai_analysis(body: dict):
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             },
             "dashboard": dashboard,
-            "regime": regime_result,
+            "regime": regime_result if is_pro_plan else _locked_advanced_engine,
             "reasons": reasons,
             "support_resistance": {
                 "support": tech_support,
                 "resistance": tech_resistance,
             },
-            "scenario": scenario,
+            "scenario": scenario if is_pro_plan else _locked_advanced_engine,
             # News Timeline (Tier 2): the SAME real headlines already
             # fetched above for news_result -- just passed through with
             # their url/published_at instead of only the aggregate score.
             "news_headlines": news[:8],
             "fundamentals": fundamentals,
-            "smart_beta": smart_beta,
+            "smart_beta": smart_beta if is_pro_plan else _locked_advanced_engine,
             "direction_probability": direction_probability,
             "shipping_proxy": shipping_proxy,
         }

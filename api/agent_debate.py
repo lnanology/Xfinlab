@@ -29,7 +29,10 @@ def agent_debate(symbol: str, token: str = None):
     their existing monthly budget; free users still just earn a point
     (same as every other AI feature), never hard-blocked.
     """
-    from services.quota_middleware import check_token_budget, record_ai_token_usage
+    from services.quota_middleware import check_token_budget, record_ai_token_usage, require_advanced_engine_plan
+    # 2026-07-26: AI辯論 (Agent Debate) is a Pro-and-above "advanced engine"
+    # feature -- gated before the (expensive, 4-call) debate ever runs.
+    require_advanced_engine_plan(token)
     user_id = check_token_budget(token)
 
     symbol = symbol.upper()

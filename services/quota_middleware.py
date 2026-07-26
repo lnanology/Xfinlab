@@ -141,3 +141,62 @@ def record_ai_token_usage(user_id) -> None:
     from ai.ai_router import get_last_usage_tokens
     from services.token_quota_service import record_tokens
     record_tokens(user_id, get_last_usage_tokens())
+
+
+# 2026-07-26 product decision (Basic-tier psychological limitation): 7
+# "advanced engine" features -- Agent Debate, Decision Journal, Smart Beta,
+# Backtest stats, Scenario Lab, Market Regime probability, Multi-Timeframe/
+# Market Structure -- are reserved for Pro tier and above. Free and Basic
+# (including a free user's temporary points-earned Basic boost) do not
+# qualify; this is deliberate, matching the pricing-psychology request to
+# make Basic "obviously lighter" than Pro so it drives upgrades.
+ADVANCED_ENGINE_PLANS = {"pro", "proplus", "professional"}
+
+
+def _resolve_effective_plan(token: str):
+    """Shared helper -- returns (user_id, effective_plan). Never raises;
+    an invalid/missing token or unknown user resolves to (None, "free")."""
+    if not token:
+        return None, "free"
+    from backend.auth.jwt_handler import verify_token
+    payload = verify_token(token)
+    if not payload:
+        return None, "free"
+    user_id = payload.get("id")
+    conn = get_db()
+    user = conn.execute("SELECT plan FROM users WHERE id=?", (user_id,)).fetchone()
+    conn.close()
+    if not user:
+        return None, "free"
+    from services.points_service import get_effective_plan
+    return user_id, get_effective_plan(user_id, user["plan"])
+
+
+def is_advanced_engine_plan(token: str) -> bool:
+    """Soft check (never raises) -- True only for real Pro/Pro+/Professional
+    (a temporary points-earned Basic boost does NOT count). Use this where a
+    locked/upgrade-teaser placeholder is preferable to a hard error, e.g.
+    redacting just the smart_beta/scenario/regime fields inside
+    api/ai_analysis.py's combined response instead of failing the whole
+    request for Basic users."""
+    _, effective_plan = _resolve_effective_plan(token)
+    return effective_plan in ADVANCED_ENGINE_PLANS
+
+
+def require_advanced_engine_plan(token: str):
+    """Hard gate -- raises HTTPException(403) if the caller isn't on a
+    real Pro/Pro+/Professional plan. Use for standalone advanced-engine
+    endpoints (Agent Debate, Decision Journal) where there's no partial
+    response to fall back to. Same upgrade_url shape as
+    check_token_budget()'s 429 so the frontend can handle both with one
+    upgrade-prompt path."""
+    if not is_advanced_engine_plan(token):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "plan_upgrade_required",
+                "message": "此功能需要 Pro 或以上方案",
+                "upgrade_url": "https://xfinlab.com/pricing.html",
+                "required_plan": "pro",
+            },
+        )

@@ -144,12 +144,12 @@ def get_status(user_id):
     }
 
 
-def record_and_check(user_id):
-    """Call once per basic-feature use by a logged-in FREE-plan user
-    (callers are responsible for only calling this when the user's real
-    plan is "free" and they have no currently-active temp upgrade --
-    see services/quota_middleware.py). Always allows the use; only
-    tracks points and grants the reward when earned."""
+def _add_points(user_id, amount):
+    """Shared mutator behind both record_and_check() (always +1, per
+    basic-feature use) and add_bonus_points() (2026-07-26: arbitrary
+    amount, for referral rewards) -- both need the exact same rolling
+    7-day-cycle-plus-500-target-grant logic, so it lives here once
+    instead of being duplicated."""
     conn = get_db()
     now = _now()
     cycle = _get_cycle(conn, user_id)
@@ -166,7 +166,7 @@ def record_and_check(user_id):
             window_start = now
             count = 0
 
-    count += 1
+    count += amount
     reward_granted = False
 
     if count >= POINTS_TARGET:
@@ -177,7 +177,12 @@ def record_and_check(user_id):
             ON CONFLICT(user_id) DO UPDATE SET
                 plan = excluded.plan, expires_at = excluded.expires_at, granted_at = excluded.granted_at
         """, (user_id, REWARD_PLAN, expires_at, _fmt(now)))
-        # Reset immediately -- next cycle starts fresh.
+        # Reset immediately -- next cycle starts fresh. Note: any points
+        # earned beyond the 500 threshold in this single addition (e.g. a
+        # referral bonus that pushes 470 -> 520) are intentionally not
+        # carried over into the new cycle -- same "reset to exactly 0"
+        # behavior record_and_check() always had, just now also reachable
+        # via a bonus instead of only ever by +1 increments.
         window_start = now
         count = 0
         reward_granted = True
@@ -192,3 +197,25 @@ def record_and_check(user_id):
     conn.close()
 
     return {"points": count, "target": POINTS_TARGET, "reward_granted": reward_granted}
+
+
+def record_and_check(user_id):
+    """Call once per basic-feature use by a logged-in FREE-plan user
+    (callers are responsible for only calling this when the user's real
+    plan is "free" and they have no currently-active temp upgrade --
+    see services/quota_middleware.py). Always allows the use; only
+    tracks points and grants the reward when earned."""
+    return _add_points(user_id, 1)
+
+
+def add_bonus_points(user_id, amount):
+    """2026-07-26 addition: credit a lump sum of points outside the
+    normal +1-per-feature-use flow -- built for services/referral_service.py's
+    referral rewards (+50 referrer / +30 new-user welcome gift / +50
+    referrer "quick-action" bonus), but generic enough for any future
+    one-off bonus. Shares record_and_check()'s exact same cycle-window
+    and 500-point reward-granting behavior via _add_points() above, so a
+    referral bonus can push a free user over the Basic-upgrade threshold
+    exactly like organic feature usage can.
+    """
+    return _add_points(user_id, amount)

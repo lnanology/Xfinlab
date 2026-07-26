@@ -18,6 +18,11 @@ class UserRegister(BaseModel):
     # fingerprint signal" (services/risk_score_service.py treats a missing
     # fingerprint as reuse-count 0), never to a hard registration failure.
     device_fingerprint: Optional[str] = None
+    # 2026-07-26 referral system: optional referral code carried through
+    # from a `?ref=CODE` link (see login.html reading the query param and
+    # api/referral.py generating the link). Optional -- a normal signup
+    # with no referral simply skips the reward in register() below.
+    ref_code: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: str

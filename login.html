@@ -191,6 +191,13 @@ const API = "https://api.xfinlab.com/api";
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
 let captchaMounted = false;
+// 2026-07-26 referral system: `?ref=CODE` from a shared referral link
+// (see api/referral.py's /referral/code) is picked up in loadLoginMethods()
+// below and stashed here, then sent along with the register() call so
+// backend/auth/auth.py can credit both sides via
+// services/referral_service.py -- see the "準確連接" fix: the link now
+// auto-opens the Register tab instead of just landing on Sign In.
+let referralCode = null;
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
@@ -280,7 +287,7 @@ async function handleRegister() {
     const res = await fetch(`${API}/auth/register`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({name, email, password, captcha_token: captchaToken, device_fingerprint: deviceFingerprint})
+      body: JSON.stringify({name, email, password, captcha_token: captchaToken, device_fingerprint: deviceFingerprint, ref_code: referralCode})
     });
     const data = await res.json();
     if (!res.ok) {
@@ -397,6 +404,25 @@ async function loadLoginMethods() {
   const params = new URLSearchParams(window.location.search);
   const socialToken = params.get('social_token');
   const socialError = params.get('social_error');
+
+  // 2026-07-26 referral system: a shared referral link points here as
+  // `login.html?ref=CODE` -- auto-switch to the Register tab (without
+  // relying on switchTab()'s `event.target`, since there's no click event
+  // to read here) so a new visitor lands directly on the signup form
+  // instead of Sign In, then carries the code through to handleRegister().
+  const refCode = params.get('ref');
+  if (refCode) {
+    referralCode = refCode;
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    if (!captchaMounted && typeof window.XFLCaptcha !== 'undefined') {
+      window.XFLCaptcha.mount('captchaWidget');
+      captchaMounted = true;
+    }
+  }
+
   if (socialToken) {
     // We only get a bare JWT back from the redirect (no id/email/name --
     // those would leak into browser history/referrer headers via the
