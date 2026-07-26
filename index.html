@@ -231,7 +231,12 @@
   .tool-pill.tool-hidden { display: none; }
 
   /* Live ticker */
-  .ticker-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 16px 0; overflow: hidden; margin-bottom: 0; }
+  /* 2026-07-26 fix: removed border-top -- this full-bleed line sat right
+     under the logo/nav row (which is inset to max-width:1160px), so it
+     read as a stray disconnected line under the logo rather than a
+     deliberate section divider. Keeps border-bottom to still separate the
+     ticker marquee from the hero below it. */
+  .ticker-section { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 0; overflow: hidden; margin-bottom: 0; }
   .ticker-wrap { display: flex; gap: 48px; animation: scroll 30s linear infinite; white-space: nowrap; }
   .ticker-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
   .ticker-symbol { font-weight: 600; color: var(--text); }
