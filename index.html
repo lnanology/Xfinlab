@@ -119,8 +119,17 @@
   .search-bar { max-width: 480px; display: flex; gap: 8px; margin-top: 22px; }
   .search-input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 18px; border-radius: 8px; font-size: 0.95rem; font-family: 'Inter', monospace; text-transform: uppercase; letter-spacing: 0.08em; transition: border-color 0.2s; }
   .search-input:focus { outline: none; border-color: var(--accent); }
-  .search-btn { background: var(--accent); color: var(--accent-text); border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s; }
-  .search-btn:hover { opacity: 0.85; }
+  /* 2026-07-26 CRO fix: this used to be solid var(--accent) fill -- the
+     EXACT same visual weight as .btn-primary ("Start Free"), so the hero
+     effectively had 2 competing "loudest" CTAs before a visitor even
+     finished reading the headline. Fintech landing-page conversion
+     research recommends a single dominant primary CTA above the fold
+     (pages with many competing CTAs convert meaningfully worse); this is
+     now an outlined/secondary treatment matching .btn-secondary/
+     .ask-ai-btn, so "Start Free" alone carries the solid-accent fill. */
+  .search-btn { background: transparent; color: var(--accent); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: border-color 0.2s, opacity 0.2s; }
+  .search-btn:hover { border-color: var(--accent); opacity: 0.85; }
+  .hero-trust-chip { font-size: 0.78rem; color: var(--muted); margin: 14px 0 0; }
   .ask-ai-bar { max-width: 480px; display: flex; gap: 8px; margin-top: 22px; }
   .ask-ai-input { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; font-family: 'Inter', sans-serif; transition: border-color 0.2s; }
   .ask-ai-input:focus { outline: none; border-color: var(--accent); }
@@ -472,6 +481,12 @@
       <a href="login.html" data-real-href="dashboard.html" class="btn-primary">Start Free</a>
       <a href="chart-analysis.html" class="btn-secondary">Chart Analysis</a>
     </div>
+    <!-- 2026-07-26 CRO addition: fintech landing-page research recommends
+         honest microcopy directly under the primary CTA (e.g. "No credit
+         card required") to reduce friction right where the trust decision
+         happens -- reusing only real, verifiable facts about this
+         platform (no fabricated user/country counts). -->
+    <p class="hero-trust-chip" data-i18n="hero_trust_chip">No credit card required · Real backtested data · 46 languages</p>
 
     <div class="search-bar">
       <div style="position:relative"><input class="search-input" id="heroTicker" data-i18n-placeholder="hero_search" placeholder="輸入股票代號 AAPL" maxlength="6"
