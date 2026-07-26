@@ -15,9 +15,18 @@ requiring a paid data plan to ship today.
 This is the numeric backbone for Chart Analysis MVP Phase 1:
     真實數據計算 RSI / MACD / Swing High-Low / 支撐阻力 / 0.618 Fibonacci
 
-AI vision (see api/chart_analysis.py) is only used for the parts that
-genuinely need a "human eye" — visual pattern recognition (雙頂/雙底/
-頭肩頂底/三角收斂 etc.) — never for numeric price levels.
+AI vision (see api/chart_analysis.py) is still used for pattern
+recognition (雙頂/雙底/頭肩頂底/三角收斂 etc.) on UPLOADED SCREENSHOTS,
+where there's no real ticker/price series to compute from at all.
+
+2026-07-26 addition: for the ticker-SEARCH flow (no screenshot), the same
+17 chart patterns are now ALSO computed here via
+services/chart_pattern_service.py — deterministic geometry on the real
+swing-point data already produced below (double top/bottom, head &
+shoulders, triangle, channel, rectangle, broadening, gap, island reversal,
+0.618 retracement etc.), no AI call involved. See that module's docstring
+for the exact rules and its honesty policy on lower-confidence patterns
+(cup & handle, diamond, ABC wave, flag, pennant).
 """
 
 import copy
@@ -31,6 +40,8 @@ import pandas as pd
 import requests
 import yfinance as yf
 from typing import Dict, List, Optional
+
+from services.chart_pattern_service import detect_patterns as _detect_chart_patterns
 
 logger = logging.getLogger(__name__)
 
@@ -230,6 +241,19 @@ class TechnicalAnalysisService:
             swing_highs=swing_highs, swing_lows=swing_lows,
         )
 
+        # ---- 2026-07-26 addition: real-data Pattern Details (chart-search
+        # flow only) -- additive, same already-fetched df, no extra data
+        # fetch. See services/chart_pattern_service.py docstring. Wrapped
+        # in try/except so any pattern-detection edge case never breaks
+        # the rest of an otherwise-working analysis (same defensive
+        # posture as _market_structure returning None on insufficient
+        # data, just guarding against an unexpected exception instead).
+        try:
+            chart_patterns, chart_pattern_points = _detect_chart_patterns(df)
+        except Exception:
+            logger.exception("chart_pattern_service.detect_patterns failed for %s", symbol)
+            chart_patterns, chart_pattern_points = {}, {}
+
         return {
             "symbol": symbol.upper(),
             "ohlc": self._ohlc_series(df),
@@ -253,6 +277,8 @@ class TechnicalAnalysisService:
             "confluence": confluence,
             "decision_levels": decision_levels,
             "market_structure": market_structure,
+            "patterns": chart_patterns,
+            "pattern_points": chart_pattern_points,
             "data_points": len(df),
             "period": period,
             "interval": interval,

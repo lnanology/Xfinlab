@@ -180,6 +180,7 @@
 
       <div id="patternBlock">
       <h4 style="margin-top:0.8rem" data-i18n="ca_pattern_detail_title">型態詳情</h4>
+      <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_pattern_low_confidence_note">杯柄形／菱形／ABC修正浪／旗形／尖旗形嘅判斷主觀性較大，僅供參考</p>
       <div class="pattern-list" id="patternList">
         <div class="pattern-item"><span data-i18n="ca_p_double_top">雙頂：</span><span id="p_double_top">-</span></div>
         <div class="pattern-item"><span data-i18n="ca_p_double_bottom">雙底：</span><span id="p_double_bottom">-</span></div>
@@ -567,7 +568,55 @@ function renderKlineChart(res) {
     addLine(dl.stop_loss, cssVar('--red', '#DC2626'), t('ca_reco_stop', '止損'));
     (dl.take_profits || []).forEach((tp, i) => addLine(tp, cssVar('--green', '#16A34A'), `${t('ca_reco_tp', '目標')}${i + 1}`));
   }
+
+  // 2026-07-26 addition: draw the "可能" chart patterns (res.pattern_points,
+  // from services/chart_pattern_service.py) directly on the chart, same
+  // way support/resistance/decision levels already are as price lines --
+  // these instead connect the REAL swing-point coordinates each verdict
+  // was computed from, in chronological order, so the shape shown is
+  // exactly the geometry the text verdict is based on (not an idealized
+  // redraw).
+  drawPatternOverlays(res.pattern_points || {});
+
   klineChart.timeScale().fitContent();
+}
+
+// Distinct-ish colors per pattern purely so multiple overlays drawn at
+// once stay visually separable -- no meaning beyond that (unlike the
+// green/red used for support/resistance above, these aren't bullish/
+// bearish-coded).
+const PATTERN_OVERLAY_COLORS = {
+  p_double_top: '#DC2626', p_double_bottom: '#16A34A',
+  p_head_shoulder_top: '#EA580C', p_head_shoulder_bottom: '#0D9488',
+  p_triangle: '#F59E0B', p_channel: '#2563EB', p_rectangle: '#7C3AED',
+  p_broadening: '#DB2777', p_breakback: '#0EA5E9', p_0618: '#8B5CF6',
+  p_flag: '#059669', p_pennant: '#65A30D', p_cup_handle: '#D946EF',
+  p_diamond: '#E11D48', p_abc: '#CA8A04', p_gap: '#F97316', p_island: '#0891B2',
+};
+
+function drawPatternOverlays(patternPoints) {
+  if (!klineChart || !klineSeries) return;
+  // Defensive cleanup in case this chart instance already has overlays
+  // from an earlier call -- in the normal flow ensureKlineChart() always
+  // tears down and recreates the whole chart first, so this is a no-op in
+  // practice, but keeps the function safe to call on its own too.
+  (klineChart._xflPatternSeries || []).forEach(s => { try { klineChart.removeSeries(s); } catch (e) {} });
+  klineChart._xflPatternSeries = [];
+  Object.keys(patternPoints || {}).forEach(key => {
+    const pts = (patternPoints[key] || []).slice().sort((a, b) => a.time - b.time);
+    if (pts.length < 2) return;
+    const color = PATTERN_OVERLAY_COLORS[key] || cssVar('--accent-blue', '#2563EB');
+    const series = klineChart.addLineSeries({
+      color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dotted,
+      priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+    });
+    series.setData(pts.map(p => ({ time: p.time, value: p.price })));
+    const label = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+    series.setMarkers([{
+      time: pts[pts.length - 1].time, position: 'aboveBar', color, shape: 'circle', text: label,
+    }]);
+    klineChart._xflPatternSeries.push(series);
+  });
 }
 
 // Defensive DOM helper -- every "分析失敗" crash reported so far traced
@@ -600,6 +649,21 @@ function showSearchError(message) {
 function hideSearchError() {
   const banner = document.getElementById('searchErrorBanner');
   if (banner) banner.style.display = 'none';
+}
+
+// 2026-07-26 addition: shared Pattern Details renderer for BOTH flows --
+// upload mode's AI-vision result and search mode's real swing-point-
+// geometry result (services/chart_pattern_service.py) return the exact
+// same 17 keys with the same "可能"/"不可能" literals, so one renderer
+// can fill in the patternList table regardless of which flow produced it.
+const PATTERN_KEYS = ['p_double_top','p_double_bottom','p_head_shoulder_top','p_head_shoulder_bottom',
+  'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
+  'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island'];
+function renderPatternDetails(patterns) {
+  const unclear = t('ca_unclear','不明');
+  PATTERN_KEYS.forEach(key => {
+    safeSetText(key, (patterns && patterns[key]) || unclear);
+  });
 }
 
 function switchMode(mode) {
@@ -679,15 +743,16 @@ async function runTickerSearch(symbolOverride){
   btn.disabled = true; btn.textContent = t('ca_search_analyzing','分析中...');
   if (typeof window.startAiLoading === 'function') window.startAiLoading();
 
-  document.getElementById('patternBlock').style.display = 'none';
-  // 2026-07-23 fix: search/no-upload mode can never actually run AI
-  // vision pattern recognition (there's no image), so this row used to
-  // just show a permanent "you need to upload a screenshot" note every
-  // single search -- which read as broken/confusing rather than
-  // informative. Hide the whole row here instead; switchMode('upload')
-  // brings it back once there's an actual image to recognize patterns
-  // from.
-  document.getElementById('patternSummaryRow').style.display = 'none';
+  // 2026-07-26 fix: search/no-upload mode used to permanently hide
+  // patternBlock here with a "you need to upload a screenshot" note
+  // (2026-07-23 fix, since AI vision genuinely can't run without an
+  // image) -- but services/chart_pattern_service.py now computes the
+  // same 17 patterns from real swing-point geometry on the same OHLC
+  // data this search already fetches, so there's no need to hide it
+  // anymore. Left visible; populated from res.patterns below once the
+  // fetch resolves.
+  document.getElementById('patternBlock').style.display = 'block';
+  document.getElementById('patternSummaryRow').style.display = 'flex';
   document.getElementById('aiCommentaryBlock').style.display = 'block';
   safeSetText('commentaryResult', '');
   document.getElementById('commentaryBtn').disabled = false;
@@ -744,7 +809,19 @@ async function runTickerSearch(symbolOverride){
     safeSetText('volumeZone', res.volume_desc || '-');
     safeSetText('rsiValue', res.rsi != null ? res.rsi : '-');
     safeSetText('macdValue', res.macd ? res.macd.trend : '-');
-    safeSetText('patternSummary', t('ca_pattern_search_mode_note','需上傳截圖先做型態辨識'));
+
+    // 2026-07-26 fix: patterns now come from services/chart_pattern_
+    // service.py's real swing-point geometry (see get_technical_analysis
+    // -> res.patterns), computed from the exact same OHLC data already
+    // fetched for this search -- no screenshot needed, replacing the old
+    // permanent "upload a screenshot first" placeholder.
+    const searchPatterns = res.patterns || {};
+    const searchPatternCount = Object.values(searchPatterns).filter(p => p === '可能').length;
+    safeSetText('patternSummary', searchPatternCount > 0
+      ? t('ca_pattern_detected_search','根據真實走勢幾何運算，偵測到若干可能型態')
+      : t('ca_pattern_not_detected_search','根據真實走勢幾何運算，未偵測到明顯型態'));
+    renderPatternDetails(searchPatterns);
+    window.__lastChartPatternPoints = res.pattern_points || {};
 
     // 2026-07-20 fix ("風險提示/建議 按「產生AI文字解讀」查看，未做好"):
     // these two rows used to just say "click the button below to view" --
@@ -1075,16 +1152,12 @@ async function runImageAnalysis(){
     safeSetText('riskTips', res.risk || t('ca_no_risk','無顯著風險提示'));
     safeSetText('recommendationValue', res.recommendation || '-');
 
-    const unclear = t('ca_unclear','不明');
-    // Phase 1 Pattern Intelligence expansion: 7 -> 17 patterns (image-
-    // upload flow only -- search mode has no image, so patternSummary
-    // there already points users at the AI commentary button instead).
-    ['p_double_top','p_double_bottom','p_head_shoulder_top','p_head_shoulder_bottom',
-     'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
-     'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island'
-    ].forEach(key => {
-      safeSetText(key, patterns[key] || unclear);
-    });
+    // Phase 1 Pattern Intelligence expansion: 7 -> 17 patterns (AI-vision,
+    // image-upload flow). 2026-07-26: extracted into the shared
+    // renderPatternDetails() helper (defined near safeSetText above) so
+    // search mode's real-swing-point-geometry patterns can reuse the
+    // exact same rendering logic.
+    renderPatternDetails(patterns);
 
     // Decision Report™ footer -- only when we have the real confluence
     // engine output (i.e. a symbol was supplied and technical_analysis_
