@@ -49,11 +49,20 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
     happens to be set to).
 
     Supported:
-        groq     → Groq (free, fast)
-        deepseek → DeepSeek V4 Flash, served via DeepInfra (cheap) --
-                   needs DEEPINFRA_API_KEY, not a DeepSeek-issued key;
-                   see _deepseek()'s docstring for why
-        claude   → Anthropic Claude (best quality)
+        groq       → Groq (free, fast)
+        deepseek   → DeepSeek V4 Flash, served via DeepInfra (cheap) --
+                     needs DEEPINFRA_API_KEY, not a DeepSeek-issued key;
+                     see _deepseek()'s docstring for why
+        claude     → Anthropic Claude (best quality)
+        openrouter → 2026-07-26 addition: one OpenAI-compatible endpoint
+                     that fans out to many upstream providers/models
+                     (GPT/Claude/Gemini/Llama/etc.) under a single
+                     OPENROUTER_API_KEY -- see _openrouter()'s docstring.
+                     Purely additive: existing groq/deepseek/claude
+                     callers and the default AI_PROVIDER are untouched;
+                     this is only used where a caller explicitly passes
+                     provider="openrouter" or AI_PROVIDER=openrouter is
+                     set in the environment.
 
     Args:
         prompt: The prompt to send
@@ -73,8 +82,10 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
         return _deepseek(prompt, max_tokens)
     elif provider == "claude":
         return _claude(prompt, max_tokens)
+    elif provider == "openrouter":
+        return _openrouter(prompt, max_tokens)
     else:
-        raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude")
+        raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude / openrouter")
 
 
 VISION_PROVIDER = os.getenv("VISION_PROVIDER", "gemini")
@@ -262,6 +273,54 @@ def _deepseek(prompt: str, max_tokens: int, _retry: int = 1) -> str:
     if res.status_code in (429, 503) and _retry > 0:
         time.sleep(3)
         return _deepseek(prompt, max_tokens, _retry=_retry - 1)
+    data = res.json()
+    usage = data.get("usage", {}).get("total_tokens")
+    if usage:
+        _LAST_USAGE_TOKENS["value"] = usage
+    return data["choices"][0]["message"]["content"].strip()
+
+
+def _openrouter(prompt: str, max_tokens: int, _retry: int = 1) -> str:
+    """
+    2026-07-26 addition: OpenRouter (https://openrouter.ai) -- a single
+    OpenAI-compatible endpoint that fans out to many upstream providers/
+    models (GPT/Claude/Gemini/Llama/etc.) under one OPENROUTER_API_KEY.
+    Purely additive: this is only reached when a caller explicitly passes
+    provider="openrouter" to get_ai_response(), or AI_PROVIDER=openrouter
+    is set in the environment -- every existing groq/deepseek/claude call
+    site and the default AI_PROVIDER are completely untouched.
+
+    Model is configurable via OPENROUTER_MODEL (defaults to a reasonable
+    general-purpose model below) -- change it per deployment without a
+    code change if a better/cheaper model becomes available.
+
+    Same retry-once-on-429/503 behavior as _deepseek() -- OpenRouter
+    fans requests out to third-party upstreams, so a transient rate-limit
+    from whichever provider it picked shouldn't hard-fail the caller.
+    """
+    import time
+    import requests
+    headers = {
+        "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
+        "Content-Type": "application/json",
+        # OpenRouter's own docs recommend these two for attribution/
+        # analytics on their dashboard -- optional, harmless if omitted.
+        "HTTP-Referer": "https://www.xfinlab.com",
+        "X-Title": "XFINLAB",
+    }
+    payload = {
+        "model": os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": max_tokens,
+        "temperature": 0.3,
+    }
+    res = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        json=payload, headers=headers, timeout=30,
+    )
+    if res.status_code in (429, 503) and _retry > 0:
+        time.sleep(3)
+        return _openrouter(prompt, max_tokens, _retry=_retry - 1)
     data = res.json()
     usage = data.get("usage", {}).get("total_tokens")
     if usage:
