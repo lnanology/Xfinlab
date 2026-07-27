@@ -144,6 +144,21 @@ svg {
 }
 
 nav {
+  /* 2026-07-27 fix ("有些頁按不動 沒滑出功能"): the mobile dropdown menu
+     below (.nav-links, position:absolute; top:100%) was written assuming
+     <nav> is its positioning anchor -- but <nav> itself, and every one of
+     its ancestors (html/body/.container/etc.), never actually declared
+     `position` as anything other than the static default. A
+     position:absolute element with no positioned ancestor anchors to the
+     page's initial containing block instead, not the nav bar -- so on
+     any page tall enough, tapping the hamburger toggled the class just
+     fine, but the panel rendered a full viewport-height below the nav,
+     off-screen, looking exactly like "the button doesn't do anything".
+     This one line was the missing anchor for the entire site; chat.html
+     never hit this because it independently overrides .nav-links to
+     position:static locally (see its own inline <style>, 2026-07-22 fix)
+     -- unaffected by this change either way. */
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
