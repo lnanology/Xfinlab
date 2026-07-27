@@ -423,6 +423,26 @@ def _notify_free_signals_ready(today: str, cache: Dict):
     except Exception:
         pass
 
+    # 2026-07-27 "Level 1 content leverage" growth batch: generate (and
+    # persist) ready-to-copy-paste post text for X/Threads/LinkedIn/
+    # Facebook/email/push from the SAME real signals data used above --
+    # this does NOT post anywhere itself (no OAuth app on file for those
+    # platforms), it just saves the text for the admin panel to display.
+    # Own idempotency key so a failure/skip here never blocks (or is
+    # blocked by) the two notification sends above.
+    try:
+        from services.push_service import already_sent_today, mark_sent_today
+        from services.content_repurpose_service import generate_content_variants, save_variants
+
+        cv_key = "content_variants_daily"
+        if already_sent_today(cv_key, today):
+            return
+        variants = generate_content_variants(cache)
+        save_variants(today, variants)
+        mark_sent_today(cv_key, today)
+    except Exception:
+        pass
+
 
 def _refresh_free_signals_cache():
     """Recompute the free-signals cache for "today" and fire the daily

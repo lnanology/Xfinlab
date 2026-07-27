@@ -379,6 +379,22 @@
           </div>
         </div>
       </div>
+
+      <!-- 2026-07-27: "Level 1 content leverage" growth batch -- today's
+           real (non-fabricated) ready-to-copy post text, generated daily
+           from the same signals data behind free-signals.html/Telegram
+           push. Read-only display + manual regenerate; nothing here posts
+           anywhere automatically. -->
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>今日 Ready-to-Post 內容 (Level 1 Content Leverage)</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm btn-purple" onclick="regenerateContentVariants()">🔄 Regenerate</button>
+          </div>
+        </div>
+        <div id="cvMeta" style="font-size:0.72rem;color:var(--muted);margin-bottom:12px"></div>
+        <div id="cvBody"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
     </div>
 
     <!-- Feature Flags -->
@@ -796,6 +812,85 @@ function showPage(name) {
   if (name === 'flags') loadFlags();
   if (name === 'auditlog') loadAuditLog();
   if (name === 'security') loadSecurityScan();
+  if (name === 'content') loadContentVariants();
+}
+
+// task #494: Content Center "ready-to-post" panel -- reads services/
+// content_repurpose_service.py's daily-generated variants (persisted in
+// content_variants_log) via GET /admin/content-variants/today, renders
+// one textarea + copy button per platform. Regenerate button bypasses
+// the daily job's once-per-day idempotency guard for on-demand refresh.
+const CV_FIELDS = [
+  {key: 'twitter', label: 'X / Twitter'},
+  {key: 'threads', label: 'Threads'},
+  {key: 'facebook', label: 'Facebook'},
+  {key: 'linkedin', label: 'LinkedIn'},
+  {key: 'email_subject', label: 'Email — Subject'},
+  {key: 'email_body', label: 'Email — Body'},
+  {key: 'push_title', label: 'Push — Title'},
+  {key: 'push_body', label: 'Push — Body'},
+];
+
+function renderContentVariants(data) {
+  const meta = document.getElementById('cvMeta');
+  const body = document.getElementById('cvBody');
+  if (!data || !data.available) {
+    meta.textContent = '';
+    body.innerHTML = '<div class="empty">今日暫無內容（今日信號未生成或未有數據）</div>';
+    return;
+  }
+  meta.textContent = `日期: ${data.date} — 內容唔會自動出街，複製落去各平台自己嘅發文工具`;
+  body.innerHTML = CV_FIELDS.map(f => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:0.78rem;color:var(--label);font-weight:600">${f.label}</span>
+        <button class="btn btn-sm btn-green" id="cvCopyBtn-${f.key}" onclick="copyVariantField('${f.key}', this)">⧉ Copy</button>
+      </div>
+      <textarea readonly style="width:100%;min-height:70px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:0.8rem;font-family:inherit;resize:vertical" id="cvField-${f.key}">${escapeHtml(data[f.key] || '')}</textarea>
+    </div>`).join('');
+}
+
+async function loadContentVariants() {
+  document.getElementById('cvBody').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/content-variants/today?token=${adminToken}`);
+    const data = await res.json();
+    renderContentVariants(data);
+  } catch (e) {
+    document.getElementById('cvBody').innerHTML = '<div class="empty">Connection error loading content variants</div>';
+  }
+}
+
+async function regenerateContentVariants() {
+  const body = document.getElementById('cvBody');
+  body.innerHTML = '<div class="empty"><span class="spinner"></span> Regenerating...</div>';
+  try {
+    const res = await fetch(`${API}/admin/content-variants/regenerate?token=${adminToken}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    renderContentVariants(data);
+  } catch (e) {
+    body.innerHTML = '<div class="empty">Regenerate failed</div>';
+  }
+}
+
+function copyVariantField(key, btn) {
+  const ta = document.getElementById(`cvField-${key}`);
+  if (!ta) return;
+  const original = btn.textContent;
+  const finish = () => { btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = original; }, 1500); };
+  const fallback = () => {
+    ta.removeAttribute('readonly');
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { /* best-effort only */ }
+    ta.setAttribute('readonly', 'readonly');
+    finish();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(finish).catch(fallback);
+  } else {
+    fallback();
+  }
 }
 
 // task #326: Security Scan panel -- surfaces services/security_scan_service.py's

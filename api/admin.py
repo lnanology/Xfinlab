@@ -289,6 +289,34 @@ def mark_annual_pro(user_id: int, token: str, request: Request):
     result = ReferralService.mark_annual_pro_payment(user_id)
     return {"status": "ok", **result}
 
+@router.get("/admin/content-variants/today")
+def get_content_variants(token: str, request: Request):
+    """2026-07-27 'Level 1 content leverage' growth batch: returns
+    today's ready-to-copy-paste post text (X/Threads/LinkedIn/Facebook/
+    email/push), generated daily by api/market_pulse.py's
+    _notify_free_signals_ready() from the same real signals data behind
+    free-signals.html and the Telegram push. Read-only -- does not post
+    anywhere; AJ copies each field into that platform's own composer."""
+    verify_admin(token, "get_content_variants", request)
+    from services.content_repurpose_service import get_latest_variants
+    return get_latest_variants()
+
+@router.post("/admin/content-variants/regenerate")
+def regenerate_content_variants(token: str, request: Request):
+    """Manual on-demand regeneration -- bypasses the daily job's
+    once-per-day idempotency guard (that guard exists to stop the
+    automated cron from re-firing, not to stop an admin from refreshing
+    on purpose, e.g. to test this feature or pull a fresh copy mid-day
+    after signals have moved)."""
+    verify_admin(token, "regenerate_content_variants", request)
+    from datetime import date
+    from api.market_pulse import _compute_free_signals
+    from services.content_repurpose_service import generate_content_variants, save_variants
+    cache = _compute_free_signals()
+    variants = generate_content_variants(cache)
+    save_variants(date.today().isoformat(), variants)
+    return variants
+
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
     verify_admin(token, f"delete_user:{user_id}", request)
