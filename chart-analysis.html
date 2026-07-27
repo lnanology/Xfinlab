@@ -641,10 +641,25 @@ function renderPatternOverlaySeries(patternPoints) {
   // practice, but keeps the function safe to call on its own too.
   (klineChart._xflPatternSeries || []).forEach(s => { try { klineChart.removeSeries(s); } catch (e) {} });
   klineChart._xflPatternSeries = [];
-  Object.keys(patternPoints || {}).forEach(key => {
-    if (PATTERN_TOGGLE_STATE[key] === false) return; // user switched this one off
+
+  // 2026-07-27 fix ("Pattern名字...都不要重疊同一位置 分開"): name-tag
+  // markers used to always anchor at each pattern's own LAST point with a
+  // fixed 'aboveBar' position -- several patterns often resolve near the
+  // same recent bar/price (today's live price action), so their tags
+  // piled up on top of each other at that one spot, on every timeframe.
+  // Give each simultaneously-drawn pattern its own "lane": alternate the
+  // tag above/below its own line, and walk the anchor back to an earlier
+  // vertex along that SAME real line (still one of its genuine swing
+  // points, nothing fabricated) as more patterns compete for the same
+  // spot, so tags fan out both vertically and horizontally instead of
+  // stacking. Recomputed fresh on every call, so it applies at every
+  // timeframe, not just the one first drawn.
+  const activeKeys = PATTERN_KEYS.filter(key => {
+    if (PATTERN_TOGGLE_STATE[key] === false) return false;
+    return ((patternPoints || {})[key] || []).length >= 2;
+  });
+  activeKeys.forEach((key, laneIndex) => {
     const pts = (patternPoints[key] || []).slice().sort((a, b) => a.time - b.time);
-    if (pts.length < 2) return;
     const color = PATTERN_OVERLAY_COLORS[key] || cssVar('--accent-blue', '#2563EB');
     const series = klineChart.addLineSeries({
       color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dotted,
@@ -652,8 +667,11 @@ function renderPatternOverlaySeries(patternPoints) {
     });
     series.setData(pts.map(p => ({ time: p.time, value: p.price })));
     const label = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+    const anchorIdx = Math.max(0, pts.length - 1 - (laneIndex % pts.length));
     series.setMarkers([{
-      time: pts[pts.length - 1].time, position: 'aboveBar', color, shape: 'circle', text: label,
+      time: pts[anchorIdx].time,
+      position: laneIndex % 2 === 0 ? 'aboveBar' : 'belowBar',
+      color, shape: 'circle', text: label,
     }]);
     klineChart._xflPatternSeries.push(series);
   });
