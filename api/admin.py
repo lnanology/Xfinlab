@@ -268,6 +268,27 @@ def downgrade_user(user_id: int, token: str, request: Request):
     conn.close()
     return {"status": "ok", "message": f"User {user_id} downgraded to Free"}
 
+@router.post("/admin/users/{user_id}/mark-annual-pro")
+def mark_annual_pro(user_id: int, token: str, request: Request):
+    """2026-07-27: manual stand-in for a real payment webhook -- confirms
+    `user_id` paid for an ANNUAL Pro subscription (there is no live Stripe/
+    PayPal integration yet). Sets their real plan to Pro with a genuine
+    1-year expiry, and -- if they were referred -- grants the referrer 1
+    year of Pro (or Pro+, once they've referred REFERRAL_PROPLUS_THRESHOLD
+    paying annual-Pro conversions) via services/referral_service.py. Once
+    a real payment gateway exists, its webhook should call
+    ReferralService.mark_annual_pro_payment() directly instead of this
+    endpoint; the reward logic itself doesn't change."""
+    verify_admin(token, f"mark_annual_pro:{user_id}", request)
+    from services.referral_service import ReferralService
+    conn = get_db()
+    exists = conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone()
+    conn.close()
+    if not exists:
+        raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+    result = ReferralService.mark_annual_pro_payment(user_id)
+    return {"status": "ok", **result}
+
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
     verify_admin(token, f"delete_user:{user_id}", request)

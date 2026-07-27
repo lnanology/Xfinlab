@@ -88,6 +88,17 @@ def init_users_table():
         conn.execute("ALTER TABLE users ADD COLUMN risk_flagged INTEGER DEFAULT 0")
     except Exception:
         pass
+    # 2026-07-27 referral-driven annual-Pro reward batch: a real paying
+    # subscription now needs an expiry (previously `plan` was a permanent
+    # admin-set flag with no time dimension -- fine for manual comps, not
+    # fine for "1 year of Pro"). NULL means "no expiry" (preserves exact
+    # existing behavior for every row created before this column existed,
+    # and for admin's plain upgrade_user()/downgrade_user() actions, which
+    # still don't set it). Same guarded ALTER pattern as risk_flagged above.
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN plan_expires_at TEXT DEFAULT NULL")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 

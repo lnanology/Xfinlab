@@ -372,9 +372,12 @@ def _lookup_plan(token: Optional[str]) -> str:
         db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
-        row = conn.execute("SELECT plan FROM users WHERE id=?", (payload["id"],)).fetchone()
+        row = conn.execute("SELECT plan, plan_expires_at FROM users WHERE id=?", (payload["id"],)).fetchone()
         conn.close()
-        return (row["plan"] if row and row["plan"] else "free")
+        if not row or not row["plan"]:
+            return "free"
+        from services.quota_middleware import resolve_real_plan
+        return resolve_real_plan(row)
     except Exception:
         return "free"
 

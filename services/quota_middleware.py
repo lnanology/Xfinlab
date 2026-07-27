@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import datetime
 from fastapi import HTTPException
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
@@ -8,6 +9,31 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def resolve_real_plan(user_row) -> str:
+    """2026-07-27: `users.plan_expires_at` is set by
+    ReferralService.mark_annual_pro_payment() for a real annual-Pro
+    conversion (see services/referral_service.py). This is the read-time
+    check that makes that expiry actually mean something -- without it,
+    a comp'd/paid annual plan would grant unlimited access forever since
+    nothing else in this file ever looks at plan_expires_at. Demotes to
+    "free" once the expiry has passed; NULL (the default for every
+    pre-existing row and for admin's plain upgrade_user()) means no
+    expiry, so this is a no-op for every case that existed before today.
+    Never writes to the DB -- purely a read-time correction."""
+    plan = user_row["plan"]
+    try:
+        expires_at = user_row["plan_expires_at"]
+    except (KeyError, IndexError):
+        expires_at = None
+    if plan != "free" and expires_at:
+        try:
+            if datetime.datetime.strptime(expires_at, "%Y-%m-%d %H:%M:%S") <= datetime.datetime.utcnow():
+                return "free"
+        except (ValueError, TypeError):
+            pass
+    return plan
 
 def check_and_increment(token: str, feature: str):
     """
@@ -35,13 +61,13 @@ def check_and_increment(token: str, feature: str):
 
     # 取得用戶 plan
     conn = get_db()
-    user = conn.execute("SELECT plan FROM users WHERE id=?", (user_id,)).fetchone()
+    user = conn.execute("SELECT plan, plan_expires_at FROM users WHERE id=?", (user_id,)).fetchone()
     conn.close()
 
     if not user:
         return True
 
-    plan = user["plan"]
+    plan = resolve_real_plan(user)
 
     from services.points_service import get_effective_plan, record_and_check
     effective_plan = get_effective_plan(user_id, plan)
@@ -94,13 +120,13 @@ def check_token_budget(token: str):
     user_id = payload.get("id")
 
     conn = get_db()
-    user = conn.execute("SELECT plan FROM users WHERE id=?", (user_id,)).fetchone()
+    user = conn.execute("SELECT plan, plan_expires_at FROM users WHERE id=?", (user_id,)).fetchone()
     conn.close()
 
     if not user:
         return None
 
-    plan = user["plan"]
+    plan = resolve_real_plan(user)
     from services.points_service import get_effective_plan, record_and_check
     effective_plan = get_effective_plan(user_id, plan)
 
@@ -164,12 +190,12 @@ def _resolve_effective_plan(token: str):
         return None, "free"
     user_id = payload.get("id")
     conn = get_db()
-    user = conn.execute("SELECT plan FROM users WHERE id=?", (user_id,)).fetchone()
+    user = conn.execute("SELECT plan, plan_expires_at FROM users WHERE id=?", (user_id,)).fetchone()
     conn.close()
     if not user:
         return None, "free"
     from services.points_service import get_effective_plan
-    return user_id, get_effective_plan(user_id, user["plan"])
+    return user_id, get_effective_plan(user_id, resolve_real_plan(user))
 
 
 def is_advanced_engine_plan(token: str) -> bool:

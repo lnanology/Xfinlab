@@ -33,6 +33,27 @@ REFERRER_QUICK_ACTION_WINDOW_DAYS = 2
 # other; there's no numeric limit on the reward side here).
 REFERRAL_PROGRESS_TARGET = 5
 
+# 2026-07-27 product decision ("推薦人介紹新用戶註冊並年付PRO PLAN，推薦人
+# 馬上升上PRO用1年，介紹5個新人升至年費的PRO，推薦人升至PRO＋"): a SEPARATE,
+# much bigger reward tier layered on top of the points-based one above --
+# gated on the new user actually becoming a real ANNUAL Pro subscriber, not
+# just signing up. Since the site has no live payment processor yet
+# (pricing.html still shows "即將開放付款"), the trigger for "this user
+# really paid" is ReferralService.mark_annual_pro_payment(), called from a
+# new admin-only endpoint until a real Stripe/PayPal webhook exists to call
+# it instead -- the reward logic itself doesn't care which one calls it.
+#   - 1st..4th qualifying conversion: referrer is granted (or has extended,
+#     see points_service.grant_temp_upgrade's stacking behavior) a real Pro
+#     tier for 1 year, immediately.
+#   - 5th and every subsequent qualifying conversion: referrer's grant
+#     becomes Pro+ instead of Pro, same 1-year-per-conversion stacking.
+# This is layered via the existing temp_upgrades mechanic (same table the
+# points system's Basic boost uses), NOT by overwriting users.plan, so it
+# auto-expires on its own and never clobbers whatever real plan the
+# referrer separately has/earns.
+REFERRAL_PRO_GRANT_DAYS = 365
+REFERRAL_PROPLUS_THRESHOLD = 5
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -60,6 +81,19 @@ def init_referral_table():
             used_at TEXT DEFAULT (datetime('now'))
         )
     """)
+    # 2026-07-27 annual-Pro referral reward: tracks which referred signups
+    # went on to actually pay for annual Pro, separately from the plain
+    # signup already recorded above -- same guarded-ALTER pattern used
+    # elsewhere in this codebase (e.g. backend/auth/auth.py's risk_flagged)
+    # so re-running this on a DB that already has the columns is a no-op.
+    try:
+        conn.execute("ALTER TABLE referral_uses ADD COLUMN converted_paid_pro INTEGER DEFAULT 0")
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE referral_uses ADD COLUMN converted_at TEXT DEFAULT NULL")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 
@@ -176,6 +210,105 @@ class ReferralService:
             "referrer_points": referrer_bonus,
             "referrer_quick_action_bonus": quick_action,
             "new_user_points": NEW_USER_WELCOME_BONUS,
+        }
+
+    @staticmethod
+    def mark_paid_conversion(new_user_id: int) -> dict:
+        """2026-07-27: called once a referred user is confirmed to have
+        actually paid for an ANNUAL Pro subscription (currently only
+        reachable via ReferralService.mark_annual_pro_payment() below,
+        since there's no live payment processor yet -- see
+        REFERRAL_PRO_GRANT_DAYS's docstring above). Idempotent per
+        new_user_id: only the first call for a given referred user grants
+        anything; a second call is a harmless no-op (returns
+        already_converted=True) so an admin re-clicking the same action
+        twice, or a future webhook retry, can never double-grant.
+
+        Silently no-ops (success=False) if this user was never referred
+        at all -- a direct signup with no ?ref= code simply has no row in
+        referral_uses to convert, which is expected, not an error.
+        """
+        conn = get_db()
+
+        use_row = conn.execute(
+            "SELECT id, referral_code, converted_paid_pro FROM referral_uses WHERE new_user_id=?",
+            (new_user_id,)
+        ).fetchone()
+
+        if not use_row:
+            conn.close()
+            return {"success": False, "message": "This user was not referred by anyone"}
+
+        if use_row["converted_paid_pro"]:
+            conn.close()
+            return {"success": False, "message": "Already converted", "already_converted": True}
+
+        referral = conn.execute(
+            "SELECT user_id FROM referrals WHERE referral_code=?", (use_row["referral_code"],)
+        ).fetchone()
+        if not referral:
+            conn.close()
+            return {"success": False, "message": "Referral code no longer exists"}
+        referrer_id = referral["user_id"]
+
+        conn.execute(
+            "UPDATE referral_uses SET converted_paid_pro=1, converted_at=datetime('now') WHERE id=?",
+            (use_row["id"],)
+        )
+        conn.commit()
+
+        paid_conversions = conn.execute(
+            """SELECT COUNT(*) as c FROM referral_uses
+               WHERE referral_code=? AND converted_paid_pro=1""",
+            (use_row["referral_code"],)
+        ).fetchone()["c"]
+        conn.close()
+
+        tier = "proplus" if paid_conversions >= REFERRAL_PROPLUS_THRESHOLD else "pro"
+
+        from services.points_service import grant_temp_upgrade
+        expires_at = grant_temp_upgrade(referrer_id, tier, REFERRAL_PRO_GRANT_DAYS)
+
+        return {
+            "success": True,
+            "referrer_id": referrer_id,
+            "reward_tier": tier,
+            "reward_expires_at": expires_at,
+            "paid_conversions": paid_conversions,
+        }
+
+    @staticmethod
+    def mark_annual_pro_payment(user_id: int) -> dict:
+        """2026-07-27: the current, temporary trigger point for "this user
+        really paid for an annual Pro subscription" -- there is no live
+        Stripe/PayPal integration yet, so this is admin-only (see
+        POST /api/admin/users/{user_id}/mark-annual-pro) until a real
+        payment webhook exists to call the exact same function instead.
+
+        Sets the PAYER's own real plan + a real 1-year expiry (so their
+        account genuinely reads as Pro, and services/quota_middleware.py's
+        resolve_real_plan() will demote them back to free automatically
+        once the year is up -- no separate cron/cleanup job needed).
+        Then, if they were referred, triggers the referrer's reward via
+        mark_paid_conversion() above.
+        """
+        conn = get_db()
+        now = datetime.datetime.utcnow()
+        expires_at = (now + datetime.timedelta(days=REFERRAL_PRO_GRANT_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute(
+            "UPDATE users SET plan='pro', plan_expires_at=? WHERE id=?",
+            (expires_at, user_id)
+        )
+        conn.commit()
+        conn.close()
+
+        referral_result = ReferralService.mark_paid_conversion(user_id)
+
+        return {
+            "user_id": user_id,
+            "plan": "pro",
+            "plan_expires_at": expires_at,
+            "referral_reward": referral_result,
         }
 
     @staticmethod

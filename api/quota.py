@@ -19,12 +19,13 @@ def check_quota(feature: str, token: str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     import sqlite3
+    from services.quota_middleware import resolve_real_plan
     conn = sqlite3.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db"))
     conn.row_factory = sqlite3.Row
-    row = conn.execute("SELECT plan FROM users WHERE id=?", (payload["id"],)).fetchone()
+    row = conn.execute("SELECT plan, plan_expires_at FROM users WHERE id=?", (payload["id"],)).fetchone()
     conn.close()
 
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return QuotaService.check(payload["id"], row["plan"], feature)
+    return QuotaService.check(payload["id"], resolve_real_plan(row), feature)

@@ -34,6 +34,17 @@ POINTS_TARGET = 500
 CYCLE_DAYS = 7
 REWARD_PLAN = "basic"
 
+# 2026-07-27 referral-driven annual-Pro reward batch: `temp_upgrades` used to
+# only ever be checked when a user's real plan was "free" (the points-cycle
+# Basic boost). The referral reward (services/referral_service.py) needs the
+# same "temporary plan on top of whatever the user really has, auto-expires,
+# no DB write needed elsewhere" mechanic, but for a real Pro/Basic/etc payer
+# too -- e.g. a Basic subscriber who earns a referral-driven comp'd Pro year
+# should actually get Pro-level access for that year, not have it silently
+# ignored because their real plan already isn't "free". PLAN_RANK is the
+# ordering used to decide whether an active temp upgrade should win.
+PLAN_RANK = {"free": 0, "basic": 1, "pro": 2, "proplus": 3, "professional": 4, "enterprise": 5}
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -97,14 +108,22 @@ def _get_active_upgrade(conn, user_id):
 
 def get_effective_plan(user_id, base_plan):
     """Returns the plan that should actually be used for quota/gating
-    decisions -- base_plan unless the user currently has an active
-    points-earned temporary upgrade AND base_plan is "free"."""
-    if base_plan != "free":
-        return base_plan
+    decisions: base_plan, unless the user has an active temporary
+    upgrade (points-cycle Basic boost, or a referral-driven Pro/Pro+
+    grant -- see grant_temp_upgrade() below) that outranks it. Before
+    2026-07-27 this only ever applied when base_plan == "free"; that
+    behavior is preserved exactly (a "basic" temp upgrade still only
+    ever beats "free"), this just also lets a higher-ranked temp grant
+    (e.g. "pro"/"proplus") take effect for a user whose real plan is
+    already something other than free."""
     conn = get_db()
     upgrade = _get_active_upgrade(conn, user_id)
     conn.close()
-    return upgrade["plan"] if upgrade else base_plan
+    if not upgrade:
+        return base_plan
+    if PLAN_RANK.get(upgrade["plan"], 0) > PLAN_RANK.get(base_plan, 0):
+        return upgrade["plan"]
+    return base_plan
 
 
 def get_status(user_id):
@@ -219,3 +238,46 @@ def add_bonus_points(user_id, amount):
     exactly like organic feature usage can.
     """
     return _add_points(user_id, amount)
+
+
+def grant_temp_upgrade(user_id: int, plan: str, days: int) -> str:
+    """2026-07-27: generic grant/extend for the temp_upgrades mechanic --
+    built for the referral annual-Pro reward (services/referral_service.py's
+    mark_paid_conversion(), which calls this with plan="pro" or "proplus"
+    and days=365 per qualifying referred conversion) but usable for any
+    future "comp this user a plan tier for N days" case.
+
+    If the user already has an active grant at the same or lower rank,
+    this EXTENDS from its current expiry (stacks) rather than resetting
+    the clock -- a referrer who earns a second 1-year Pro grant while
+    their first year is still running ends up with ~2 years, not a reset
+    1 year. If the new grant outranks or replaces an expired/absent one,
+    it starts counting from now. Returns the resulting expires_at string.
+    """
+    conn = get_db()
+    now = _now()
+    existing = conn.execute(
+        "SELECT plan, expires_at FROM temp_upgrades WHERE user_id=?", (user_id,)
+    ).fetchone()
+
+    base_from = now
+    if existing:
+        try:
+            cur_expiry = _parse(existing["expires_at"])
+            still_active = cur_expiry > now
+            not_a_downgrade = PLAN_RANK.get(existing["plan"], 0) <= PLAN_RANK.get(plan, 0)
+            if still_active and not_a_downgrade:
+                base_from = cur_expiry
+        except (ValueError, TypeError):
+            pass
+
+    expires_at = _fmt(base_from + datetime.timedelta(days=days))
+    conn.execute("""
+        INSERT INTO temp_upgrades (user_id, plan, expires_at, granted_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            plan = excluded.plan, expires_at = excluded.expires_at, granted_at = excluded.granted_at
+    """, (user_id, plan, expires_at, _fmt(now)))
+    conn.commit()
+    conn.close()
+    return expires_at
