@@ -53,6 +53,18 @@
 }
 .pattern-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-top:0.6rem}
 .pattern-item{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.6rem;text-align:center}
+/* 2026-07-27 Q&A card redesign ("每個的字分上下題及答顯示，置中框內"):
+   pattern name = question (top line), verdict = answer (bottom line),
+   both centered inside a bordered box. font-size is set per-element by
+   fitCardText() in JS (shrink-to-fit for long text in any language), so
+   only the max/min bounds and box layout live here in CSS. */
+.pattern-qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-top:0.6rem}
+.pattern-qa-card{background:var(--navy3);border:1px solid var(--border2);border-radius:8px;padding:0.65rem 0.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;min-height:78px;text-align:center}
+.pattern-qa-q{display:block;width:100%;color:var(--text2);font-weight:600;line-height:1.25;overflow-wrap:break-word}
+.pattern-qa-a{display:block;width:100%;font-weight:700;line-height:1.25;overflow-wrap:break-word}
+.pattern-qa-a.is-possible{color:var(--green,#16A34A)}
+.pattern-qa-a.is-not-possible{color:var(--text3)}
+.pattern-qa-a.is-unclear{color:var(--text2)}
 .education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
 @media(max-width:980px){.analysis-section{grid-template-columns:1fr}.preview-area{width:100%}.analysis-side{order:2}}
 @media(max-width:520px){.upload-area{padding:1rem}.uploader{flex-direction:column}.preview-area{width:100%}}
@@ -185,25 +197,13 @@
       <div id="patternBlock">
       <h4 style="margin-top:0.8rem" data-i18n="ca_pattern_detail_title">型態詳情</h4>
       <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_pattern_low_confidence_note">杯柄形／菱形／ABC修正浪／旗形／尖旗形嘅判斷主觀性較大，僅供參考</p>
-      <div class="pattern-list" id="patternList">
-        <div class="pattern-item"><span data-i18n="ca_p_double_top">雙頂：</span><span id="p_double_top">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_double_bottom">雙底：</span><span id="p_double_bottom">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_head_top">頭肩頂：</span><span id="p_head_shoulder_top">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_head_bottom">頭肩底：</span><span id="p_head_shoulder_bottom">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_triangle">三角收斂：</span><span id="p_triangle">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_breakback">突破回測：</span><span id="p_breakback">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_0618">0.618 回調：</span><span id="p_0618">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_flag">旗形：</span><span id="p_flag">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_pennant">尖旗形：</span><span id="p_pennant">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_channel">通道：</span><span id="p_channel">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_rectangle">矩形整理：</span><span id="p_rectangle">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_cup_handle">杯柄形：</span><span id="p_cup_handle">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_diamond">菱形：</span><span id="p_diamond">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_broadening">擴散形：</span><span id="p_broadening">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_abc">ABC修正浪：</span><span id="p_abc">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_gap">缺口：</span><span id="p_gap">-</span></div>
-        <div class="pattern-item"><span data-i18n="ca_p_island">島型反轉：</span><span id="p_island">-</span></div>
-      </div>
+      <!-- 2026-07-27 Q&A card redesign: content is now built entirely by
+           renderPatternDetails() in JS (question=pattern name on top,
+           answer=verdict below, centered, auto-shrinking font via
+           fitCardText()) -- see PATTERN_KEYS/renderPatternDetails below.
+           Left empty here; populated on page load and after every
+           search/timeframe-switch. -->
+      <div class="pattern-qa-grid" id="patternList"></div>
       </div>
 
       <div id="marketStructureBlock" style="display:none">
@@ -729,10 +729,72 @@ function hideSearchError() {
 const PATTERN_KEYS = ['p_double_top','p_double_bottom','p_head_shoulder_top','p_head_shoulder_bottom',
   'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
   'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island'];
+
+// 2026-07-27 fix ("全部要加語言"): the backend's 可能/不可能 verdict
+// literals are shared, unchanged business-logic strings used internally
+// by both pattern-detection code paths (see chart_pattern_service.py's
+// own comment on why they're never renamed) -- so translate them here at
+// the display boundary only, same approach this file already uses for
+// CA_DIRECTION_MAP/CA_CONFIDENCE_MAP just above. Backend stays untouched;
+// only what the user sees changes with the UI language.
+function caVerdictLabel(verdict) {
+  if (verdict === '可能') return t('ca_verdict_possible', '可能');
+  if (verdict === '不可能') return t('ca_verdict_not_possible', '不可能');
+  return verdict;
+}
+
+// 2026-07-27 shrink-to-fit ("字長時自動調整尺寸"): some languages render
+// noticeably longer than Chinese for the same label (e.g. German "Kopf-
+// Schulter-Formation (oben)"), and the card width is fixed by the grid --
+// rather than truncating or fixed-shrinking by language, measure the
+// actual rendered width and step the font down until it fits, so this
+// works correctly for literally any language/string length.
+function fitCardText(el, maxPx, minPx) {
+  if (!el) return;
+  maxPx = maxPx || 13; minPx = minPx || 9;
+  el.style.fontSize = maxPx + 'px';
+  let size = maxPx;
+  while (el.scrollWidth > el.clientWidth + 1 && size > minPx) {
+    size -= 1;
+    el.style.fontSize = size + 'px';
+  }
+}
+
+// 2026-07-27 Q&A card redesign ("每個的字分上下題及答顯示，置中框內"):
+// each pattern is now its own card with the pattern name as a "question"
+// on top and the (translated) verdict as an "answer" below, both
+// centered -- replacing the old two-span "label：value" row layout.
+// Shared by both flows exactly as before (upload's AI-vision result and
+// search's real-geometry result use the same 17 keys/literals).
 function renderPatternDetails(patterns) {
-  const unclear = t('ca_unclear','不明');
+  const list = document.getElementById('patternList');
+  if (!list) return;
+  const hasData = !!(patterns && Object.keys(patterns).length);
+  const unclear = t('ca_unclear', '不明');
+  list.innerHTML = '';
   PATTERN_KEYS.forEach(key => {
-    safeSetText(key, (patterns && patterns[key]) || unclear);
+    const raw = hasData ? patterns[key] : null;
+    const isPossible = raw === '可能';
+    const isNotPossible = raw === '不可能';
+    const answerText = raw ? caVerdictLabel(raw) : (hasData ? unclear : '-');
+
+    const card = document.createElement('div');
+    card.className = 'pattern-qa-card';
+
+    const q = document.createElement('span');
+    q.className = 'pattern-qa-q';
+    q.textContent = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+
+    const a = document.createElement('span');
+    a.id = key; // kept for any future direct-id lookups; harmless otherwise
+    a.className = 'pattern-qa-a' + (isPossible ? ' is-possible' : isNotPossible ? ' is-not-possible' : ' is-unclear');
+    a.textContent = answerText;
+
+    card.appendChild(q);
+    card.appendChild(a);
+    list.appendChild(card);
+    fitCardText(q);
+    fitCardText(a, 15, 10);
   });
 }
 
@@ -1145,6 +1207,11 @@ async function requestBacktestCompare(){
 // sharing genuinely re-runs the same real analysis rather than showing a
 // frozen screenshot of it.
 (function initChartAnalysisMode(){
+  // Pre-populate the 17 Q&A cards with the "-" not-yet-analyzed placeholder
+  // (matches the old static markup's pre-search look) so the block never
+  // renders as an empty box before the user's first search/upload.
+  renderPatternDetails({});
+
   const params = new URLSearchParams(location.search);
   const urlSymbol = params.get('symbol');
   const urlMode = params.get('mode');
