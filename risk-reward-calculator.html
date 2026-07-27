@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Risk/Reward Ratio Calculator 2026 - XFINLAB</title>
+<link rel="canonical" href="https://www.xfinlab.com/risk-reward-calculator.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="Free risk/reward ratio calculator. Enter your entry, stop-loss and target price to instantly see your R:R ratio and the win rate you'd need to break even -- free, no signup.">
+<meta name="keywords" content="risk reward ratio calculator, R:R calculator, trading calculator, breakeven win rate, stop loss target, XFINLAB">
+<meta property="og:title" content="Free Risk/Reward Ratio Calculator - XFINLAB">
+<meta property="og:description" content="See your R:R ratio and breakeven win rate instantly from entry, stop and target price.">
+<meta property="og:url" content="https://www.xfinlab.com/risk-reward-calculator.html">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Risk/Reward Ratio Calculator","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://www.xfinlab.com/risk-reward-calculator.html"}
+</script>
+<style>
+body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
+nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
+.brand{color:#00d4ff;font-weight:700;font-size:1.1rem;text-decoration:none}
+.nav-link{color:#94a3b8;text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:720px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.9rem;color:#fff;margin-bottom:8px}
+.subtitle{color:#64748b;margin-bottom:32px}
+.calc{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
+.field input{width:100%;box-sizing:border-box;background:#131c2e;border:1px solid #1e2d45;color:#e2e8f0;border-radius:8px;padding:12px;font-size:1rem}
+.result{background:#131c2e;border:1px solid #00d4ff;border-radius:10px;padding:20px;margin-top:16px;display:none}
+.result .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d45}
+.result .row:last-child{border-bottom:none}
+.result .row .k{color:#94a3b8;font-size:0.85rem}
+.result .row .v{color:#00d4ff;font-weight:700}
+.section{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:20px}
+h2{color:#94a3b8;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px}
+p{color:#cbd5e1;line-height:1.8}
+.cta{background:#00d4ff;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin-top:8px}
+footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
+footer a{color:#64748b;margin:0 6px;text-decoration:none}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
+  <span><a href="tools.html" class="nav-link">Free Tools</a><a href="login.html" class="nav-link">Sign In</a></span>
+</nav>
+<main>
+<h1>Risk/Reward Ratio Calculator</h1>
+<p class="subtitle">Enter your entry, stop-loss and target price to see your R:R ratio and the win rate you'd need just to break even.</p>
+
+<div class="calc">
+  <div class="field">
+    <label>Entry Price ($)</label>
+    <input type="number" id="entry" step="any" placeholder="e.g. 100.00">
+  </div>
+  <div class="field">
+    <label>Stop-Loss Price ($)</label>
+    <input type="number" id="stop" step="any" placeholder="e.g. 95.00">
+  </div>
+  <div class="field">
+    <label>Target Price ($)</label>
+    <input type="number" id="target" step="any" placeholder="e.g. 115.00">
+  </div>
+  <div id="result" class="result">
+    <div class="row"><span class="k">Risk (per share)</span><span class="v" id="riskVal">—</span></div>
+    <div class="row"><span class="k">Reward (per share)</span><span class="v" id="rewardVal">—</span></div>
+    <div class="row"><span class="k">Risk/Reward Ratio</span><span class="v" id="rrRatio">—</span></div>
+    <div class="row"><span class="k">Breakeven Win Rate Needed</span><span class="v" id="breakeven">—</span></div>
+  </div>
+</div>
+
+<div class="section">
+<h2>Why Risk/Reward Ratio Matters</h2>
+<p>A risk/reward (R:R) ratio compares how much you stand to lose against how much you stand to gain on a single trade. A 1:3 ratio means you're risking $1 to make $3 -- which matters because it directly sets the win rate you actually need to be profitable over time. At 1:1 you need to win more than 50% of trades just to break even (before costs); at 1:3 you only need to win more than 25%. This is why many traders focus on finding setups with a favorable R:R before they even think about win rate.</p>
+</div>
+
+<div class="section">
+<h2>Risk Disclaimer</h2>
+<p>This calculator performs a simple, transparent arithmetic calculation from the numbers you enter. It is for informational and educational purposes only and does not constitute financial advice. A favorable risk/reward ratio does not guarantee profitability -- always conduct your own research and consult a qualified financial advisor before making investment decisions.</p>
+</div>
+
+<a href="https://xfinlab.com" class="cta">Get Full AI Entry/Stop/Target Levels →</a>
+</main>
+<footer>
+  © 2026 XFINLAB — AI Investment Intelligence Platform<br><br>
+  <a href="tools.html">Free Tools</a>
+  <a href="ai-analysis.html">AI Analysis</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="terms.html">Terms</a>
+  <a href="privacy.html">Privacy</a>
+</footer>
+<script>
+(function(){
+  var ids = ['entry','stop','target'];
+  var els = {}; ids.forEach(function(id){ els[id] = document.getElementById(id); });
+  var result = document.getElementById('result');
+
+  function calc(){
+    var entry = parseFloat(els.entry.value);
+    var stop = parseFloat(els.stop.value);
+    var target = parseFloat(els.target.value);
+
+    if (![entry, stop, target].every(isFinite)) { result.style.display = 'none'; return; }
+    var risk = Math.abs(entry - stop);
+    var reward = Math.abs(target - entry);
+    if (risk === 0) { result.style.display = 'none'; return; }
+
+    var ratio = reward / risk;
+    var breakeven = 1 / (1 + ratio) * 100;
+
+    document.getElementById('riskVal').textContent = '$' + risk.toFixed(2);
+    document.getElementById('rewardVal').textContent = '$' + reward.toFixed(2);
+    document.getElementById('rrRatio').textContent = '1 : ' + ratio.toFixed(2);
+    document.getElementById('breakeven').textContent = breakeven.toFixed(1) + '%';
+    result.style.display = 'block';
+  }
+  ids.forEach(function(id){ els[id].addEventListener('input', calc); });
+})();
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+</body>
+</html>

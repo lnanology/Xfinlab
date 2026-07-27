@@ -11,6 +11,31 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://www.xfinlab.com/tools.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/pe-calculator.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/dcf-calculator.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/position-size-calculator.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/risk-reward-calculator.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.xfinlab.com/ai-analysis.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

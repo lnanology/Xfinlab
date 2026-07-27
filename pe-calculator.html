@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free P/E Ratio Calculator 2026 - XFINLAB</title>
+<link rel="canonical" href="https://www.xfinlab.com/pe-calculator.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="Free P/E ratio calculator. Instantly work out a stock's price-to-earnings ratio, or its fair value from a target P/E, right in your browser -- no signup required.">
+<meta name="keywords" content="PE ratio calculator, price to earnings ratio, PE calculator, stock valuation, fair value calculator, XFINLAB">
+<meta property="og:title" content="Free P/E Ratio Calculator - XFINLAB">
+<meta property="og:description" content="Work out a stock's P/E ratio, or its fair value from a target P/E, instantly and free.">
+<meta property="og:url" content="https://www.xfinlab.com/pe-calculator.html">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"P/E Ratio Calculator","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://www.xfinlab.com/pe-calculator.html"}
+</script>
+<style>
+body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
+nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
+.brand{color:#00d4ff;font-weight:700;font-size:1.1rem;text-decoration:none}
+.nav-link{color:#94a3b8;text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:720px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.9rem;color:#fff;margin-bottom:8px}
+.subtitle{color:#64748b;margin-bottom:32px}
+.calc{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
+.field input{width:100%;box-sizing:border-box;background:#131c2e;border:1px solid #1e2d45;color:#e2e8f0;border-radius:8px;padding:12px;font-size:1rem}
+.result{background:#131c2e;border:1px solid #00d4ff;border-radius:10px;padding:20px;margin-top:16px;display:none}
+.result .value{font-size:2rem;font-weight:700;color:#00d4ff}
+.result .desc{color:#94a3b8;font-size:0.85rem;margin-top:6px}
+.section{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:20px}
+h2{color:#94a3b8;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px}
+p{color:#cbd5e1;line-height:1.8}
+.cta{background:#00d4ff;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin-top:8px}
+footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
+footer a{color:#64748b;margin:0 6px;text-decoration:none}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
+  <span><a href="tools.html" class="nav-link">Free Tools</a><a href="login.html" class="nav-link">Sign In</a></span>
+</nav>
+<main>
+<h1>P/E Ratio Calculator</h1>
+<p class="subtitle">Work out a stock's price-to-earnings ratio, or its implied fair price from a target P/E -- free, instant, no signup.</p>
+
+<div class="calc">
+  <div class="field">
+    <label>Stock Price ($)</label>
+    <input type="number" id="price" step="any" placeholder="e.g. 195.50">
+  </div>
+  <div class="field">
+    <label>Earnings Per Share / EPS ($)</label>
+    <input type="number" id="eps" step="any" placeholder="e.g. 6.50">
+  </div>
+  <div id="peResult" class="result">
+    <div class="value" id="peValue">—</div>
+    <div class="desc" id="peDesc"></div>
+  </div>
+</div>
+
+<div class="calc">
+  <h2 style="margin-bottom:16px">Reverse: Fair Price From Target P/E</h2>
+  <div class="field">
+    <label>Target P/E Ratio</label>
+    <input type="number" id="targetPe" step="any" placeholder="e.g. 25">
+  </div>
+  <div class="field">
+    <label>Earnings Per Share / EPS ($)</label>
+    <input type="number" id="eps2" step="any" placeholder="e.g. 6.50">
+  </div>
+  <div id="fairResult" class="result">
+    <div class="value" id="fairValue">—</div>
+    <div class="desc">Implied fair price at this target P/E</div>
+  </div>
+</div>
+
+<div class="section">
+<h2>What Is the P/E Ratio?</h2>
+<p>The price-to-earnings (P/E) ratio divides a stock's current price by its earnings per share (EPS). It shows how much investors are paying today for each dollar of a company's annual earnings -- a higher P/E generally means the market expects faster future growth (or the stock is simply more expensive relative to its current profits), while a lower P/E can signal either a bargain or genuine risk the market is pricing in. P/E is most useful when compared against a company's own history and its direct sector peers, not as a standalone number.</p>
+</div>
+
+<div class="section">
+<h2>Risk Disclaimer</h2>
+<p>This calculator performs a simple, transparent arithmetic calculation from the numbers you enter. It is for informational and educational purposes only and does not constitute financial advice. Always conduct your own research and consult a qualified financial advisor before making investment decisions.</p>
+</div>
+
+<a href="https://xfinlab.com" class="cta">Get Full AI Stock Analysis →</a>
+</main>
+<footer>
+  © 2026 XFINLAB — AI Investment Intelligence Platform<br><br>
+  <a href="tools.html">Free Tools</a>
+  <a href="ai-analysis.html">AI Analysis</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="terms.html">Terms</a>
+  <a href="privacy.html">Privacy</a>
+</footer>
+<script>
+(function(){
+  var priceEl = document.getElementById('price'), epsEl = document.getElementById('eps');
+  var peResult = document.getElementById('peResult'), peValue = document.getElementById('peValue'), peDesc = document.getElementById('peDesc');
+  function calcPe(){
+    var price = parseFloat(priceEl.value), eps = parseFloat(epsEl.value);
+    if (!isFinite(price) || !isFinite(eps) || eps === 0) { peResult.style.display = 'none'; return; }
+    var pe = price / eps;
+    peValue.textContent = pe.toFixed(2) + 'x';
+    peDesc.textContent = eps < 0
+      ? 'EPS is negative -- P/E is not meaningful for a currently unprofitable company.'
+      : 'You are paying $' + pe.toFixed(2) + ' for every $1 of annual earnings.';
+    peResult.style.display = 'block';
+  }
+  priceEl.addEventListener('input', calcPe);
+  epsEl.addEventListener('input', calcPe);
+
+  var targetPeEl = document.getElementById('targetPe'), eps2El = document.getElementById('eps2');
+  var fairResult = document.getElementById('fairResult'), fairValue = document.getElementById('fairValue');
+  function calcFair(){
+    var tpe = parseFloat(targetPeEl.value), eps = parseFloat(eps2El.value);
+    if (!isFinite(tpe) || !isFinite(eps)) { fairResult.style.display = 'none'; return; }
+    fairValue.textContent = '$' + (tpe * eps).toFixed(2);
+    fairResult.style.display = 'block';
+  }
+  targetPeEl.addEventListener('input', calcFair);
+  eps2El.addEventListener('input', calcFair);
+})();
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+</body>
+</html>

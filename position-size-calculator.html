@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Position Size Calculator 2026 - XFINLAB</title>
+<link rel="canonical" href="https://www.xfinlab.com/position-size-calculator.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="Free position size calculator for traders. Work out exactly how many shares to buy based on your account size, risk tolerance, entry price and stop-loss -- free, instant, no signup.">
+<meta name="keywords" content="position size calculator, risk management, stop loss calculator, trading calculator, share size calculator, XFINLAB">
+<meta property="og:title" content="Free Position Size Calculator - XFINLAB">
+<meta property="og:description" content="Work out exactly how many shares to buy based on account size, risk %, entry and stop-loss.">
+<meta property="og:url" content="https://www.xfinlab.com/position-size-calculator.html">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Position Size Calculator","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://www.xfinlab.com/position-size-calculator.html"}
+</script>
+<style>
+body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
+nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
+.brand{color:#00d4ff;font-weight:700;font-size:1.1rem;text-decoration:none}
+.nav-link{color:#94a3b8;text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:720px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.9rem;color:#fff;margin-bottom:8px}
+.subtitle{color:#64748b;margin-bottom:32px}
+.calc{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:0.78rem;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
+.field input{width:100%;box-sizing:border-box;background:#131c2e;border:1px solid #1e2d45;color:#e2e8f0;border-radius:8px;padding:12px;font-size:1rem}
+.result{background:#131c2e;border:1px solid #00d4ff;border-radius:10px;padding:20px;margin-top:16px;display:none}
+.result .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2d45}
+.result .row:last-child{border-bottom:none}
+.result .row .k{color:#94a3b8;font-size:0.85rem}
+.result .row .v{color:#00d4ff;font-weight:700}
+.result .warn{color:#f59e0b;font-size:0.82rem;margin-top:10px}
+.section{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:20px}
+h2{color:#94a3b8;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px}
+p{color:#cbd5e1;line-height:1.8}
+.cta{background:#00d4ff;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin-top:8px}
+footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
+footer a{color:#64748b;margin:0 6px;text-decoration:none}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
+  <span><a href="tools.html" class="nav-link">Free Tools</a><a href="login.html" class="nav-link">Sign In</a></span>
+</nav>
+<main>
+<h1>Position Size Calculator</h1>
+<p class="subtitle">Work out exactly how many shares to buy so a stopped-out trade only ever costs the % of your account you decide in advance.</p>
+
+<div class="calc">
+  <div class="field">
+    <label>Account Size ($)</label>
+    <input type="number" id="account" step="any" placeholder="e.g. 10000">
+  </div>
+  <div class="field">
+    <label>Risk Per Trade (%)</label>
+    <input type="number" id="riskPct" step="any" placeholder="e.g. 1" value="1">
+  </div>
+  <div class="field">
+    <label>Entry Price ($)</label>
+    <input type="number" id="entry" step="any" placeholder="e.g. 50.00">
+  </div>
+  <div class="field">
+    <label>Stop-Loss Price ($)</label>
+    <input type="number" id="stop" step="any" placeholder="e.g. 47.50">
+  </div>
+  <div id="result" class="result">
+    <div class="row"><span class="k">Risk Per Share</span><span class="v" id="riskPerShare">—</span></div>
+    <div class="row"><span class="k">Dollar Risk (max loss)</span><span class="v" id="dollarRisk">—</span></div>
+    <div class="row"><span class="k">Position Size (shares)</span><span class="v" id="shares">—</span></div>
+    <div class="row"><span class="k">Position Value</span><span class="v" id="posValue">—</span></div>
+    <div class="row"><span class="k">% of Account Deployed</span><span class="v" id="pctAccount">—</span></div>
+    <div id="warnMsg" class="warn" style="display:none"></div>
+  </div>
+</div>
+
+<div class="section">
+<h2>How Position Sizing Works</h2>
+<p>Position sizing answers one question: how many shares can you buy so that if the stock hits your stop-loss, you only lose the amount you decided to risk -- not a random, uncomfortable number. The formula is straightforward: divide your dollar risk (account size × risk %) by your risk per share (the distance between your entry and your stop). Professional traders typically risk 0.5%-2% of their account on any single position, regardless of how confident they feel about the trade -- position sizing is what keeps one bad trade from doing serious account damage.</p>
+</div>
+
+<div class="section">
+<h2>Risk Disclaimer</h2>
+<p>This calculator performs a simple, transparent arithmetic calculation from the numbers you enter. It is for informational and educational purposes only and does not constitute financial advice. Position sizing reduces risk but cannot eliminate it -- always conduct your own research and consult a qualified financial advisor before making investment decisions.</p>
+</div>
+
+<a href="https://xfinlab.com" class="cta">Get Full AI Risk Analysis →</a>
+</main>
+<footer>
+  © 2026 XFINLAB — AI Investment Intelligence Platform<br><br>
+  <a href="tools.html">Free Tools</a>
+  <a href="ai-analysis.html">AI Analysis</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="terms.html">Terms</a>
+  <a href="privacy.html">Privacy</a>
+</footer>
+<script>
+(function(){
+  var ids = ['account','riskPct','entry','stop'];
+  var els = {}; ids.forEach(function(id){ els[id] = document.getElementById(id); });
+  var result = document.getElementById('result');
+  var warnMsg = document.getElementById('warnMsg');
+
+  function calc(){
+    var account = parseFloat(els.account.value);
+    var riskPct = parseFloat(els.riskPct.value);
+    var entry = parseFloat(els.entry.value);
+    var stop = parseFloat(els.stop.value);
+
+    if (![account, riskPct, entry, stop].every(isFinite) || account <= 0 || entry <= 0) {
+      result.style.display = 'none';
+      return;
+    }
+    var riskPerShare = Math.abs(entry - stop);
+    if (riskPerShare === 0) { result.style.display = 'none'; return; }
+
+    var dollarRisk = account * (riskPct / 100);
+    var shares = Math.floor(dollarRisk / riskPerShare);
+    var posValue = shares * entry;
+    var pctAccount = (posValue / account) * 100;
+
+    document.getElementById('riskPerShare').textContent = '$' + riskPerShare.toFixed(2);
+    document.getElementById('dollarRisk').textContent = '$' + dollarRisk.toFixed(2);
+    document.getElementById('shares').textContent = shares.toLocaleString();
+    document.getElementById('posValue').textContent = '$' + posValue.toLocaleString(undefined, {maximumFractionDigits: 2});
+    document.getElementById('pctAccount').textContent = pctAccount.toFixed(1) + '%';
+
+    if (posValue > account) {
+      warnMsg.style.display = 'block';
+      warnMsg.textContent = '⚠ This position size exceeds your account size -- your stop is very close to entry relative to your account. Consider a wider stop or a smaller risk %.';
+    } else {
+      warnMsg.style.display = 'none';
+    }
+    result.style.display = 'block';
+  }
+  ids.forEach(function(id){ els[id].addEventListener('input', calc); });
+})();
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+</body>
+</html>
