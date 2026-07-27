@@ -30,10 +30,31 @@ to the Pattern Details block.
 All thresholds below are fixed, documented constants — nothing here is
 randomised or fitted per-request, so results are fully reproducible for
 the same OHLC input.
+
+v2 note (pivot/slope/volume rigor pass): swing points are now found with
+an ATR-adaptive ZigZag (a pivot confirms once price reverses by
+max(ATR*mult, price*min_pct) from the last tracked extreme) instead of a
+fixed 5-bar fractal window -- this scales the "how big a wiggle counts"
+threshold to the instrument's own recent volatility, so a quiet utility
+stock and a volatile crypto pair each get a sensibly-sized pivot instead
+of one flat percentage rule for both (see ZigZag indicator literature).
+Shape-fitting for triangle/channel/rectangle/broadening now uses a proper
+least-squares regression slope (numpy.polyfit) across the recent swings
+rather than an average of consecutive point-to-point diffs, so a single
+outlier swing can no longer dominate the fitted trendline. Breakout-
+dependent checks (double top/bottom, H&S top/bottom, breakout retest,
+gap, island) also now note whether the relevant bar's volume confirms
+(>=1.25x its trailing 20-bar average) per Bulkowski-style breakout
+statistics, appended to the diagnostic `detail` string. Per deliberate
+design choice, none of this raises the bar for the top-level 可能/不可能
+verdict itself (still a shape-only check) -- it only makes the underlying
+swing/slope math more robust and enriches the diagnostic detail/marker
+text, so existing detection sensitivity is preserved.
 """
 
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 
 # Verdicts use the exact same two literal strings the AI-vision upload
@@ -79,54 +100,119 @@ LOOKBACK_SWING = 80
 LOOKBACK_SHORT = 20
 
 
-def _pivots(df: pd.DataFrame, window: int = 5) -> List[Dict]:
+def _atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Standard Wilder-style True Range, smoothed with a simple rolling
+    mean (min_periods=1 so the series has no leading NaNs -- the ZigZag
+    below needs a usable threshold from the very first bar)."""
+    high = df["High"].astype(float)
+    low = df["Low"].astype(float)
+    close = df["Close"].astype(float)
+    prev_close = close.shift(1)
+    prev_close.iloc[0] = close.iloc[0]  # first bar: no prior close, so TR = high-low only
+    tr = pd.concat(
+        [high - low, (high - prev_close).abs(), (low - prev_close).abs()], axis=1
+    ).max(axis=1)
+    return tr.rolling(period, min_periods=1).mean()
+
+
+def _zigzag_pivots(
+    df: pd.DataFrame, atr_period: int = 14, atr_mult: float = 1.5, min_pct: float = 0.02
+) -> List[Dict]:
     """
     Chronological list of {time, idx, price, kind} swing pivots -- kind is
-    "high" or "low". Same fractal window-based rule as
-    TechnicalAnalysisService._swing_points() (a swing high/low is a local
-    max/min over `window` bars on each side), reimplemented standalone
-    here rather than importing/refactoring that method, so this module
-    carries zero risk of touching the already-shipped confluence/
-    market-structure/decision-levels logic. This version additionally
-    keeps each pivot's bar index and real timestamp (needed to reason
-    about chronological order between patterns, and to hand real chart
-    coordinates back to the frontend for on-chart drawing).
-    """
-    highs = df["High"]
-    lows = df["Low"]
-    n = len(df)
-    pivots: List[Dict] = []
-    for i in range(window, n - window):
-        h_slice = highs.iloc[i - window : i + window + 1]
-        l_slice = lows.iloc[i - window : i + window + 1]
-        t = int(df.index[i].timestamp())
-        if highs.iloc[i] == h_slice.max():
-            pivots.append({"time": t, "idx": i, "price": float(highs.iloc[i]), "kind": "high"})
-        if lows.iloc[i] == l_slice.min():
-            pivots.append({"time": t, "idx": i, "price": float(lows.iloc[i]), "kind": "low"})
-    pivots.sort(key=lambda p: p["idx"])
+    "high" or "low". Single-pass ATR-adaptive ZigZag: track the running
+    price extreme since the last confirmed pivot, and confirm a new pivot
+    the moment price reverses away from that extreme by at least
+    max(ATR(atr_period)[i] * atr_mult, price[i] * min_pct).
 
-    # Collapse runs of adjacent same-kind pivots into one. A flat/plateau
-    # stretch (rare on real market data with fractional prices, but common
-    # on illiquid/limit-up-down bars, and in any synthetic test data) makes
-    # every bar in the plateau satisfy the local-max/min check equally,
-    # which would otherwise leave several near-duplicate entries for what
-    # is really a single swing point -- corrupting "the last two swing
-    # highs" style comparisons used by every pattern check below (they'd
-    # end up comparing two bars from the SAME peak instead of two distinct
-    # peaks). Keep the middle bar of each run as the representative pivot.
-    merged: List[Dict] = []
-    run: List[Dict] = []
-    for p in pivots:
-        if run and p["kind"] == run[-1]["kind"] and p["idx"] - run[-1]["idx"] <= window:
-            run.append(p)
-        else:
-            if run:
-                merged.append(run[len(run) // 2])
-            run = [p]
-    if run:
-        merged.append(run[len(run) // 2])
-    return merged
+    This replaces the earlier fixed 5-bar-window fractal detector, which
+    used one flat percentage-style rule for every instrument regardless of
+    its own volatility -- too loose for a volatile name (misses real
+    pivots, or merges several into one) and too strict for a quiet one
+    (fires on ordinary noise). Scaling the threshold to the instrument's
+    own recent ATR (the standard ZigZag-indicator approach) fixes both. A
+    min_pct floor guards against the odd case where ATR is close to zero
+    (e.g. a long flat stretch) from producing near-continuous pivots.
+
+    The final in-progress swing (the extreme reached since the last
+    confirmed pivot, not yet reversed far enough to confirm) is appended
+    too -- pattern checks below need to reason about "the current/latest
+    swing", which is often still developing rather than already confirmed.
+    """
+    n = len(df)
+    if n < 3:
+        return []
+
+    atr = _atr(df, atr_period)
+    highs = df["High"].astype(float)
+    lows = df["Low"].astype(float)
+    closes = df["Close"].astype(float)
+
+    def _threshold(i: int) -> float:
+        return max(float(atr.iloc[i]) * atr_mult, float(closes.iloc[i]) * min_pct)
+
+    pivots: List[Dict] = []
+    trend: Optional[str] = None  # "up" (tracking towards a high) or "down"
+    ext_idx = 0
+    ext_high = float(highs.iloc[0])
+    ext_low = float(lows.iloc[0])
+
+    def _mk(idx: int, price: float, kind: str) -> Dict:
+        return {"time": int(df.index[idx].timestamp()), "idx": idx, "price": round(price, 6), "kind": kind}
+
+    for i in range(1, n):
+        h, l = float(highs.iloc[i]), float(lows.iloc[i])
+        thr = _threshold(i)
+
+        if trend is None:
+            # Still establishing initial direction from the opening range.
+            if h - ext_low >= thr:
+                pivots.append(_mk(ext_idx, ext_low, "low"))
+                trend = "up"
+                ext_high, ext_idx = h, i
+            elif ext_high - l >= thr:
+                pivots.append(_mk(ext_idx, ext_high, "high"))
+                trend = "down"
+                ext_low, ext_idx = l, i
+            else:
+                if h > ext_high:
+                    ext_high = h
+                if l < ext_low:
+                    ext_low = l
+            continue
+
+        if trend == "up":
+            if h > ext_high:
+                ext_high, ext_idx = h, i
+            elif ext_high - l >= thr:
+                pivots.append(_mk(ext_idx, ext_high, "high"))
+                trend = "down"
+                ext_low, ext_idx = l, i
+        else:  # trend == "down"
+            if l < ext_low:
+                ext_low, ext_idx = l, i
+            elif h - ext_low >= thr:
+                pivots.append(_mk(ext_idx, ext_low, "low"))
+                trend = "up"
+                ext_high, ext_idx = h, i
+
+    # Append the still-developing final swing so callers can see "the
+    # latest swing high/low" even when it hasn't reversed far enough to
+    # confirm yet (mirrors how a chartist reads an in-progress swing).
+    if trend == "up":
+        pivots.append(_mk(ext_idx, ext_high, "high"))
+    elif trend == "down":
+        pivots.append(_mk(ext_idx, ext_low, "low"))
+
+    pivots.sort(key=lambda p: p["idx"])
+    return pivots
+
+
+def _pivots(df: pd.DataFrame, atr_period: int = 14, atr_mult: float = 1.5, min_pct: float = 0.02) -> List[Dict]:
+    """Thin, name-stable wrapper around _zigzag_pivots so every existing
+    call site below (and detect_patterns()) picks up the ATR-adaptive
+    ZigZag without any other code needing to change."""
+    return _zigzag_pivots(df, atr_period=atr_period, atr_mult=atr_mult, min_pct=min_pct)
 
 
 def _pt(p: Dict) -> Dict:
@@ -139,13 +225,52 @@ def _recent(pivots: List[Dict], kind: str, n_bars: int, last_idx: int, count: Op
 
 
 def _slope(points: List[Dict]) -> float:
-    """Simple average per-pivot price change (not a full regression --
-    intentionally crude/transparent, good enough to classify flat vs
-    rising vs falling vs converging over a handful of pivots)."""
+    """Least-squares linear-regression slope (price per pivot-step) across
+    the given points, via numpy.polyfit. Replaces the earlier average-of-
+    consecutive-diffs approach, which let a single outlier swing skew the
+    whole read (e.g. 3 flat pivots + 1 spike averaged to "sloping" even
+    though the overall trendline is flat) -- a proper fit uses every point
+    at once. Same call signature/units as before, so every existing caller
+    (triangle/channel/rectangle/broadening/flag-pennant/diamond) is a
+    drop-in, no threshold retuning needed."""
     if len(points) < 2:
         return 0.0
-    diffs = [points[i + 1]["price"] - points[i]["price"] for i in range(len(points) - 1)]
-    return sum(diffs) / len(diffs)
+    xs = np.arange(len(points), dtype=float)
+    ys = np.array([p["price"] for p in points], dtype=float)
+    slope, _intercept = np.polyfit(xs, ys, 1)
+    return float(slope)
+
+
+def _volume_confirms(df: pd.DataFrame, idx: int, mult: float = 1.25, window: int = 20) -> Optional[bool]:
+    """Bulkowski-style breakout volume confirmation: does the bar at `idx`
+    trade at least `mult`x its trailing `window`-bar average volume?
+    Returns None (not True/False) when it can't be judged at all -- no
+    Volume column, not enough history before idx, or a zero/garbage
+    trailing average -- so callers can honestly say "unknown" rather than
+    silently treating unknown as a fail. This is diagnostic-only: it never
+    changes a verdict, only enriches the `detail` string (deliberately, to
+    avoid re-introducing the earlier "feature is unusable" complaint from
+    tightening shape-only triggers into breakout+volume-gated ones)."""
+    if "Volume" not in df.columns or idx <= 0 or idx >= len(df):
+        return None
+    vol = df["Volume"].astype(float)
+    start = max(0, idx - window)
+    trailing = vol.iloc[start:idx]
+    if trailing.empty:
+        return None
+    avg = trailing.mean()
+    if not avg or avg <= 0:
+        return None
+    return bool(vol.iloc[idx] >= avg * mult)
+
+
+def _vol_note(df: pd.DataFrame, idx: int) -> str:
+    """Human-readable (Chinese) fragment describing volume confirmation at
+    bar `idx`, for appending to a pattern's `detail` string."""
+    confirmed = _volume_confirms(df, idx)
+    if confirmed is None:
+        return "，成交量數據不足以判斷"
+    return "，成交量放大配合" if confirmed else "，成交量未見放大配合"
 
 
 def _empty(reason: str) -> Tuple[str, str, List[Dict]]:
@@ -159,7 +284,7 @@ def _empty(reason: str) -> Tuple[str, str, List[Dict]]:
 # current text UI, kept for the on-chart tooltip/label built in the
 # chart-drawing phase and for debugging).
 
-def _double_top(highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
+def _double_top(df: pd.DataFrame, highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
     if len(highs) < 2:
         return _empty("swing high 少於2個")
     h2, h1 = highs[-1], highs[-2]
@@ -171,11 +296,15 @@ def _double_top(highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str
     trough = min(between, key=lambda l: l["price"])
     if trough["price"] > min(h1["price"], h2["price"]) * 0.97:
         return _empty("中間回落幅度不足3%")
-    detail = f"高位 {round(h1['price'],2)}/{round(h2['price'],2)} 相差{round(abs(h2['price']-h1['price'])/h1['price']*100,1)}%，中間拉回至{round(trough['price'],2)}"
+    detail = (
+        f"高位 {round(h1['price'],2)}/{round(h2['price'],2)} 相差"
+        f"{round(abs(h2['price']-h1['price'])/h1['price']*100,1)}%，中間拉回至{round(trough['price'],2)}"
+        + _vol_note(df, h2["idx"])
+    )
     return POSSIBLE, detail, [_pt(h1), _pt(trough), _pt(h2)]
 
 
-def _double_bottom(highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
+def _double_bottom(df: pd.DataFrame, highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
     if len(lows) < 2:
         return _empty("swing low 少於2個")
     l2, l1 = lows[-1], lows[-2]
@@ -187,11 +316,15 @@ def _double_bottom(highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[
     peak = max(between, key=lambda h: h["price"])
     if peak["price"] < max(l1["price"], l2["price"]) * 1.03:
         return _empty("中間反彈幅度不足3%")
-    detail = f"低位 {round(l1['price'],2)}/{round(l2['price'],2)} 相差{round(abs(l2['price']-l1['price'])/l1['price']*100,1)}%，中間反彈至{round(peak['price'],2)}"
+    detail = (
+        f"低位 {round(l1['price'],2)}/{round(l2['price'],2)} 相差"
+        f"{round(abs(l2['price']-l1['price'])/l1['price']*100,1)}%，中間反彈至{round(peak['price'],2)}"
+        + _vol_note(df, l2["idx"])
+    )
     return POSSIBLE, detail, [_pt(l1), _pt(peak), _pt(l2)]
 
 
-def _head_shoulder_top(highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
+def _head_shoulder_top(df: pd.DataFrame, highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
     if len(highs) < 3:
         return _empty("swing high 少於3個")
     l_sh, head, r_sh = highs[-3], highs[-2], highs[-1]
@@ -202,11 +335,11 @@ def _head_shoulder_top(highs: List[Dict], lows: List[Dict], last_idx: int) -> Tu
     neckline = [l for l in lows if l_sh["idx"] < l["idx"] < r_sh["idx"]]
     if len(neckline) < 2:
         return _empty("兩個肩部之間頸線點不足")
-    detail = f"左肩{round(l_sh['price'],2)}／頭{round(head['price'],2)}／右肩{round(r_sh['price'],2)}"
+    detail = f"左肩{round(l_sh['price'],2)}／頭{round(head['price'],2)}／右肩{round(r_sh['price'],2)}" + _vol_note(df, r_sh["idx"])
     return POSSIBLE, detail, [_pt(l_sh)] + [_pt(n) for n in neckline] + [_pt(head), _pt(r_sh)]
 
 
-def _head_shoulder_bottom(highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
+def _head_shoulder_bottom(df: pd.DataFrame, highs: List[Dict], lows: List[Dict], last_idx: int) -> Tuple[str, str, List[Dict]]:
     if len(lows) < 3:
         return _empty("swing low 少於3個")
     l_sh, head, r_sh = lows[-3], lows[-2], lows[-1]
@@ -217,7 +350,7 @@ def _head_shoulder_bottom(highs: List[Dict], lows: List[Dict], last_idx: int) ->
     neckline = [h for h in highs if l_sh["idx"] < h["idx"] < r_sh["idx"]]
     if len(neckline) < 2:
         return _empty("兩個肩部之間頸線點不足")
-    detail = f"左肩{round(l_sh['price'],2)}／頭{round(head['price'],2)}／右肩{round(r_sh['price'],2)}"
+    detail = f"左肩{round(l_sh['price'],2)}／頭{round(head['price'],2)}／右肩{round(r_sh['price'],2)}" + _vol_note(df, r_sh["idx"])
     return POSSIBLE, detail, [_pt(l_sh)] + [_pt(n) for n in neckline] + [_pt(head), _pt(r_sh)]
 
 
@@ -286,7 +419,7 @@ def _broadening(highs: List[Dict], lows: List[Dict]) -> Tuple[str, str, List[Dic
     return _empty("高低位唔符合擴散形態")
 
 
-def _breakback(pivots: List[Dict], closes: pd.Series, last_idx: int) -> Tuple[str, str, List[Dict]]:
+def _breakback(df: pd.DataFrame, pivots: List[Dict], closes: pd.Series, last_idx: int) -> Tuple[str, str, List[Dict]]:
     """Breakout retest: price broke above a prior swing-high resistance and
     has since pulled back close to (without re-crossing below) that level."""
     highs = [p for p in pivots if p["kind"] == "high" and p["idx"] < last_idx - 3]
@@ -302,7 +435,12 @@ def _breakback(pivots: List[Dict], closes: pd.Series, last_idx: int) -> Tuple[st
     dist = abs(last_close - broken["price"]) / broken["price"]
     if dist > 0.03:
         return _empty("現價離突破位太遠，未算回測")
-    return POSSIBLE, f"突破前高{round(broken['price'],2)}後拉回測試", [_pt(broken)]
+    # Volume confirmation is judged at the bar where price first cleared
+    # the broken level (a genuine breakout should show above-average
+    # volume there), not at the current retest bar.
+    breakout_idx = next((p["idx"] for p in pivots if p["idx"] > broken["idx"]), last_idx)
+    detail = f"突破前高{round(broken['price'],2)}後拉回測試" + _vol_note(df, breakout_idx)
+    return POSSIBLE, detail, [_pt(broken)]
 
 
 def _fib_0618(highs: List[Dict], lows: List[Dict], closes: pd.Series) -> Tuple[str, str, List[Dict]]:
@@ -427,10 +565,12 @@ def _gap(df: pd.DataFrame, lookback: int = 15) -> Tuple[str, str, List[Dict]]:
             continue
         if cur_low > prev_high and (cur_low - prev_high) / ref >= 0.005:
             t = int(df.index[i].timestamp())
-            return POSSIBLE, f"向上缺口，缺口{round((cur_low-prev_high)/ref*100,1)}%", [{"time": t, "price": round(prev_high, 4)}, {"time": t, "price": round(cur_low, 4)}]
+            detail = f"向上缺口，缺口{round((cur_low-prev_high)/ref*100,1)}%" + _vol_note(df, i)
+            return POSSIBLE, detail, [{"time": t, "price": round(prev_high, 4)}, {"time": t, "price": round(cur_low, 4)}]
         if cur_high < prev_low and (prev_low - cur_high) / ref >= 0.005:
             t = int(df.index[i].timestamp())
-            return POSSIBLE, f"向下缺口，缺口{round((prev_low-cur_high)/ref*100,1)}%", [{"time": t, "price": round(prev_low, 4)}, {"time": t, "price": round(cur_high, 4)}]
+            detail = f"向下缺口，缺口{round((prev_low-cur_high)/ref*100,1)}%" + _vol_note(df, i)
+            return POSSIBLE, detail, [{"time": t, "price": round(prev_low, 4)}, {"time": t, "price": round(cur_high, 4)}]
     return _empty("最近未見明顯缺口")
 
 
@@ -459,7 +599,8 @@ def _island(df: pd.DataFrame, lookback: int = 25) -> Tuple[str, str, List[Dict]]
         island_len = idx2 - idx1
         if dir1 != dir2 and 1 <= island_len <= 6:
             t1, t2 = int(df.index[idx1].timestamp()), int(df.index[idx2].timestamp())
-            return POSSIBLE, f"{dir1}缺口後{island_len}日內再現{dir2}缺口，中間形成孤島", [
+            detail = f"{dir1}缺口後{island_len}日內再現{dir2}缺口，中間形成孤島" + _vol_note(df, idx2)
+            return POSSIBLE, detail, [
                 {"time": t1, "price": round(float(df['Close'].iloc[idx1]), 4)},
                 {"time": t2, "price": round(float(df['Close'].iloc[idx2]), 4)},
             ]
@@ -501,15 +642,15 @@ def detect_patterns(df: pd.DataFrame) -> Tuple[Dict[str, str], Dict[str, List[Di
         if verdict == POSSIBLE and pts:
             points[key] = pts
 
-    _set("p_double_top", _double_top(highs, lows, last_idx))
-    _set("p_double_bottom", _double_bottom(highs, lows, last_idx))
-    _set("p_head_shoulder_top", _head_shoulder_top(highs, lows, last_idx))
-    _set("p_head_shoulder_bottom", _head_shoulder_bottom(highs, lows, last_idx))
+    _set("p_double_top", _double_top(df, highs, lows, last_idx))
+    _set("p_double_bottom", _double_bottom(df, highs, lows, last_idx))
+    _set("p_head_shoulder_top", _head_shoulder_top(df, highs, lows, last_idx))
+    _set("p_head_shoulder_bottom", _head_shoulder_bottom(df, highs, lows, last_idx))
     _set("p_triangle", _triangle(highs, lows))
     _set("p_channel", _channel(highs, lows))
     _set("p_rectangle", _rectangle(highs, lows))
     _set("p_broadening", _broadening(highs, lows))
-    _set("p_breakback", _breakback(all_pivots, closes, last_idx))
+    _set("p_breakback", _breakback(df, all_pivots, closes, last_idx))
     _set("p_0618", _fib_0618(highs, lows, closes))
     _set("p_cup_handle", _cup_handle(df, last_idx))
     _set("p_diamond", _diamond(highs, lows, last_idx))

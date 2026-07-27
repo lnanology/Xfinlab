@@ -61,6 +61,9 @@
 .tf-btn{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.3rem 0.7rem;border-radius:5px;cursor:pointer;font-size:0.78rem;font-family:inherit}
 .tf-btn.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
 .tf-btn:disabled{opacity:0.5;cursor:not-allowed}
+.pattern-toggle-pill{display:inline-flex;align-items:center;gap:5px;background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.25rem 0.6rem;border-radius:999px;cursor:pointer;font-size:0.74rem;font-family:inherit;opacity:0.55}
+.pattern-toggle-pill.active{opacity:1;color:var(--text);border-color:var(--pill-color,var(--accent-blue))}
+.pattern-toggle-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--pill-color,var(--accent-blue));flex-shrink:0}
 .btn-secondary:disabled{opacity:0.5;cursor:not-allowed}
 </style>
 <script src="js/nav.js"></script>
@@ -158,6 +161,7 @@
       <h4 style="margin:0" data-i18n="ca_tv_title">K線圖</h4>
       <div id="klineTfRow" style="display:flex;gap:4px;flex-wrap:wrap"></div>
     </div>
+    <div id="patternToggleRow" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:0.6rem"></div>
     <div id="klineChart" style="height:460px"></div>
   </div>
 
@@ -611,7 +615,25 @@ const PATTERN_OVERLAY_COLORS = {
   p_diamond: '#E11D48', p_abc: '#CA8A04', p_gap: '#F97316', p_island: '#0891B2',
 };
 
+// 2026-07-27 addition ("可以自由按導航框開關去顯示形態"): per-pattern
+// show/hide state, keyed by the same p_* keys as everywhere else. true
+// (or missing, i.e. default) = visible. Kept module-level (not reset on
+// every redraw) so a user's on/off choice survives a timeframe switch for
+// the same symbol -- only a brand-new ticker search resets it, since a
+// totally different chart's pattern set has no relation to the last one.
+let PATTERN_TOGGLE_STATE = {};
+
 function drawPatternOverlays(patternPoints) {
+  window.__lastChartPatternPoints = patternPoints || {};
+  buildPatternToggles(patternPoints);
+  renderPatternOverlaySeries(patternPoints);
+}
+
+// Pure drawing step, split out from drawPatternOverlays() so a toggle-pill
+// click can just redraw from the already-fetched pattern_points without
+// re-fetching data or rebuilding the toggle row itself (which would wipe
+// the user's other on/off choices and flicker the row on every click).
+function renderPatternOverlaySeries(patternPoints) {
   if (!klineChart || !klineSeries) return;
   // Defensive cleanup in case this chart instance already has overlays
   // from an earlier call -- in the normal flow ensureKlineChart() always
@@ -620,6 +642,7 @@ function drawPatternOverlays(patternPoints) {
   (klineChart._xflPatternSeries || []).forEach(s => { try { klineChart.removeSeries(s); } catch (e) {} });
   klineChart._xflPatternSeries = [];
   Object.keys(patternPoints || {}).forEach(key => {
+    if (PATTERN_TOGGLE_STATE[key] === false) return; // user switched this one off
     const pts = (patternPoints[key] || []).slice().sort((a, b) => a.time - b.time);
     if (pts.length < 2) return;
     const color = PATTERN_OVERLAY_COLORS[key] || cssVar('--accent-blue', '#2563EB');
@@ -633,6 +656,36 @@ function drawPatternOverlays(patternPoints) {
       time: pts[pts.length - 1].time, position: 'aboveBar', color, shape: 'circle', text: label,
     }]);
     klineChart._xflPatternSeries.push(series);
+  });
+}
+
+// Builds one pill per pattern that actually has drawable points (i.e. came
+// back "可能" with >=2 real swing coordinates) -- patterns that came back
+// "不可能" have nothing to toggle, so they're simply not shown here rather
+// than appearing as a permanently-disabled pill.
+function buildPatternToggles(patternPoints) {
+  const row = document.getElementById('patternToggleRow');
+  if (!row) return;
+  const drawableKeys = PATTERN_KEYS.filter(key => ((patternPoints || {})[key] || []).length >= 2);
+  row.innerHTML = '';
+  if (!drawableKeys.length) { row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  drawableKeys.forEach(key => {
+    if (PATTERN_TOGGLE_STATE[key] === undefined) PATTERN_TOGGLE_STATE[key] = true;
+    const color = PATTERN_OVERLAY_COLORS[key] || cssVar('--accent-blue', '#2563EB');
+    const label = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'pattern-toggle-pill' + (PATTERN_TOGGLE_STATE[key] ? ' active' : '');
+    pill.style.setProperty('--pill-color', color);
+    pill.innerHTML = `<span class="dot"></span><span>${label}</span>`;
+    pill.title = t('ca_pattern_toggle_hint', '按一下顯示／隱藏呢個型態喺圖表上嘅劃線');
+    pill.onclick = () => {
+      PATTERN_TOGGLE_STATE[key] = !PATTERN_TOGGLE_STATE[key];
+      pill.classList.toggle('active', PATTERN_TOGGLE_STATE[key]);
+      renderPatternOverlaySeries(window.__lastChartPatternPoints || {});
+    };
+    row.appendChild(pill);
   });
 }
 
@@ -759,6 +812,13 @@ async function runTickerSearch(symbolOverride){
   const btn = document.getElementById('searchBtn');
   btn.disabled = true; btn.textContent = t('ca_search_analyzing','分析中...');
   if (typeof window.startAiLoading === 'function') window.startAiLoading();
+
+  // A brand-new symbol search means a brand-new pattern set with no
+  // relation to whatever the user had toggled on/off for the previous
+  // ticker -- reset so every newly-detected pattern starts visible again
+  // (timeframe switches on the SAME symbol deliberately do NOT reset this,
+  // see PATTERN_TOGGLE_STATE's own comment above).
+  PATTERN_TOGGLE_STATE = {};
 
   // 2026-07-26 fix: search/no-upload mode used to permanently hide
   // patternBlock here with a "you need to upload a screenshot" note
