@@ -637,6 +637,7 @@ async function loadUsers(page = 1) {
               ${u.plan==='free'
                 ?`<button class="btn btn-sm btn-green" onclick="upgradeUser(${u.id})">↑ Pro</button>`
                 :`<button class="btn btn-sm btn-amber" onclick="downgradeUser(${u.id})">↓ Free</button>`}
+              <button class="btn btn-sm btn-green" title="標記為已付年費Pro（觸發推薦人1年Pro/5轉Pro+獎勵）" onclick="markAnnualPro(${u.id},'${u.email}')">📅 年付Pro</button>
               <button class="btn btn-sm btn-red" onclick="deleteUser(${u.id},'${u.email}')">✕</button>
             </div></td>
           </tr>`).join('')}
@@ -739,6 +740,25 @@ async function upgradeUser(id) {
 async function downgradeUser(id) {
   if (!confirm(`Downgrade user #${id} to Free?`)) return;
   await fetch(`${API}/admin/users/${id}/downgrade?token=${adminToken}`, {method:'POST'});
+  loadUsers(currentPage);
+}
+async function markAnnualPro(id, email) {
+  // 2026-07-27: confirms user #id paid for annual Pro -- no live payment
+  // processor exists yet, so this is the manual trigger. Sets their real
+  // plan+1yr expiry, and if they were referred, immediately rewards the
+  // referrer (1 year Pro, or Pro+ once they hit 5 such conversions).
+  if (!confirm(`確認 ${email} (#${id}) 已付年費 Pro？\n會將此用戶設為 Pro（1年到期），並如果佢係被人推薦嚟嘅，即刻獎勵推薦人。`)) return;
+  const res = await fetch(`${API}/admin/users/${id}/mark-annual-pro?token=${adminToken}`, {method:'POST'});
+  const data = await res.json();
+  if (!res.ok) {
+    alert('失敗: ' + (data.detail || res.status));
+    return;
+  }
+  const rr = data.referral_reward || {};
+  const msg = rr.success
+    ? `已設定 #${id} 為年付 Pro（到期: ${data.plan_expires_at}）。\n推薦人 #${rr.referrer_id} 獲得 ${rr.reward_tier === 'proplus' ? 'Pro+' : 'Pro'} 1年（累積 ${rr.paid_conversions} 個轉換）。`
+    : `已設定 #${id} 為年付 Pro（到期: ${data.plan_expires_at}）。\n${rr.message || '此用戶並非經推薦註冊，冇推薦人獎勵。'}`;
+  alert(msg);
   loadUsers(currentPage);
 }
 async function deleteUser(id, email) {
