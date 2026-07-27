@@ -19,6 +19,11 @@
 <style>
 body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
 nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45}
+.breadcrumb{font-size:0.78rem;color:#64748b;margin-bottom:16px}
+.breadcrumb a{color:#64748b;text-decoration:none}
+.breadcrumb a:hover{color:#00d4ff}
+.related a{display:inline-block;color:#00d4ff;text-decoration:none;background:#0d1525;border:1px solid #1e2d45;border-radius:8px;padding:8px 14px;margin:4px 6px 4px 0;font-size:0.85rem}
+.related a:hover{border-color:#00d4ff}
 .brand{color:#00d4ff;font-weight:700;font-size:1.1rem;text-decoration:none}
 main{max-width:900px;margin:0 auto;padding:40px 24px}
 h1{font-size:2rem;color:#fff;margin-bottom:8px}
@@ -33,10 +38,69 @@ p{color:#cbd5e1;line-height:1.8}
 .cta{background:#00d4ff;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin-top:20px}
 footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
 </style>
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is this financial advice?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. XFINLAB's analysis is for informational purposes only and does not constitute financial advice. Always conduct your own research and consult a qualified financial advisor before making investment decisions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How often is the HD data updated?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Price and trend figures shown on this page are fetched live from market data providers each time the page loads."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What does XFINLAB's full AI analysis include?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "XFINLAB's full platform layers on news sentiment, technical indicators, risk scoring, and a 0-100 investment score, free to try with no credit card required."
+        }
+      }
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.xfinlab.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Free Tools",
+        "item": "https://www.xfinlab.com/tools.html"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "HD",
+        "item": "https://www.xfinlab.com/hd.html"
+      }
+    ]
+  }
+]
+</script>
 </head>
 <body>
 <nav><a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a></nav>
 <main>
+<div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/tools.html">Free Tools</a> &rsaquo; HD</div>
 <h1>HD — The Home Depot, Inc.</h1>
 <p class="subtitle">AI Investment Analysis · Live Data</p>
 
@@ -58,6 +122,21 @@ footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:
 <div class="section">
 <h2>AI Analysis Methodology</h2>
 <p>XFINLAB uses a multi-layer analysis pipeline combining market data scoring, news sentiment analysis, strategy evaluation, and risk assessment to generate a final investment score from 0-100.</p>
+</div>
+
+<div class="section">
+<h2>Frequently Asked Questions</h2>
+<p><strong>Is this financial advice?</strong> No. XFINLAB's analysis is for informational purposes only and does not constitute financial advice. Always conduct your own research and consult a qualified financial advisor before making investment decisions.</p>
+<p><strong>How often is the HD data updated?</strong> Price and trend figures shown above are fetched live from market data providers each time this page loads.</p>
+<p><strong>What does the full AI analysis include?</strong> XFINLAB's full platform layers on news sentiment, technical indicators, risk scoring, and a 0-100 investment score — free to try, no credit card required.</p>
+</div>
+
+<div class="section related">
+<h2>Related Consumer</h2>
+<a href="/ko.html">KO</a>
+<a href="/pep.html">PEP</a>
+<a href="/wmt.html">WMT</a>
+<a href="/dis.html">DIS</a>
 </div>
 
 <div class="section">
