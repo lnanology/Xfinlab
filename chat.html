@@ -635,14 +635,55 @@ function analyzeTickerMention(ticker) {
 // over any shorter overlapping match.
 const TERM_LIST = [
   'S&P 500', 'STOXX 600', 'CAC 40', 'DAX', 'VIX', 'CBOE',
-  'MACD', 'EMA', 'RSI',
-  'ECB', 'Volkswagen', 'BMW'
+  'MACD', 'EMA', 'RSI', 'PE', 'ETF',
+  'ECB', 'Volkswagen', 'BMW',
+  // Site feature names -- kept literal (Latin) like the acronyms above,
+  // since these are XFINLAB's own product names rather than translated
+  // vocabulary. Chinese variants added too since the site's own nav links
+  // use these Chinese labels (see resolveNavTarget() below, which already
+  // recognizes both phrasings for the numbered-options-card flow).
+  'Free Signals', 'AI Analysis', 'Chart Analysis', 'AI市場分析', 'K線分析', '免費信號'
 ];
-const TERM_RE_SRC = '(' + TERM_LIST.slice().sort((a, b) => b.length - a.length)
-  .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'))
-  .join('|') + ')(?![A-Za-z0-9])';
+
+// 2026-07-27 fix ("以下字或相關字句要導航可搜 要跟全語言"): the TERM_LIST
+// above only ever held Latin-script proper nouns/acronyms/product names --
+// identical in every UI language, so one hardcoded array always worked.
+// This batch covers XFINLAB's own investment/strategy vocabulary (asset
+// classes, technical/fundamental jargon, risk-profile and holding-period
+// language), which genuinely differs by language since the AI replies in
+// the user's UI language (see services/i18n.py). Each entry has its own
+// chat_term_* i18n key (46-language coverage); the second element is the
+// Chinese fallback shown before I18N finishes loading. The detection
+// regex is rebuilt from the CURRENT active language on every
+// buildLinkifyRegex() call below (not cached once at parse time), so
+// switching UI language mid-session immediately changes what gets
+// matched -- no page reload needed.
+const CHAT_TERM_ENTRIES = [
+  ['chat_term_hk_stocks', '港股'], ['chat_term_us_stocks', '美股'], ['chat_term_china', '中國'],
+  ['chat_term_crypto', '加密貨幣'], ['chat_term_commodity', '商品'], ['chat_term_gold', '黃金'],
+  ['chat_term_oil', '原油'], ['chat_term_candlestick', 'K線'], ['chat_term_moving_avg', '均線'],
+  ['chat_term_fundamentals', '基本面'], ['chat_term_earnings', '財報'], ['chat_term_earnings_season', '財報季'],
+  ['chat_term_policy_news', '政策消息'], ['chat_term_combine_both', '兩者結合'],
+  ['chat_term_tech_and_news', '技術配合消息面'], ['chat_term_risk_mgmt', '風險管理'],
+  ['chat_term_risk_tolerance', '風險承擔'], ['chat_term_conservative', '保守'],
+  ['chat_term_stop_loss', '止損'], ['chat_term_pullback', '回撤'], ['chat_term_aggressive', '激進'],
+  ['chat_term_bear_tolerate', '承受'], ['chat_term_larger_volatility', '較大波動'],
+  ['chat_term_big_volatility', '大波動'], ['chat_term_high_return', '高回報'],
+  ['chat_term_tech_sector', '科技'], ['chat_term_energy_sector', '能源'],
+  ['chat_term_support', '支撐'], ['chat_term_pressure', '壓力'], ['chat_term_swing', '波段'],
+  ['chat_term_take_profit', '止盈'], ['chat_term_top_gainer', '漲幅最大'],
+  ['chat_term_recent_performance', '最近表現'], ['chat_term_realtime_info', '即時資訊'],
+  ['chat_term_risk_assessment', '風險評估'], ['chat_term_investment_horizon', '投資期限'],
+  ['chat_term_investment_strategy', '投資策略'], ['chat_term_technical_analysis', '技術面分析'],
+  ['chat_term_fundamental_info', '基本面資訊'], ['chat_term_indicator', '指標'],
+  ['chat_term_company_business', '公司業務'], ['chat_term_industry_trend', '行業趨勢'],
+  ['chat_term_investment_direction', '投資方向'], ['chat_term_short_swing', '短線波段'],
+  ['chat_term_swing_holding', '波段持倉'], ['chat_term_long_term_invest', '長期投資'],
+];
 function analyzeTermMention(term) {
   if (typeof isLoading !== 'undefined' && isLoading) return;
+  const navUrl = resolveNavTarget(term);
+  if (navUrl) { window.location.href = navUrl; return; }
   sendQuick(`分析 ${term}`);
 }
 // 2026-07-23 follow-up: "CHAT 回答 所有橙色 藍色都可導航" -- ticker
@@ -663,12 +704,34 @@ function analyzeTermMention(term) {
 // so the second pass can never re-scan HTML markup the first pass already
 // injected (e.g. a ticker equal to a term name, like BMW, would otherwise
 // get its own onclick/title attribute text re-matched and mangled).
-const LINKIFY_RE = new RegExp(TICKER_PAREN_RE_SRC + '|' + TERM_RE_SRC, 'g');
+// Builds the combined ticker+term detection regex fresh every call (not a
+// cached top-level constant) -- CHAT_TERM_ENTRIES' surface forms depend on
+// the CURRENT active UI language via t(), so this must be re-evaluated
+// every time a message is formatted, not just once at page load.
+function buildLinkifyRegex() {
+  const dynamicTerms = CHAT_TERM_ENTRIES.map(([key, zh]) => t(key, zh));
+  const allTerms = TERM_LIST.concat(dynamicTerms);
+  const termReSrc = '(' + allTerms.slice().sort((a, b) => b.length - a.length)
+    .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'))
+    .join('|') + ')(?![A-Za-z0-9])';
+  return new RegExp(TICKER_PAREN_RE_SRC + '|' + termReSrc, 'g');
+}
 function linkifyTickers(s) {
-  return s.replace(LINKIFY_RE, (full, ticker, term) => {
+  return s.replace(buildLinkifyRegex(), (full, ticker, term) => {
     const key = ticker || term;
     const handler = ticker ? 'analyzeTickerMention' : 'analyzeTermMention';
-    return `<span class="chat-ticker-strong" onclick="${handler}('${key.replace(/'/g, "\\'")}')" title="繼續問AI：分析 ${key}">${full}</span>`;
+    // 2026-07-27 fix: this tooltip used to be a single hardcoded Chinese
+    // string regardless of UI language ("continue asking AI"), which was
+    // also just wrong for the handful of terms (Free Signals/AI Analysis/
+    // Chart Analysis) that now navigate to a real page instead of
+    // re-querying chat -- see analyzeTermMention()'s resolveNavTarget()
+    // check above. Both tooltip variants are now real i18n templates.
+    const navUrl = ticker ? null : resolveNavTarget(key);
+    const tooltip = (navUrl
+      ? t('chat_tooltip_go_to_page', '前往 {term} 頁面')
+      : t('chat_tooltip_ask_ai', '繼續問AI：分析 {term}')
+    ).replace('{term}', key);
+    return `<span class="chat-ticker-strong" onclick="${handler}('${key.replace(/'/g, "\\'")}')" title="${tooltip.replace(/"/g, '&quot;')}">${full}</span>`;
   });
 }
 function inlineFormat(s) {
