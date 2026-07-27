@@ -123,6 +123,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Mainstream FastAPI hardening: standard security response headers.
+# Deliberately NOT including Content-Security-Policy here -- the existing
+# HTML pages rely on inline <script>/<style> throughout, so a CSP would need
+# a per-page audit first or it would break the site (violates "keep go
+# build"). These four are safe defaults with no such dependency.
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy", "geolocation=(), microphone=(), camera=()"
+    )
+    if request.url.scheme == "https":
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+        )
+    return response
+
+
 # Market
 app.include_router(market_router, prefix="/api", tags=["Market"])
 

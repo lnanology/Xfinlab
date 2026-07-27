@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # requirements.txt is now pinned (see task #475) so Dependabot can propose
+  # updates as PRs -- each one runs through the existing CI workflow
+  # (ci.yml: syntax check + app-boot smoke test) before it can be merged.
+  # Nothing ever auto-merges; this just surfaces updates instead of the repo
+  # silently drifting out of date with no visibility.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
