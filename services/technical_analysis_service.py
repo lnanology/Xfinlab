@@ -42,6 +42,7 @@ import yfinance as yf
 from typing import Dict, List, Optional
 
 from services.chart_pattern_service import detect_patterns as _detect_chart_patterns
+from services.market_structure_engine import compute_market_structure as _compute_market_structure_v2
 
 logger = logging.getLogger(__name__)
 
@@ -233,13 +234,20 @@ class TechnicalAnalysisService:
             atr14=atr14,
         )
 
-        # ---- Phase 2 Market Structure Engine: additive, no extra data ----
-        # fetch needed -- reuses the same chronologically-ordered swing_
-        # highs/swing_lows already computed above for support/resistance.
-        market_structure = self._market_structure(
-            closes=closes, highs=highs, lows=lows,
-            swing_highs=swing_highs, swing_lows=swing_lows,
-        )
+        # ---- Market Structure Engine V2 (2026-07-30): additive, no extra
+        # data fetch -- reuses the SAME already-fetched df. Replaces the
+        # old boolean-only self._market_structure() (still defined below,
+        # left in place unused rather than deleted) with quantified
+        # Swing/Trend/BOS/CHOCH/Liquidity/Volatility scores + a Confidence
+        # composite -- see services/market_structure_engine.py's module
+        # docstring for the full architecture rationale and honest scope
+        # limits (no Order Flow/Volume Profile/Institutional Footprint --
+        # those need order-book/tick data this codebase doesn't have).
+        try:
+            market_structure = _compute_market_structure_v2(df)
+        except Exception:
+            logger.exception("market_structure_engine.compute_market_structure failed for %s", symbol)
+            market_structure = None
 
         # ---- 2026-07-26 addition: real-data Pattern Details (chart-search
         # flow only) -- additive, same already-fetched df, no extra data

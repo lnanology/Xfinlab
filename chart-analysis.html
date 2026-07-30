@@ -209,6 +209,11 @@
       <div id="marketStructureBlock" style="display:none">
         <h4 style="margin-top:0.8rem" data-i18n="ca_ms_title">市場結構（Market Structure）</h4>
         <div class="result-row"><div class="result-label" data-i18n="ca_ms_prior">先前結構</div><div class="result-value" id="msPriorStructure">-</div></div>
+        <!-- 2026-07-30 addition (Market Structure Engine V2): quantified
+             0-100 sub-engine scores, replacing the old boolean-only read.
+             Hidden when data.market_structure has no score fields (e.g. an
+             older cached response) so this degrades gracefully. -->
+        <div class="pattern-qa-grid" id="msScoreGrid" style="margin-top:0.5rem;display:none"></div>
         <div id="msEvents" style="margin-top:0.4rem"></div>
       </div>
 
@@ -1076,6 +1081,41 @@ async function runTickerSearch(symbolOverride){
       msBlock.style.display = 'block';
       const structureLabel = {uptrend: t('ca_ms_uptrend','上升結構'), downtrend: t('ca_ms_downtrend','下降結構'), mixed: t('ca_ms_mixed','結構混合/盤整')}[ms.prior_structure] || ms.prior_structure;
       safeSetText('msPriorStructure', structureLabel);
+
+      // 2026-07-30 addition (Market Structure Engine V2): render the
+      // quantified 0-100 sub-engine scores as Q&A-style cards (reusing
+      // the same .pattern-qa-grid/.pattern-qa-card styling already used
+      // above for Pattern Details). Only shown when the backend actually
+      // sent score fields -- a stale/older response missing them just
+      // hides this grid rather than showing broken "undefined" cells.
+      const scoreGrid = document.getElementById('msScoreGrid');
+      const scoreFields = [
+        ['trend_score', 'ca_ms_trend_score', '趨勢分數'],
+        ['swing_quality', 'ca_ms_swing_quality', '擺動品質'],
+        ['bos_score', 'ca_ms_bos_score', 'BOS強度'],
+        ['choch_score', 'ca_ms_choch_score', 'CHOCH強度'],
+        ['liquidity_score', 'ca_ms_liquidity_score', '流動性訊號'],
+        ['volatility_score', 'ca_ms_volatility_score', '波動穩定度'],
+        ['confidence', 'ca_ms_confidence', '結構信心'],
+      ];
+      if (ms.confidence != null && scoreGrid) {
+        scoreGrid.style.display = 'grid';
+        scoreGrid.innerHTML = scoreFields.map(([key, i18nKey, fallback]) => {
+          const val = ms[key];
+          const shown = (val == null) ? '-' : Math.round(val);
+          const cls = shown === '-' ? 'is-unclear' : (shown >= 65 ? 'is-possible' : shown <= 35 ? 'is-not-possible' : 'is-unclear');
+          return `<div class="pattern-qa-card">
+            <span class="pattern-qa-q">${t(i18nKey, fallback)}</span>
+            <span class="pattern-qa-a ${cls}">${shown}${shown === '-' ? '' : '/100'}</span>
+          </div>`;
+        }).join('');
+        if (ms.weights_calibrated === false) {
+          scoreGrid.innerHTML += `<div class="upload-hint" style="grid-column:1/-1;font-size:0.7rem">${t('ca_ms_weights_note','分數權重為初步設計，尚未經歷史回測校準')}</div>`;
+        }
+      } else if (scoreGrid) {
+        scoreGrid.style.display = 'none';
+      }
+
       const eventsEl = document.getElementById('msEvents');
       if (ms.events && ms.events.length) {
         eventsEl.innerHTML = ms.events.map(e => `<div class="result-row"><div class="result-label">${e.type}</div><div class="result-value">${e.detail}</div></div>`).join('');
