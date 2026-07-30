@@ -685,9 +685,20 @@ async function runAnalysis(){
     }
 
     // ---- Tier 2: Scenario Lab ----
+    // 2026-07-30 fix ("AI 市場快速分析 用唔到" -- root cause): for a non-Pro
+    // (free or logged-out) plan, api/ai_analysis.py sends data.scenario as
+    // the Pro-tier-locked placeholder ({locked:true, required_plan:'pro',
+    // upgrade_url:...}) -- a truthy object, but with NO .bull/.base/.bear
+    // keys. `if (scen)` alone let this through, then `scen.bull.target`
+    // threw "Cannot read properties of undefined (reading 'target')" --
+    // an uncaught exception in EVERY non-Pro search (any symbol, e.g.
+    // AAPL), caught by the outer try/catch and shown as the generic
+    // "分析失敗，請稍後重試" alert. renderSmartBeta()/renderShippingProxy()
+    // above already guard correctly (checking a real inner field before
+    // using it); Scenario Lab was the one spot that didn't.
     const scen = data.scenario;
     const scenAccordion = document.getElementById('scenarioAccordion');
-    if (scen) {
+    if (scen && scen.bull && scen.base && scen.bear) {
       scenAccordion.style.display = 'block';
       document.getElementById('scenBullTarget').textContent = scen.bull.target != null ? scen.bull.target : '-';
       document.getElementById('scenBullProb').textContent = scen.bull.probability_pct + '%';
