@@ -37,37 +37,37 @@ footer a{color:#64748b;margin:0 6px;text-decoration:none}
 <body>
 <nav>
   <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
-  <span><a href="login.html" class="nav-link">Sign In</a></span>
+  <span><a href="login.html" class="nav-link" data-i18n="nav_login">Sign In</a></span>
 </nav>
 <main>
-<h1>Free Investing Calculators</h1>
-<p class="subtitle">Four calculators used every day by XFINLAB's own AI analysis engine -- free to use directly, no account needed.</p>
+<h1 data-i18n="tools_h1">Free Investing Calculators</h1>
+<p class="subtitle" data-i18n="tools_subtitle">Four calculators used every day by XFINLAB's own AI analysis engine -- free to use directly, no account needed.</p>
 
 <div class="grid">
   <a href="pe-calculator.html" class="card">
-    <span class="badge">Valuation</span>
-    <h2>P/E Ratio Calculator</h2>
-    <p>Work out a stock's price-to-earnings ratio, or its fair price from a target P/E.</p>
+    <span class="badge" data-i18n="tools_badge_valuation">Valuation</span>
+    <h2 data-i18n="tools_pe_title">P/E Ratio Calculator</h2>
+    <p data-i18n="tools_pe_desc">Work out a stock's price-to-earnings ratio, or its fair price from a target P/E.</p>
   </a>
   <a href="dcf-calculator.html" class="card">
-    <span class="badge">Valuation</span>
-    <h2>DCF Calculator</h2>
-    <p>Estimate a stock's intrinsic value per share with a standard 2-stage discounted cash flow model.</p>
+    <span class="badge" data-i18n="tools_badge_valuation">Valuation</span>
+    <h2 data-i18n="tools_dcf_title">DCF Calculator</h2>
+    <p data-i18n="tools_dcf_desc">Estimate a stock's intrinsic value per share with a standard 2-stage discounted cash flow model.</p>
   </a>
   <a href="position-size-calculator.html" class="card">
-    <span class="badge">Risk Management</span>
-    <h2>Position Size Calculator</h2>
-    <p>Work out how many shares to buy so a stopped-out trade only costs the % of your account you choose.</p>
+    <span class="badge" data-i18n="tools_badge_risk">Risk Management</span>
+    <h2 data-i18n="tools_possize_title">Position Size Calculator</h2>
+    <p data-i18n="tools_possize_desc">Work out how many shares to buy so a stopped-out trade only costs the % of your account you choose.</p>
   </a>
   <a href="risk-reward-calculator.html" class="card">
-    <span class="badge">Risk Management</span>
-    <h2>Risk/Reward Ratio Calculator</h2>
-    <p>See your R:R ratio and the win rate you'd need just to break even, from entry, stop and target.</p>
+    <span class="badge" data-i18n="tools_badge_risk">Risk Management</span>
+    <h2 data-i18n="tools_rr_title">Risk/Reward Ratio Calculator</h2>
+    <p data-i18n="tools_rr_desc">See your R:R ratio and the win rate you'd need just to break even, from entry, stop and target.</p>
   </a>
 </div>
 
-<h2 style="font-size:1.3rem;margin-top:48px;color:#fff;text-transform:none;letter-spacing:normal">Stock Comparisons</h2>
-<p class="subtitle">Live side-by-side price comparisons, with a link to run the full AI Compare Engine.</p>
+<h2 style="font-size:1.3rem;margin-top:48px;color:#fff;text-transform:none;letter-spacing:normal" data-i18n="tools_compare_h2">Stock Comparisons</h2>
+<p class="subtitle" data-i18n="tools_compare_subtitle">Live side-by-side price comparisons, with a link to run the full AI Compare Engine.</p>
 <div class="grid">
   <a href="aapl-vs-msft.html" class="card"><h2>AAPL vs MSFT</h2><p>Apple vs Microsoft — live price &amp; AI comparison.</p></a>
   <a href="nvda-vs-amd.html" class="card"><h2>NVDA vs AMD</h2><p>NVIDIA vs AMD — live price &amp; AI comparison.</p></a>
@@ -82,12 +82,13 @@ footer a{color:#64748b;margin:0 6px;text-decoration:none}
 </div>
 </main>
 <footer>
-  © 2026 XFINLAB — AI Investment Intelligence Platform<br><br>
-  <a href="ai-analysis.html">AI Analysis</a>
-  <a href="pricing.html">Pricing</a>
-  <a href="terms.html">Terms</a>
-  <a href="privacy.html">Privacy</a>
+  <span data-i18n="pricing_footer">© 2026 XFINLAB — AI Investment Intelligence Platform</span><br><br>
+  <a href="ai-analysis.html" data-i18n="nav_analysis">AI Analysis</a>
+  <a href="pricing.html" data-i18n="nav_pricing">Pricing</a>
+  <a href="terms.html" data-i18n="pricing_footer_terms">Terms</a>
+  <a href="privacy.html" data-i18n="pricing_footer_privacy">Privacy</a>
 </footer>
+<script src="js/i18n.js"></script>
 <script src="js/cookie-consent.js"></script>
 <script src="js/anti-scrape.js"></script>
 </body>
