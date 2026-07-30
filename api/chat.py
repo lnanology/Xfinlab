@@ -117,23 +117,24 @@ async def chat(body: dict):
     user_id = check_token_budget(token)
 
     try:
-        # 2026-07-30: this is the site's flagship "talk to AI" feature --
-        # the one users most directly compare against a paid model like
-        # Claude/GPT. Two additive changes from the plain get_ai_response()
-        # call this used before: (1) reasoning_effort="high" asks Groq's
-        # gpt-oss-120b to actually think harder before answering (was
-        # hardcoded "low" everywhere purely for speed); max_tokens is
-        # raised from 800->1200 alongside it since "high" reasoning eats
-        # more of the budget on hidden thinking tokens before writing the
-        # visible answer (see ai/ai_router.py's _groq() docstring -- this
-        # exact failure mode caused a real empty-response bug before).
-        # (2) get_ai_response_with_escalation() falls back to Claude ONCE
-        # if Groq's answer ever comes back empty/degenerate, rather than
-        # immediately showing the canned "AI 服務暫時不可用" message. This
-        # does NOT reverse the earlier decision to keep Groq as the
-        # default for cost reasons -- Claude is only ever called on the
-        # rare failure case, not on every request.
-        answer = get_ai_response_with_escalation(prompt, max_tokens=1200, reasoning_effort="high")
+        # 2026-07-30 revert: reasoning_effort="high" was piloted here for
+        # one deploy and immediately produced a real "AI 服務暫時不可用"
+        # failure in production. This endpoint's system prompt is long and
+        # dense (multiple paragraphs of Cantonese instructions plus
+        # history/context), and "high" reasoning effort makes gpt-oss-120b
+        # spend MORE hidden thinking tokens processing all of that before
+        # writing anything visible -- exactly the starvation failure mode
+        # _groq()'s 2026-07-20 docstring already documents, just triggered
+        # more easily at "high" than "low" even with the raised token
+        # floor. Couldn't be safely validated against the real Groq API
+        # from the dev sandbox (no live GROQ_API_KEY there) before shipping
+        # -- reverting to "low" (the same setting every other Groq call
+        # site in this codebase already uses) now that production evidence
+        # says "high" isn't safe for THIS prompt. Kept: max_tokens 800->
+        # 1200 (strictly more headroom, never the cause of a failure) and
+        # the get_ai_response_with_escalation() Claude fallback below,
+        # since neither of those caused the regression.
+        answer = get_ai_response_with_escalation(prompt, max_tokens=1200, reasoning_effort="low")
         if not answer.strip():
             # get_ai_response_with_escalation() deliberately never raises
             # (it returns "" if both Groq and the Claude escalation fail
