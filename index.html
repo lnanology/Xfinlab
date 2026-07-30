@@ -8,8 +8,13 @@
 <link rel="shortcut icon" href="/img/favicon.ico">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XFINLAB — Decision Intelligence for Investors</title>
-<meta name="description" content="XFINLAB：Institutional-grade AI Investment Research。Decision Score™、Confidence™、RiskDNA™ —— 用真實市場數據為股票、ETF同加密貨幣提供AI決策智能。">
+<!-- 2026-07-30 compliance fix: was "Decision Intelligence for Investors" /
+     "Institutional-grade AI Investment Research" -- softened away from
+     "Investment Research/Advice" framing toward "market data & analytics"
+     framing (payment-processor compliance batch; see engines/scoring_engine.py
+     and api/ai_analysis.py for the matching BUY/SELL -> Bullish/Bearish fix). -->
+<title>XFINLAB — AI Market Data & Analytics</title>
+<meta name="description" content="XFINLAB：機構級AI市場數據分析平台。Decision Score™、Confidence™、RiskDNA™ —— 用真實市場數據為股票、ETF同加密貨幣提供AI數據分析。">
 <link rel="canonical" href="https://www.xfinlab.com/">
 <!-- hreflang alternates (auto-generated, see gen_lang_pages.py) -->
 <link rel="alternate" hreflang="en" href="https://www.xfinlab.com/">
@@ -48,7 +53,7 @@
   "url": "https://www.xfinlab.com/",
   "logo": "https://www.xfinlab.com/img/logo-mark-512.png",
   "image": "https://www.xfinlab.com/img/logo-mark-512.png",
-  "description": "XFINLAB是機構級AI投資研究平台，提供Decision Score、Confidence、RiskDNA等真實市場數據驅動嘅AI決策智能，涵蓋股票、ETF同加密貨幣。",
+  "description": "XFINLAB是機構級AI市場數據分析平台，提供Decision Score、Confidence、RiskDNA等真實市場數據驅動嘅AI數據分析，涵蓋股票、ETF同加密貨幣。",
   "sameAs": [
     "https://t.me/xfinlab_daily",
     "https://t.me/xfinlab_zh",
@@ -442,12 +447,12 @@
 <script src="js/smart-router.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/prob-display.js"></script>
-<meta property="og:title" content="XFINLAB — Decision Intelligence for Investors">
-<meta property="og:description" content="Institutional-grade AI Investment Research. Analyze Stocks, ETFs & Crypto in under 60 seconds.">
+<meta property="og:title" content="XFINLAB — AI Market Data & Analytics">
+<meta property="og:description" content="Institutional-grade AI market data & analytics. Analyze Stocks, ETFs & Crypto in under 60 seconds.">
 <meta property="og:url" content="https://www.xfinlab.com/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="XFINLAB — AI Investment Intelligence">
+<meta name="twitter:title" content="XFINLAB — AI Market Data & Analytics">
 </head>
 <body>
 
@@ -728,7 +733,7 @@
     <div class="step-box step-box-clickable step-box-bonus" onclick="location.href='free-signals.html'">
       <span class="step-plus">+</span>
       <div class="step-num">🔔</div>
-      <div class="step-title" data-i18n="how4">訂閱每日免費信號</div>
+      <div class="step-title" data-i18n="how4">訂閱每日市場快訊</div>
     </div>
   </div>
 </div>
@@ -1686,8 +1691,8 @@ document.getElementById('demoTicker').addEventListener('keydown', function(e){
 <!-- Telegram Subscribe Widget -->
 <div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
   <div id="tgPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
-    <div style="font-weight:700;margin-bottom:4px;color:var(--text)">📡 XFINLAB Daily Signals</div>
-    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px">Free daily AI stock analysis on Telegram</div>
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
     <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:var(--accent);color:var(--accent-text);text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
     <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border);color:var(--text);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
     <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border);color:var(--text);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>

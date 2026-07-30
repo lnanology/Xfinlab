@@ -110,6 +110,18 @@ async def chat(body: dict):
         "定係想要邊種分析角度），可以先簡短反問1-2個問題澄清，等用戶下次回覆講清楚先再詳細分析；"
         "但如果已經有足夠資訊（包括下面嘅背景資訊已經識別到具體資產），"
         "就唔好淨係反問，應該直接畀返仔細、有針對性嘅分析，答到point。"
+        # 2026-07-30 (Paddle payment-processor compliance batch): this
+        # endpoint is free-form/unconstrained-field text (no fixed JSON
+        # schema like research_agent.py or chart_analysis.py), so it was
+        # the single biggest unaddressed risk of the model writing literal
+        # "buy"/"sell" trading instructions -- mirrors the same guardrail
+        # already added to company_compare.py, research_agent.py and
+        # chart_analysis.py this session.
+        "呢個平台提供嘅係客觀市場數據整理同分析，唔係投資建議：討論股票/資產嗰陣，"
+        "唔好用「建議買入」「建議賣出」「應該買」「應該沽」「Strong Buy」「Strong Sell」"
+        "呢類直接嘅買賣指令字眼，改用中性描述（例如「數據偏向睇好」「訊號偏向睇淡」「市場情緒中性」）"
+        "去形容你觀察到嘅市場狀況，並喺相關回答入面提提用戶呢啲係資訊整理，實際投資決定要自己諗清楚"
+        "或者請教持牌財務顧問。"
         f"{history_text}\n\n{context_note}用戶問題：{query}"
     )
 

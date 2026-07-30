@@ -430,7 +430,16 @@
   </div>
 </div>
 
-<footer><span data-i18n="pricing_footer">© 2026 XFINLAB — AI Investment Intelligence Platform · </span><a href="terms.html" style="color:var(--muted)" data-i18n="pricing_footer_terms">Terms</a> · <a href="privacy.html" style="color:var(--muted)" data-i18n="pricing_footer_privacy">Privacy</a> · <a href="refund.html" style="color:var(--muted)" data-i18n="pricing_footer_refund">Refund</a></footer>
+<!-- 2026-07-30 (Paddle compliance batch): the "not financial advice"
+     disclaimer already existed, but only inside a collapsed FAQ accordion
+     answer (pricing_faq_a4) -- easy to miss unless a visitor happens to
+     click that specific question open. Promoting the SAME already-
+     translated string to an always-visible banner right above the footer,
+     so it's readable without any interaction, on the one page every
+     paying customer necessarily passes through. -->
+<div style="max-width:760px;margin:0 auto;padding:0 20px 24px;text-align:center;font-size:0.78rem;color:var(--muted);line-height:1.6" data-i18n="pricing_faq_a4">No. XFINLAB provides AI-powered data analysis and research tools for informational purposes only. Always consult a qualified financial advisor before making investment decisions.</div>
+
+<footer><span data-i18n="pricing_footer">© 2026 XFINLAB — AI Market Data & Analytics Platform · </span><a href="terms.html" style="color:var(--muted)" data-i18n="pricing_footer_terms">Terms</a> · <a href="privacy.html" style="color:var(--muted)" data-i18n="pricing_footer_privacy">Privacy</a> · <a href="refund.html" style="color:var(--muted)" data-i18n="pricing_footer_refund">Refund</a></footer>
 
 <script>
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }

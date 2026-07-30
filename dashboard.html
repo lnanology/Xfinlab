@@ -805,8 +805,13 @@ function loading(html = '') {
 function getRatingClass(rating) {
   if (!rating) return '';
   const r = rating.toUpperCase();
-  if (r.includes('BUY') || r === 'BULLISH') return 'rating-buy';
-  if (r.includes('SELL') || r === 'BEARISH') return 'rating-sell';
+  // 2026-07-30: backend now emits "Very Bullish"/"Bullish"/"Neutral"/
+  // "Bearish"/"Very Bearish" instead of "Strong Buy"/"Buy"/"Sell"/"Strong
+  // Sell" (compliance rewrite) -- BUY/SELL substring checks kept for any
+  // still-cached/legacy values, BULLISH/BEARISH switched from exact-match
+  // to substring so "Very Bullish"/"Very Bearish" still classify correctly.
+  if (r.includes('BUY') || r.includes('BULLISH')) return 'rating-buy';
+  if (r.includes('SELL') || r.includes('BEARISH')) return 'rating-sell';
   return 'rating-hold';
 }
 
@@ -1316,7 +1321,11 @@ async function loadDecisionJournal() {
       return;
     }
     journalEl.innerHTML = entries.map(e => {
-      const color = e.rating === 'BUY' ? 'var(--green)' : e.rating === 'SELL' ? 'var(--red)' : 'var(--muted)';
+      // 2026-07-30: hero.rating is now BULLISH/BEARISH/NEUTRAL (was BUY/SELL/HOLD,
+      // compliance rewrite) -- .includes() so journal entries saved under the
+      // old vocabulary before this change still color correctly too.
+      const _r = (e.rating || '').toUpperCase();
+      const color = _r.includes('BULLISH') || _r === 'BUY' ? 'var(--green)' : _r.includes('BEARISH') || _r === 'SELL' ? 'var(--red)' : 'var(--muted)';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-family:monospace;font-weight:600">${e.symbol}</span>

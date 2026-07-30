@@ -139,9 +139,14 @@ class ReportGenerator:
                 text = str(val)
             story.append(Paragraph(text, body_style))
 
-        # ── AI Verdict ───────────────────────────────────
+        # ── AI Outlook ───────────────────────────────────
+        # 2026-07-30 compliance fix: was "AI VERDICT" / "Recommendation" --
+        # reworded to "AI Outlook" / "Outlook" so this reads as a data
+        # summary rather than an instruction to act (see research_agent.py's
+        # matching prompt-level fix; ai_recommendation's actual content is
+        # now a Bullish/Neutral/Bearish outlook description, not "Buy/Sell").
         story.append(HRFlowable(width="100%", thickness=1, color=C_SURFACE, spaceBefore=16, spaceAfter=16))
-        story.append(Paragraph("AI VERDICT", section_style))
+        story.append(Paragraph("AI OUTLOOK", section_style))
 
         confidence = research.get('confidence', 0)
         if confidence <= 1:
@@ -150,8 +155,8 @@ class ReportGenerator:
         summary = research.get('summary', 'No summary available.')
 
         verdict_data = [
-            ['Recommendation', 'Confidence', 'Target Price'],
-            [str(research.get('ai_recommendation', 'HOLD')),
+            ['Outlook', 'Confidence', 'Target Price'],
+            [str(research.get('ai_recommendation', 'Neutral')),
              f"{confidence}%",
              f"${target:.2f}" if isinstance(target, (int, float)) else str(target)],
         ]

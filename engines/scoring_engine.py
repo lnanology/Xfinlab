@@ -40,16 +40,22 @@ class ScoringEngine:
 
         final_score = round(max(0, min(100, raw_score - risk_penalty)), 2)
 
+        # 2026-07-30 compliance fix: these used to read "Strong Buy"/"Buy"/
+        # "Sell"/"Strong Sell" -- a literal trading instruction. Reworded to
+        # describe the score itself (a sentiment/bias reading) rather than
+        # telling the user what action to take, so the platform reads as a
+        # data/analytics tool rather than an investment-advice service (see
+        # payment-processor compliance batch, 2026-07-30).
         if final_score >= 80:
-            rating = "Strong Buy"
+            rating = "Very Bullish"
         elif final_score >= 65:
-            rating = "Buy"
+            rating = "Bullish"
         elif final_score >= 50:
             rating = "Neutral"
         elif final_score >= 35:
-            rating = "Sell"
+            rating = "Bearish"
         else:
-            rating = "Strong Sell"
+            rating = "Very Bearish"
 
         return {
             "final_score": final_score,
