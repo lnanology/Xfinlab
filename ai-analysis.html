@@ -161,6 +161,15 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <!-- Layer 3: AI Summary (1-minute read) -->
     <div class="ai-summary-box" id="aiSummaryBox" style="display:none"></div>
 
+    <!-- 2026-07-30 fix ("查0544 出唔到股票"): when the requested symbol has
+         too little trading history for the confluence/decision-levels/
+         chart engine (e.g. a thinly-traded HK small-cap), the chart panel
+         below simply doesn't render -- this box gives an honest one-line
+         reason instead of leaving an unexplained gap that reads as "search
+         broken". Hidden by default; only shown when data.data_warning is
+         present (see the /api/ai-analysis handler below). -->
+    <div class="panel" id="dataWarningBox" style="display:none;border-left:3px solid var(--warn-color,#e0a800);background:var(--card-bg-soft,rgba(224,168,0,0.08))"></div>
+
     <div class="panel" id="klineChartPanel" style="display:none">
       <h4 style="margin-top:0" data-i18n="ca_tv_title">K線圖</h4>
       <div id="klineChart" style="height:460px"></div>
@@ -558,6 +567,18 @@ async function runAnalysis(){
       renderKlineChart(data.ohlc, data.decision_levels);
     } else {
       document.getElementById('klineChartPanel').style.display = 'none';
+    }
+    // 2026-07-30 fix: honest reason instead of a silent gap when the
+    // chart/confluence/decision-levels engine had too little history to
+    // work with (see api/ai_analysis.py's data_warning field).
+    const warnBox = document.getElementById('dataWarningBox');
+    if (warnBox) {
+      if (data.data_warning) {
+        warnBox.textContent = '⚠️ ' + data.data_warning;
+        warnBox.style.display = 'block';
+      } else {
+        warnBox.style.display = 'none';
+      }
     }
 
     document.getElementById('fundScore').textContent = scores.fund + '/100';

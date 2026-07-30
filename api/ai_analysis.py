@@ -194,6 +194,7 @@ async def ai_analysis(body: dict):
     tech_resistance = None
     tech_ohlc = None
     tech_raw = None
+    data_warning = None
     try:
         # 2026-07-25 fix (task #409): pass lang through so the confluence
         # engine's dynamic signal strings (bullish_signals/bearish_signals,
@@ -228,6 +229,22 @@ async def ai_analysis(body: dict):
             # needs no OHLC data of its own). Now that ai-analysis.html
             # draws its own candlestick chart, it needs the same real bars.
             tech_ohlc = tech.get("ohlc")
+        elif tech and "error" in tech:
+            # 2026-07-30 fix ("查0544 出唔到股票"): technical_analysis_
+            # service.py's own get_analysis() already returns an honest
+            # "{symbol} 歷史數據不足，無法計算技術指標" message when a
+            # thinly-traded ticker (e.g. 0544.HK / Daido Group -- real,
+            # listed, but very low trading volume) has fewer than 20 days
+            # of usable OHLC history -- correct behavior, not a bug (this
+            # codebase never fabricates indicators from insufficient data).
+            # The bug was that this message was computed and then silently
+            # dropped: the frontend just hid the chart panel with zero
+            # explanation, which reads exactly like "查唔到" to a user even
+            # though the search itself worked fine and other sections
+            # (price/fundamentals/scores below) still render normally.
+            # Forwarding it through so ai-analysis.html can show an honest
+            # one-line reason instead of an unexplained gap.
+            data_warning = tech.get("error")
         if tech_raw and "error" not in tech_raw:
             confluence_raw = tech_raw.get("confluence")
     except Exception:
@@ -466,6 +483,7 @@ async def ai_analysis(body: dict):
             "price": market.get("price", 0),
             "decision_levels": decision_levels,
             "ohlc": tech_ohlc,
+            "data_warning": data_warning,
             "hero": {
                 "rating": hero_rating,
                 "stars": hero_stars,
