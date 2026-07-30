@@ -77,7 +77,15 @@ async def submit_feedback(body: FeedbackRequest):
 
 
 @router.get("/feedback/list")
-def get_feedback(token: str):
+def get_feedback(token: str, type: Optional[str] = None):
+    """
+    2026-07-30 addition: optional `type` filter, backward compatible --
+    omitting it returns every row exactly as before. Added so the
+    Intelligence API "Request Early Access" form (which inserts rows here
+    with type="intelligence_early_access", see api/intelligence.py) can be
+    listed separately from general bug-report/feature-request feedback in
+    admin.html, without needing its own dedicated table.
+    """
     from backend.auth.jwt_handler import verify_token
     from fastapi import HTTPException
     payload = verify_token(token)
@@ -85,8 +93,14 @@ def get_feedback(token: str):
         raise HTTPException(status_code=403, detail="Admin only")
 
     conn = get_db()
-    rows = conn.execute(
-        "SELECT * FROM feedback ORDER BY created_at DESC LIMIT 50"
-    ).fetchall()
+    if type:
+        rows = conn.execute(
+            "SELECT * FROM feedback WHERE type = ? ORDER BY created_at DESC LIMIT 50",
+            (type,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM feedback ORDER BY created_at DESC LIMIT 50"
+        ).fetchall()
     conn.close()
     return {"feedback": [dict(r) for r in rows]}

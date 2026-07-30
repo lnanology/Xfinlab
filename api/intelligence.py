@@ -78,6 +78,108 @@ def intelligence_status():
     })
 
 
+# ---------------------------------------------------------------------------
+# "Request Early Access" landing page support (intelligence-api.html).
+# V1 has no self-serve signup -- this is the conversation-first funnel:
+# a prospective developer submits interest, the admin follows up manually
+# and issues a key via /intelligence/admin/issue-key above once there's an
+# actual conversation about pricing (per the 2026-07-30 "唔急住公開定價,
+# 先用對話式定價" decision -- see chat history).
+# ---------------------------------------------------------------------------
+from pydantic import BaseModel, field_validator
+
+
+class EarlyAccessRequest(BaseModel):
+    # Plain str, not pydantic's EmailStr -- that type requires the
+    # "email-validator" package, which isn't in requirements.txt (nothing
+    # else in this codebase pulls it in either; api/feedback.py's own
+    # `email` field is a plain Optional[str] for the same reason). A
+    # lightweight manual check below is enough for a lead-capture form --
+    # this isn't gating anything security-sensitive, just filtering
+    # obviously-malformed submissions before they reach the admin inbox.
+    email: str
+    company: Optional[str] = None
+    tier_interest: Optional[str] = None  # "free" / "pro" / "enterprise"
+    message: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def _basic_email_shape(cls, v: str) -> str:
+        v = (v or "").strip()
+        if "@" not in v or "." not in v.split("@")[-1] or len(v) < 5:
+            raise ValueError("Please provide a valid email address")
+        return v
+
+
+@router.get("/intelligence/plan-visibility")
+def intelligence_plan_visibility():
+    """Public, unauthenticated -- intelligence-api.html calls this on load
+    to decide which of the 3 pricing tier cards to render. Backed by the
+    same feature_flags table/admin.html toggle UI every other flag in this
+    app already uses (api/admin.py's _DEFAULT_FLAGS: intel_plan_free_visible/
+    intel_plan_pro_visible/intel_plan_enterprise_visible) -- the admin can
+    hide any tier from the landing page without a redeploy, e.g. hiding
+    Enterprise until there's a real reason to show it."""
+    from api.admin import get_db as _admin_get_db
+
+    conn = _admin_get_db()
+    rows = conn.execute(
+        "SELECT key, enabled FROM feature_flags WHERE key IN "
+        "('intel_plan_free_visible','intel_plan_pro_visible','intel_plan_enterprise_visible')"
+    ).fetchall()
+    conn.close()
+    flags = {r["key"]: bool(r["enabled"]) for r in rows}
+    return _envelope(data={
+        "free": flags.get("intel_plan_free_visible", True),
+        "pro": flags.get("intel_plan_pro_visible", True),
+        "enterprise": flags.get("intel_plan_enterprise_visible", True),
+    })
+
+
+@router.post("/intelligence/early-access")
+def intelligence_early_access(body: EarlyAccessRequest):
+    """Public -- the landing page's "Request Early Access" form posts here.
+    Reuses api/feedback.py's existing `feedback` table (type=
+    "intelligence_early_access") rather than a new bespoke table -- same
+    insert-then-notify-admin shape that module already has, just a
+    different `type` value so admin.html can list these separately (see
+    GET /feedback/list's optional `type` filter)."""
+    import sqlite3
+    import os as _os
+
+    db_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "xfinlab.db")
+    conn = sqlite3.connect(db_path)
+    message_parts = [f"tier_interest={body.tier_interest or 'unspecified'}"]
+    if body.company:
+        message_parts.append(f"company={body.company}")
+    if body.message:
+        message_parts.append(f"message={body.message}")
+    message = " | ".join(message_parts)
+    conn.execute(
+        "INSERT INTO feedback (type, message, email) VALUES (?, ?, ?)",
+        ("intelligence_early_access", message, body.email),
+    )
+    conn.commit()
+    conn.close()
+
+    try:
+        from services.email_service import EmailService
+        html = f"""
+        <div style="font-family:Arial,sans-serif;padding:20px;background:#080c14;color:#e2e8f0">
+            <h2 style="color:#00d4ff">Intelligence API -- Early Access Request</h2>
+            <p><strong>Email:</strong> {body.email}</p>
+            <p><strong>Company:</strong> {body.company or 'N/A'}</p>
+            <p><strong>Tier interest:</strong> {body.tier_interest or 'unspecified'}</p>
+            <p><strong>Message:</strong> {body.message or 'N/A'}</p>
+        </div>
+        """
+        EmailService.send("abcoaj888@gmail.com", "[XFINLAB] Intelligence API early-access request", html)
+    except Exception:
+        pass
+
+    return _envelope(data={"received": True})
+
+
 @router.get("/intelligence/v1/events")
 def intelligence_events(
     request: Request,

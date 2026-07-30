@@ -405,6 +405,18 @@
         <div class="panel-title">Platform Features</div>
         <div id="flagsList"></div>
       </div>
+
+      <!-- 2026-07-30: Intelligence API "Request Early Access" submissions
+           (intelligence-api.html -> POST /api/intelligence/early-access ->
+           the shared `feedback` table, type="intelligence_early_access").
+           Lives on this same page since an admin toggling plan visibility
+           here is the same person who wants to see who's asking for
+           access. Reuses GET /feedback/list's type filter rather than a
+           new endpoint. -->
+      <div class="panel">
+        <div class="panel-title">Intelligence API — Early Access Requests</div>
+        <div id="earlyAccessList"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
     </div>
 
     <!-- Audit Log -->
@@ -498,6 +510,9 @@ const FLAGS_DESC = {
   google_login: 'Show "Sign in with Google" on login page (needs GOOGLE_CLIENT_ID env var)',
   line_login: 'Show "Login with LINE" on login page',
   whatsapp_otp: 'Show WhatsApp OTP login option',
+  intel_plan_free_visible: 'Show "Free" tier card on intelligence-api.html',
+  intel_plan_pro_visible: 'Show "Pro" tier card on intelligence-api.html',
+  intel_plan_enterprise_visible: 'Show "Enterprise" tier card on intelligence-api.html',
 };
 
 // Auto login
@@ -697,6 +712,35 @@ async function loadAuditLog() {
   }
 }
 
+async function loadEarlyAccessRequests() {
+  const el = document.getElementById('earlyAccessList');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/feedback/list?token=${adminToken}&type=intelligence_early_access`);
+    const data = await res.json();
+    if (!res.ok) {
+      el.innerHTML = `<div class="empty">Failed to load requests (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
+    const rows = data.feedback || [];
+    if (rows.length === 0) {
+      el.innerHTML = '<div class="empty">No early-access requests yet.</div>';
+      return;
+    }
+    el.innerHTML = rows.map(r => `
+      <div class="content-item" style="align-items:flex-start">
+        <div>
+          <div style="font-weight:600">${r.email || 'N/A'}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${r.message || ''}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">${r.created_at || ''}</div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="window.open('mailto:${r.email}')">Reply</button>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading early-access requests</div>';
+  }
+}
+
 async function loadFlags() {
   document.getElementById('flagsList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
   try {
@@ -809,7 +853,7 @@ function showPage(name) {
   if (name === 'health') loadHealth();
   if (name === 'users') loadUsers(1);
   if (name === 'trending') loadStats();
-  if (name === 'flags') loadFlags();
+  if (name === 'flags') { loadFlags(); loadEarlyAccessRequests(); }
   if (name === 'auditlog') loadAuditLog();
   if (name === 'security') loadSecurityScan();
   if (name === 'content') loadContentVariants();

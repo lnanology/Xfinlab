@@ -53,6 +53,16 @@ _DEFAULT_FLAGS = {
     "google_login": False,
     "line_login": False,
     "whatsapp_otp": False,
+    # 2026-07-30 (Intelligence API v1 "Request Early Access" landing page):
+    # lets the admin show/hide each pricing tier card on
+    # intelligence-api.html without a redeploy, e.g. hiding "Enterprise"
+    # until there's an actual reason to show it, or hiding "Free" once the
+    # early-access phase ends and every signup should go through sales
+    # conversation first. All default ON (matches this page's initial
+    # 3-tier launch state) -- toggle off individually as needed.
+    "intel_plan_free_visible": True,
+    "intel_plan_pro_visible": True,
+    "intel_plan_enterprise_visible": True,
 }
 
 def init_feature_flags_table():

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB Intelligence API — Events, Sentiment &amp; AI Debate for Developers</title>
+<meta name="description" content="A structured JSON API for market events, FinBERT sentiment, and multi-agent AI debate — built on real data, no fabricated numbers. Early access now open.">
+<link rel="canonical" href="https://www.xfinlab.com/intelligence-api.html">
+<!-- 2026-07-30: no hreflang block on this page (unlike the rest of the
+     site) -- this is a developer-facing product page, not consumer
+     content, and hasn't gone through the site's i18n pass yet. Follow-up
+     task if/when this product gets a public multi-language push. -->
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="XFINLAB Intelligence API — Events, Sentiment &amp; AI Debate">
+<meta property="og:description" content="A structured JSON API for market events, FinBERT sentiment, and multi-agent AI debate. Early access now open.">
+<meta property="og:url" content="https://www.xfinlab.com/intelligence-api.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/theme-toggle.js"></script>
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid var(--border-color);background:var(--bg-primary);display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-weight:700;font-size:1.05rem;color:var(--text-primary);text-decoration:none;display:flex;align-items:center}
+.nav-brand em{font-style:normal;color:var(--accent-blue)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-right a{font-size:0.85rem;color:var(--text-secondary);text-decoration:none}
+.container{max-width:980px;margin:0 auto;padding:0 20px;flex:1}
+.badge-pill{display:inline-block;padding:4px 12px;border-radius:99px;background:rgba(37,99,235,0.1);color:var(--accent-blue);font-size:0.72rem;font-weight:700;letter-spacing:0.03em;margin-bottom:16px}
+.hero{padding:56px 0 40px;text-align:center}
+.hero h1{font-size:2.1rem;font-weight:700;line-height:1.25;margin:0 0 14px}
+.hero p{font-size:1rem;color:var(--text-secondary);max-width:640px;margin:0 auto 26px;line-height:1.6}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--accent-blue);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-primary:hover{background:#1D4ED8}
+.btn-ghost{background:transparent;color:var(--text-primary);border:1px solid var(--border-color);padding:12px 24px;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer;text-decoration:none;display:inline-block}
+
+.section{padding:36px 0}
+.section-title{font-size:1.4rem;font-weight:700;margin:0 0 6px;text-align:center}
+.section-sub{color:var(--text-muted);font-size:0.88rem;text-align:center;margin:0 0 28px}
+
+.endpoints{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:820px){.endpoints{grid-template-columns:1fr}}
+.ep-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+.ep-tag{font-family:monospace;font-size:0.75rem;color:var(--accent-blue);background:rgba(37,99,235,0.1);padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:10px}
+.ep-name{font-weight:700;font-size:1rem;margin-bottom:6px}
+.ep-desc{font-size:0.83rem;color:var(--text-secondary);line-height:1.55}
+
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:820px){.plans{grid-template-columns:1fr}}
+.plan{background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:24px;display:flex;flex-direction:column}
+.plan.popular{border-color:var(--accent-blue);position:relative}
+.plan.popular::before{content:'MOST REQUESTED';position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--accent-blue);color:#fff;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;padding:3px 10px;border-radius:99px}
+.plan-name{font-weight:700;font-size:1.05rem;margin-bottom:4px}
+.plan-price{font-size:1.5rem;font-weight:700;margin:6px 0 4px}
+.plan-price small{font-size:0.7rem;font-weight:500;color:var(--text-muted)}
+.plan-desc{font-size:0.8rem;color:var(--text-muted);margin-bottom:14px;min-height:32px}
+.plan-features{list-style:none;padding:0;margin:0 0 18px;flex:1}
+.plan-features li{font-size:0.82rem;color:var(--text-secondary);padding:5px 0;display:flex;gap:8px}
+.plan-features li .check{color:var(--accent-green)}
+.plan-features li .cross{color:var(--text-muted)}
+.plan-btn{width:100%;text-align:center;padding:10px 0;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;border:1px solid var(--border-color);background:transparent;color:var(--text-primary)}
+.plan.popular .plan-btn{background:var(--accent-blue);color:#fff;border:none}
+
+.access-form{max-width:480px;margin:0 auto;background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:28px}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:5px}
+.form-row input,.form-row select,.form-row textarea{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-family:inherit;font-size:0.88rem}
+.form-row textarea{resize:vertical;min-height:64px}
+.form-submit{width:100%;padding:12px 0;border-radius:8px;border:none;background:var(--accent-blue);color:#fff;font-weight:700;font-size:0.9rem;cursor:pointer}
+.form-submit:disabled{opacity:0.6;cursor:not-allowed}
+.form-note{font-size:0.72rem;color:var(--text-muted);margin-top:10px;text-align:center;line-height:1.5}
+#accessMsg{font-size:0.85rem;margin-top:12px;text-align:center;display:none;padding:10px;border-radius:8px}
+#accessMsg.ok{display:block;background:rgba(16,185,129,0.1);color:var(--accent-green)}
+#accessMsg.err{display:block;background:rgba(239,68,68,0.1);color:var(--accent-red)}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center;font-size:0.8rem;color:var(--text-muted)}
+.footer a{color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <div class="nav-right">
+    <a href="index.html">← Back to XFINLAB</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="hero">
+    <span class="badge-pill">EARLY ACCESS</span>
+    <h1>Real market intelligence, structured for developers</h1>
+    <p>Three JSON endpoints — market events, FinBERT sentiment, and multi-agent AI debate — built on the same real data and anti-fabrication principles behind XFINLAB's own product. No self-serve signup yet: request access below and we'll set you up personally.</p>
+    <div class="hero-ctas">
+      <a href="#access" class="btn-primary">Request Early Access</a>
+      <a href="#endpoints" class="btn-ghost">See the endpoints</a>
+    </div>
+  </div>
+
+  <div class="section" id="endpoints">
+    <div class="section-title">Three endpoints, one API key</div>
+    <div class="section-sub">Every response is AI-structured JSON — never raw scraped article text.</div>
+    <div class="endpoints">
+      <div class="ep-card">
+        <span class="ep-tag">GET /v1/events</span>
+        <div class="ep-name">Events</div>
+        <div class="ep-desc">Recent market/company headlines by ticker or globally — title, source, publish time, and link. No fabricated summaries of articles we can't retain in full.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">GET /v1/sentiment</span>
+        <div class="ep-name">Sentiment</div>
+        <div class="ep-desc">FinBERT-scored sentiment across a ticker's recent headlines — per-headline label/confidence plus an aggregate score. Honestly reports "unavailable" rather than guessing when the model is unreachable.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">GET /v1/debate</span>
+        <div class="ep-name">AI Debate</div>
+        <div class="ep-desc">A 4-call Bull / Bear / Risk-Manager / Arbiter debate grounded in real technical data for a ticker — synthesized into one verdict. The most compute-intensive endpoint, weighted accordingly in quota.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Plans</div>
+    <div class="section-sub">V1 is early access — every plan is set up personally, not self-serve. Pricing isn't fixed yet; we're calibrating it with the first real developers using this.</div>
+    <div class="plans" id="plansGrid">
+
+      <div class="plan" id="plan-free" data-plan="free">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">$0</div>
+        <div class="plan-desc">For evaluating the API and prototyping.</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> 100 calls / day</li>
+          <li><span class="check">✓</span> Events + Sentiment endpoints</li>
+          <li><span class="cross">✕</span> AI Debate endpoint</li>
+          <li><span class="cross">✕</span> Priority support</li>
+        </ul>
+        <button class="plan-btn" onclick="selectPlan('free')">Get a Free Key</button>
+      </div>
+
+      <div class="plan popular" id="plan-pro" data-plan="pro">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">Contact us<br><small>usage-based, calibrating with early users</small></div>
+        <div class="plan-desc">For shipping a real integration.</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> 5,000 calls / day</li>
+          <li><span class="check">✓</span> All 3 endpoints, incl. AI Debate</li>
+          <li><span class="check">✓</span> Priority email support</li>
+          <li><span class="check">✓</span> Early say in the public roadmap</li>
+        </ul>
+        <button class="plan-btn" onclick="selectPlan('pro')">Request Early Access</button>
+      </div>
+
+      <div class="plan" id="plan-enterprise" data-plan="enterprise">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">Custom</div>
+        <div class="plan-desc">For higher volume or dedicated needs.</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Unlimited calls</li>
+          <li><span class="check">✓</span> All 3 endpoints, incl. AI Debate</li>
+          <li><span class="check">✓</span> Dedicated support</li>
+          <li><span class="check">✓</span> SLA on request</li>
+        </ul>
+        <button class="plan-btn" onclick="selectPlan('enterprise')">Contact Sales</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section" id="access">
+    <div class="section-title">Request Early Access</div>
+    <div class="section-sub">Tell us a bit about what you're building — we'll follow up personally with a key and, if it's a paid tier, pricing that fits.</div>
+
+    <form class="access-form" id="accessForm">
+      <div class="form-row">
+        <label for="accessEmail">Email *</label>
+        <input type="email" id="accessEmail" required placeholder="you@company.com">
+      </div>
+      <div class="form-row">
+        <label for="accessCompany">Company / project (optional)</label>
+        <input type="text" id="accessCompany" placeholder="e.g. Acme Trading Bot">
+      </div>
+      <div class="form-row">
+        <label for="accessTier">Which plan interests you?</label>
+        <select id="accessTier">
+          <option value="free">Free</option>
+          <option value="pro" selected>Pro</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="accessMessage">What are you building? (optional)</label>
+        <textarea id="accessMessage" placeholder="A quick sentence helps us set you up faster"></textarea>
+      </div>
+      <button type="submit" class="form-submit" id="accessSubmitBtn">Request Access</button>
+      <div id="accessMsg"></div>
+      <div class="form-note">No credit card, no automatic billing. We'll email you directly to follow up.</div>
+    </form>
+  </div>
+
+</div>
+
+<div class="footer">
+  © 2026 XFINLAB. <a href="index.html">Back to xfinlab.com</a> · <a href="mailto:support@xfinlab.com">support@xfinlab.com</a>
+</div>
+
+<script>
+const API = 'https://api.xfinlab.com/api';
+
+// 2026-07-30: which tier cards to show is admin-controlled (see
+// api/admin.py's intel_plan_*_visible flags, toggled in admin.html's
+// Feature Flags page) -- fetched here so a tier can be hidden without a
+// redeploy, e.g. hiding Enterprise until there's a real reason to show it.
+async function applyPlanVisibility() {
+  try {
+    const res = await fetch(`${API}/intelligence/plan-visibility`);
+    const data = await res.json();
+    const flags = (data && data.data) || {};
+    if (flags.free === false) document.getElementById('plan-free').style.display = 'none';
+    if (flags.pro === false) document.getElementById('plan-pro').style.display = 'none';
+    if (flags.enterprise === false) document.getElementById('plan-enterprise').style.display = 'none';
+  } catch (e) {
+    // Best-effort -- if this fails, all 3 plans stay visible (safe default).
+  }
+}
+applyPlanVisibility();
+
+function selectPlan(tier) {
+  document.getElementById('accessTier').value = tier;
+  document.getElementById('access').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('accessEmail').focus();
+}
+
+document.getElementById('accessForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('accessSubmitBtn');
+  const msgEl = document.getElementById('accessMsg');
+  msgEl.className = '';
+  msgEl.style.display = 'none';
+
+  const payload = {
+    email: document.getElementById('accessEmail').value.trim(),
+    company: document.getElementById('accessCompany').value.trim() || null,
+    tier_interest: document.getElementById('accessTier').value,
+    message: document.getElementById('accessMessage').value.trim() || null,
+  };
+
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  try {
+    const res = await fetch(`${API}/intelligence/early-access`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok && data.success !== false) {
+      msgEl.textContent = "Thanks — we'll follow up by email shortly.";
+      msgEl.className = 'ok';
+      document.getElementById('accessForm').reset();
+      document.getElementById('accessTier').value = 'pro';
+    } else {
+      msgEl.textContent = (data && data.detail) || 'Something went wrong — please try again.';
+      msgEl.className = 'err';
+    }
+  } catch (err) {
+    msgEl.textContent = 'Network error — please try again.';
+    msgEl.className = 'err';
+  }
+  msgEl.style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = 'Request Access';
+});
+</script>
+
+</body>
+</html>
