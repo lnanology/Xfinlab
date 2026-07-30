@@ -88,6 +88,11 @@ PATTERN_CONFIDENCE = {
     "p_abc": "low",
     "p_gap": "high",
     "p_island": "medium",
+    # 2026-07-30 addition -- rising/falling wedge, the one pattern from
+    # the user's "8 high-win-rate patterns" reference image with no
+    # existing detector at all (see _wedge_rising/_wedge_falling above).
+    "p_wedge_rising": "medium",
+    "p_wedge_falling": "medium",
 }
 
 # How far back (in bars) a pattern's most recent point may sit and still
@@ -419,6 +424,136 @@ def _broadening(highs: List[Dict], lows: List[Dict]) -> Tuple[str, str, List[Dic
     return _empty("高低位唔符合擴散形態")
 
 
+def _wedge_rising(highs: List[Dict], lows: List[Dict]) -> Tuple[str, str, List[Dict]]:
+    """Rising wedge: BOTH the swing-high and swing-low trendlines slope
+    upward, but resistance rises more slowly than support so the range
+    narrows over time -- a classic bearish reversal/continuation pattern.
+    Distinct from an ascending channel (_channel: same-direction slopes
+    but roughly PARALLEL, not narrowing) and from a symmetrical/ascending
+    triangle (_triangle: converges from opposite-sign slopes or one flat
+    side, not two same-direction sloped lines)."""
+    shape = _range_shape(highs, lows)
+    if not shape:
+        return _empty("高低位數量不足")
+    hs, ls, pts = shape
+    ref = (highs[-1]["price"] + lows[-1]["price"]) / 2
+    eps = ref * 0.003
+    if not (hs > eps and ls > eps):
+        return _empty("高低位並非同步向上")
+    if (ls - hs) <= eps:
+        return _empty("高低位闊度冇明顯收窄，屬於通道而非楔形")
+    return POSSIBLE, "高低位同步向上，但闊度持續收窄", pts
+
+
+def _wedge_falling(highs: List[Dict], lows: List[Dict]) -> Tuple[str, str, List[Dict]]:
+    """Falling wedge: BOTH trendlines slope downward but narrow over time
+    -- a classic bullish reversal/continuation pattern (mirror of the
+    rising wedge above)."""
+    shape = _range_shape(highs, lows)
+    if not shape:
+        return _empty("高低位數量不足")
+    hs, ls, pts = shape
+    ref = (highs[-1]["price"] + lows[-1]["price"]) / 2
+    eps = ref * 0.003
+    if not (hs < -eps and ls < -eps):
+        return _empty("高低位並非同步向下")
+    if (ls - hs) <= eps:
+        return _empty("高低位闊度冇明顯收窄，屬於通道而非楔形")
+    return POSSIBLE, "高低位同步向下，但闊度持續收窄", pts
+
+
+# 2026-07-30 addition ("呢D圖你可以量化加入圖表嗎" -- user posted a "8
+# high-win-rate patterns" reference image whose bullish/bearish variants
+# of triangle/channel/flag/pennant/rectangle are the SAME geometric shape
+# as an existing p_* check here, just with a directional bias the shared
+# 17-key verdict schema doesn't carry (that schema is intentionally kept
+# identical between this real-geometry path and the AI-vision upload path
+# -- see detect_patterns()'s own docstring -- so it isn't split into
+# separate per-direction keys). These helpers compute that extra bias as
+# a SEPARATE "pattern_directions" dict instead, additive and optional:
+# absent/None here changes nothing for any existing caller.
+def _pattern_direction_triangle(highs: List[Dict], lows: List[Dict]) -> Optional[str]:
+    shape = _range_shape(highs, lows)
+    if not shape:
+        return None
+    hs, ls, _ = shape
+    ref = (highs[-1]["price"] + lows[-1]["price"]) / 2
+    eps = ref * 0.003
+    high_flat = abs(hs) <= eps
+    low_flat = abs(ls) <= eps
+    if high_flat and ls > eps:
+        return "ascending"  # flat resistance + rising support -> bullish
+    if low_flat and hs < -eps:
+        return "descending"  # flat support + falling resistance -> bearish
+    if hs < -eps and ls > eps:
+        return "symmetrical"  # converging from both sides -> neutral
+    return None
+
+
+def _pattern_direction_channel(highs: List[Dict], lows: List[Dict]) -> Optional[str]:
+    shape = _range_shape(highs, lows)
+    if not shape:
+        return None
+    hs, ls, _ = shape
+    ref = (highs[-1]["price"] + lows[-1]["price"]) / 2
+    eps = ref * 0.003
+    if hs > eps and ls > eps:
+        return "ascending"
+    if hs < -eps and ls < -eps:
+        return "descending"
+    return None
+
+
+def _pattern_direction_rectangle(df: pd.DataFrame, highs: List[Dict], lows: List[Dict]) -> Optional[str]:
+    """Rectangle itself is flat/directionless by definition -- the
+    bullish/bearish label in reference material actually comes from the
+    TREND LEADING INTO the consolidation (an uptrend pausing vs a
+    downtrend pausing), not the rectangle's own geometry. Compares the
+    close at the start of the rectangle's own swing points against the
+    close ~20 bars earlier to read that prior trend."""
+    shape = _range_shape(highs, lows)
+    if not shape:
+        return None
+    count = 3
+    hh, ll = highs[-count:], lows[-count:]
+    start_idx = min(hh[0]["idx"], ll[0]["idx"])
+    prior_idx = max(0, start_idx - 20)
+    if start_idx <= prior_idx:
+        return None
+    closes = df["Close"]
+    base = float(closes.iloc[prior_idx])
+    if not base:
+        return None
+    prior_change = (float(closes.iloc[start_idx]) - base) / base
+    if prior_change > 0.04:
+        return "bull_continuation"
+    if prior_change < -0.04:
+        return "bear_continuation"
+    return None
+
+
+def _pattern_direction_impulse(df: pd.DataFrame) -> Optional[str]:
+    """Same impulse-leg check _flag_pennant() already does internally,
+    exposed standalone so detect_patterns() can label a confirmed
+    flag/pennant as bull (impulse up) or bear (impulse down) without
+    changing _flag_pennant()'s own return signature."""
+    closes = df["Close"]
+    n = len(closes)
+    impulse_bars = min(15, n - 1)
+    consolidation_bars = min(6, n - 1)
+    if n < impulse_bars + consolidation_bars + 1:
+        return None
+    pre = closes.iloc[-(impulse_bars + consolidation_bars):-consolidation_bars]
+    if not len(pre) or not pre.iloc[0]:
+        return None
+    impulse_pct = (pre.iloc[-1] - pre.iloc[0]) / pre.iloc[0]
+    if impulse_pct >= 0.06:
+        return "bull"
+    if impulse_pct <= -0.06:
+        return "bear"
+    return None
+
+
 def _breakback(df: pd.DataFrame, pivots: List[Dict], closes: pd.Series, last_idx: int) -> Tuple[str, str, List[Dict]]:
     """Breakout retest: price broke above a prior swing-high resistance and
     has since pulled back close to (without re-crossing below) that level."""
@@ -607,25 +742,40 @@ def _island(df: pd.DataFrame, lookback: int = 25) -> Tuple[str, str, List[Dict]]
     return _empty("兩個缺口之間唔構成孤島")
 
 
-def detect_patterns(df: pd.DataFrame) -> Tuple[Dict[str, str], Dict[str, List[Dict]]]:
+def detect_patterns(df: pd.DataFrame) -> Tuple[Dict[str, str], Dict[str, List[Dict]], Dict[str, str]]:
     """
     Main entry point. `df` is the SAME OHLC dataframe
     TechnicalAnalysisService.get_analysis() already fetched (DatetimeIndex,
     columns High/Low/Close) -- no extra network call.
 
-    Returns (verdicts, points):
-      verdicts -- {"p_double_top": "可能"|"不可能", ...} for all 17 keys,
-                  identical key names/values chart-analysis.html's upload
-                  flow already uses, so the existing frontend loop can
-                  render either flow's result unchanged.
+    Returns (verdicts, points, directions):
+      verdicts -- {"p_double_top": "可能"|"不可能", ...} for all 19 keys
+                  (17 original + p_wedge_rising/p_wedge_falling added
+                  2026-07-30), identical key names/values chart-analysis.
+                  html's upload flow already uses, so the existing
+                  frontend loop can render either flow's result unchanged.
       points   -- {"p_double_top": [{"time":..,"price":..}, ...], ...} only
                   for patterns that came back "可能" -- real chart
                   coordinates for the on-chart drawing overlay. Not shown
                   in today's text-only UI; harmless extra data otherwise.
+      directions -- {"p_triangle": "ascending"|"descending"|"symmetrical",
+                  "p_channel": "ascending"|"descending", "p_rectangle":
+                  "bull_continuation"|"bear_continuation", "p_flag"/
+                  "p_pennant": "bull"|"bear"} -- 2026-07-30 addition
+                  ("呢D圖你可以量化加入圖表嗎"): a SEPARATE, purely
+                  additive dict giving the bullish/bearish subtype the
+                  shared verdict schema doesn't carry (see
+                  _pattern_direction_* helpers above for why this is kept
+                  out of the verdict schema itself). Only populated for
+                  keys that came back "可能" AND have a clear direction;
+                  omitted (not present) otherwise -- the AI-vision upload
+                  flow has no equivalent, so callers must treat a missing
+                  key here as "no directional read available", not an
+                  error.
     """
     if df is None or df.empty or len(df) < 15:
         keys = list(PATTERN_CONFIDENCE.keys())
-        return {k: NOT_POSSIBLE for k in keys}, {}
+        return {k: NOT_POSSIBLE for k in keys}, {}, {}
 
     all_pivots = _pivots(df)
     last_idx = len(df) - 1
@@ -657,6 +807,8 @@ def detect_patterns(df: pd.DataFrame) -> Tuple[Dict[str, str], Dict[str, List[Di
     _set("p_abc", _abc(highs, lows, last_idx))
     _set("p_gap", _gap(df))
     _set("p_island", _island(df))
+    _set("p_wedge_rising", _wedge_rising(highs, lows))
+    _set("p_wedge_falling", _wedge_falling(highs, lows))
 
     flag_verdict, pennant_verdict, fp_detail, fp_pts = _flag_pennant(df, highs, lows, last_idx)
     verdicts["p_flag"] = flag_verdict
@@ -666,4 +818,28 @@ def detect_patterns(df: pd.DataFrame) -> Tuple[Dict[str, str], Dict[str, List[Di
     if pennant_verdict == POSSIBLE and fp_pts:
         points["p_pennant"] = fp_pts
 
-    return verdicts, points
+    # 2026-07-30 addition: bullish/bearish subtype for the shape checks
+    # whose reference-image variants share ONE geometric verdict key here
+    # (see detect_patterns()'s own docstring above for why this is a
+    # separate dict rather than new p_* keys).
+    directions: Dict[str, str] = {}
+    if verdicts.get("p_triangle") == POSSIBLE:
+        d = _pattern_direction_triangle(highs, lows)
+        if d:
+            directions["p_triangle"] = d
+    if verdicts.get("p_channel") == POSSIBLE:
+        d = _pattern_direction_channel(highs, lows)
+        if d:
+            directions["p_channel"] = d
+    if verdicts.get("p_rectangle") == POSSIBLE:
+        d = _pattern_direction_rectangle(df, highs, lows)
+        if d:
+            directions["p_rectangle"] = d
+    impulse_dir = _pattern_direction_impulse(df)
+    if impulse_dir:
+        if flag_verdict == POSSIBLE:
+            directions["p_flag"] = impulse_dir
+        if pennant_verdict == POSSIBLE:
+            directions["p_pennant"] = impulse_dir
+
+    return verdicts, points, directions

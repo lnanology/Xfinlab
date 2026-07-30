@@ -249,10 +249,10 @@ class TechnicalAnalysisService:
         # posture as _market_structure returning None on insufficient
         # data, just guarding against an unexpected exception instead).
         try:
-            chart_patterns, chart_pattern_points = _detect_chart_patterns(df)
+            chart_patterns, chart_pattern_points, chart_pattern_directions = _detect_chart_patterns(df)
         except Exception:
             logger.exception("chart_pattern_service.detect_patterns failed for %s", symbol)
-            chart_patterns, chart_pattern_points = {}, {}
+            chart_patterns, chart_pattern_points, chart_pattern_directions = {}, {}, {}
 
         return {
             "symbol": symbol.upper(),
@@ -279,6 +279,7 @@ class TechnicalAnalysisService:
             "market_structure": market_structure,
             "patterns": chart_patterns,
             "pattern_points": chart_pattern_points,
+            "pattern_directions": chart_pattern_directions,
             "data_points": len(df),
             "period": period,
             "interval": interval,

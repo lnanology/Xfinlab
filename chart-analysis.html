@@ -541,7 +541,7 @@ async function setKlineTimeframe(symbol, tf, btnEl) {
       safeSetText('patternSummary', tfPatternCount > 0
         ? t('ca_pattern_detected_search','根據真實走勢幾何運算，偵測到若干可能型態')
         : t('ca_pattern_not_detected_search','根據真實走勢幾何運算，未偵測到明顯型態'));
-      renderPatternDetails(tfPatterns);
+      renderPatternDetails(tfPatterns, json.data.pattern_directions || {});
       drawPatternOverlays(json.data.pattern_points || {});
     }
   } catch (e) {
@@ -622,6 +622,9 @@ const PATTERN_OVERLAY_COLORS = {
   p_broadening: '#DB2777', p_breakback: '#0EA5E9', p_0618: '#8B5CF6',
   p_flag: '#059669', p_pennant: '#65A30D', p_cup_handle: '#D946EF',
   p_diamond: '#E11D48', p_abc: '#CA8A04', p_gap: '#F97316', p_island: '#0891B2',
+  // 2026-07-30 addition ("呢D圖你可以量化加入圖表嗎"): rising/falling wedge,
+  // see services/chart_pattern_service.py's _wedge_rising/_wedge_falling.
+  p_wedge_rising: '#991B1B', p_wedge_falling: '#166534',
 };
 
 // 2026-07-27 addition ("可以自由按導航框開關去顯示形態"): per-pattern
@@ -755,7 +758,31 @@ function hideSearchError() {
 // can fill in the patternList table regardless of which flow produced it.
 const PATTERN_KEYS = ['p_double_top','p_double_bottom','p_head_shoulder_top','p_head_shoulder_bottom',
   'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
-  'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island'];
+  'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island',
+  'p_wedge_rising','p_wedge_falling'];
+
+// 2026-07-30 addition ("呢D圖你可以量化加入圖表嗎" -- user's reference image
+// labelled bullish/bearish variants of triangle/channel/flag/pennant/
+// rectangle): services/chart_pattern_service.py's detect_patterns() now
+// also returns a separate res.pattern_directions dict (only for the
+// real-geometry search flow -- the AI-vision upload flow has no
+// equivalent, so this is always {} there and the suffix below simply
+// never appears for that flow). Maps each direction code to an i18n key.
+const PATTERN_DIRECTION_I18N = {
+  ascending: 'ca_dir_ascending',
+  descending: 'ca_dir_descending',
+  symmetrical: 'ca_dir_symmetrical',
+  bull: 'ca_dir_bull',
+  bear: 'ca_dir_bear',
+  bull_continuation: 'ca_dir_bull_continuation',
+  bear_continuation: 'ca_dir_bear_continuation',
+};
+function patternDirectionSuffix(key, directions) {
+  const code = (directions || {})[key];
+  const i18nKey = code && PATTERN_DIRECTION_I18N[code];
+  if (!i18nKey) return '';
+  return ` (${t(i18nKey, code)})`;
+}
 
 // 2026-07-27 fix ("全部要加語言"): the backend's 可能/不可能 verdict
 // literals are shared, unchanged business-logic strings used internally
@@ -792,8 +819,13 @@ function fitCardText(el, maxPx, minPx) {
 // on top and the (translated) verdict as an "answer" below, both
 // centered -- replacing the old two-span "label：value" row layout.
 // Shared by both flows exactly as before (upload's AI-vision result and
-// search's real-geometry result use the same 17 keys/literals).
-function renderPatternDetails(patterns) {
+// search's real-geometry result use the same key/literal set).
+// 2026-07-30: added optional `directions` param (res.pattern_directions,
+// search flow only) -- appends a bull/bear/ascending/descending suffix
+// to the question label when available; omitted entirely for the
+// upload flow (always called with {} or undefined there), so nothing
+// changes for that path.
+function renderPatternDetails(patterns, directions) {
   const list = document.getElementById('patternList');
   if (!list) return;
   const hasData = !!(patterns && Object.keys(patterns).length);
@@ -810,7 +842,8 @@ function renderPatternDetails(patterns) {
 
     const q = document.createElement('span');
     q.className = 'pattern-qa-q';
-    q.textContent = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+    const dirSuffix = isPossible ? patternDirectionSuffix(key, directions) : '';
+    q.textContent = t(`ca_${key}`, key).replace(/[:：]\s*$/, '') + dirSuffix;
 
     const a = document.createElement('span');
     a.id = key; // kept for any future direct-id lookups; harmless otherwise
@@ -986,7 +1019,7 @@ async function runTickerSearch(symbolOverride){
     safeSetText('patternSummary', searchPatternCount > 0
       ? t('ca_pattern_detected_search','根據真實走勢幾何運算，偵測到若干可能型態')
       : t('ca_pattern_not_detected_search','根據真實走勢幾何運算，未偵測到明顯型態'));
-    renderPatternDetails(searchPatterns);
+    renderPatternDetails(searchPatterns, res.pattern_directions || {});
     window.__lastChartPatternPoints = res.pattern_points || {};
 
     // 2026-07-20 fix ("風險提示/建議 按「產生AI文字解讀」查看，未做好"):
