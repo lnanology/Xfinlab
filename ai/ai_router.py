@@ -63,12 +63,17 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
                      this is only used where a caller explicitly passes
                      provider="openrouter" or AI_PROVIDER=openrouter is
                      set in the environment.
+        kimi       → 2026-07-30 addition: Moonshot AI's Kimi K2.6 (open-
+                     weight, Modified MIT license), served via DeepInfra --
+                     same DEEPINFRA_API_KEY already used by _deepseek(),
+                     no new account/key needed. See _kimi()'s docstring.
+                     Purely additive, same as openrouter above.
 
     Args:
         prompt: The prompt to send
         max_tokens: Max response tokens
-        provider: optional override ("groq"/"deepseek"/"claude"); defaults
-            to the AI_PROVIDER env var when omitted
+        provider: optional override ("groq"/"deepseek"/"claude"/"kimi");
+            defaults to the AI_PROVIDER env var when omitted
 
     Returns:
         str: AI response text
@@ -84,8 +89,10 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
         return _claude(prompt, max_tokens)
     elif provider == "openrouter":
         return _openrouter(prompt, max_tokens)
+    elif provider == "kimi":
+        return _kimi(prompt, max_tokens)
     else:
-        raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude / openrouter")
+        raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude / openrouter / kimi")
 
 
 VISION_PROVIDER = os.getenv("VISION_PROVIDER", "gemini")
@@ -321,6 +328,51 @@ def _openrouter(prompt: str, max_tokens: int, _retry: int = 1) -> str:
     if res.status_code in (429, 503) and _retry > 0:
         time.sleep(3)
         return _openrouter(prompt, max_tokens, _retry=_retry - 1)
+    data = res.json()
+    usage = data.get("usage", {}).get("total_tokens")
+    if usage:
+        _LAST_USAGE_TOKENS["value"] = usage
+    return data["choices"][0]["message"]["content"].strip()
+
+
+def _kimi(prompt: str, max_tokens: int, _retry: int = 1) -> str:
+    """
+    2026-07-30 addition: Moonshot AI's Kimi K2.6 -- an open-weight
+    (Modified MIT license) agentic/reasoning model, served via DeepInfra's
+    OpenAI-compatible endpoint under the SAME DEEPINFRA_API_KEY already
+    used by _deepseek() above. No new account or key needed to try this --
+    it's literally the same transport, different `model` string.
+
+    Model id is DeepInfra's catalog id (moonshotai/Kimi-K2.6), configurable
+    via KIMI_MODEL if a newer/cheaper Kimi version becomes available later
+    without needing a code change.
+
+    Same retry-once-on-429/503 behavior as _deepseek()/_openrouter() --
+    DeepInfra publishes no hard rate-limit/SLA guarantee for this tier.
+
+    Purely additive: only reached when a caller explicitly passes
+    provider="kimi" or AI_PROVIDER=kimi is set -- every existing
+    groq/deepseek/claude/openrouter call site is untouched.
+    """
+    import time
+    import requests
+    headers = {
+        "Authorization": f"Bearer {os.getenv('DEEPINFRA_API_KEY')}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": os.getenv("KIMI_MODEL", "moonshotai/Kimi-K2.6"),
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": max_tokens,
+        "temperature": 0.3,
+    }
+    res = requests.post(
+        "https://api.deepinfra.com/v1/openai/chat/completions",
+        json=payload, headers=headers, timeout=30,
+    )
+    if res.status_code in (429, 503) and _retry > 0:
+        time.sleep(3)
+        return _kimi(prompt, max_tokens, _retry=_retry - 1)
     data = res.json()
     usage = data.get("usage", {}).get("total_tokens")
     if usage:
