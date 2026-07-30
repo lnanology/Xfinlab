@@ -275,12 +275,12 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </details>
 
     <details class="xfl-accordion" id="historicalAnalogAccordion" style="display:none">
-      <summary>▶ 歷史類比 Historical Analog</summary>
+      <summary data-i18n="aa_analog_title">▶ 歷史類比 Historical Analog</summary>
       <div class="xfl-accordion-body" id="historicalAnalogBody">-</div>
     </details>
 
     <details class="xfl-accordion" id="scenarioAccordion" style="display:none">
-      <summary>▶ 情境分析 Scenario Lab</summary>
+      <summary data-i18n="aa_scenario_title">▶ 情境分析 Scenario Lab</summary>
       <div class="xfl-accordion-body">
         <div class="dash-grid" style="grid-template-columns:repeat(3,1fr)">
           <div class="dash-cell"><div class="dash-cell-label">Bull</div><div class="dash-cell-value" id="scenBullTarget">-</div><div class="score-sub" id="scenBullProb">-</div></div>
@@ -292,12 +292,12 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     </details>
 
     <details class="xfl-accordion" id="newsTimelineAccordion" style="display:none">
-      <summary>▶ 新聞時間軸 News Timeline</summary>
+      <summary data-i18n="aa_news_timeline_title">▶ 新聞時間軸 News Timeline</summary>
       <div class="xfl-accordion-body" id="newsTimelineBody">-</div>
     </details>
 
     <details class="xfl-accordion" id="relatedResearchAccordion" style="display:none">
-      <summary>▶ 相關研究 Related Research</summary>
+      <summary data-i18n="aa_related_research_title">▶ 相關研究 Related Research</summary>
       <div class="xfl-accordion-body" id="relatedResearchBody">-</div>
     </details>
 
@@ -306,7 +306,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
          services/agent_debate_service.py). Never shown as a broken
          button. -->
     <details class="xfl-accordion" id="debateAccordion" style="display:none">
-      <summary>▶ 🗣️ AI辯論 Agent Debate</summary>
+      <summary data-i18n="aa_debate_title">▶ 🗣️ AI辯論 Agent Debate</summary>
       <div class="xfl-accordion-body">
         <button type="button" id="debateRunBtn" class="primary-btn" style="height:38px;padding:0 14px">開始辯論</button>
         <div id="debateBody" style="margin-top:0.8rem"></div>
@@ -649,37 +649,54 @@ async function runAnalysis(){
       (!(reasons.bullish || []).length && !(reasons.bearish || []).length) ? 'block' : 'none';
 
     // ---- support/resistance accordion ----
+    // 2026-07-30 fix ("做咩又有不同語言 全網跟進" -- this whole render
+    // function was hardcoded Traditional Chinese with no data-i18n/tr()
+    // wiring at all, so switching the site to English never translated
+    // this section. Uses the same tr(key, fallback) pattern already used
+    // by renderSmartBeta()/renderShippingProxy()/renderKlineChart() above.
+    const tr2 = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
     const sr = data.support_resistance || {};
     const srBody = document.getElementById('supportResistanceBody');
     if (sr.support || sr.resistance) {
+      const touchLine = (n) => tr2('aa_sr_touch_count', '（觸及 {n} 次）').replace('{n}', n);
       srBody.innerHTML = `
-        ${sr.support ? `<div>支撐位：${sr.support.level}（觸及 ${sr.support.touches} 次）</div>` : ''}
-        ${sr.resistance ? `<div>阻力位：${sr.resistance.level}（觸及 ${sr.resistance.touches} 次）</div>` : ''}
+        ${sr.support ? `<div>${tr2('ca_support', '支撐位')}：${sr.support.level}${touchLine(sr.support.touches)}</div>` : ''}
+        ${sr.resistance ? `<div>${tr2('ca_resistance', '阻力位')}：${sr.resistance.level}${touchLine(sr.resistance.touches)}</div>` : ''}
       `;
     } else {
-      srBody.textContent = '暫無足夠數據推算支持阻力位。';
+      srBody.textContent = tr2('aa_sr_no_data', '暫無足夠數據推算支持阻力位。');
     }
 
     // ---- Tier 3: Historical Analog (honest replacement for a fabricated
     // macro-shock slider -- see services/historical_analog_service.py) ----
+    // 2026-07-30 fix: same issue -- body text was 100% hardcoded Chinese,
+    // AND the backend endpoint itself had no lang param at all (see
+    // services/historical_analog_service.py), so even passing lang here
+    // only fixes half the problem; the ?lang= param below is now honored
+    // server-side too (regime_label/methodology/error text all translated).
+    const analogLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
     const analogAccordion = document.getElementById('historicalAnalogAccordion');
     const analogBody = document.getElementById('historicalAnalogBody');
     if (symbols.length) {
       analogAccordion.style.display = 'block';
-      analogBody.textContent = '計算緊...';
-      fetch(`${API_BASE}/api/historical-analog/${encodeURIComponent(symbols[0])}`)
+      analogBody.textContent = tr2('aa_analog_calculating', '計算緊...');
+      fetch(`${API_BASE}/api/historical-analog/${encodeURIComponent(symbols[0])}?lang=${encodeURIComponent(analogLang)}`)
         .then(r => r.json())
         .then(a => {
           if (a.error) { analogBody.textContent = a.error; return; }
-          if (!a.match_count) { analogBody.textContent = a.note || '暫無足夠歷史類比。'; return; }
+          if (!a.match_count) { analogBody.textContent = a.note || tr2('aa_analog_fetch_error', '暫無足夠歷史類比。'); return; }
+          const regimeLine = tr2('aa_analog_regime_line', '市況組合：{label}（過去出現 {n} 次）').replace('{label}', a.regime_label).replace('{n}', a.match_count);
+          const winRateLine = tr2('aa_analog_win_rate_line', '之後{days}日勝率：{pct}%').replace('{days}', a.forward_days).replace('{pct}', a.win_rate_pct);
+          const avgReturnLine = tr2('aa_analog_avg_return_line', '平均回報：{pct}%（最好 {best}% / 最差 {worst}%）')
+            .replace('{pct}', a.avg_forward_return_pct).replace('{best}', a.best_forward_return_pct).replace('{worst}', a.worst_forward_return_pct);
           analogBody.innerHTML = `
-            <div>市況組合：${a.regime_label}（過去出現 ${a.match_count} 次）</div>
-            <div>之後${a.forward_days}日勝率：${a.win_rate_pct}%</div>
-            <div>平均回報：${a.avg_forward_return_pct}%（最好 ${a.best_forward_return_pct}% / 最差 ${a.worst_forward_return_pct}%）</div>
+            <div>${regimeLine}</div>
+            <div>${winRateLine}</div>
+            <div>${avgReturnLine}</div>
             <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem">${a.methodology || ''}</div>
           `;
         })
-        .catch(() => { analogBody.textContent = '暫時無法計算歷史類比。'; });
+        .catch(() => { analogBody.textContent = tr2('aa_analog_fetch_error', '暫時無法計算歷史類比。'); });
     } else {
       analogAccordion.style.display = 'none';
     }
