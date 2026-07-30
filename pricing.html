@@ -528,12 +528,25 @@ function applyRegionalPricing() {
   const proEl = document.getElementById('proPrice');
   if (basicEl) basicEl.textContent = '$' + (isAnnual ? prices.basic * ANNUAL_MULTIPLIER : prices.basic);
   if (proEl) proEl.textContent = '$' + (isAnnual ? prices.pro * ANNUAL_MULTIPLIER : prices.pro);
-  // A regional discount and the $29->$18 intro-price strike are two
-  // different discount stories -- showing both at once ("$29 -> $18,
-  // also 50% off") would be confusing, so the strike/badge switches to a
-  // single regional message instead of stacking on top of the promo one.
+  // 2026-07-30 fix ("而家係台灣顯示$14，加返個$29有一劃減咁"): previously
+  // this HID the $29 strike for regional users, on the theory that "$29
+  // -> $14, also regional" was a confusing double-discount story. Explicit
+  // instruction reversed that -- the $29 list-price anchor should always
+  // be visible struck through, no matter which price it discounts down
+  // to (the global $18 intro price OR a regional price like Taiwan's
+  // $14), since the anchor itself is what makes ANY of these prices read
+  // as a deal. Keep it visible and set it to the correct list-price
+  // figure for the current billing cycle (annual multiplies it same as
+  // toggleBilling() does).
   const strikeEl = document.getElementById('proPriceStrike');
-  if (strikeEl) strikeEl.style.display = 'none';
+  if (strikeEl) {
+    strikeEl.style.display = '';
+    strikeEl.textContent = '$' + (isAnnual ? PRO_LIST_PRICE * ANNUAL_MULTIPLIER : PRO_LIST_PRICE);
+  }
+  // Badge wording unchanged (still "pricing_regional_badge", already
+  // translated across all 47 languages from the original regional-pricing
+  // build) -- today's fix is scoped to the strike-through only, not a
+  // copy change, so the existing translated string is left exactly as is.
   const badgeEl = document.querySelector('.promo-badge');
   if (badgeEl) badgeEl.textContent = t('pricing_regional_badge', '🌍 Regional pricing for your area');
 }
