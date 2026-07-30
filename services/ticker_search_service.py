@@ -46,6 +46,7 @@ site here to swap in a drop-in wrapper. The TTL cache addresses the same
 underlying risk (repeated outbound load) from a different angle instead.
 """
 import logging
+import re
 import time
 
 try:
@@ -54,6 +55,30 @@ except Exception:
     yf = None
 
 logger = logging.getLogger(__name__)
+
+_NUMERIC_RE = re.compile(r"^\d+$")
+
+
+def _numeric_exchange_candidates(query: str):
+    """2026-07-30 addition ("打0544 滑出全世界0544嘅相關代號"): for a bare
+    numeric query, Yahoo's own search index doesn't always resolve a plain
+    number to the exchange-suffixed ticker a user actually means -- e.g.
+    "0544" needs to become "0544.HK" before Yahoo's lookup recognizes it
+    as Daido Group Limited. Mirrors the exact same heuristic js/
+    autocomplete.js's normalizeGlobalTicker() already applies client-side
+    for the "Analyze" button (HK 4-digit codes, mainland China 6-digit
+    Shanghai/Shenzhen codes) so the LIVE search dropdown can surface a
+    real match even when the raw numeric query alone doesn't."""
+    candidates = []
+    if len(query) <= 5:
+        candidates.append(query.zfill(4) + ".HK")
+    elif len(query) == 6:
+        first = query[0]
+        if first == "6":
+            candidates.append(query + ".SS")
+        elif first in ("0", "3"):
+            candidates.append(query + ".SZ")
+    return candidates
 
 _TYPE_MAP = {
     "EQUITY": "stock",
@@ -101,6 +126,39 @@ def _cache_set(cache_key: str, results) -> None:
     _CACHE[cache_key] = {"results": results, "fetched_at": time.time()}
 
 
+def _lookup_one(candidate: str, limit: int = 1):
+    """Run a single yf.Lookup() call and normalize its rows into this
+    module's result dict shape. Returns [] on any failure/empty result --
+    never raises, so callers can use this for best-effort supplementary
+    lookups without their own try/except boilerplate."""
+    try:
+        lookup = yf.Lookup(candidate, raise_errors=False)
+        df = lookup.get_all(count=limit)
+        if df is None or df.empty:
+            return []
+        df = df.reset_index()
+        rows = []
+        for _, row in df.iterrows():
+            row = row.to_dict()
+            symbol = _first_present(row, ["symbol", "Symbol", "index"])
+            if not symbol:
+                continue
+            name = _first_present(row, ["shortName", "longName", "name"], symbol)
+            quote_type = str(_first_present(row, ["quoteType", "type"], "")).upper()
+            exchange = _first_present(row, ["exchange", "exchDisp", "fullExchangeName"])
+            rows.append({
+                "symbol": symbol,
+                "name": name,
+                "type": _TYPE_MAP.get(quote_type, "stock"),
+                "exchange": exchange,
+            })
+            if len(rows) >= limit:
+                break
+        return rows
+    except Exception:
+        return []
+
+
 def search_global_assets(query: str, limit: int = 8):
     query = (query or "").strip()
     if not query or yf is None:
@@ -111,40 +169,37 @@ def search_global_assets(query: str, limit: int = 8):
     if cached is not None:
         return cached
 
-    try:
-        lookup = yf.Lookup(query, raise_errors=False)
-        df = lookup.get_all(count=limit)
-        if df is None or df.empty:
-            logger.info("ticker_search: zero results (query_len=%d)", len(query))
-            _cache_set(cache_key, [])
-            return []
+    results = _lookup_one(query, limit=limit)
 
-        df = df.reset_index()
-        results = []
-        for _, row in df.iterrows():
-            row = row.to_dict()
-            symbol = _first_present(row, ["symbol", "Symbol", "index"])
-            if not symbol:
+    # 2026-07-30 addition: a bare numeric query (e.g. "0544") often isn't
+    # resolved by Yahoo's own lookup until it's suffixed with the exchange
+    # a user actually means (see _numeric_exchange_candidates()'s
+    # docstring). Try those candidates too and merge in any real match not
+    # already found above, so the dropdown can surface e.g. "0544.HK
+    # Daido Group" even when the raw numeric lookup alone came back empty
+    # or found something unrelated. Best-effort: never raises, and this
+    # whole result (main + candidates) is cached together under the
+    # original query so repeat keystrokes don't re-pay this extra call.
+    if _NUMERIC_RE.match(query):
+        known_symbols = {r["symbol"].upper() for r in results}
+        for candidate in _numeric_exchange_candidates(query):
+            if candidate.upper() in known_symbols:
                 continue
-            name = _first_present(row, ["shortName", "longName", "name"], symbol)
-            quote_type = str(_first_present(row, ["quoteType", "type"], "")).upper()
-            exchange = _first_present(row, ["exchange", "exchDisp", "fullExchangeName"])
-            results.append({
-                "symbol": symbol,
-                "name": name,
-                "type": _TYPE_MAP.get(quote_type, "stock"),
-                "exchange": exchange,
-            })
-            if len(results) >= limit:
-                break
-        _cache_set(cache_key, results)
-        return results
-    except Exception as e:
-        # Best-effort supplement -- never let a Yahoo/yfinance hiccup
-        # break the autocomplete experience; the local curated list
-        # still works either way. Logged (not silently swallowed) so a
-        # persistent failure pattern -- e.g. Yahoo throttling this
-        # endpoint -- is visible instead of just looking like "no
-        # results" forever.
-        logger.info("ticker_search: search_global_assets failed (query_len=%d): %s", len(query), e)
+            extra = _lookup_one(candidate, limit=1)
+            for r in extra:
+                if r["symbol"].upper() not in known_symbols:
+                    known_symbols.add(r["symbol"].upper())
+                    # Put the exchange-normalized exact match first -- it's
+                    # almost always what the user meant by a bare number,
+                    # more so than an unrelated fuzzy text match Yahoo's
+                    # raw lookup might have returned instead.
+                    results.insert(0, r)
+
+    if not results:
+        logger.info("ticker_search: zero results (query_len=%d)", len(query))
+        _cache_set(cache_key, [])
         return []
+
+    results = results[:limit]
+    _cache_set(cache_key, results)
+    return results
