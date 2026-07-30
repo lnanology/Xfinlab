@@ -286,6 +286,59 @@ _LICENSES: Dict[str, LicenseRecord] = {
         ),
         replacement_candidates=["oilpriceapi_baltic_dry_index"],
     ),
+    # 2026-07-31: added after the user asked to add Polygon.io and Twelve
+    # Data as free-tier rotation candidates alongside Alpaca. Both
+    # providers' free tiers turned out to be personal/non-commercial-use
+    # only on review (see notes below) -- same class of risk already
+    # flagged for yahoo_finance above. Per an explicit decision with the
+    # user, both are gated to dev/test-only usage in the new
+    # services/dev_data_rotation_service.py harness (never imported by
+    # api/*.py or backend/main.py) rather than wired into production.
+    "polygon_io": LicenseRecord(
+        source_id="polygon_io",
+        license_type="non_commercial",
+        commercial_use_allowed=False,
+        terms_url="https://massive.com/terms/market_data_terms.pdf",
+        risk_level="high",
+        notes=(
+            "Free 'Basic' tier: end-of-day/delayed data, 5 calls/minute, "
+            "no credit card. Polygon's (now rebranded Massive.com) Market "
+            "Data ToS states any business/professional/commercial use is "
+            "incompatible with 'Non-Professional' status -- even on "
+            "behalf of an organization outside the securities industry. "
+            "XFINLAB is a commercial product serving real end users, so "
+            "the free tier alone does not license production use; a paid "
+            "Business-tier plan would be required first. NOT wired into "
+            "any production route -- used only in services/"
+            "dev_data_rotation_service.py (gated behind "
+            "ALLOW_DEV_DATA_ROTATION=true) to validate the rotation/rate-"
+            "limit engineering pattern with real API responses."
+        ),
+        replacement_candidates=["polygon_io_business_tier"],
+    ),
+    "twelve_data": LicenseRecord(
+        source_id="twelve_data",
+        license_type="non_commercial",
+        commercial_use_allowed=False,
+        terms_url="https://twelvedata.com/terms",
+        risk_level="high",
+        notes=(
+            "Free 'Basic' plan: 8 calls/minute, 800 calls/day, covers US "
+            "equities/forex/crypto. Twelve Data's own terms state free-"
+            "subscription users 'may only use the Services for personal, "
+            "non-commercial purposes and may not display or distribute "
+            "Twelve Data Services to third parties in any manner' -- an "
+            "explicit third-party-display bar that XFINLAB's product "
+            "(displaying data to free and paying end users) would breach "
+            "on the free tier. Their Business plan (from $29/month) is "
+            "required for commercial display/internal use. NOT wired "
+            "into any production route -- used only in services/"
+            "dev_data_rotation_service.py (gated behind "
+            "ALLOW_DEV_DATA_ROTATION=true), same treatment as polygon_io "
+            "above."
+        ),
+        replacement_candidates=["twelve_data_business_tier"],
+    ),
     "oilpriceapi_baltic_dry_index": LicenseRecord(
         source_id="oilpriceapi_baltic_dry_index",
         license_type="unknown",
