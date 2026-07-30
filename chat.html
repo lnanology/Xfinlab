@@ -156,6 +156,24 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 .msg-bubble table{border-collapse:collapse;width:100%;margin:0.5rem 0;font-size:0.88rem}
 .msg-bubble th{background:var(--bg-secondary);color:var(--accent-blue);padding:0.4rem 0.6rem;text-align:left;border:1px solid var(--border-color)}
 .msg-bubble td{padding:0.35rem 0.6rem;border:1px solid var(--border-color);color:var(--text-secondary)}
+
+/* 2026-07-30 (Paddle compliance): on-demand asset card -- shown only
+   after the user's question resolves to a specific ticker (never
+   proactively), pulling REAL data from the public /api/ai-analysis
+   endpoint. Deliberately shows only a descriptive probability bar
+   (Bullish/Neutral/Bearish %) and two plain structural price levels
+   (Key Level / Reference Level) -- no Entry/Stop Loss/Take Profit/
+   Risk-Reward framing, matching the same deep-rewrite already applied
+   to chart-analysis.html/ai-analysis.html/js/decision-footer.js this
+   session. Available to logged-out users too, since the underlying
+   endpoint fields are already ungated. */
+.chat-asset-card{margin-top:0.7rem;padding:0.8rem 0.9rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary)}
+.chat-asset-card-head{font-size:0.78rem;font-weight:700;color:var(--accent-blue);margin-bottom:0.5rem}
+.chat-asset-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--border-color);margin-bottom:0.4rem}
+.chat-asset-bar-seg{height:100%}
+.chat-asset-bar-legend{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem}
+.chat-asset-levels{display:flex;gap:1.2rem;font-size:0.8rem;color:var(--text-secondary)}
+.chat-asset-levels b{color:var(--text-primary);font-family:monospace}
 .msg-bubble tr:hover td{background:var(--bg-secondary)}
 .msg-bubble .disclaimer{font-size:0.82rem;color:var(--text-muted);border-top:1px solid var(--border-color);margin-top:0.8rem;padding-top:0.6rem}
 
@@ -622,6 +640,86 @@ const TICKER_PAREN_RE_SRC = '[\\(（]\\s*([A-Z]{1,6}(?:\\.[A-Z]{1,3})?)\\s*[\\)�
 function analyzeTickerMention(ticker) {
   if (typeof isLoading !== 'undefined' && isLoading) return;
   sendQuick(`分析 ${ticker}`);
+}
+
+// 2026-07-30 (Paddle compliance): "用戶按卡片或CHAT發問先出" -- an on-demand
+// (never proactive) asset card, shown only once the AI's own answer has
+// resolved to a specific ticker (reusing the SAME TICKER_PAREN_RE_SRC
+// regex already used for ticker-mention linkification above, so a
+// mention of e.g. "AstraZeneca（AZN）" is what triggers it -- a broad
+// multi-asset market question with no single resolvable ticker never
+// shows a card). Calls the public /api/ai-analysis endpoint directly
+// (not postApi(), to skip the global full-screen loading overlay for
+// what should feel like a quiet background enrichment, not a second
+// "AI thinking" moment) and renders only a descriptive probability bar
+// + two plain structural price levels -- deliberately no Entry/Stop
+// Loss/Take Profit/Risk-Reward framing, matching the same deep-rewrite
+// already applied to chart-analysis.html/ai-analysis.html/
+// js/decision-footer.js this session. No login required: the
+// probabilities/decision_levels fields in /api/ai-analysis's response
+// are already ungated for anonymous callers.
+function firstTickerFromAnswer(text) {
+  if (!text) return null;
+  const re = new RegExp(TICKER_PAREN_RE_SRC);
+  const m = text.match(re);
+  return m ? m[1] : null;
+}
+async function attachAssetCard(msgDiv, answerText) {
+  try {
+    const ticker = firstTickerFromAnswer(answerText);
+    if (!ticker || !msgDiv) return;
+    const lang = (typeof I18N !== 'undefined' && I18N.currentLang) || undefined;
+    const res = await fetch(`${API_BASE}/api/ai-analysis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols: [ticker], lang })
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    const data = json.data || json;
+    const probs = data.probabilities;
+    const dl = data.decision_levels;
+    if (!probs && !dl) return; // nothing real to show -- stay silent, never fabricate
+
+    const bull = Math.round(probs?.bull ?? 0);
+    const flat = Math.round(probs?.flat ?? 0);
+    const bear = Math.round(probs?.bear ?? 0);
+    const total = bull + flat + bear;
+
+    let barHtml = '';
+    let legendHtml = '';
+    if (total > 0) {
+      barHtml = `<div class="chat-asset-bar">`
+        + (bull > 0 ? `<div class="chat-asset-bar-seg" style="width:${bull}%;background:var(--accent-green,#16A34A)"></div>` : '')
+        + (flat > 0 ? `<div class="chat-asset-bar-seg" style="width:${flat}%;background:var(--text-secondary,#94A3B8)"></div>` : '')
+        + (bear > 0 ? `<div class="chat-asset-bar-seg" style="width:${bear}%;background:var(--accent-red,#DC2626)"></div>` : '')
+        + `</div>`;
+      legendHtml = `<div class="chat-asset-bar-legend">`
+        + `<span>${t('idx_dir_bull','偏多')} ${bull}%</span>`
+        + `<span>${t('idx_dir_neutral','橫行')} ${flat}%</span>`
+        + `<span>${t('idx_dir_bear','偏空')} ${bear}%</span>`
+        + `</div>`;
+    }
+
+    let levelsHtml = '';
+    if (dl && dl.stop_loss != null) {
+      const parts = [`<span>${t('chat_key_level','關鍵位')}: <b>${dl.stop_loss}</b></span>`];
+      if (dl.take_profits && dl.take_profits.length) {
+        parts.push(`<span>${t('ca_reco_tp','參考位')}: <b>${dl.take_profits[0]}</b></span>`);
+      }
+      levelsHtml = `<div class="chat-asset-levels">${parts.join('')}</div>`;
+    }
+
+    if (!barHtml && !levelsHtml) return;
+    const card = document.createElement('div');
+    card.className = 'chat-asset-card';
+    card.innerHTML = `<div class="chat-asset-card-head">📊 ${ticker}</div>${barHtml}${legendHtml}${levelsHtml}`;
+    const bubble = msgDiv.querySelector('.msg-bubble');
+    if (bubble) bubble.appendChild(card);
+  } catch (e) {
+    // best-effort enrichment only -- a failure here must never disrupt
+    // the main chat answer that already rendered successfully
+  }
 }
 // 2026-07-25: "CHAT 加入顯示回答如有資產文字或相似代號 技術指標 經濟指標
 // 公司名...加入導航跟當句主題再搜" -- besides (TICKER) parentheticals, the
@@ -1148,8 +1246,10 @@ async function sendMessage() {
     const answer = res?.answer || res?.data?.answer || res?.data?.conclusion || null;
     if (answer) {
       conversationId = res.conversation_id || res?.data?.conversation_id || conversationId;
-      addMessage('bot', answer);
+      const botDiv = addMessage('bot', answer);
       addToHistory(text || t('chat_chart_analysis','圖表分析'));
+      // Fire-and-forget: never await, never block the chat UI on this.
+      attachAssetCard(botDiv, answer);
     } else {
       addMessage('bot', t('chat_error_analysis','⚠️ 分析時出現問題，請稍後重試。'));
     }
