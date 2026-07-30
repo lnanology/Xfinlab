@@ -27,6 +27,7 @@ individually verified live, same convention as rss_news_service.py's own
 import logging
 from typing import Dict, List
 
+from services.gdelt_news_service import search_global_events
 from services.macro_data_service import REGIONS
 from services.outbound_http import get_with_backoff
 from services.rss_news_service import _TICKER_STRIP_RE, get_all_headlines
@@ -121,6 +122,26 @@ def get_region_headlines(region: str, limit: int = 8) -> Dict:
         if any(kw in item["title"].lower() for kw in keywords) and item["link"] not in seen_links:
             matches.append(item)
             seen_links.add(item["link"])
+
+    # 2026-07-31 addition: GDELT's global monitoring (100+ languages,
+    # confirmed free + unrestricted commercial use -- see
+    # services/license_registry.py) gives real coverage for the regions
+    # the 4 English-language wires above barely touch (Korea/Taiwan/SEA/
+    # Middle East/Latin America especially). Query is GDELT's own
+    # server-side search on the region's primary keyword rather than
+    # another client-side substring filter, since GDELT actually
+    # supports real search -- and its titles are often translated/
+    # paraphrased, so re-running the English-wire-oriented keyword list
+    # against them would wrongly drop valid hits.
+    try:
+        gdelt_query = f'"{keywords[0]}" sourcelang:english'
+        gdelt_result = search_global_events(gdelt_query, limit=15, timespan="2d")
+        for item in gdelt_result.get("items", []):
+            if item["link"] not in seen_links:
+                matches.append({**item, "kind": "market_news"})
+                seen_links.add(item["link"])
+    except Exception as e:
+        logger.info("global_news_region_service: GDELT lookup failed for region=%s: %s", region, e)
 
     matches.sort(key=lambda x: x["published_at"] or "", reverse=True)
     result = {

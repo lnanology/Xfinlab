@@ -339,6 +339,80 @@ _LICENSES: Dict[str, LicenseRecord] = {
         ),
         replacement_candidates=["twelve_data_business_tier"],
     ),
+    # 2026-07-31: added while building out the free-commercial-source
+    # combo the user asked for (GDELT/FRED/ECB) after Polygon/Twelve Data
+    # turned out to be free-tier-non-commercial above. All 3 verified by
+    # direct fetch of their actual terms pages (not assumed from search
+    # snippets) before wiring any of them into services/gdelt_news_service.py
+    # / services/global_news_region_service.py.
+    "gdelt": LicenseRecord(
+        source_id="gdelt",
+        license_type="public_domain",
+        commercial_use_allowed=True,
+        terms_url="https://www.gdeltproject.org/about.html",
+        risk_level="low",
+        notes=(
+            "GDELT's own terms: all datasets 'available for unlimited and "
+            "unrestricted use for any academic, commercial, or "
+            "governmental use of any kind without fee.' No API key, no "
+            "rate-limit-driven commercial gate like Polygon/Twelve Data/"
+            "Tiingo/EODHD's free tiers above. Used by services/"
+            "gdelt_news_service.py (GDELT 2.0 DOC API, article-level "
+            "search) and wired into services/global_news_region_service.py "
+            "as an additional per-region source alongside the existing RSS "
+            "pool. Same minimal-retention convention as rss_news_service.py "
+            "-- only title/link/published_at/source/language kept, never "
+            "full article text."
+        ),
+    ),
+    "fred": LicenseRecord(
+        source_id="fred",
+        license_type="commercial",
+        commercial_use_allowed=True,
+        terms_url="https://fred.stlouisfed.org/docs/api/terms_of_use.html",
+        risk_level="low",
+        notes=(
+            "Free API key (St. Louis Fed). Terms of Use verified by direct "
+            "fetch 2026-07-31: no personal/non-commercial-only bar like "
+            "Polygon/Twelve Data/Tiingo/EODHD above -- the terms even "
+            "classify the API itself as a 'commercial item' for government-"
+            "procurement purposes. Two real obligations to honor, not "
+            "optional: (1) mandatory attribution notice wherever used -- "
+            "'This product uses the FRED® API but is not endorsed or "
+            "certified by the Federal Reserve Bank of St. Louis.'; (2) some "
+            "individual DATA SERIES (not the API itself) are owned by third "
+            "parties and marked 'Copyright' in their notes -- those specific "
+            "series require contacting the data owner before any non-"
+            "personal use, so any series pulled in must be checked for that "
+            "marker before display. NOT YET integrated into any service as "
+            "of this entry -- documented here ahead of building services/"
+            "fred_macro_service.py so the attribution + copyrighted-series "
+            "check ships from day one, not bolted on after."
+        ),
+    ),
+    "ecb_data_portal": LicenseRecord(
+        source_id="ecb_data_portal",
+        license_type="commercial",
+        commercial_use_allowed=True,
+        terms_url="https://www.ecb.europa.eu/services/disclaimer/html/index.en.html",
+        risk_level="low",
+        notes=(
+            "Free SDMX 2.1 REST API, no key required. ECB's disclaimer & "
+            "copyright page verified by direct fetch 2026-07-31: 'users of "
+            "this website may make free use of the information' subject to "
+            "conditions -- (1) must cite the ECB as source when distributed/"
+            "reproduced; (2) if incorporated into something SOLD (any "
+            "medium), must inform buyers the data is available free of "
+            "charge from the ECB, both before payment and each time they "
+            "access it -- directly relevant since XFINLAB is a paid "
+            "product, so any ECB-sourced figure shown to paying users needs "
+            "that disclosure somewhere reachable (e.g. a data-sources/"
+            "methodology page), not just a citation; (3) modifications "
+            "(e.g. seasonal adjustment) must be stated explicitly. No "
+            "blanket non-commercial bar like Polygon/Twelve Data/Tiingo/"
+            "EODHD. NOT YET integrated into any service as of this entry."
+        ),
+    ),
     "oilpriceapi_baltic_dry_index": LicenseRecord(
         source_id="oilpriceapi_baltic_dry_index",
         license_type="unknown",
