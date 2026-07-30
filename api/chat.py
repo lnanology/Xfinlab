@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from ai.ai_router import get_ai_response
+from ai.ai_router import get_ai_response_with_escalation
 from services.i18n import ai_language_instruction
 from services.ticker_shorthand import build_context_note
 
@@ -117,7 +117,30 @@ async def chat(body: dict):
     user_id = check_token_budget(token)
 
     try:
-        answer = get_ai_response(prompt, max_tokens=800)
+        # 2026-07-30: this is the site's flagship "talk to AI" feature --
+        # the one users most directly compare against a paid model like
+        # Claude/GPT. Two additive changes from the plain get_ai_response()
+        # call this used before: (1) reasoning_effort="high" asks Groq's
+        # gpt-oss-120b to actually think harder before answering (was
+        # hardcoded "low" everywhere purely for speed); max_tokens is
+        # raised from 800->1200 alongside it since "high" reasoning eats
+        # more of the budget on hidden thinking tokens before writing the
+        # visible answer (see ai/ai_router.py's _groq() docstring -- this
+        # exact failure mode caused a real empty-response bug before).
+        # (2) get_ai_response_with_escalation() falls back to Claude ONCE
+        # if Groq's answer ever comes back empty/degenerate, rather than
+        # immediately showing the canned "AI 服務暫時不可用" message. This
+        # does NOT reverse the earlier decision to keep Groq as the
+        # default for cost reasons -- Claude is only ever called on the
+        # rare failure case, not on every request.
+        answer = get_ai_response_with_escalation(prompt, max_tokens=1200, reasoning_effort="high")
+        if not answer.strip():
+            # get_ai_response_with_escalation() deliberately never raises
+            # (it returns "" if both Groq and the Claude escalation fail
+            # or aren't configured) -- turn that into the SAME "service
+            # unavailable" UX this endpoint always showed on failure,
+            # instead of silently returning an empty answer to the user.
+            raise RuntimeError("AI response empty after Groq + escalation attempt")
         record_ai_token_usage(user_id)
         history.append({"query": query, "answer": answer})
         conversation_store[conversation_id] = history[-MAX_HISTORY_TURNS:]

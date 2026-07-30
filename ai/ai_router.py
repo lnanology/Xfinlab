@@ -1,3 +1,4 @@
+import logging
 import os
 from dotenv import load_dotenv
 
@@ -38,7 +39,7 @@ def set_last_usage_tokens(total: int) -> None:
     _LAST_USAGE_TOKENS["value"] = total
 
 
-def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -> str:
+def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None, reasoning_effort: str = None) -> str:
     """
     Universal AI router - switch provider via AI_PROVIDER env var, or pass
     `provider` explicitly to override it for one call (added 2026-07-18
@@ -74,6 +75,10 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
         max_tokens: Max response tokens
         provider: optional override ("groq"/"deepseek"/"claude"/"kimi");
             defaults to the AI_PROVIDER env var when omitted
+        reasoning_effort: "low" (default) or "high" -- Groq-only, ignored
+            by every other provider. See _groq()'s 2026-07-30 docstring
+            addition for why "high" also needs a bigger max_tokens from
+            the caller, not just this flag.
 
     Returns:
         str: AI response text
@@ -82,7 +87,7 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
     _LAST_USAGE_TOKENS["value"] = 0
 
     if provider == "groq":
-        return _groq(prompt, max_tokens)
+        return _groq(prompt, max_tokens, reasoning_effort=reasoning_effort or "low")
     elif provider == "deepseek":
         return _deepseek(prompt, max_tokens)
     elif provider == "claude":
@@ -93,6 +98,68 @@ def get_ai_response(prompt: str, max_tokens: int = 1000, provider: str = None) -
         return _kimi(prompt, max_tokens)
     else:
         raise ValueError(f"Unknown AI provider: {provider}. Use groq / deepseek / claude / openrouter / kimi")
+
+
+def get_ai_response_with_escalation(
+    prompt: str,
+    max_tokens: int = 1000,
+    provider: str = None,
+    reasoning_effort: str = None,
+    min_length: int = 15,
+) -> str:
+    """
+    2026-07-30 addition: a "cascade" wrapper around get_ai_response() for
+    the site's highest-visibility AI outputs (starting with api/chat.py's
+    flagship assistant -- see that file's own 2026-07-23 comment where the
+    user explicitly chose "keep the free Groq model, improve the prompt"
+    over switching to the paid `claude` provider outright). This keeps
+    that decision intact for the 90%+ of calls that come back fine, but
+    adds a safety net for the ones that don't, instead of silently showing
+    a generic error message to the user.
+
+    Behavior:
+      1. Call get_ai_response() with the given provider (Groq by default)
+         exactly as before.
+      2. If that raises OR returns something too short/degenerate to be a
+         real answer (min_length is deliberately low -- this is only
+         meant to catch outright failures like "" or a 2-character
+         fragment, not to judge answer quality), and ANTHROPIC_API_KEY is
+         configured, retry the SAME prompt against Claude once.
+      3. If Claude isn't configured or also fails, return whatever the
+         first attempt produced (even if empty) -- never raises, matching
+         every other AI-facing function in this codebase's graceful-
+         degradation convention. Callers keep their existing except-block
+         fallback text as the final safety net, unchanged.
+
+    This is opt-in: only call sites that explicitly switch to this
+    function get the escalation behavior. get_ai_response() itself is
+    completely unchanged for every other caller.
+    """
+    primary_answer = ""
+    try:
+        primary_answer = get_ai_response(
+            prompt, max_tokens=max_tokens, provider=provider, reasoning_effort=reasoning_effort
+        )
+    except Exception as e:
+        logging.getLogger(__name__).info("get_ai_response_with_escalation: primary call failed: %s", e)
+        primary_answer = ""
+
+    if len(primary_answer.strip()) >= min_length:
+        return primary_answer
+
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        # No escalation path configured -- return the (possibly empty)
+        # primary result, same as if this wrapper didn't exist.
+        return primary_answer
+
+    try:
+        escalated = _claude(prompt, max_tokens)
+        if len(escalated.strip()) >= min_length:
+            return escalated
+    except Exception as e:
+        logging.getLogger(__name__).info("get_ai_response_with_escalation: Claude escalation failed: %s", e)
+
+    return primary_answer
 
 
 VISION_PROVIDER = os.getenv("VISION_PROVIDER", "gemini")
@@ -194,7 +261,7 @@ def _groq_vision(prompt: str, image_base64: str, mime_type: str, max_tokens: int
     return response.choices[0].message.content.strip()
 
 
-def _groq(prompt: str, max_tokens: int) -> str:
+def _groq(prompt: str, max_tokens: int, reasoning_effort: str = "low") -> str:
     """
     2026-07-20 fix: "AI文字解讀" (chart-analysis.html's commentary feature,
     which calls this via the AI_PROVIDER default) was silently returning
@@ -208,26 +275,39 @@ def _groq(prompt: str, max_tokens: int) -> str:
     codebase's chart-analysis.html commentary call used max_tokens=400,
     well under Groq's own recommended 1024+ default for this model.
 
-    Fix: (1) reasoning_effort="low" -- per Groq's docs this specifically
-    reduces how many tokens gpt-oss-120b spends on hidden reasoning,
-    leaving more of the budget for the actual visible answer; (2) a
-    700-token floor on top of whatever the caller asked for, since even
+    Fix: (1) reasoning_effort="low" by default -- per Groq's docs this
+    specifically reduces how many tokens gpt-oss-120b spends on hidden
+    reasoning, leaving more of the budget for the actual visible answer;
+    (2) a token floor on top of whatever the caller asked for, since even
     "low" reasoning effort still needs headroom beyond a short answer's
     own length; (3) max_completion_tokens is the parameter name Groq's
     current docs use for reasoning-aware models (max_tokens still
     appeared to be accepted before, but wasn't reliably budgeting
     reasoning tokens against the callers' request).
+
+    2026-07-30 addition: reasoning_effort is now a parameter (still
+    defaults to "low", so every existing caller that doesn't pass it is
+    byte-for-byte unaffected) so a specific high-value call site (e.g.
+    api/chat.py's flagship AI assistant) can opt into "high" for better
+    reasoning quality. Because "high" spends MORE hidden tokens on
+    reasoning than "low" -- exactly the failure mode the empty-content
+    bug above already documents -- the token floor scales up with it
+    (1400 instead of 700) so there's still real headroom left for the
+    visible answer after reasoning eats its share. Callers that want
+    "high" should also pass a generous max_tokens themselves; this floor
+    is a safety net, not a substitute for that.
     """
     from groq import Groq
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    floor = 1400 if reasoning_effort == "high" else 700
     response = client.chat.completions.create(
         # llama-3.1-8b-instant was deprecated by Groq on 2026-06-17.
         # openai/gpt-oss-120b is Groq's recommended replacement.
         model="openai/gpt-oss-120b",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
-        max_completion_tokens=max(max_tokens, 700),
-        reasoning_effort="low",
+        max_completion_tokens=max(max_tokens, floor),
+        reasoning_effort=reasoning_effort,
     )
     if getattr(response, "usage", None) and response.usage.total_tokens:
         _LAST_USAGE_TOKENS["value"] = response.usage.total_tokens
