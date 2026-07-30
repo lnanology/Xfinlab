@@ -214,6 +214,13 @@
              Hidden when data.market_structure has no score fields (e.g. an
              older cached response) so this degrades gracefully. -->
         <div class="pattern-qa-grid" id="msScoreGrid" style="margin-top:0.5rem;display:none"></div>
+        <!-- 2026-07-30 addition: Order Flow / Volume Profile / Institutional
+             Footprint. These 3 are OHLCV-only APPROXIMATIONS (no real
+             order-book/tick/dark-pool data available to this codebase) --
+             kept in their own grid with a distinct disclosure line so they
+             are never confused with the 6 primary calibrated-weight scores
+             above. Hidden entirely when the backend sends no proxy data. -->
+        <div class="pattern-qa-grid" id="msProxyGrid" style="margin-top:0.5rem;display:none"></div>
         <div id="msEvents" style="margin-top:0.4rem"></div>
       </div>
 
@@ -1114,6 +1121,53 @@ async function runTickerSearch(symbolOverride){
         }
       } else if (scoreGrid) {
         scoreGrid.style.display = 'none';
+      }
+
+      // Proxy-only engines (Order Flow / Volume Profile / Institutional
+      // Footprint) -- OHLCV-derived APPROXIMATIONS, not real order-book/
+      // tick/dark-pool data (see market_structure_engine.py docstring).
+      // Rendered in a visually separate grid with its own disclosure line.
+      const proxyGrid = document.getElementById('msProxyGrid');
+      const vpPositionI18n = { above_value_area: 'ca_ms_vp_above', inside_value_area: 'ca_ms_vp_inside', below_value_area: 'ca_ms_vp_below' };
+      const footprintI18n = { accumulation: 'ca_ms_footprint_accumulation', distribution: 'ca_ms_footprint_distribution', breakout: 'ca_ms_footprint_breakout' };
+      const proxyDirI18n = { bullish: 'ca_dir_bull', bearish: 'ca_dir_bear' };
+      const proxyCards = [];
+      if (ms.order_flow && ms.order_flow.score != null) {
+        const val = Math.round(ms.order_flow.score);
+        const cls = val >= 65 ? 'is-possible' : val <= 35 ? 'is-not-possible' : 'is-unclear';
+        proxyCards.push(`<div class="pattern-qa-card">
+          <span class="pattern-qa-q">${t('ca_ms_order_flow','資金流向（近似）')}</span>
+          <span class="pattern-qa-a ${cls}">${val}/100</span>
+        </div>`);
+      }
+      if (ms.volume_profile && ms.volume_profile.poc != null) {
+        const vp = ms.volume_profile;
+        const posKey = vpPositionI18n[vp.position];
+        const posLabel = posKey ? t(posKey, vp.position) : vp.position;
+        const cls = vp.position === 'above_value_area' ? 'is-possible' : vp.position === 'below_value_area' ? 'is-not-possible' : 'is-unclear';
+        proxyCards.push(`<div class="pattern-qa-card">
+          <span class="pattern-qa-q">${t('ca_ms_volume_profile','成交量分佈 POC（近似）')}</span>
+          <span class="pattern-qa-a ${cls}">${vp.poc} · ${posLabel}</span>
+        </div>`);
+      }
+      if (ms.institutional_footprint && ms.institutional_footprint.candidate) {
+        const fp = ms.institutional_footprint;
+        const fpKey = footprintI18n[fp.candidate];
+        const fpLabel = fpKey ? t(fpKey, fp.candidate) : fp.candidate;
+        const dirKey = proxyDirI18n[fp.direction];
+        const dirLabel = dirKey ? ` (${t(dirKey, fp.direction)})` : '';
+        const cls = fp.direction === 'bullish' ? 'is-possible' : fp.direction === 'bearish' ? 'is-not-possible' : 'is-unclear';
+        proxyCards.push(`<div class="pattern-qa-card">
+          <span class="pattern-qa-q">${t('ca_ms_institutional_footprint','大戶足跡訊號（近似）')}</span>
+          <span class="pattern-qa-a ${cls}">${fpLabel}${dirLabel}</span>
+        </div>`);
+      }
+      if (proxyCards.length && proxyGrid) {
+        proxyGrid.style.display = 'grid';
+        proxyGrid.innerHTML = proxyCards.join('') +
+          `<div class="upload-hint" style="grid-column:1/-1;font-size:0.7rem">${t('ca_ms_proxy_note','以上為近似估算，並非真實盤口／大戶數據，僅供參考')}</div>`;
+      } else if (proxyGrid) {
+        proxyGrid.style.display = 'none';
       }
 
       const eventsEl = document.getElementById('msEvents');

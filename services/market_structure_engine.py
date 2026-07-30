@@ -18,15 +18,28 @@ of real OHLCV data already fetched for this ticker (swing points, ATR,
 volume, candle geometry) -- nothing here calls an LLM, guesses, or uses
 data XFINLAB doesn't actually have.
 
-Deliberately SCOPED OUT (raised with the user, who agreed to drop them):
-Order Flow Engine, Volume Profile Engine, Institutional Footprint Engine.
-Those need level-2 order-book / tick / dark-pool data no source this
-codebase uses (yfinance, Alpaca's free IEX feed) provides. Computing a
-fake "institutional footprint" number from daily OHLCV bars alone would
-be exactly the invented-looking-precise-number problem this codebase's
-other modules (chart_pattern_service.py, historical_analog_service.py,
-services/backtest_service.py) already refuse to ship -- so those 3 stay
-out rather than being faked.
+2026-07-30, later same session -- Order Flow / Volume Profile / Institutional
+Footprint added back in, PROXY-ONLY: the user asked for all 3. None of
+this codebase's data sources (yfinance, Alpaca's free IEX feed) provide
+level-2 order-book, tick, or dark-pool data, so a GENUINE order-flow,
+volume-at-price, or institutional-footprint number still can't be
+computed here -- faking one would be exactly the invented-looking-precise-
+number problem this codebase's other modules (chart_pattern_service.py,
+historical_analog_service.py, services/backtest_service.py) already
+refuse to ship. Instead, each of the 3 is a well-known, honestly-labeled
+OHLCV-only APPROXIMATION (`is_proxy: True` on every one of them):
+  - Order Flow -> Chaikin-Money-Flow-style close-location-value x volume
+    (a standard buying/selling-pressure proxy, not real order-book flow).
+  - Volume Profile -> each bar's volume distributed across its own
+    High-Low range into price buckets (a standard OHLC-only volume-
+    profile approximation, not real trade-level volume-at-price).
+  - Institutional Footprint -> rolling volume z-score + range/close-
+    position heuristic ("accumulation/distribution/breakout candidate"),
+    not confirmed institutional or dark-pool activity.
+These 3 are kept as separate, clearly-labeled fields and are NOT blended
+into the `confidence` composite below -- their proxy nature makes them
+meaningfully less reliable than the 6 primary sub-engines, and folding
+them in would silently launder that lower confidence into one number.
 
 Also deliberately NOT rebuilding what already exists elsewhere under a
 different name: Multi-Timeframe Engine (get_multi_timeframe_analysis(),
@@ -294,6 +307,166 @@ def _volatility_engine(atr_series: pd.Series, closes: pd.Series) -> float:
     return _clip(100 - abs(percentile - 50) * 2)
 
 
+def _order_flow_engine(df: pd.DataFrame, window: int = 20) -> Optional[Dict]:
+    """PROXY, not real order flow -- there is no level-2/tick feed in this
+    codebase's data sources (yfinance, Alpaca's free IEX feed) to compute
+    genuine buy/sell-initiated volume. This instead computes a Chaikin-
+    Money-Flow-style read: each bar's Close-Location-Value (where within
+    its own High-Low range the bar closed -- near the high implies buying
+    pressure, near the low implies selling pressure) times its Volume,
+    summed over a trailing window and normalized by total volume in that
+    window. A real, honest, widely-used technical-analysis proxy computed
+    ENTIRELY from real OHLCV data already fetched -- explicitly flagged
+    `is_proxy: True`, never presented as genuine order-book flow.
+    Returns a 0-100 score (50 = neutral, >50 = net buying pressure, <50 =
+    net selling pressure) plus the raw -100..100 money-flow value.
+    """
+    if "Volume" not in df.columns or len(df) < 5:
+        return None
+    n = min(window, len(df))
+    sub = df.iloc[-n:]
+    high = sub["High"].astype(float)
+    low = sub["Low"].astype(float)
+    close = sub["Close"].astype(float)
+    volume = sub["Volume"].astype(float)
+    rng = (high - low).replace(0, np.nan)
+    clv = ((close - low) - (high - close)) / rng
+    clv = clv.fillna(0.0)
+    signed_volume = clv * volume
+    total_volume = float(volume.sum())
+    if not total_volume:
+        return None
+    raw_flow = float(signed_volume.sum() / total_volume) * 100  # -100..100
+    score = _clip(50 + raw_flow / 2)
+    return {"score": round(score, 1), "raw_flow": round(raw_flow, 1), "is_proxy": True}
+
+
+def _volume_profile_engine(df: pd.DataFrame, lookback: int = 60, bins: int = 20) -> Optional[Dict]:
+    """PROXY volume profile -- true volume-at-price needs tick-level trade
+    prices this codebase's OHLCV-only sources don't provide. This instead
+    distributes EACH bar's already-real total volume across price buckets
+    proportional to how much of that bar's own High-Low range falls in
+    each bucket (a standard, disclosed approximation used by most retail
+    platforms whenever only OHLCV bars are available) -- never presented
+    as genuine trade-level volume-at-price (`is_proxy: True`).
+    Returns POC (Point of Control -- the bucket with the most estimated
+    volume), a Value Area (narrowest set of buckets covering ~70% of
+    estimated volume), and where the latest close sits relative to it.
+    """
+    if "Volume" not in df.columns or len(df) < 10:
+        return None
+    n = min(lookback, len(df))
+    sub = df.iloc[-n:]
+    lo = float(sub["Low"].min())
+    hi = float(sub["High"].max())
+    if hi <= lo:
+        return None
+    edges = np.linspace(lo, hi, bins + 1)
+    vol_per_bin = np.zeros(bins)
+    for _, row in sub.iterrows():
+        b_lo, b_hi, b_vol = float(row["Low"]), float(row["High"]), float(row["Volume"])
+        if b_hi <= b_lo or not b_vol:
+            continue
+        overlap_lo = np.clip(edges[:-1], b_lo, b_hi)
+        overlap_hi = np.clip(edges[1:], b_lo, b_hi)
+        overlap = np.maximum(0.0, overlap_hi - overlap_lo)
+        total_overlap = float(overlap.sum())
+        if total_overlap <= 0:
+            continue
+        vol_per_bin += (overlap / total_overlap) * b_vol
+
+    if vol_per_bin.sum() <= 0:
+        return None
+
+    poc_idx = int(np.argmax(vol_per_bin))
+    poc_price = float((edges[poc_idx] + edges[poc_idx + 1]) / 2)
+
+    order = np.argsort(vol_per_bin)[::-1]
+    target = vol_per_bin.sum() * 0.70
+    covered = 0.0
+    chosen: List[int] = []
+    for idx in order:
+        chosen.append(int(idx))
+        covered += vol_per_bin[idx]
+        if covered >= target:
+            break
+    lo_bin, hi_bin = min(chosen), max(chosen)
+    value_area_low = float(edges[lo_bin])
+    value_area_high = float(edges[hi_bin + 1])
+
+    last_close = float(df["Close"].iloc[-1])
+    if last_close > value_area_high:
+        position = "above_value_area"
+    elif last_close < value_area_low:
+        position = "below_value_area"
+    else:
+        position = "inside_value_area"
+
+    return {
+        "poc": round(poc_price, 4),
+        "value_area_high": round(value_area_high, 4),
+        "value_area_low": round(value_area_low, 4),
+        "position": position,
+        "is_proxy": True,
+    }
+
+
+def _institutional_footprint_engine(df: pd.DataFrame, window: int = 20) -> Optional[Dict]:
+    """PROXY, not confirmed institutional/dark-pool activity -- genuine
+    footprint detection needs block-trade prints or dark-pool data no free
+    source here provides. This instead flags STATISTICALLY UNUSUAL volume
+    bars (a z-score against the trailing window) and classifies them by
+    how much the bar's range expanded: unusual volume + a NARROW range
+    (relative to ATR) suggests size being absorbed quietly ("accumulation/
+    distribution candidate" -- large orders filled without moving price
+    much); unusual volume + a WIDE range suggests size pushing price
+    aggressively instead ("breakout candidate"). A well-known
+    discretionary/retail heuristic, explicitly labeled a CANDIDATE, never
+    asserted as confirmed institutional activity (`is_proxy: True`).
+    """
+    if "Volume" not in df.columns or len(df) < window + 5:
+        return None
+    vol = df["Volume"].astype(float)
+    trailing = vol.iloc[-(window + 1):-1]
+    if trailing.empty:
+        return None
+    mean, std = float(trailing.mean()), float(trailing.std())
+    if not std or std != std:
+        return None
+    last_vol = float(vol.iloc[-1])
+    z = (last_vol - mean) / std
+
+    last_high = float(df["High"].iloc[-1])
+    last_low = float(df["Low"].iloc[-1])
+    last_close = float(df["Close"].iloc[-1])
+    rng = max(last_high - last_low, 1e-9)
+
+    atr_series = _atr(df)
+    atr_last = float(atr_series.iloc[-1]) if len(atr_series) else 0.0
+    range_ratio = (rng / atr_last) if atr_last else 1.0
+
+    score = _clip(z / 3.0 * 100) if z > 0 else 0.0
+    close_pos = (last_close - last_low) / rng
+
+    if z <= 1.0:
+        candidate = None
+        direction = None
+    elif range_ratio < 0.8:
+        candidate = "accumulation" if close_pos >= 0.5 else "distribution"
+        direction = "bullish" if candidate == "accumulation" else "bearish"
+    else:
+        candidate = "breakout"
+        direction = "bullish" if close_pos >= 0.5 else "bearish"
+
+    return {
+        "score": round(score, 1),
+        "volume_zscore": round(z, 2),
+        "candidate": candidate,
+        "direction": direction,
+        "is_proxy": True,
+    }
+
+
 def compute_market_structure(df: pd.DataFrame) -> Optional[Dict]:
     """
     Main entry point -- replaces the old TechnicalAnalysisService.
@@ -372,6 +545,12 @@ def compute_market_structure(df: pd.DataFrame) -> Optional[Dict]:
                                  lows[:-1] if len(lows) > 1 else lows, closes, atr_series)
     volatility_score = _volatility_engine(atr_series, closes)
 
+    # PROXY-only engines (see module docstring) -- informational, not
+    # blended into `confidence` below.
+    order_flow = _order_flow_engine(df)
+    volume_profile = _volume_profile_engine(df)
+    institutional_footprint = _institutional_footprint_engine(df)
+
     # "No event this bar" defaults to a neutral 50 for BOS/CHOCH/Liquidity
     # -- most bars are mid-range (no break at all), and that absence is
     # simply "no fresh evidence either way", not itself negative or
@@ -409,4 +588,8 @@ def compute_market_structure(df: pd.DataFrame) -> Optional[Dict]:
         "weights_calibrated": False,
         "liquidity_pools": liquidity_pools,
         "swing_details": swing_details,
+        # ---- proxy-only fields (see module docstring), not part of `confidence` ----
+        "order_flow": order_flow,
+        "volume_profile": volume_profile,
+        "institutional_footprint": institutional_footprint,
     }
