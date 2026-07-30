@@ -119,17 +119,27 @@
         );
       }
 
-      if (opts.entryPrice !== null && opts.entryPrice !== undefined) {
-        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.entryPrice + '</div><div class="xfl-df-label">Entry</div></div>');
-      }
+      // 2026-07-30 (Paddle compliance, deep rewrite -- user explicitly
+      // chose "深度改做純描述性支持/阻力位" over a cosmetic rename): the
+      // old Entry/Stop Loss/Risk-Reward/Risk% stats presented these real
+      // ATR+support/resistance-derived numbers as an actionable trade plan
+      // (where to buy, where to place a stop, the reward-per-unit-risk of
+      // "the trade") -- exactly what Paddle's AUP means by "trading
+      // signals", regardless of what the labels were called. entryPrice
+      // is no longer shown as its own stat at all (the chart already
+      // shows the current price; a dedicated "Entry" stat implied an
+      // instruction to transact there). stopLoss/takeProfits are still
+      // real numbers -- just relabeled as plain structural price levels,
+      // with no reward-ratio math shown (Risk/Reward only means anything
+      // if you're evaluating a trade).
       if (opts.stopLoss !== null && opts.stopLoss !== undefined) {
-        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.stopLoss + '</div><div class="xfl-df-label">Stop Loss</div></div>');
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.stopLoss + '</div><div class="xfl-df-label">Key Level</div></div>');
       }
-      if (opts.riskReward !== null && opts.riskReward !== undefined) {
-        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">1:' + opts.riskReward + '</div><div class="xfl-df-label">Risk/Reward</div></div>');
+      if (opts.takeProfits && opts.takeProfits.length && opts.takeProfits[0] != null) {
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.takeProfits[0] + '</div><div class="xfl-df-label">Reference Level</div></div>');
       }
       if (opts.riskPct !== null && opts.riskPct !== undefined) {
-        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.riskPct + '%</div><div class="xfl-df-label">Risk %</div></div>');
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.riskPct + '%</div><div class="xfl-df-label">Distance</div></div>');
       }
 
       var invalidationText = opts.invalidation !== undefined
@@ -150,11 +160,13 @@
 
       if (stats.length) html += '<div class="xfl-df-grid">' + stats.join('') + '</div>';
 
-      if (opts.takeProfits && opts.takeProfits.length) {
-        html += '<div class="xfl-df-section"><strong>Take Profit Targets</strong><ul>'
-          + opts.takeProfits.map(function (tp, i) { return '<li>TP' + (i + 1) + ': ' + tp + '</li>'; }).join('')
-          + '</ul></div>';
-      }
+      // 2026-07-30: the old multi-target "Take Profit Targets" list (TP1/
+      // TP2/TP3) is removed -- TP1 (the one real, structurally-grounded
+      // level) is now shown above as the "Reference Level" stat instead;
+      // TP2/TP3 were pure risk-multiple projections (entry + 2x/3x risk)
+      // with no independent technical basis, existing only to serve a
+      // trade take-profit ladder, so they're dropped rather than
+      // relabeled.
 
       if (opts.keyReasons && opts.keyReasons.length) {
         html += '<div class="xfl-df-section"><strong>Key Reasons</strong><ul>'

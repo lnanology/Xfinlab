@@ -1333,7 +1333,10 @@ async function loadDecisionJournal() {
           <span style="font-size:0.72rem;color:var(--muted)">${e.created_at || ''}</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-family:monospace;font-size:0.8rem;color:var(--muted)">Entry ${e.entry_price != null ? e.entry_price : '-'} / Stop ${e.stop_loss != null ? e.stop_loss : '-'}</span>
+          <!-- 2026-07-30 (Paddle compliance, deep rewrite): was "Entry X / Stop Y",
+               framing this journal snapshot as an open trade plan. Relabeled to
+               plain reference numbers (same real values, no buy/sell framing). -->
+          <span style="font-family:monospace;font-size:0.8rem;color:var(--muted)">參考價 ${e.entry_price != null ? e.entry_price : '-'} ・ 關鍵位 ${e.stop_loss != null ? e.stop_loss : '-'}</span>
           <button onclick="removeJournalEntry(${e.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem">✕</button>
         </div>
       </div>`;

@@ -538,10 +538,24 @@ function renderKlineChart(ohlc, decisionLevels) {
       axisLabelVisible: true, title,
     }));
   };
+  // 2026-07-30 (Paddle compliance, deep rewrite -- "深度改做純描述性支持/
+  // 阻力位"): the old entry/stop-loss/TP1-3 lines presented these ATR+
+  // support/resistance-derived numbers as an actionable trade plan.
+  // decisionLevels.stop_loss IS literally the real support level (long
+  // bias) or resistance level (short bias) this was derived from, so it's
+  // now labeled as exactly that (unlike chart-analysis.html, this page
+  // doesn't already draw a separate support/resistance line, so this is
+  // the only place that real level shows up). decisionLevels.entry (the
+  // current close, redundant with the chart itself) and the two synthetic
+  // risk-multiple TP2/TP3 projections are dropped; only take_profits[0]
+  // (the one further level genuinely grounded in the opposite real
+  // support/resistance) is kept, as a plain reference level.
   if (decisionLevels) {
-    addLine(decisionLevels.entry, cssVar('--accent-blue', '#2563EB'), tr('ca_reco_entry', '進場'));
-    addLine(decisionLevels.stop_loss, cssVar('--accent-red', '#DC2626'), tr('ca_reco_stop', '止損'));
-    (decisionLevels.take_profits || []).forEach((tp, i) => addLine(tp, cssVar('--accent-green', '#16A34A'), `${tr('ca_reco_tp', '目標')}${i + 1}`));
+    const stopLabel = decisionLevels.bias === 'long' ? tr('ca_support', '支撐位') : tr('ca_resistance', '阻力位');
+    addLine(decisionLevels.stop_loss, cssVar('--accent-red', '#DC2626'), stopLabel);
+    if (decisionLevels.take_profits && decisionLevels.take_profits.length) {
+      addLine(decisionLevels.take_profits[0], cssVar('--accent-green', '#16A34A'), tr('ca_reco_tp', 'Reference Level'));
+    }
   }
   klineChart.timeScale().fitContent();
 }

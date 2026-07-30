@@ -215,21 +215,21 @@
       <div id="mtfBlock" style="display:none">
         <h4 style="margin-top:0.8rem" data-i18n="ca_mtf_title">跨時間框架（選填）</h4>
         <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_mtf_hint">比較週線/日線/1小時嘅趨勢是否一致（非必需，主動按先會查）</p>
-        <button class="btn-secondary" id="mtfBtn" onclick="requestMultiTimeframe()" data-i18n="ca_mtf_btn">📊 查看跨時間框架</button>
+        <button class="btn-secondary" id="mtfBtn" onclick="requestMultiTimeframe()" data-i18n="ca_mtf_btn" style="border-color:var(--blue,#2563EB)">📊 查看跨時間框架</button>
         <div id="mtfResult" style="margin-top:0.6rem"></div>
       </div>
 
       <div id="backtestBlock" style="display:none">
         <h4 style="margin-top:0.8rem" data-i18n="ca_backtest_title">策略歷史回測（選填）</h4>
         <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_backtest_hint">用真實歷史數據回測幾種策略嘅過往勝率／回報／回撤（非必需，主動按先會查；細樣本統計學上唔可靠，過去表現不代表未來）</p>
-        <button class="btn-secondary" id="backtestBtn" onclick="requestBacktestCompare()" data-i18n="ca_backtest_btn">🧪 回測比較策略</button>
+        <button class="btn-secondary" id="backtestBtn" onclick="requestBacktestCompare()" data-i18n="ca_backtest_btn" style="border-color:var(--blue,#2563EB)">🧪 回測比較策略</button>
         <div id="backtestResult" style="margin-top:0.6rem"></div>
       </div>
 
       <div id="aiCommentaryBlock" style="display:none">
         <h4 style="margin-top:0.8rem" data-i18n="ca_ai_commentary_title">AI 文字解讀（選填）</h4>
         <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_ai_commentary_hint">型態辨識需要截圖先做到；呢度可以叫AI將上面嘅真實數據寫成一段易讀總結（非必需，主動按先會叫AI）</p>
-        <button class="btn-secondary" id="commentaryBtn" onclick="requestAiCommentary()" data-i18n="ca_ai_commentary_btn">🤖 產生AI文字解讀</button>
+        <button class="btn-secondary" id="commentaryBtn" onclick="requestAiCommentary()" data-i18n="ca_ai_commentary_btn" style="border-color:var(--blue,#2563EB)">🤖 產生AI文字解讀</button>
         <p class="meta-line" id="commentaryResult" style="margin-top:0.6rem"></p>
       </div>
 
@@ -583,11 +583,20 @@ function renderKlineChart(res) {
   };
   if (res.support && res.support.level != null) addLine(res.support.level, cssVar('--green', '#16A34A'), t('ca_support', '支撐位'));
   if (res.resistance && res.resistance.level != null) addLine(res.resistance.level, cssVar('--red', '#DC2626'), t('ca_resistance', '阻力位'));
+  // 2026-07-30 (Paddle compliance, deep rewrite -- "深度改做純描述性支持/
+  // 阻力位"): this used to draw dl.entry/dl.stop_loss as extra "進場"/"止損"
+  // lines on top of the support/resistance lines just above -- dl.stop_loss
+  // is literally the SAME price as res.support.level/res.resistance.level
+  // (it's derived from them), so drawing it again as a "stop loss" line
+  // only added buy/sell-instruction framing to an already-shown structural
+  // level, never new information. dl.entry (= current close) is redundant
+  // with the chart itself. Only draw dl.take_profits[0] -- the one further
+  // level genuinely grounded in the opposite real support/resistance --
+  // as one more descriptive reference line; the other two are pure
+  // risk-multiple projections with no technical basis, dropped entirely.
   const dl = res.decision_levels;
-  if (dl) {
-    addLine(dl.entry, cssVar('--accent-blue', '#2563EB'), t('ca_reco_entry', '進場'));
-    addLine(dl.stop_loss, cssVar('--red', '#DC2626'), t('ca_reco_stop', '止損'));
-    (dl.take_profits || []).forEach((tp, i) => addLine(tp, cssVar('--green', '#16A34A'), `${t('ca_reco_tp', '目標')}${i + 1}`));
+  if (dl && dl.take_profits && dl.take_profits.length) {
+    addLine(dl.take_profits[0], cssVar('--accent-blue', '#2563EB'), t('ca_reco_tp', 'Reference Level'));
   }
 
   // 2026-07-26 addition: draw the "可能" chart patterns (res.pattern_points,
