@@ -119,6 +119,21 @@
     <div id="errorMsg" class="error"></div>
     <div id="successMsg" class="success"></div>
 
+    <!-- 2026-07-30 ("GOOGLE 及 LINE 放上面行先"): Google + LINE moved above
+         the email/password form -- these are one-click/one-tap methods, so
+         putting them first reduces friction for users who'd rather skip
+         typing. WhatsApp OTP still needs typing a phone number + code, so
+         it stays below the form in its own block (see socialLoginSection
+         further down). Toggled by loadLoginMethods() same as before, just
+         a different display target now (socialLoginTop). -->
+    <div id="socialLoginTop" style="display:none;margin-bottom:8px">
+      <div id="googleLoginBlock" style="display:none;margin-bottom:10px;justify-content:center"></div>
+      <button type="button" id="lineLoginBtn" class="btn" style="display:none;background:#06C755;color:#fff" onclick="startLineLogin()">
+        <span data-i18n="login_line_btn">💬 Continue with LINE</span>
+      </button>
+      <div class="divider"><span data-i18n="login_or_divider">or</span></div>
+    </div>
+
     <!-- Login Form -->
     <div id="loginForm">
       <div class="form-group">
@@ -154,17 +169,13 @@
       <button type="button" class="btn btn-primary" id="registerBtn" onclick="handleRegister()" data-i18n="login_btn_create">Create Account</button>
     </div>
 
-    <!-- task #333: Google/LINE/WhatsApp login -- each block only shows if
-         its feature flag is on AND (for Google) a client_id is actually
-         configured; see loadLoginMethods() below. Works for both the
-         Sign In and Register tabs since all 3 backends find-or-create
-         the account, so there's no need for separate widgets per tab. -->
+    <!-- task #333: WhatsApp OTP login (Google/LINE moved to socialLoginTop
+         above, 2026-07-30) -- only shows if its feature flag is on; see
+         loadLoginMethods() below. Works for both the Sign In and Register
+         tabs since the backend finds-or-creates the account, so there's no
+         need for separate widgets per tab. -->
     <div id="socialLoginSection" style="display:none;margin-top:8px">
       <div class="divider"><span data-i18n="login_or_divider">or</span></div>
-      <div id="googleLoginBlock" style="display:none;margin-bottom:10px;justify-content:center"></div>
-      <button type="button" id="lineLoginBtn" class="btn" style="display:none;background:#06C755;color:#fff" onclick="startLineLogin()">
-        <span data-i18n="login_line_btn">💬 Continue with LINE</span>
-      </button>
       <div id="whatsappOtpBlock" style="display:none">
         <div class="form-group">
           <label data-i18n="login_whatsapp_label">WhatsApp number</label>
@@ -443,24 +454,31 @@ async function loadLoginMethods() {
   try {
     const res = await fetch(`${API}/auth/login-methods`);
     const cfg = await res.json();
-    let anyShown = false;
+    // 2026-07-30: Google + LINE now live in their own block above the form
+    // (socialLoginTop); WhatsApp OTP stays in the original block below the
+    // form (socialLoginSection). Tracked separately so each block only
+    // reveals itself (and its own "or" divider) when it actually has
+    // something to show.
+    let anyShownTop = false;
+    let anyShownBottom = false;
 
     if (cfg.line_login) {
       document.getElementById('lineLoginBtn').style.display = 'block';
-      anyShown = true;
+      anyShownTop = true;
     }
     if (cfg.whatsapp_otp) {
       document.getElementById('whatsappOtpBlock').style.display = 'block';
-      anyShown = true;
+      anyShownBottom = true;
     }
     if (cfg.google_login && cfg.google_client_id && typeof google !== 'undefined' && google.accounts) {
       document.getElementById('googleLoginBlock').style.display = 'flex';
       google.accounts.id.initialize({ client_id: cfg.google_client_id, callback: handleGoogleCredential });
       google.accounts.id.renderButton(document.getElementById('googleLoginBlock'), { theme: 'outline', size: 'large', width: 280 });
-      anyShown = true;
+      anyShownTop = true;
     }
-    if (anyShown) document.getElementById('socialLoginSection').style.display = 'block';
-  } catch (e) { /* social login section just stays hidden */ }
+    if (anyShownTop) document.getElementById('socialLoginTop').style.display = 'block';
+    if (anyShownBottom) document.getElementById('socialLoginSection').style.display = 'block';
+  } catch (e) { /* social login blocks just stay hidden */ }
 }
 loadLoginMethods();
 
