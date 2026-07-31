@@ -236,31 +236,45 @@ _LICENSES: Dict[str, LicenseRecord] = {
     ),
     "huggingface_inference_api": LicenseRecord(
         source_id="huggingface_inference_api",
-        license_type="unknown",
+        license_type="commercial",
         commercial_use_allowed=True,
-        terms_url="https://huggingface.co/inference-api",
-        risk_level="medium",
+        terms_url="https://huggingface.co/terms-of-service",
+        risk_level="low",
         notes=(
             "Used by services/finbert_sentiment_service.py (Stage 2 "
             "roadmap: 'FinBERT 新聞情緒升級') to call the ProsusAI/finbert "
             "model hosted on HuggingFace's Inference API, replacing/"
             "augmenting the old hand-picked keyword sentiment list in "
-            "engines/news_engine.py. HuggingFace's own Inference API "
-            "terms generally permit commercial use of hosted public "
-            "models, but the ProsusAI/finbert model card's own license "
-            "terms have not been independently re-verified for this "
-            "specific commercial usage pattern (calling it via the "
-            "hosted API rather than downloading the weights) -- flagged "
-            "conservatively, same treatment as coingecko_free_tier above. "
-            "Gated entirely behind an HF_API_TOKEN env var "
-            "(finbert_sentiment_service.is_available()); when unset or "
-            "the API call fails, callers fall back to the original "
-            "keyword heuristic rather than fabricating a FinBERT-"
-            "labelled score. No new package dependency -- called over "
-            "plain HTTPS via services/outbound_http.py's backoff helper, "
-            "not the `transformers`/`torch` self-hosting path (this "
-            "backend is a single small Railway dyno; a ~440MB in-process "
-            "model was judged not worth the memory/cold-start cost)."
+            "engines/news_engine.py. "
+            "2026-07-31 re-verification (directly fetched huggingface.co/"
+            "terms-of-service): 'Inference Providers' is explicitly listed "
+            "as one of Hugging Face's own paid, usage-metered commercial "
+            "Services ('Payment' section: billed monthly in advance plus "
+            "usage-based overage) -- there is no personal/non-commercial "
+            "restriction anywhere in this ToS, unlike Polygon/Twelve Data/"
+            "Marketstack/Finnhub above. This lowers risk from the prior "
+            "conservative 'medium' rating to 'low'. One remaining, lower-"
+            "stakes caveat: the ProsusAI/finbert model card itself "
+            "(confirmed via huggingface.co/api/models/ProsusAI/finbert) "
+            "carries NO declared license tag at all -- so the model "
+            "WEIGHTS' own reuse terms are technically undefined/all-"
+            "rights-reserved by ProsusAI. This does not block XFINLAB's "
+            "actual usage pattern, though: this codebase only ever "
+            "consumes classification OUTPUTS via the hosted API call "
+            "(governed by the HF platform ToS just confirmed above), and "
+            "never downloads, redistributes, or self-hosts the model "
+            "weights -- so the model's own undeclared license does not "
+            "apply to XFINLAB's usage the way it would if the weights "
+            "were being redistributed. Gated entirely behind an "
+            "HF_API_TOKEN env var (finbert_sentiment_service.is_"
+            "available()); when unset or the API call fails, callers fall "
+            "back to the original keyword heuristic rather than "
+            "fabricating a FinBERT-labelled score. No new package "
+            "dependency -- called over plain HTTPS via services/"
+            "outbound_http.py's backoff helper, not the `transformers`/"
+            "`torch` self-hosting path (this backend is a single small "
+            "Railway dyno; a ~440MB in-process model was judged not worth "
+            "the memory/cold-start cost)."
         ),
     ),
     "shipping_sector_etfs_proxy": LicenseRecord(
