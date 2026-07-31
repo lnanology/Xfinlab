@@ -181,6 +181,46 @@ def _get_line_jwk_client():
     return _line_jwk_client
 
 
+# 2026-07-31 fix ("用LINE 註冊及登入不了" -- every LINE login attempt was
+# failing): LINE's own docs (developers.line.biz/en/docs/line-login/
+# verify-id-token/, "Header"/"Signature" sections) say the ID token's
+# signing algorithm depends on HOW it was obtained -- native app/LINE
+# SDK/LIFF tokens are ES256 (verified via the JWKS `kid` lookup this file
+# already had), but a classic server-side web OAuth flow like this one
+# (authorize -> redirect -> code -> token exchange, exactly what
+# line_login_start()/line_login_callback() below do) gets an **HS256**
+# token instead, verified with the Channel Secret as the HMAC key -- NOT
+# the JWKS endpoint at all. HS256 tokens also have no `kid` in their
+# header (LINE's docs: "kid ... included only when alg is ES256"), so the
+# old code's unconditional `_get_line_jwk_client().get_signing_key_from_jwt()`
+# + `algorithms=["RS256"]` call was guaranteed to throw on every single
+# real login, landing in the blanket `except` below and always redirecting
+# to `social_error=line_verify_failed`. This decodes the header first to
+# pick the correct verification path per LINE's own alg-to-key table
+# instead of assuming JWKS/RS256 unconditionally.
+def _verify_line_id_token(id_token: str, channel_id: str, channel_secret: str) -> dict:
+    header = jwt.get_unverified_header(id_token)
+    alg = header.get("alg")
+    if alg == "HS256":
+        return jwt.decode(
+            id_token,
+            channel_secret,
+            algorithms=["HS256"],
+            audience=channel_id,
+            issuer="https://access.line.me",
+        )
+    # ES256 (native app/LINE SDK/LIFF-obtained tokens) -- verify via the
+    # JWKS `kid` this file already fetches.
+    signing_key = _get_line_jwk_client().get_signing_key_from_jwt(id_token)
+    return jwt.decode(
+        id_token,
+        signing_key.key,
+        algorithms=["ES256"],
+        audience=channel_id,
+        issuer="https://access.line.me",
+    )
+
+
 def _line_redirect_uri():
     # Must match EXACTLY (including trailing slash/scheme) what's
     # registered in the LINE Developers Console for this channel.
@@ -235,14 +275,7 @@ def line_login_callback(request: Request, code: str = "", state: str = "", error
         if not id_token:
             return RedirectResponse(f"{login_page}?social_error=line_token_exchange_failed")
 
-        signing_key = _get_line_jwk_client().get_signing_key_from_jwt(id_token)
-        payload = jwt.decode(
-            id_token,
-            signing_key.key,
-            algorithms=["RS256"],
-            audience=channel_id,
-            issuer="https://access.line.me",
-        )
+        payload = _verify_line_id_token(id_token, channel_id, channel_secret)
     except Exception:
         return RedirectResponse(f"{login_page}?social_error=line_verify_failed")
 
