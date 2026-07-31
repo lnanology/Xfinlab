@@ -96,7 +96,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
   <div class="hero">
     <span class="badge-pill">EARLY ACCESS</span>
     <h1>Real market intelligence, structured for developers</h1>
-    <p>Three JSON endpoints — market events, FinBERT sentiment, and multi-agent AI debate — built on the same real data and anti-fabrication principles behind XFINLAB's own product. No self-serve signup yet: request access below and we'll set you up personally.</p>
+    <p>Three JSON endpoints — market events, FinBERT sentiment, and multi-agent AI debate — built on the same real data and anti-fabrication principles behind XFINLAB's own product. Free tier keys are issued instantly and automatically; Pro/Enterprise are still set up personally.</p>
     <div class="hero-ctas">
       <a href="#access" class="btn-primary">Request Early Access</a>
       <a href="#endpoints" class="btn-ghost">See the endpoints</a>
@@ -132,7 +132,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 
   <div class="section">
     <div class="section-title">Plans</div>
-    <div class="section-sub">V1 is early access — every plan is set up personally, not self-serve yet. Pro pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
+    <div class="section-sub">Free is instant and automated. Pro/Enterprise are still set up personally — pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
     <div class="plans" id="plansGrid">
 
       <div class="plan" id="plan-free" data-plan="free">
@@ -179,8 +179,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
   </div>
 
   <div class="section" id="access">
-    <div class="section-title">Request Early Access</div>
-    <div class="section-sub">Tell us a bit about what you're building — we'll follow up personally with a key and, if it's a paid tier, pricing that fits.</div>
+    <div class="section-title">Get an API Key</div>
+    <div class="section-sub">Choose Free below and your key is emailed instantly — no waiting. Choose Pro or Enterprise and we'll follow up personally with pricing that fits.</div>
 
     <form class="access-form" id="accessForm">
       <div class="form-row">
@@ -205,7 +205,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
       </div>
       <button type="submit" class="form-submit" id="accessSubmitBtn">Request Access</button>
       <div id="accessMsg"></div>
-      <div class="form-note">No credit card, no automatic billing. We'll email you directly to follow up. By requesting access you agree to our <a href="api-terms.html">API Terms of Service</a>.</div>
+      <div class="form-note">Free tier: key is generated and emailed automatically, no admin step. Pro/Enterprise: no credit card yet, we'll email you directly to follow up. By requesting access you agree to our <a href="api-terms.html">API Terms of Service</a>.</div>
     </form>
   </div>
 
@@ -249,30 +249,55 @@ document.getElementById('accessForm').addEventListener('submit', async function(
   msgEl.className = '';
   msgEl.style.display = 'none';
 
-  const payload = {
-    email: document.getElementById('accessEmail').value.trim(),
-    company: document.getElementById('accessCompany').value.trim() || null,
-    tier_interest: document.getElementById('accessTier').value,
-    message: document.getElementById('accessMessage').value.trim() || null,
-  };
-
+  const tier = document.getElementById('accessTier').value;
+  const email = document.getElementById('accessEmail').value.trim();
   btn.disabled = true;
-  btn.textContent = 'Sending...';
+
   try {
-    const res = await fetch(`${API}/intelligence/early-access`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (res.ok && data.success !== false) {
-      msgEl.textContent = "Thanks — we'll follow up by email shortly.";
-      msgEl.className = 'ok';
-      document.getElementById('accessForm').reset();
-      document.getElementById('accessTier').value = 'pro';
+    let res, data;
+    if (tier === 'free') {
+      // 2026-07-31: Free tier is now fully automated (POST /v1/signup) --
+      // no admin step, key is emailed within seconds. Pro/Enterprise below
+      // still go through the manual early-access flow.
+      btn.textContent = 'Issuing key...';
+      res = await fetch(`${API}/intelligence/v1/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      data = await res.json();
+      if (res.ok && data.success !== false) {
+        msgEl.textContent = "Done — check your inbox, your free API key is on its way.";
+        msgEl.className = 'ok';
+        document.getElementById('accessForm').reset();
+        document.getElementById('accessTier').value = 'pro';
+      } else {
+        msgEl.textContent = (data && data.detail) || 'Something went wrong — please try again.';
+        msgEl.className = 'err';
+      }
     } else {
-      msgEl.textContent = (data && data.detail) || 'Something went wrong — please try again.';
-      msgEl.className = 'err';
+      btn.textContent = 'Sending...';
+      const payload = {
+        email,
+        company: document.getElementById('accessCompany').value.trim() || null,
+        tier_interest: tier,
+        message: document.getElementById('accessMessage').value.trim() || null,
+      };
+      res = await fetch(`${API}/intelligence/early-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      data = await res.json();
+      if (res.ok && data.success !== false) {
+        msgEl.textContent = "Thanks — we'll follow up by email shortly.";
+        msgEl.className = 'ok';
+        document.getElementById('accessForm').reset();
+        document.getElementById('accessTier').value = 'pro';
+      } else {
+        msgEl.textContent = (data && data.detail) || 'Something went wrong — please try again.';
+        msgEl.className = 'err';
+      }
     }
   } catch (err) {
     msgEl.textContent = 'Network error — please try again.';

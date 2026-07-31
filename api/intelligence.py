@@ -10,11 +10,16 @@ retention policy (title/source/link/published_at only, never full body).
 
 Auth: X-API-Key header, verified against a raw-sqlite api_keys table (see
 services/api_key_service.py for why this isn't database/db.py's unused
-SQLAlchemy layer). V1 has no self-serve signup/Stripe billing --
-keys are issued manually by the admin via /intelligence/admin/issue-key
-(gated by api.admin.verify_admin, same convention as every other admin
-endpoint). This is a deliberate, honest stopgap: don't build a billing
-system before there's a single paying customer to bill.
+SQLAlchemy layer). Paid tiers (Pro/Enterprise) have no self-serve
+signup/Stripe billing yet -- those keys are issued manually by the admin
+via /intelligence/admin/issue-key (gated by api.admin.verify_admin, same
+convention as every other admin endpoint). This is a deliberate, honest
+stopgap: don't build a billing system before there's a single paying
+customer to bill.
+
+2026-07-31: Free tier is the exception -- POST /intelligence/v1/signup
+below issues and emails a key automatically, no admin step, tracked in a
+separate self_serve_api_keys table (see api_key_service.py).
 
 Versioned under /api/v1/intelligence/* -- the rest of this app's ~50
 routers are unversioned flat /api/*; this is a clean-slate decision for
@@ -179,6 +184,80 @@ def intelligence_early_access(body: EarlyAccessRequest):
         pass
 
     return _envelope(data={"received": True})
+
+
+# ---------------------------------------------------------------------------
+# 2026-07-31: Self-serve Free-tier signup (Task #575). Automated, no admin
+# step -- closes the "no self-serve billing" gap for the Free tier only.
+# Pro/Enterprise deliberately still route through /intelligence/early-access
+# above until a real payment processor (Stripe recommended over Paddle for
+# usage-metered API billing -- see chat) is actually connected, which needs
+# the business owner's own merchant account and is out of scope here.
+# ---------------------------------------------------------------------------
+
+
+class FreeSignupRequest(BaseModel):
+    email: str  # same plain-str rationale as EarlyAccessRequest.email above
+
+    @field_validator("email")
+    @classmethod
+    def _basic_email_shape(cls, v: str) -> str:
+        v = (v or "").strip()
+        if "@" not in v or "." not in v.split("@")[-1] or len(v) < 5:
+            raise ValueError("Please provide a valid email address")
+        return v
+
+
+@router.post("/intelligence/v1/signup")
+def intelligence_self_serve_signup(body: FreeSignupRequest, request: Request):
+    """Public, unauthenticated. Issues a Free-tier key immediately and
+    emails it -- never returned in the JSON response body, so it can't sit
+    in browser devtools/network logs. Guarded by a disposable-email check
+    (reusing services/disposable_email_domains.py, the same blocklist
+    already used for site registration) and a per-IP daily rate limit
+    (services/api_key_service.check_self_serve_signup_rate) so this can't
+    be scripted into unlimited free-key generation."""
+    from services.disposable_email_domains import is_disposable_email
+    from services.email_service import EmailService
+
+    if is_disposable_email(body.email):
+        raise HTTPException(status_code=400, detail="Please use a non-disposable email address")
+
+    ip = request.client.host if request and request.client else "unknown"
+    if not api_key_service.check_self_serve_signup_rate(ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many signup attempts from this network today -- please try again tomorrow",
+        )
+    api_key_service.record_self_serve_signup_attempt(ip)
+
+    result = api_key_service.issue_self_serve_free_key(body.email)
+
+    html = f"""
+    <div style="font-family:Arial,sans-serif;padding:20px;background:#080c14;color:#e2e8f0">
+        <h2 style="color:#00d4ff">Your XFINLAB Intelligence API key</h2>
+        <p>Free tier -- 100 weighted calls/day. Keep this key secret; it will not be shown again (re-run signup with the same email to rotate it if lost).</p>
+        <p style="font-family:monospace;background:#111827;padding:12px;border-radius:8px;word-break:break-all">{result['key']}</p>
+        <p>Docs: <a href="https://www.xfinlab.com/intelligence-api.html" style="color:#00d4ff">xfinlab.com/intelligence-api.html</a> &middot; Terms: <a href="https://www.xfinlab.com/api-terms.html" style="color:#00d4ff">api-terms.html</a></p>
+    </div>
+    """
+    sent = False
+    try:
+        sent = EmailService.send(result["email"], "[XFINLAB] Your Intelligence API key", html)
+    except Exception:
+        sent = False
+
+    if not sent:
+        # The key already exists in self_serve_api_keys at this point, but
+        # if we can't deliver it there's no way for the customer to receive
+        # it (same "show it once" posture as issue_key()) -- report the
+        # failure honestly rather than claiming success.
+        raise HTTPException(
+            status_code=502,
+            detail="Key was issued but the confirmation email failed to send -- please try again or contact support@xfinlab.com",
+        )
+
+    return _envelope(data={"email": result["email"], "tier": "free", "sent": True})
 
 
 @router.get("/intelligence/v1/events")
