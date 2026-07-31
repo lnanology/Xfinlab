@@ -482,6 +482,47 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "EODHD. NOT YET integrated into any service as of this entry."
         ),
     ),
+    # 2026-07-31 (later same day): user shared a research summary of
+    # open-source finance tooling and asked to add BaoStock specifically
+    # (the only one of that list judged to fill a real product gap --
+    # zero A-share coverage anywhere in this codebase's data layer).
+    "baostock": LicenseRecord(
+        source_id="baostock",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="http://www.baostock.com",
+        risk_level="high",
+        notes=(
+            "Free, no-registration Python client for China A-share daily "
+            "history/fundamentals (pip install baostock; actively "
+            "maintained, v0.9.1 as of Apr 2026 per PyPI). The wrapper "
+            "LIBRARY itself is confirmed BSD-licensed via PyPI/GitHub "
+            "PKG-INFO -- that covers the Python client code only, NOT "
+            "necessarily the underlying A-share DATA's redistribution "
+            "terms, which is the actual open question here. Same "
+            "situation as finnhub above: baostock.com is a client-"
+            "rendered SPA that blocked both WebFetch and WebSearch from "
+            "seeing the real 免责声明/使用条款 (disclaimer/terms-of-use) "
+            "page text, and no browser-rendering tool was available in "
+            "that session to load it. Treated conservatively "
+            "(commercial_use_allowed=False) purely because a permissive "
+            "code license is not evidence either way about the data's "
+            "own terms -- this is not circumstantial evidence pointing "
+            "toward non-commercial like finnhub's, just a genuine "
+            "unknown. This entry should be corrected the moment someone "
+            "actually reads baostock.com's primary-source terms text. "
+            "NOT wired into any production route -- used only in "
+            "services/dev_data_rotation_service.py (gated behind "
+            "ALLOW_DEV_DATA_ROTATION=true), same treatment as finnhub/"
+            "marketstack/polygon_io/twelve_data above. Also unlike those "
+            "four: BaoStock is a stateful login/query/logout session "
+            "client, not a metered HTTP API, so the calls_per_minute "
+            "figure registered for it in dev_data_rotation_service.py is "
+            "a precautionary self-imposed cap, not a provider-published "
+            "limit."
+        ),
+        replacement_candidates=["baostock_verified_commercial_terms", "sec_edgar"],
+    ),
     "oilpriceapi_baltic_dry_index": LicenseRecord(
         source_id="oilpriceapi_baltic_dry_index",
         license_type="unknown",

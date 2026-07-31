@@ -41,24 +41,41 @@ signal is consistently in one direction and this codebase's convention
 is to assume the more conservative reading when actual ToS text can't be
 verified.
 
+BaoStock (2026-07-31 addition): a free, no-registration Python client for
+China A-share history -- fills a real gap, since services/
+market_data_gateway.py has zero A-share coverage today. The wrapper
+LIBRARY is BSD-licensed (confirmed via PyPI/GitHub PKG-INFO), but same as
+Finnhub above, this codebase could NOT independently verify BaoStock's
+own data-terms page (baostock.com is a client-rendered SPA that blocked
+both WebFetch and WebSearch, and no browser-rendering tool was available
+in that session) -- a permissive code license does not by itself confirm
+the underlying A-share DATA can be redistributed commercially. Treated
+with the same conservative unknown/high-risk rating as Finnhub. Also
+architecturally different from the other four: it's a stateful login/
+query/logout session against BaoStock's own data server, not a metered
+HTTP API, so there's no official per-minute/per-day figure to record --
+the limit registered for it below is a precautionary self-imposed
+number, not a provider-published one.
+
 XFINLAB is a commercial product serving real end users (free and
-paying), so wiring any of these four free tiers into the production
+paying), so wiring any of these five free sources into the production
 request path would create the exact same class of ToS risk this
 codebase already flags as "high risk" for Yahoo Finance.
 
 Per explicit 2026-07-31 decisions with the user (extended from Polygon/
-Twelve Data to also cover Finnhub and Marketstack), all four providers
-are therefore gated to dev/test-only usage here: this module helps prove
-out the rotation/rate-limiting ENGINEERING pattern using real responses,
-but must never run against real end-user traffic. Every real-network
-call in this file is gated behind ALLOW_DEV_DATA_ROTATION=true (see
-_dev_guard() below) -- do NOT set that env var in the Railway production
-environment. If a paid Business/commercial-tier plan is ever actually
-purchased for any of these providers, update its record in
-license_registry.py first, then promote the relevant fetch function into
-services/technical_analysis_service.py's real Alpaca-first/yfinance-
-fallback routing -- this file should stay a harness, not become the
-production path itself.
+Twelve Data to also cover Finnhub, Marketstack, and BaoStock), all five
+providers are therefore gated to dev/test-only usage here: this module
+helps prove out the rotation/rate-limiting ENGINEERING pattern using real
+responses, but must never run against real end-user traffic. Every
+real-network call in this file is gated behind ALLOW_DEV_DATA_ROTATION=true
+(see _dev_guard() below) -- do NOT set that env var in the Railway
+production environment. If a paid Business/commercial-tier plan is ever
+actually purchased for any of these providers (or BaoStock's actual data
+terms are confirmed acceptable), update its record in license_registry.py
+first, then promote the relevant fetch function into services/
+technical_analysis_service.py's real Alpaca-first/yfinance-fallback
+routing -- this file should stay a harness, not become the production
+path itself.
 
 Alpaca is exempt from the gate: its free tier is already documented as
 commercial-use-clean in license_registry.py and is already XFINLAB's
@@ -98,20 +115,21 @@ _PERIOD_DAYS = {"1mo": 30, "3mo": 90, "6mo": 182, "1y": 365, "2y": 730}
 
 
 def _dev_guard() -> None:
-    """Hard-refuses to make any Polygon/Twelve Data/Finnhub/Marketstack
-    request unless the caller has explicitly opted in -- the safety net
-    that keeps these ToS-restricted (or ToS-unconfirmed, see Finnhub's
-    module-docstring note) free tiers out of production even if this
-    module is ever accidentally imported from somewhere it shouldn't be."""
+    """Hard-refuses to make any Polygon/Twelve Data/Finnhub/Marketstack/
+    BaoStock request unless the caller has explicitly opted in -- the
+    safety net that keeps these ToS-restricted (or ToS-unconfirmed, see
+    Finnhub's and BaoStock's module-docstring notes) free sources out of
+    production even if this module is ever accidentally imported from
+    somewhere it shouldn't be."""
     if os.getenv(ALLOW_ENV_VAR, "").lower() not in ("1", "true", "yes"):
         raise RuntimeError(
             f"dev_data_rotation_service is gated behind {ALLOW_ENV_VAR}=true. "
-            "This module calls Polygon.io's, Twelve Data's, Finnhub's, and "
-            "Marketstack's FREE tiers, which are personal/non-commercial-use "
-            "only (or unconfirmed for commercial use) per their own terms "
-            "(see services/license_registry.py) -- it must never run "
-            "against real end-user traffic. Do not set this env var in the "
-            "Railway production environment."
+            "This module calls Polygon.io's, Twelve Data's, Finnhub's, "
+            "Marketstack's, and BaoStock's FREE sources, which are personal/"
+            "non-commercial-use only (or unconfirmed for commercial use) per "
+            "their own terms (see services/license_registry.py) -- it must "
+            "never run against real end-user traffic. Do not set this env "
+            "var in the Railway production environment."
         )
 
 
@@ -149,6 +167,14 @@ PROVIDER_LIMITS: Dict[str, ProviderLimit] = {
     # that will allow users to make up to 100 market data API requests
     # per month").
     "marketstack": ProviderLimit(name="marketstack", calls_per_month=100),
+    # BaoStock (2026-07-31): unlike every other entry above, this number
+    # is NOT sourced from the provider's own published docs -- BaoStock is
+    # a free, no-registration, stateful login/query/logout client with no
+    # officially published rate limit anywhere found. 30/minute is a
+    # precautionary self-imposed cap this codebase is choosing so the dev
+    # harness never hammers their server; lower it further if they ever
+    # push back.
+    "baostock": ProviderLimit(name="baostock", calls_per_minute=30),
 }
 
 
@@ -410,6 +436,65 @@ def _fetch_marketstack_dev(symbol: str, period: str = "6mo") -> Optional[pd.Data
     return df.sort_index()[["Open", "High", "Low", "Close", "Volume"]]
 
 
+def _fetch_baostock_dev(symbol: str, period: str = "6mo") -> Optional[pd.DataFrame]:
+    """DEV/TEST ONLY -- see module docstring. BaoStock: free, no
+    registration/API key, China A-share daily history via a stateful
+    login/query/logout session against BaoStock's own data server (NOT a
+    parameterized HTTP GET like the other four fetch functions above).
+    Fills a real gap -- services/market_data_gateway.py has zero A-share
+    coverage today. Commercial-use terms for the underlying DATA are
+    unconfirmed (module docstring); the wrapper library's BSD license only
+    covers the client code.
+
+    Symbol format is BaoStock's own convention, NOT the ".SH"/".SZ" suffix
+    style used elsewhere in this codebase: lowercase exchange prefix +
+    dot + code, e.g. "sh.600000" (Shanghai) / "sz.000001" (Shenzhen).
+    Caller is responsible for passing that format -- no normalization
+    layer here, this is a harness, not the production ticker resolver."""
+    _dev_guard()
+    try:
+        import baostock as bs
+    except ImportError:
+        logger.info("baostock (dev) package not installed -- skipping")
+        return None
+
+    days = _PERIOD_DAYS.get(period, 182)
+    end = datetime.utcnow().date()
+    start = end - timedelta(days=days)
+
+    lg = bs.login()
+    if lg.error_code != "0":
+        logger.info("BaoStock (dev) login failed: %s", lg.error_msg)
+        return None
+    try:
+        rs = bs.query_history_k_data_plus(
+            symbol,
+            "date,open,high,low,close,volume",
+            start_date=start.isoformat(),
+            end_date=end.isoformat(),
+            frequency="d",
+            adjustflag="2",
+        )
+        if rs.error_code != "0":
+            logger.info("BaoStock (dev) query failed for %s: %s", symbol, rs.error_msg)
+            return None
+        rows = []
+        while rs.next():
+            rows.append(rs.get_row_data())
+        if not rows:
+            logger.info("BaoStock (dev) returned no rows for %s", symbol)
+            return None
+        df = pd.DataFrame(rows, columns=rs.fields)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.set_index("date").rename(
+            columns={"open": "Open", "high": "High", "low": "Low", "close": "Close", "volume": "Volume"}
+        )
+        df = df.astype({"Open": float, "High": float, "Low": float, "Close": float, "Volume": float})
+        return df.sort_index()[["Open", "High", "Low", "Close", "Volume"]]
+    finally:
+        bs.logout()
+
+
 if __name__ == "__main__":
     # Standalone smoke test -- only runs when this file is executed
     # directly (e.g. `python services/dev_data_rotation_service.py`),
@@ -420,6 +505,10 @@ if __name__ == "__main__":
     # handling (a None result is still "handled", not an exception).
     logging.basicConfig(level=logging.INFO)
     test_symbol = os.getenv("DEV_ROTATION_TEST_SYMBOL", "AAPL")
+    # BaoStock uses its own "sh.600000"/"sz.000001" symbol convention, not
+    # the US-ticker-style test_symbol above -- kept as a separate env var
+    # rather than forcing one shared symbol format across all 6 providers.
+    test_symbol_baostock = os.getenv("DEV_ROTATION_TEST_SYMBOL_BAOSTOCK", "sh.600000")
 
     rotator = DevProviderRotator({
         "alpaca": lambda: _fetch_alpaca_dev(test_symbol),
@@ -427,6 +516,7 @@ if __name__ == "__main__":
         "twelvedata": lambda: _fetch_twelvedata_dev(test_symbol),
         "finnhub": lambda: _fetch_finnhub_dev(test_symbol),
         "marketstack": lambda: _fetch_marketstack_dev(test_symbol),
+        "baostock": lambda: _fetch_baostock_dev(test_symbol_baostock),
     })
 
     for i in range(6):
