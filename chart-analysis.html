@@ -21,6 +21,7 @@
 <script src="js/ai-loading.js"></script>
 <script src="js/prob-display.js"></script>
 <script src="js/decision-footer.js"></script>
+<script src="js/broker-cta.js"></script>
 <script src="js/share-tools.js"></script>
 <style>
 /* Page-specific small adjustments while fully using site style */
@@ -253,6 +254,8 @@
       </div>
 
       <div id="decisionFooter"></div>
+      <div id="brokerCta"></div>
+      <button class="btn-secondary" id="downloadReportBtn" type="button" data-i18n="report_download_pdf" style="display:none;margin-top:0.6rem">📄 下載 PDF 報告</button>
       </div>
 
       <div id="shareBar"></div>
@@ -1217,8 +1220,62 @@ async function runTickerSearch(symbolOverride){
           riskReward: dl ? dl.risk_reward : null,
           riskPct: dl ? dl.risk_pct : null
         });
+        if (typeof window.renderBrokerCta === 'function') {
+          window.renderBrokerCta('brokerCta');
+        }
+        // AI Report Generator (task #600) -- see ai-analysis.html's matching
+        // wiring / ai/report_generator.py's generate_from_live_data()
+        // docstring. Only shown when there's a real confluence score to
+        // report on (this branch), never in the AI-vision-only fallback.
+        const downloadReportBtn = document.getElementById('downloadReportBtn');
+        if (downloadReportBtn) {
+          downloadReportBtn.style.display = 'inline-block';
+          downloadReportBtn.onclick = async () => {
+            const originalText = downloadReportBtn.textContent;
+            downloadReportBtn.disabled = true;
+            downloadReportBtn.textContent = '⏳ 生成緊...';
+            try {
+              const reportToken = localStorage.getItem('xfinlab_token') || '';
+              const resp = await fetch(`${API_BASE}/api/report/generate${reportToken ? '?token=' + encodeURIComponent(reportToken) : ''}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ticker: currentSearchSymbol || 'ASSET',
+                  decisionScore: decisionScore,
+                  confidencePct: c.confidence_pct,
+                  riskLabel: riskLabel,
+                  keyReasons: reasons.length ? reasons : null,
+                  suggestedAction: null,
+                  stopLoss: dl ? dl.stop_loss : null,
+                  takeProfits: dl ? dl.take_profits : null,
+                  riskPct: dl ? dl.risk_pct : null
+                })
+              });
+              if (!resp.ok) throw new Error('report generation failed');
+              const blob = await resp.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${currentSearchSymbol || 'asset'}_XFINLAB_Report.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+            } catch (e) {
+              console.error(e);
+              alert('報告生成失敗，請稍後再試');
+            } finally {
+              downloadReportBtn.disabled = false;
+              downloadReportBtn.textContent = originalText;
+            }
+          };
+        }
       } else {
         window.renderDecisionFooter('decisionFooter', {});
+        var brokerCtaEl = document.getElementById('brokerCta');
+        if (brokerCtaEl) brokerCtaEl.innerHTML = '';
+        var downloadReportBtnEl = document.getElementById('downloadReportBtn');
+        if (downloadReportBtnEl) downloadReportBtnEl.style.display = 'none';
       }
     }
 
@@ -1501,11 +1558,61 @@ async function runImageAnalysis(){
           riskReward: dl ? dl.risk_reward : null,
           riskPct: dl ? dl.risk_pct : null
         });
+        if (typeof window.renderBrokerCta === 'function') {
+          window.renderBrokerCta('brokerCta');
+        }
+        const downloadReportBtn2 = document.getElementById('downloadReportBtn');
+        if (downloadReportBtn2) {
+          downloadReportBtn2.style.display = 'inline-block';
+          downloadReportBtn2.onclick = async () => {
+            const originalText = downloadReportBtn2.textContent;
+            downloadReportBtn2.disabled = true;
+            downloadReportBtn2.textContent = '⏳ 生成緊...';
+            try {
+              const reportToken = localStorage.getItem('xfinlab_token') || '';
+              const resp = await fetch(`${API_BASE}/api/report/generate${reportToken ? '?token=' + encodeURIComponent(reportToken) : ''}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ticker: symbol || 'ASSET',
+                  decisionScore: decisionScore,
+                  confidencePct: c.confidence_pct,
+                  riskLabel: riskLabel,
+                  keyReasons: reasons.length ? reasons : null,
+                  suggestedAction: res.recommendation || null,
+                  stopLoss: dl ? dl.stop_loss : null,
+                  takeProfits: dl ? dl.take_profits : null,
+                  riskPct: dl ? dl.risk_pct : null
+                })
+              });
+              if (!resp.ok) throw new Error('report generation failed');
+              const blob = await resp.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${symbol || 'asset'}_XFINLAB_Report.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+            } catch (e) {
+              console.error(e);
+              alert('報告生成失敗，請稍後再試');
+            } finally {
+              downloadReportBtn2.disabled = false;
+              downloadReportBtn2.textContent = originalText;
+            }
+          };
+        }
       } else {
         // AI-vision-only fallback (no symbol supplied) -- no real numeric
         // composite score exists, so honestly show nothing rather than a
         // fabricated Decision Score™.
         window.renderDecisionFooter('decisionFooter', {});
+        var brokerCtaEl2 = document.getElementById('brokerCta');
+        if (brokerCtaEl2) brokerCtaEl2.innerHTML = '';
+        var downloadReportBtnEl2 = document.getElementById('downloadReportBtn');
+        if (downloadReportBtnEl2) downloadReportBtnEl2.style.display = 'none';
       }
     }
 

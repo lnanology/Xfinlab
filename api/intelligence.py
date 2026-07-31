@@ -428,6 +428,82 @@ def intelligence_ticker(
 
 
 # ---------------------------------------------------------------------------
+# 2026-07-31 (monetization batch, task #598): "Decision/Market-Structure API"
+# and "Stress-Test API" -- pure packaging of two engines this codebase
+# already built and already serves on ai-analysis.html/chart-analysis.html
+# (services/technical_analysis_service.py's confluence+MACD+market-structure
+# +chart-pattern pipeline) and stress-lab.html (services/monte_carlo_service
+# .py's real historical-bootstrap simulation). No new computation, no new
+# AI calls -- same honesty posture as every other endpoint in this router:
+# real numbers from real data, never a fabricated estimate.
+# ---------------------------------------------------------------------------
+
+@router.get("/intelligence/v1/technical/{ticker}")
+def intelligence_technical(
+    ticker: str,
+    period: str = "6mo",
+    interval: str = "1d",
+    lang: str = "en",
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Confluence direction/confidence, trend, MACD, volume, chart patterns,
+    and market-structure (BOS/CHOCH/liquidity-sweep/order-flow/volume-
+    profile/institutional-footprint) for one ticker -- everything
+    ai-analysis.html's dashboard shows, minus AI prose. `lang` reuses the
+    same site-wide per-language translation this endpoint's underlying
+    function already does for the website (task #592's fix), so API
+    consumers get real localized labels too, not just en/zh."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "technical")
+
+    from services.technical_analysis_service import get_technical_analysis
+
+    ticker = ticker.upper().strip()
+    tech = get_technical_analysis(ticker, period=period, interval=interval, lang=lang)
+    if not tech or "error" in tech:
+        return _envelope(data=None, error=(tech or {}).get("error", f"No technical data available for {ticker}"))
+
+    return _envelope(data=tech, meta={"ticker": ticker, "period": period, "interval": interval})
+
+
+class StressTestRequest(BaseModel):
+    symbol: str
+    amount: float
+    horizon_days: int = 252
+    n_simulations: Optional[int] = None
+    lang: Optional[str] = None
+
+
+@router.post("/intelligence/v1/stress-test")
+def intelligence_stress_test(
+    body: StressTestRequest,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Real historical-bootstrap Monte Carlo (see services/monte_carlo_
+    service.py's module docstring for the honesty notes on method/
+    limitations -- returned verbatim in the `method`/`note` fields, never
+    stripped out for API consumers). Same MAX_HORIZON_DAYS/MAX_N_SIMULATIONS
+    caps stress-lab.html's own callers get; POST (not GET) since this is
+    the heaviest-compute endpoint in this router after `debate`/`intel`."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "stress_test")
+
+    from services.monte_carlo_service import simulate, DEFAULT_N_SIMULATIONS
+
+    result = simulate(
+        body.symbol,
+        amount=body.amount,
+        horizon_days=body.horizon_days,
+        n_simulations=body.n_simulations or DEFAULT_N_SIMULATIONS,
+        lang=body.lang,
+    )
+    if not result.get("available"):
+        return _envelope(data=None, error=result.get("message", "Simulation unavailable"))
+
+    return _envelope(data=result, meta={"symbol": body.symbol.upper()})
+
+
+# ---------------------------------------------------------------------------
 # Admin: key issuance. V1 stopgap only -- no self-serve signup, no billing.
 # ---------------------------------------------------------------------------
 

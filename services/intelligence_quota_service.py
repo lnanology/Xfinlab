@@ -53,6 +53,17 @@ ENDPOINT_WEIGHT = {
     # max_clusters -- still a placeholder pending real cost-based pricing,
     # same caveat as every other number in this dict.
     "intel": 8,
+    # 2026-07-31 (monetization batch, task #598): two more endpoints
+    # exposing already-built engines as the "Decision/Market-Structure API"
+    # direction from chat. No new AI calls -- `technical` is one yfinance/
+    # Alpaca OHLC fetch + pure numpy/pandas computation (confluence, MACD,
+    # market structure, chart patterns), `stress_test` is one OHLC fetch +
+    # a vectorized numpy Monte Carlo resample (services/monte_carlo_service
+    # .py already caps cost via MAX_HORIZON_DAYS/MAX_N_SIMULATIONS). Both
+    # cheaper than `debate`/`intel` (no LLM call) but heavier than a plain
+    # RSS lookup, since they do a real network fetch + nontrivial compute.
+    "technical": 3,
+    "stress_test": 3,
 }
 
 

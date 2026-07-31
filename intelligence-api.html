@@ -96,7 +96,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
   <div class="hero">
     <span class="badge-pill">EARLY ACCESS</span>
     <h1>Real market intelligence, structured for developers</h1>
-    <p>Three JSON endpoints — market events, FinBERT sentiment, and multi-agent AI debate — built on the same real data and anti-fabrication principles behind XFINLAB's own product. Free tier keys are issued instantly and automatically; Pro/Enterprise are still set up personally.</p>
+    <p>Six JSON endpoints — market events, FinBERT sentiment, multi-agent AI debate, structured intelligence feed, technical/market-structure analysis, and Monte Carlo stress testing — built on the same real data and anti-fabrication principles behind XFINLAB's own product. Free tier keys are issued instantly and automatically; Pro/Enterprise are still set up personally.</p>
     <div class="hero-ctas">
       <a href="#access" class="btn-primary">Request Early Access</a>
       <a href="#endpoints" class="btn-ghost">See the endpoints</a>
@@ -104,7 +104,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
   </div>
 
   <div class="section" id="endpoints">
-    <div class="section-title">Four endpoints, one API key</div>
+    <div class="section-title">Six endpoints, one API key</div>
     <div class="section-sub">Every response is AI-structured JSON — never raw scraped article text.</div>
     <div class="endpoints">
       <div class="ep-card">
@@ -126,6 +126,16 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
         <span class="ep-tag">GET /v1/intel/latest · /v1/intel/{ticker}</span>
         <div class="ep-name">AI Intelligence Feed</div>
         <div class="ep-desc">Original structured intelligence, not raw news: same-event headlines clustered, then enriched with entities, sentiment, real technical/historical-analog signals, a non-causal cross-asset co-movement read, and an AI-written narrative — every number traceable to a real computation, never a fabricated confidence score. The most compute-intensive endpoint, weighted 8x in quota.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">GET /v1/technical/{ticker}</span>
+        <div class="ep-name">Technical &amp; Market Structure</div>
+        <div class="ep-desc">Confluence direction/confidence, trend, MACD, volume, chart-pattern detection, and market structure (break-of-structure, change-of-character, liquidity sweeps, order flow, volume profile, institutional footprint) for any ticker — the same engine behind XFINLAB's own chart analysis. Weighted 3x in quota.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">POST /v1/stress-test</span>
+        <div class="ep-name">Monte Carlo Stress Test</div>
+        <div class="ep-desc">A real historical-bootstrap simulation — resamples a symbol's own real daily returns thousands of times to report percentile ending values and drawdowns for a given horizon. Never an LLM-estimated number. Weighted 3x in quota.</div>
       </div>
     </div>
   </div>

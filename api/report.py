@@ -1,4 +1,7 @@
+from typing import List, Optional
+
 from fastapi import APIRouter
+from pydantic import BaseModel
 from services.quota_middleware import check_and_increment
 from fastapi.responses import FileResponse
 from ai.research_agent import ResearchAgent
@@ -8,6 +11,45 @@ import os
 
 router = APIRouter()
 market_service = MarketDataService()
+
+
+class LiveReportRequest(BaseModel):
+    """2026-07-31 (task #600): mirrors exactly the fields js/decision-
+    footer.js's renderDecisionFooter() already accepts and renders on
+    ai-analysis.html/chart-analysis.html -- the frontend just forwards the
+    SAME object it already built for the on-screen Decision Report, so
+    the PDF can never disagree with what's on screen. See ReportGenerator
+    .generate_from_live_data()'s docstring for why this is a separate,
+    simpler path from the older /report/{ticker} LLM-narrative endpoint
+    below."""
+    ticker: str
+    decisionScore: Optional[float] = None
+    confidencePct: Optional[float] = None
+    riskLabel: Optional[str] = None
+    keyReasons: Optional[List[str]] = None
+    suggestedAction: Optional[str] = None
+    invalidation: Optional[str] = None
+    stopLoss: Optional[float] = None
+    takeProfits: Optional[List[float]] = None
+    riskPct: Optional[float] = None
+
+
+@router.post("/report/generate")
+def generate_live_report(body: LiveReportRequest, token: str = None):
+    # Same free-tier point-earning gate every other AI-adjacent report/
+    # analysis endpoint in this codebase already uses (see
+    # services/quota_middleware.py's check_and_increment docstring --
+    # never hard-blocks, just records a point for free users).
+    check_and_increment(token, "report")
+
+    ticker = body.ticker.upper().strip()
+    pdf_path = ReportGenerator.generate_from_live_data(ticker, body.dict())
+
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename=os.path.basename(pdf_path)
+    )
 
 @router.get("/report/{ticker}")
 def generate_report(ticker: str, token: str = None):

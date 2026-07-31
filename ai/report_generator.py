@@ -188,3 +188,116 @@ class ReportGenerator:
 
         doc.build(story)
         return filename
+
+    @staticmethod
+    def generate_from_live_data(ticker: str, payload: dict, output_dir: str = "reports") -> str:
+        """2026-07-31 (monetization batch, task #600): "AI Report Generator"
+        -- a one-click PDF built ENTIRELY from the same real numbers already
+        rendered on-screen by js/decision-footer.js on ai-analysis.html /
+        chart-analysis.html (decisionScore, confidencePct, riskLabel,
+        keyReasons, suggestedAction, stopLoss/takeProfits/riskPct).
+
+        Deliberately does NOT call an LLM or re-fetch data the way
+        generate() above does (that method asks ResearchAgent to write a
+        FRESH due-diligence narrative from scratch, which can drift from
+        what the user actually saw on the page). This is a strict
+        packaging step: whatever the frontend already computed and
+        displayed is what goes into the PDF, so the document is always a
+        faithful, WYSIWYG copy of the on-screen analysis -- same "never
+        show a number that wasn't really computed" posture as the rest of
+        this codebase's 2026-07 fabrication-fix batch (feature_engine.py,
+        stress-lab.html Monte Carlo, MasterPipeline modules)."""
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{output_dir}/{ticker}_report_{timestamp}.pdf"
+
+        doc = SimpleDocTemplate(
+            filename, pagesize=A4,
+            rightMargin=20*mm, leftMargin=20*mm, topMargin=20*mm, bottomMargin=20*mm
+        )
+        styles = getSampleStyleSheet()
+        story = []
+
+        title_style = ParagraphStyle('Title', parent=styles['Normal'],
+            fontSize=28, fontName='Helvetica-Bold', textColor=C_ACCENT, spaceAfter=4)
+        subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'],
+            fontSize=11, fontName='Helvetica', textColor=C_MUTED, spaceAfter=20)
+        section_style = ParagraphStyle('Section', parent=styles['Normal'],
+            fontSize=8, fontName='Helvetica-Bold', textColor=C_ACCENT,
+            spaceBefore=16, spaceAfter=8, letterSpacing=1.5)
+        body_style = ParagraphStyle('Body', parent=styles['Normal'],
+            fontSize=9.5, fontName='Helvetica', textColor=C_TEXT, leading=16, spaceAfter=8)
+        muted_style = ParagraphStyle('Muted', parent=styles['Normal'],
+            fontSize=8, fontName='Helvetica', textColor=C_MUTED, spaceAfter=4)
+
+        story.append(Paragraph("XFINLAB", title_style))
+        story.append(Paragraph(f"Decision Report — {ticker}", subtitle_style))
+        story.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y %H:%M')}", muted_style))
+        story.append(HRFlowable(width="100%", thickness=1, color=C_ACCENT, spaceAfter=20))
+
+        story.append(Paragraph("DECISION REPORT SUMMARY", section_style))
+
+        def risk_color(label):
+            return {"Low": C_GREEN, "Medium": C_AMBER, "High": C_RED}.get(label, C_MUTED)
+
+        decision_score = payload.get("decisionScore")
+        confidence_pct = payload.get("confidencePct")
+        risk_label = payload.get("riskLabel")
+
+        summary_rows = [['Metric', 'Value']]
+        if decision_score is not None:
+            summary_rows.append(['Decision Score™', str(decision_score)])
+        if confidence_pct is not None:
+            summary_rows.append(['Confidence™', f"{confidence_pct}%"])
+        if risk_label:
+            summary_rows.append(['RiskDNA™', risk_label])
+        if payload.get("stopLoss") is not None:
+            summary_rows.append(['Key Level', str(payload["stopLoss"])])
+        if payload.get("takeProfits"):
+            summary_rows.append(['Reference Level', str(payload["takeProfits"][0])])
+        if payload.get("riskPct") is not None:
+            summary_rows.append(['Distance', f"{payload['riskPct']}%"])
+
+        if len(summary_rows) > 1:
+            t = Table(summary_rows, colWidths=[95*mm, 95*mm])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), C_SURFACE),
+                ('TEXTCOLOR', (0,0), (-1,0), C_ACCENT),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,0), 8),
+                ('BACKGROUND', (0,1), (-1,-1), HexColor('#0a1020')),
+                ('TEXTCOLOR', (0,1), (-1,-1), C_TEXT),
+                ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+                ('FONTSIZE', (0,1), (-1,-1), 9),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [HexColor('#0a1020'), HexColor('#0d1525')]),
+                ('GRID', (0,0), (-1,-1), 0.5, HexColor('#1e2d45')),
+                ('PADDING', (0,0), (-1,-1), 8),
+            ]))
+            story.append(t)
+            story.append(Spacer(1, 16))
+
+        key_reasons = payload.get("keyReasons") or []
+        if key_reasons:
+            story.append(Paragraph("KEY REASONS", section_style))
+            for r in key_reasons:
+                story.append(Paragraph(f"• {r}", body_style))
+
+        suggested_action = payload.get("suggestedAction")
+        if suggested_action:
+            story.append(Paragraph("AI SUMMARY", section_style))
+            story.append(Paragraph(str(suggested_action), body_style))
+
+        invalidation = payload.get("invalidation")
+        if invalidation:
+            story.append(Paragraph("INVALIDATION CONDITION", section_style))
+            story.append(Paragraph(str(invalidation), body_style))
+
+        story.append(HRFlowable(width="100%", thickness=1, color=C_SURFACE, spaceBefore=20, spaceAfter=12))
+        story.append(Paragraph(
+            "DISCLAIMER: This report reflects XFINLAB's AI-generated analysis at the time of generation, "
+            "based on real market data. It is for informational purposes only and does not constitute "
+            "financial advice. Always conduct your own research before making investment decisions.",
+            muted_style))
+
+        doc.build(story)
+        return filename
