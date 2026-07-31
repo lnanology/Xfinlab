@@ -339,6 +339,61 @@ _LICENSES: Dict[str, LicenseRecord] = {
         ),
         replacement_candidates=["twelve_data_business_tier"],
     ),
+    # 2026-07-31 (later same day): user asked to add Finnhub and
+    # Marketstack too, same "dev/test-only rotation" treatment as
+    # Polygon/Twelve Data above -- see services/dev_data_rotation_service.py.
+    "finnhub": LicenseRecord(
+        source_id="finnhub",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="https://finnhub.io/terms-of-service",
+        risk_level="high",
+        notes=(
+            "Free tier: 60 calls/minute, real-time quotes + company "
+            "fundamentals. UNLIKE Polygon/Twelve Data/Marketstack below, "
+            "this codebase could NOT independently verify Finnhub's actual "
+            "Terms of Service text -- their site is a client-rendered SPA "
+            "that blocked both automated fetch and search-snippet access, "
+            "and no browser-rendering tool was available in that session "
+            "to load the real page. Treated conservatively (commercial_use_"
+            "allowed=False) based on circumstantial evidence only: their "
+            "own FAQ's noncommittal 'review the terms before commercial "
+            "use' wording, and multiple third-party sources noting Finnhub "
+            "routes commercial inquiries to sales@finnhub.io for a "
+            "'commercial license' (implying the free key alone doesn't "
+            "cover it). This entry should be corrected the moment someone "
+            "actually reads the primary-source ToS text -- flagged here so "
+            "that gap isn't silently forgotten. NOT wired into any "
+            "production route -- used only in services/"
+            "dev_data_rotation_service.py (gated behind "
+            "ALLOW_DEV_DATA_ROTATION=true), same treatment as polygon_io/"
+            "twelve_data above."
+        ),
+        replacement_candidates=["finnhub_commercial_license"],
+    ),
+    "marketstack": LicenseRecord(
+        source_id="marketstack",
+        license_type="non_commercial",
+        commercial_use_allowed=False,
+        terms_url="https://marketstack.com/pricing",
+        risk_level="high",
+        notes=(
+            "Free plan: 100 requests/MONTH (not per-minute), end-of-day "
+            "data only, 12 months history. Confirmed directly via "
+            "marketstack.com/pricing's own feature comparison table: "
+            "'Commercial Use' is listed as an explicit, named, checked "
+            "feature starting at the paid Basic plan ($9.99/mo) and above "
+            "-- it is visibly ABSENT from the Free plan's feature list. "
+            "This is the clearest, most direct confirmation found for any "
+            "provider checked this session (a literal named feature gated "
+            "to paid tiers on the provider's own site, not an inference "
+            "from a sales-contact link). NOT wired into any production "
+            "route -- used only in services/dev_data_rotation_service.py "
+            "(gated behind ALLOW_DEV_DATA_ROTATION=true), same treatment "
+            "as polygon_io/twelve_data/finnhub above."
+        ),
+        replacement_candidates=["marketstack_basic_tier"],
+    ),
     # 2026-07-31: added while building out the free-commercial-source
     # combo the user asked for (GDELT/FRED/ECB) after Polygon/Twelve Data
     # turned out to be free-tier-non-commercial above. All 3 verified by
