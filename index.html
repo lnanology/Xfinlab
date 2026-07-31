@@ -156,7 +156,7 @@
      (pages with many competing CTAs convert meaningfully worse); this is
      now an outlined/secondary treatment matching .btn-secondary/
      .ask-ai-btn, so "Start Free" alone carries the solid-accent fill. */
-  .search-btn { background: transparent; color: var(--accent); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: border-color 0.2s, opacity 0.2s; }
+  .search-btn { background: transparent; color: var(--accent); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; white-space: nowrap; transition: border-color 0.2s, opacity 0.2s; }
   .search-btn:hover { border-color: var(--accent); opacity: 0.85; }
   .hero-trust-chip { font-size: 0.78rem; color: var(--muted); margin: 14px 0 0; }
   .ask-ai-bar { max-width: 480px; display: flex; gap: 8px; margin-top: 22px; }
@@ -816,18 +816,6 @@
   <div class="faq-item">
     <div class="faq-q" data-i18n="faq7_q">唔登入可唔可以試用？</div>
     <div class="faq-a" data-i18n="faq7_a">可以，首頁「免費體驗」每個IP有1個限時免費體驗時段（時段內可以任意查詢，伺服器記錄IP，唔會因為重開網頁而重置），時段完結後會直接帶你去登入頁面繼續使用。</div>
-  </div>
-</div>
-
-<!-- Final CTA -->
-<div style="padding: 0 24px;">
-  <div class="cta">
-    <h2 data-i18n="cta_title">Start Your First AI Research</h2>
-    <p data-i18n="cta_subtitle">Free · 免費帳號每日 10 次分析，無需信用卡</p>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <a href="login.html" data-real-href="dashboard.html" class="btn-primary" data-i18n="cta_start" style="flex:0 1 200px;text-align:center">Start Free</a>
-      <a href="ai-analysis.html" class="btn-secondary" data-i18n="cta_try" style="flex:0 1 200px;text-align:center">立即試用</a>
-    </div>
   </div>
 </div>
 

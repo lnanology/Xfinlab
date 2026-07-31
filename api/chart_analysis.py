@@ -8,6 +8,7 @@ from fastapi import APIRouter
 
 from ai.ai_router import get_ai_response, get_vision_response
 from services.technical_analysis_service import get_technical_analysis, get_multi_timeframe_analysis
+from services.i18n import ai_language_instruction
 
 router = APIRouter()
 
@@ -418,7 +419,9 @@ def chart_search(symbol: str, period: str = "6mo", interval: str = "1d", lang: s
 
 
 @router.get("/chart-search/{symbol}/commentary")
-def chart_search_commentary(symbol: str, period: str = "6mo", interval: str = "1d", token: str = None):
+def chart_search_commentary(
+    symbol: str, period: str = "6mo", interval: str = "1d", token: str = None, lang: str = None
+):
     """
     Optional, user-triggered plain-text AI summary of the real numeric
     data above. Deliberately a separate, lazy endpoint rather than being
@@ -428,12 +431,24 @@ def chart_search_commentary(symbol: str, period: str = "6mo", interval: str = "1
     vision -- there's no screenshot in this flow, so there's nothing for a
     vision model to look at; it's purely writing up numbers that were
     already computed from real market data.
+
+    2026-07-31 fix: this used to hard-force "用繁體中文" (Traditional
+    Chinese) into the prompt regardless of the site's selected UI
+    language -- same backend-hardcoded-language bug already fixed once
+    for the screener prompt (task #317/#327) and once for
+    historical_analog_service.py (task #530). Now accepts the same
+    `lang` param the sibling /chart-search and /multi-timeframe endpoints
+    on this router already take, and swaps in the shared
+    ai_language_instruction(lang) helper (services/i18n.py) instead of a
+    literal Chinese sentence -- same helper api/chat.py and
+    api/ai_analysis.py's screener prompt already use, so this doesn't
+    invent a second translation mechanism for the same concept.
     """
     symbol = (symbol or "").strip().upper()
     if not symbol or not _SYMBOL_RE.match(symbol):
         return {"status": "error", "message": "代號格式無效，請重新輸入。"}
 
-    cache_key = f"{symbol}|{period}|{interval}"
+    cache_key = f"{symbol}|{period}|{interval}|{lang or ''}"
     cached = _ttl_cache_get(_COMMENTARY_CACHE, cache_key, _COMMENTARY_CACHE_TTL_SECONDS)
     if cached is not None:
         return {"status": "ok", "data": {"commentary": cached, "cached": True}}
@@ -456,9 +471,10 @@ def chart_search_commentary(symbol: str, period: str = "6mo", interval: str = "1
         f"綜合訊號（Confluence）：{c['direction']}（分數{c['score']}，信心{c['confidence']}）\n"
         f"睇多訊號：{'、'.join(c['bullish_signals']) or '無'}\n"
         f"睇淡訊號：{'、'.join(c['bearish_signals']) or '無'}\n\n"
-        "用繁體中文，將以上數據寫成一段簡短、易讀嘅文字解讀（80字以內），"
+        "將以上數據寫成一段簡短、易讀嘅文字解讀（80字以內），"
         "需要包含關鍵風險提示，唔好自己估任何新數字，一律以上面提供嘅真實數據為準。"
         "只回覆純文字，唔好加JSON、唔好加markdown、唔好加任何其他文字。"
+        f" {ai_language_instruction(lang)}"
     )
     from services.quota_middleware import check_token_budget, record_ai_token_usage
     user_id = check_token_budget(token)

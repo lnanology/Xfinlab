@@ -156,39 +156,26 @@ def _to_probability_view(raw: dict, data_quality: dict) -> dict:
     # 擺出嚟。Committee.vote()就係直接返BUY/SELL/HOLD呢隻string —— 呢個
     # 先係user明確話唔想顯示嘅嘢,所以刻意唔攞嚟用。
     #
-    # Step 2 of the Strategy Intelligence roadmap (2026-07-18): expanded
-    # from 3 volatility-only buckets to RegimeDetector's 9-state taxonomy
-    # (see backend/alpha/regime_detector.py) -- kept the old 3 keys too so
-    # this stays backward compatible if `regime` is ever "NORMAL" etc.
-    # from some other caller.
-    regime_zh = {
-        "STRONG_BULLISH": "強勢多頭",
-        "WEAK_BULLISH": "弱勢多頭",
-        "STRONG_BEARISH": "強勢空頭",
-        "WEAK_BEARISH": "弱勢空頭",
-        "RANGING": "區間震盪",
-        "HIGH_VOLATILITY": "高波動",
-        "PANIC": "恐慌",
-        "EUPHORIA": "狂熱",
-        "LOW_LIQUIDITY": "流動性不足",
-        "LOW_VOLATILITY": "低波動",
-        "NORMAL": "正常波動",
-    }.get(raw.get("regime"), "未知")
-
-    secondary_flag_zh = {
-        "LOW_LIQUIDITY": "流動性不足",
-        "TREND_REVERSAL_WATCH": "疑似轉勢，觀察中",
-    }
-    regime_secondary_flags_zh = [
-        secondary_flag_zh.get(f, f) for f in raw.get("regime_secondary_flags", [])
-    ]
+    # 2026-07-31 fix: this used to translate the regime code straight into
+    # hardcoded Traditional Chinese text server-side (regime_zh/
+    # secondary_flag_zh dicts), so probability-scan.html's "market regime"
+    # value stayed Chinese no matter what UI language was selected --
+    # same backend-hardcoded-language bug already fixed once for
+    # historical_analog_service.py (task #530). Now returns the raw
+    # RegimeDetector code (e.g. "WEAK_BULLISH") untranslated and lets the
+    # frontend translate it via i18n, matching the client-side pattern
+    # probability-scan.html's own ps_regime_label/ps_regime_unknown keys
+    # already use -- no separate server-side translation table to keep in
+    # sync with services/i18n.py's 47 languages.
+    regime_code = raw.get("regime") or "UNKNOWN"
+    regime_secondary_flags = list(raw.get("regime_secondary_flags", []))
 
     return {
         "ticker": raw["ticker"],
         "bullish_probability": bullish_probability,
         "bearish_probability": round(1 - bullish_probability, 3),
-        "market_regime": regime_zh,
-        "market_regime_flags": regime_secondary_flags_zh,
+        "market_regime": regime_code,
+        "market_regime_flags": regime_secondary_flags,
         "risk_score": raw.get("risk", {}).get("risk_score"),
         "risk_level": raw.get("risk", {}).get("level"),
         "factor_score": raw.get("factor", {}).get("factor_score"),

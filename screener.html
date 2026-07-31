@@ -181,7 +181,7 @@ function toggleNav(){
          chat.html's existing ?q= auto-send instead of leaving the user to
          retype the whole screening context from scratch in a blank chat. -->
     <div id="scAskAiRow" style="display:none;margin-top:0.8rem">
-      <a id="scAskAi" href="chat.html" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:0.5rem 0.9rem;border-radius:8px;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem">🤖 唔明？直接問AI</a>
+      <a id="scAskAi" href="chat.html" data-i18n="sc_ask_ai" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:0.5rem 0.9rem;border-radius:8px;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem">🤖 唔明？直接問AI</a>
     </div>
     <div style="font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;" data-i18n="sc_disclaimer">⚠️ 以上篩選結果由AI生成，僅供參考，不構成投資建議。</div>
   </div>
@@ -206,6 +206,18 @@ function setPreset(p){
   document.getElementById('f_risk').value=s.risk;
 }
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+// 2026-07-31 fix: the post-search summary line used to show the raw <option
+// value="..."> string (always Chinese, e.g. "全球"/"任何風險") regardless of
+// UI language -- those values are the semantic filter values sent to the
+// backend, never translated themselves. The <option>'s displayed textContent
+// IS already translated by I18N.apply() by the time doScreen() runs, so
+// reading .selectedOptions[0].textContent gives the correct on-screen label
+// in whatever language is active, without touching the underlying query.
+function selText(id){
+  const el = document.getElementById(id);
+  if(el && el.selectedOptions && el.selectedOptions[0]) return el.selectedOptions[0].textContent.trim();
+  return el ? el.value : '';
+}
 
 async function doScreen(){
   const market=document.getElementById('f_market').value;
@@ -237,7 +249,7 @@ async function doScreen(){
     const res = await postApi('/api/ai-analysis', payload);
     const answer = res?.data?.conclusion || res?.data?.analysis || res?.answer || '';
     if(answer){
-      document.getElementById('resultTitle').textContent=`${market} · ${sector} · ${risk} ${t('sc_result_title_suffix','篩選結果')}`;
+      document.getElementById('resultTitle').textContent=`${selText('f_market')} · ${selText('f_sector')} · ${selText('f_risk')} ${t('sc_result_title_suffix','篩選結果')}`;
       document.getElementById('resultContent').innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
 
       const scAskQ = `我啱啱用篩選器搵咗呢啲條件：市場${market}、行業${sector}、市值${cap}、增長率${growth}、估值${value}、風險${risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？`;

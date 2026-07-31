@@ -133,13 +133,13 @@
       // with no reward-ratio math shown (Risk/Reward only means anything
       // if you're evaluating a trade).
       if (opts.stopLoss !== null && opts.stopLoss !== undefined) {
-        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.stopLoss + '</div><div class="xfl-df-label">Key Level</div></div>');
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.stopLoss + '</div><div class="xfl-df-label">' + tr('decision_key_level', 'Key Level') + '</div></div>');
       }
       if (opts.takeProfits && opts.takeProfits.length && opts.takeProfits[0] != null) {
-        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.takeProfits[0] + '</div><div class="xfl-df-label">Reference Level</div></div>');
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.takeProfits[0] + '</div><div class="xfl-df-label">' + tr('decision_reference_level', 'Reference Level') + '</div></div>');
       }
       if (opts.riskPct !== null && opts.riskPct !== undefined) {
-        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.riskPct + '%</div><div class="xfl-df-label">Distance</div></div>');
+        stats.push('<div class="xfl-df-stat"><div class="xfl-df-num">' + opts.riskPct + '%</div><div class="xfl-df-label">' + tr('decision_distance', 'Distance') + '</div></div>');
       }
 
       var invalidationText = opts.invalidation !== undefined
@@ -169,13 +169,13 @@
       // relabeled.
 
       if (opts.keyReasons && opts.keyReasons.length) {
-        html += '<div class="xfl-df-section"><strong>Key Reasons</strong><ul>'
+        html += '<div class="xfl-df-section"><strong>' + tr('decision_key_reasons', 'Key Reasons') + '</strong><ul>'
           + opts.keyReasons.map(function (r) { return '<li>' + r + '</li>'; }).join('')
           + '</ul></div>';
       }
 
       if (opts.suggestedAction) {
-        html += '<div class="xfl-df-section"><strong>Suggested Action</strong><p>' + opts.suggestedAction + '</p></div>';
+        html += '<div class="xfl-df-section"><strong>' + tr('decision_suggested_action', 'Suggested Action') + '</strong><p>' + opts.suggestedAction + '</p></div>';
       }
 
       if (invalidationText) {

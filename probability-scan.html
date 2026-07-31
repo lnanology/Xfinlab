@@ -149,6 +149,21 @@ function toggleNav(){
 
 <script>
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+// 2026-07-31 fix: maps the raw RegimeDetector code the backend now sends
+// (see api/pipeline_api.py) to a translated label via i18n, with the
+// original Chinese text kept as the fallback for each code so nothing
+// breaks before services/i18n.py's regime_* keys are loaded.
+const REGIME_LABEL_FALLBACK = {
+  STRONG_BULLISH: '強勢多頭', WEAK_BULLISH: '弱勢多頭',
+  STRONG_BEARISH: '強勢空頭', WEAK_BEARISH: '弱勢空頭',
+  RANGING: '區間震盪', HIGH_VOLATILITY: '高波動', PANIC: '恐慌',
+  EUPHORIA: '狂熱', LOW_LIQUIDITY: '流動性不足', LOW_VOLATILITY: '低波動',
+  NORMAL: '正常波動',
+};
+function regimeLabel(code){
+  if(!code || code === 'UNKNOWN') return t('ps_regime_unknown','未知');
+  return t('regime_' + code.toLowerCase(), REGIME_LABEL_FALLBACK[code] || code);
+}
 
 async function runScan(){
   const ticker = (document.getElementById('tickerInput').value || '').trim().toUpperCase();
@@ -189,7 +204,12 @@ async function runScan(){
       return (Number.isInteger(r) ? r.toFixed(0) : r.toFixed(2)).replace(/\.00$/, '');
     };
 
-    document.getElementById('regimeValue').textContent = d.market_regime || t('ps_regime_unknown','未知');
+    // 2026-07-31 fix: backend now sends the raw RegimeDetector code (e.g.
+    // "WEAK_BULLISH") instead of pre-translated Chinese text (see
+    // api/pipeline_api.py's _to_probability_view) -- translate it here via
+    // the same i18n mechanism ps_regime_label already uses, so the value
+    // actually follows the selected UI language instead of always Chinese.
+    document.getElementById('regimeValue').textContent = regimeLabel(d.market_regime);
     document.getElementById('riskValue').textContent = fmtNum(d.risk_score) + (d.risk_level ? ` (${d.risk_level})` : '');
     document.getElementById('factorValue').textContent = fmtNum(d.factor_score);
     document.getElementById('newsValue').textContent = fmtNum(d.news_sentiment_score);

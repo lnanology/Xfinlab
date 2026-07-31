@@ -1249,8 +1249,13 @@ async function requestAiCommentary(){
   btn.textContent = t('ca_ai_commentary_loading','產生緊...');
   try {
     const _authToken = localStorage.getItem('xfinlab_token');
+    const _commLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const _commentaryParams = new URLSearchParams();
+    if(_authToken) _commentaryParams.set('token', _authToken);
+    if(_commLang) _commentaryParams.set('lang', _commLang);
+    const _qs = _commentaryParams.toString();
     const _commentaryUrl = `${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/commentary`
-      + (_authToken ? `?token=${encodeURIComponent(_authToken)}` : '');
+      + (_qs ? `?${_qs}` : '');
     const response = await fetch(_commentaryUrl);
     const json = await response.json();
     if(json.status !== 'ok'){
@@ -1291,7 +1296,14 @@ async function requestMultiTimeframe(){
   }
 }
 
-const BACKTEST_STRATEGY_LABEL = {
+// 2026-07-31 fix: this used to be a static object built once with hardcoded
+// Traditional Chinese values, so every strategy name in the backtest-
+// compare results stayed Chinese regardless of UI language. Turned into a
+// lookup function so each call reads the CURRENT language via the same
+// t()/I18N pattern already used for periodLabelMap/intervalLabelMap just
+// below -- new bt_strategy_* keys carry the same 7 strategy names
+// translated to all 47 languages.
+const BACKTEST_STRATEGY_LABEL_FALLBACK = {
   confluence_trend: '趨勢追蹤（Confluence）',
   breakout_donchian: '突破（Donchian Breakout）',
   mean_reversion_bollinger: '均值回歸（Bollinger）',
@@ -1300,6 +1312,9 @@ const BACKTEST_STRATEGY_LABEL = {
   volume_breakout_confirmation: '量價突破確認',
   ma_golden_cross: '黃金交叉/死亡交叉（50/200MA）',
 };
+function btStrategyLabel(code){
+  return t('bt_strategy_' + code, BACKTEST_STRATEGY_LABEL_FALLBACK[code] || code);
+}
 
 async function requestBacktestCompare(){
   if(!currentSearchSymbol) return;
@@ -1315,7 +1330,7 @@ async function requestBacktestCompare(){
     }
     const data = json.data;
     const rows = (data.strategies || []).map(s => {
-      const label = BACKTEST_STRATEGY_LABEL[s.strategy] || s.strategy;
+      const label = btStrategyLabel(s.strategy);
       const st = s.stats || {};
       if(st.trade_count === 0){
         return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">${st.note || '冇觸發交易訊號'}</div></div>`;
