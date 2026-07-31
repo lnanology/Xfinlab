@@ -422,8 +422,15 @@ async function loadLoginMethods() {
   // to read here) so a new visitor lands directly on the signup form
   // instead of Sign In, then carries the code through to handleRegister().
   const refCode = params.get('ref');
-  if (refCode) {
-    referralCode = refCode;
+  if (refCode) referralCode = refCode;
+
+  // 2026-08-01 ("start free 入果頁 好似無用咁"): index.html's "Start Free"
+  // hero CTA was linking here with no signal at all, so anonymous visitors
+  // landed on the Sign In tab -- i.e. a "free" button that asked existing
+  // users to log in, with zero visible signup form. index.html now appends
+  // `?intent=register`; reuse the exact same tab-switch as the referral
+  // flow above so both paths share one code path.
+  if (refCode || params.get('intent') === 'register') {
     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab')[1].classList.add('active');
     document.getElementById('loginForm').style.display = 'none';
