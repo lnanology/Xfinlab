@@ -59,6 +59,7 @@ from api.captcha import router as captcha_router
 from auth.social_login import router as social_login_router
 from auth.whatsapp_auth import router as whatsapp_auth_router
 from api.telegram_webhook import router as telegram_webhook_router
+from api.webhooks_paddle import router as webhooks_paddle_router
 
 
 app = FastAPI(
@@ -209,6 +210,7 @@ app.include_router(captcha_router, prefix="/api", tags=["Captcha"])
 app.include_router(social_login_router, prefix="/api", tags=["Social Login"])
 app.include_router(whatsapp_auth_router, prefix="/api", tags=["WhatsApp OTP"])
 app.include_router(telegram_webhook_router, prefix="/api", tags=["Telegram Webhook"])
+app.include_router(webhooks_paddle_router, prefix="/api", tags=["Paddle Webhook"])
 
 
 # Real scheduled job for the daily Free Signals push (replaces relying
@@ -283,6 +285,28 @@ _push_scheduler.add_job(
     "interval",
     minutes=30,
     id="watchlist_anomaly_check",
+    replace_existing=True,
+)
+
+# 2026-08-01 ("自動化可做那裡" audit): plan_expires_at (task #479) already
+# auto-demotes a lapsed Pro/annual-Pro user back to Free in
+# quota_middleware.resolve_real_plan(), but nobody was ever warned it was
+# about to happen -- a pure, avoidable renewal/revenue leak. This finds
+# users expiring within 3 days and emails + (if subscribed) pushes them
+# once per expiry date. See services/plan_expiry_reminder_service.py.
+def _run_plan_expiry_reminder_job():
+    try:
+        from services.plan_expiry_reminder_service import check_and_notify_expiring_plans
+        check_and_notify_expiring_plans()
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_plan_expiry_reminder_job,
+    "cron",
+    hour=9,
+    minute=0,
+    id="plan_expiry_reminder",
     replace_existing=True,
 )
 
