@@ -523,6 +523,44 @@ _LICENSES: Dict[str, LicenseRecord] = {
         ),
         replacement_candidates=["baostock_verified_commercial_terms", "sec_edgar"],
     ),
+    # 2026-07-31 (later same day): user shared a data-provider comparison
+    # table claiming EODHD's free tier allows commercial use. Verified
+    # directly against EODHD's own primary-source page (not the comparison
+    # table, not a search snippet) -- the claim does not hold up.
+    "eodhd": LicenseRecord(
+        source_id="eodhd",
+        license_type="non_commercial",
+        commercial_use_allowed=False,
+        terms_url="https://eodhd.com/financial-apis/commercial-vs-personal-license-use",
+        risk_level="high",
+        notes=(
+            "Free tier: 20 API calls/day (no credit card), 1 year of EOD "
+            "history on demo tickers, one-time 500-call welcome bonus. "
+            "Global stock/forex/crypto coverage plus reasonably complete "
+            "fundamentals -- genuinely broader coverage than most other "
+            "sources in this registry. HOWEVER: verified by direct fetch "
+            "of eodhd.com/financial-apis/commercial-vs-personal-license-use "
+            "(2026-07-31) -- their own page states plainly: 'The packages "
+            "on the pricing page are intended for personal use only as "
+            "commercial use requires a more thorough approach to licensing "
+            "and data use.' Commercial use requires contacting their sales "
+            "team for a separate, custom-quoted Startups/Enterprise "
+            "commercial license (their FAQ: 3-business-day onboarding once "
+            "approved) -- there is no free-tier or personal-plan path that "
+            "covers XFINLAB's commercial, paying-end-user product. Same "
+            "category of restriction as polygon_io/twelve_data/marketstack "
+            "above, not the free-and-clear category of gdelt/fred/"
+            "ecb_data_portal/sec_edgar. A user-provided comparison table "
+            "claimed 'free + commercial use allowed' for EODHD -- that "
+            "claim is incorrect per the provider's own primary-source page "
+            "and should not be relied on. NOT wired into any production "
+            "route; would need the same dev/test-only rotation-harness "
+            "treatment as polygon_io/twelve_data/finnhub/marketstack above "
+            "if used for development, or a paid commercial-license quote "
+            "before any production use."
+        ),
+        replacement_candidates=["eodhd_commercial_license"],
+    ),
     "oilpriceapi_baltic_dry_index": LicenseRecord(
         source_id="oilpriceapi_baltic_dry_index",
         license_type="unknown",
