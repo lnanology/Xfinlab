@@ -43,7 +43,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 .section-title{font-size:1.4rem;font-weight:700;margin:0 0 6px;text-align:center}
 .section-sub{color:var(--text-muted);font-size:0.88rem;text-align:center;margin:0 0 28px}
 
-.endpoints{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.endpoints{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 @media (max-width:820px){.endpoints{grid-template-columns:1fr}}
 .ep-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
 .ep-tag{font-family:monospace;font-size:0.75rem;color:var(--accent-blue);background:rgba(37,99,235,0.1);padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:10px}
@@ -104,7 +104,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
   </div>
 
   <div class="section" id="endpoints">
-    <div class="section-title">Three endpoints, one API key</div>
+    <div class="section-title">Four endpoints, one API key</div>
     <div class="section-sub">Every response is AI-structured JSON — never raw scraped article text.</div>
     <div class="endpoints">
       <div class="ep-card">
@@ -120,14 +120,19 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
       <div class="ep-card">
         <span class="ep-tag">GET /v1/debate</span>
         <div class="ep-name">AI Debate</div>
-        <div class="ep-desc">A 4-call Bull / Bear / Risk-Manager / Arbiter debate grounded in real technical data for a ticker — synthesized into one verdict. The most compute-intensive endpoint, weighted accordingly in quota.</div>
+        <div class="ep-desc">A 4-call Bull / Bear / Risk-Manager / Arbiter debate grounded in real technical data for a ticker — synthesized into one verdict. Weighted 5x in quota to reflect its compute cost.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">GET /v1/intel/latest · /v1/intel/{ticker}</span>
+        <div class="ep-name">AI Intelligence Feed</div>
+        <div class="ep-desc">Original structured intelligence, not raw news: same-event headlines clustered, then enriched with entities, sentiment, real technical/historical-analog signals, a non-causal cross-asset co-movement read, and an AI-written narrative — every number traceable to a real computation, never a fabricated confidence score. The most compute-intensive endpoint, weighted 8x in quota.</div>
       </div>
     </div>
   </div>
 
   <div class="section">
     <div class="section-title">Plans</div>
-    <div class="section-sub">V1 is early access — every plan is set up personally, not self-serve. Pricing isn't fixed yet; we're calibrating it with the first real developers using this.</div>
+    <div class="section-sub">V1 is early access — every plan is set up personally, not self-serve yet. Pro pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
     <div class="plans" id="plansGrid">
 
       <div class="plan" id="plan-free" data-plan="free">
@@ -135,9 +140,10 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
         <div class="plan-price">$0</div>
         <div class="plan-desc">For evaluating the API and prototyping.</div>
         <ul class="plan-features">
-          <li><span class="check">✓</span> 100 calls / day</li>
+          <li><span class="check">✓</span> 100 weighted calls / day</li>
           <li><span class="check">✓</span> Events + Sentiment endpoints</li>
           <li><span class="cross">✕</span> AI Debate endpoint</li>
+          <li><span class="cross">✕</span> AI Intelligence Feed endpoint</li>
           <li><span class="cross">✕</span> Priority support</li>
         </ul>
         <button class="plan-btn" onclick="selectPlan('free')">Get a Free Key</button>
@@ -145,11 +151,11 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 
       <div class="plan popular" id="plan-pro" data-plan="pro">
         <div class="plan-name">Pro</div>
-        <div class="plan-price">Contact us<br><small>usage-based, calibrating with early users</small></div>
+        <div class="plan-price">$49<small>/month</small><br><small>recommended — see below</small></div>
         <div class="plan-desc">For shipping a real integration.</div>
         <ul class="plan-features">
-          <li><span class="check">✓</span> 5,000 calls / day</li>
-          <li><span class="check">✓</span> All 3 endpoints, incl. AI Debate</li>
+          <li><span class="check">✓</span> 5,000 weighted calls / day</li>
+          <li><span class="check">✓</span> All 4 endpoints, incl. AI Debate + AI Intelligence Feed</li>
           <li><span class="check">✓</span> Priority email support</li>
           <li><span class="check">✓</span> Early say in the public roadmap</li>
         </ul>
@@ -162,7 +168,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
         <div class="plan-desc">For higher volume or dedicated needs.</div>
         <ul class="plan-features">
           <li><span class="check">✓</span> Unlimited calls</li>
-          <li><span class="check">✓</span> All 3 endpoints, incl. AI Debate</li>
+          <li><span class="check">✓</span> All 4 endpoints, incl. AI Debate + AI Intelligence Feed</li>
           <li><span class="check">✓</span> Dedicated support</li>
           <li><span class="check">✓</span> SLA on request</li>
         </ul>

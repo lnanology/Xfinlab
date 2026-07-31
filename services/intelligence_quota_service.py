@@ -6,9 +6,16 @@ reusing it directly -- that service's FREE_LIMITS/plan strings are specific
 to the logged-in-user AI-feature quotas (full_analysis/research/report) and
 shouldn't be overloaded with an unrelated per-API-key concept.
 
-TIER_LIMITS below are placeholders -- pricing hasn't been decided yet (see
-chat). Adjust these three numbers once pricing is set; nothing else about
-this module needs to change.
+TIER_LIMITS below reflect a RECOMMENDED pricing structure (2026-07-31),
+reasoned from each endpoint's real relative cost (see ENDPOINT_WEIGHT
+below -- events/sentiment are cheap RSS+one-model-call lookups, debate is
+4 sequential LLM calls, intel is up to 2 LLM calls plus real OHLC/quant/
+cross-asset lookups per cluster, the most expensive path in this router).
+The corresponding $ prices are shown on intelligence-api.html (Free $0 /
+Pro $49/mo / Enterprise custom) -- this is a RECOMMENDATION pending the
+business owner's actual approval, not a unilaterally finalized decision;
+adjust both this dict and intelligence-api.html's plan cards together if
+the approved numbers differ.
 """
 import sqlite3
 import os
@@ -16,9 +23,11 @@ from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 
-# PLACEHOLDER -- pricing not finalized yet. "unlimited" tiers are represented
-# as -1 (checked explicitly below), matching services/quota_service.py's
-# convention for pro/starter.
+# RECOMMENDED (2026-07-31) -- maps to intelligence-api.html: Free $0,
+# Pro $49/month, Enterprise custom. "unlimited" tiers are represented as
+# -1 (checked explicitly below), matching services/quota_service.py's
+# convention for pro/starter. This is a recommendation, not a unilateral
+# final decision -- see this module's docstring.
 TIER_LIMITS = {
     "free": 100,
     "pro": 5000,
@@ -28,8 +37,8 @@ TIER_LIMITS = {
 # Debate is 4 sequential LLM calls per run (see services/agent_debate_service.py)
 # -- far more expensive than a headline/sentiment lookup. Weight it heavier
 # in the counter so a free-tier key can't cheaply exhaust the same "100
-# calls" budget on the priciest endpoint. Still a placeholder pending real
-# cost-based pricing.
+# calls" budget on the priciest endpoint. Recommended weighting, same
+# pending-approval caveat as TIER_LIMITS above.
 ENDPOINT_WEIGHT = {
     "events": 1,
     "sentiment": 1,
