@@ -257,6 +257,12 @@ document.querySelectorAll('.company-input').forEach(input=>{
   input.addEventListener('keydown', function(e){ if (e.key === 'Enter') doCompare(); });
 });
 window.addEventListener('DOMContentLoaded', updateCompanyCount);
+// 2026-07-31 fix ("已輸入：0 家" staying in Chinese on non-Chinese UI):
+// updateCompanyCount() only re-ran on user input/clear, so if I18N.translations
+// hadn't finished loading yet at DOMContentLoaded (a real race -- i18n.js
+// applies asynchronously), the label was stuck showing t()'s Chinese
+// fallback text until the user typed something. Re-run once i18n is ready.
+document.addEventListener('i18nApplied', updateCompanyCount);
 window.addEventListener('DOMContentLoaded', () => {
   if (typeof autoAttachTickerAutocomplete === 'function') {
     autoAttachTickerAutocomplete('.company-input');

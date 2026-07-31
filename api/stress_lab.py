@@ -27,6 +27,7 @@ async def stress_lab(body: dict):
     symbol = body.get("symbol", "")
     amount = body.get("amount", 100000)
     horizon_days = body.get("horizon_days", 252)
+    lang = body.get("lang")
 
     try:
         amount = float(amount)
@@ -38,5 +39,5 @@ async def stress_lab(body: dict):
     except (TypeError, ValueError):
         horizon_days = 252
 
-    result = simulate(symbol, amount=amount, horizon_days=horizon_days)
+    result = simulate(symbol, amount=amount, horizon_days=horizon_days, lang=lang)
     return {"status": "ok", "data": result}

@@ -43,6 +43,7 @@ from typing import Dict, List, Optional
 
 from services.chart_pattern_service import detect_patterns as _detect_chart_patterns
 from services.market_structure_engine import compute_market_structure as _compute_market_structure_v2
+from services.i18n import get_translations
 
 logger = logging.getLogger(__name__)
 
@@ -1165,6 +1166,15 @@ def get_multi_timeframe_analysis(symbol: str, lang: Optional[str] = None) -> Opt
 # Chinese. Full 46-language coverage of the confluence signal vocabulary
 # is a larger follow-up (this only ever had a Chinese/English split, same
 # as ai_analysis.py's existing dashboard translation).
+#
+# 2026-07-31 fix ("MACD, Key Volume Zone, Decision Report Key Reasons"
+# staying in English on Japanese/etc UI): this dict is still used as the
+# English fallback (and as the zh->en table for the deeper signal-list
+# strings that aren't in scope below), but the handful of fields that are
+# ALWAYS visible in chart-analysis.html's result grid -- tech.trend,
+# macd.trend, volume_desc, confluence.direction/confidence -- now go
+# through _LANG_KEY_MAP + services/i18n.py's real per-language strings
+# instead of unconditionally collapsing every non-Chinese lang to English.
 _EN_FIXED = {
     "上升": "Rising", "下降": "Falling",
     "金叉/看漲": "Golden cross / bullish", "死叉/看跌": "Death cross / bearish",
@@ -1240,29 +1250,66 @@ def _translate_market_structure_detail(s: str) -> str:
     return s  # unmapped/new template -- honestly left as-is, never guessed
 
 
+# Chinese source phrase -> services/i18n.py key, for the handful of fields
+# that are always visible in chart-analysis.html's main result grid (as
+# opposed to the deeper signal-list/market-structure detail strings, which
+# stay on the English-only _EN_FIXED shim per the comment above -- a real
+# 47-language table for those ~28 sentences is the larger follow-up).
+_LANG_KEY_MAP = {
+    "上升": "ts_trend_up", "下降": "ts_trend_down",
+    "金叉/看漲": "ts_macd_golden", "死叉/看跌": "ts_macd_death",
+    "偏多": "ts_bias_bullish", "偏空": "ts_bias_bearish",
+    "訊號分歧，中性": "ts_mixed_neutral", "數據不足": "ts_insufficient_data",
+    "高": "ts_conf_high", "中": "ts_conf_medium", "低": "ts_conf_low",
+    "成交量數據不足": "ts_vol_insufficient",
+}
+
+
+def _lang_translate(s: str, tr: Dict) -> str:
+    """Real per-language lookup for the fields in _LANG_KEY_MAP, falling
+    back to the English-only _EN_FIXED table (then the original string)
+    for anything not covered -- e.g. when `tr` is the English dict itself,
+    or a language whose i18n.py block is somehow missing a key."""
+    key = _LANG_KEY_MAP.get(s)
+    if key and tr.get(key):
+        return tr[key]
+    return _EN_FIXED.get(s, s)
+
+
 def translate_technical_analysis(tech: Dict, lang: Optional[str]) -> Dict:
-    """Best-effort EN translation of get_technical_analysis()'s dynamic
-    Chinese fields, applied only when `lang` is set and non-Chinese.
+    """Translate get_technical_analysis()'s dynamic Chinese fields into the
+    requested `lang`, applied only when `lang` is set and non-Chinese.
     Returns `tech` unchanged (same object) for Chinese/no-lang callers --
-    zero behavior change for every consumer that doesn't pass lang."""
+    zero behavior change for every consumer that doesn't pass lang.
+
+    2026-07-31 fix: this used to translate to English (_EN_FIXED) no
+    matter what `lang` was requested -- a Japanese/French/German/etc UI
+    would still see raw English "MACD"/volume/trend values, since the old
+    guard only special-cased Chinese-vs-not. Now looks up the actual
+    per-language string via get_translations(lang) for the fields always
+    shown on-page (trend/macd.trend/volume_desc/confluence.direction and
+    .confidence); everything else still uses the English fallback."""
     if not tech or "error" in tech or not lang or lang in ("zh-HK", "zh-TW", "zh-CN"):
         return tech
+    tr = get_translations(lang) or {}
     if tech.get("trend") in _EN_FIXED:
-        tech["trend"] = _EN_FIXED[tech["trend"]]
+        tech["trend"] = _lang_translate(tech["trend"], tr)
     macd = tech.get("macd")
     if macd and macd.get("trend") in _EN_FIXED:
-        macd["trend"] = _EN_FIXED[macd["trend"]]
+        macd["trend"] = _lang_translate(macd["trend"], tr)
     if tech.get("volume_desc") in _EN_FIXED:
-        tech["volume_desc"] = _EN_FIXED[tech["volume_desc"]]
+        tech["volume_desc"] = _lang_translate(tech["volume_desc"], tr)
     elif tech.get("volume_desc", "").startswith("最近成交量為20日均量嘅"):
         m = re.match(r"最近成交量為20日均量嘅([\d.]+)倍(（放量）)?", tech["volume_desc"])
         if m:
-            tech["volume_desc"] = f"Recent volume is {m.group(1)}x the 20-day average" + (" (volume surge)" if m.group(2) else "")
+            template = tr.get("ts_vol_recent") or "Recent volume is {x}x the 20-day average"
+            surge_suffix = (tr.get("ts_vol_surge_suffix") or " (volume surge)") if m.group(2) else ""
+            tech["volume_desc"] = template.replace("{x}", m.group(1)) + surge_suffix
     confluence = tech.get("confluence")
     if confluence:
         for field in ("direction", "confidence"):
             if confluence.get(field) in _EN_FIXED:
-                confluence[field] = _EN_FIXED[confluence[field]]
+                confluence[field] = _lang_translate(confluence[field], tr)
         for field in ("bullish_signals", "bearish_signals"):
             if confluence.get(field):
                 confluence[field] = [_translate_signal(s) for s in confluence[field]]

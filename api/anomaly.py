@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from engines.anomaly_engine import AnomalyEngine
 from services.dashboard_snapshot_service import get_dashboard_tickers, compute_snapshots
 from services.anomaly_history_service import scan_last_30_days
+from services.i18n import get_translations
 
 router = APIRouter()
 
@@ -56,7 +57,7 @@ def anomaly(token: str = None):
 
 
 @router.get("/anomaly/search/{ticker}")
-def anomaly_search(ticker: str):
+def anomaly_search(ticker: str, lang: str = None):
     """
     Single-ticker anomaly check -- lets a user check ANY global ticker,
     separate from the batch watchlist scan above. Same AnomalyEngine
@@ -68,14 +69,30 @@ def anomaly_search(ticker: str):
     radar), this ALWAYS returns a result even when severity is NONE --
     someone explicitly searching one ticker wants an honest "no anomaly
     detected" answer, not silence.
+
+    2026-07-31 fix ("顯示「攞唔到 AAPL 嘅市場數據...」" regardless of UI
+    language): both error messages below used to be hardcoded Traditional
+    Chinese literals, so an English/Japanese/etc-mode user searching an
+    unrecognized or data-unavailable ticker still saw raw Cantonese. Now
+    accepts `lang` (same param anomaly.html already sends everywhere else
+    via I18N.currentLang) and looks the two messages up from
+    services/i18n.py's per-language dict, defaulting to the original
+    Chinese text for zh-HK/zh-TW/unset lang -- these are plain UI strings
+    (not AI-generated prose), so a direct dict lookup is simpler and more
+    reliable here than the ai_language_instruction() prompt-steering
+    pattern used for LLM endpoints elsewhere.
     """
     ticker = (ticker or "").strip().upper()
+    tr = get_translations(lang) if lang and lang not in ("zh-HK", "zh-TW") else None
+
     if not ticker or not _SYMBOL_RE.match(ticker):
-        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+        msg = (tr or {}).get("anom_ticker_format_error") or "代號格式無效，請重新輸入。"
+        return {"status": "error", "message": msg}
 
     snapshots = compute_snapshots([ticker])
     if not snapshots:
-        return {"status": "error", "message": f"攞唔到 {ticker} 嘅市場數據，請確認代號正確。"}
+        msg = (tr or {}).get("anom_no_data_error") or "攞唔到 {ticker} 嘅市場數據，請確認代號正確。"
+        return {"status": "error", "message": msg.replace("{ticker}", ticker)}
 
     s = snapshots[0]
     result = AnomalyEngine.detect(

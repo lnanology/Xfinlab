@@ -337,7 +337,8 @@ async function runMonteCarlo(){
   resultEl.innerHTML = `<div style="color:var(--text-muted);padding:0.6rem 0">${t('sl_mc_loading', 'Running simulation on real historical data…')}</div>`;
 
   try {
-    const response = await postApi('/api/stress-lab', { symbol, amount, horizon_days: horizonDays });
+    const _mcLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await postApi('/api/stress-lab', { symbol, amount, horizon_days: horizonDays, lang: _mcLang });
     const data = response.data;
     if (!data || data.available === false) {
       resultEl.innerHTML = `<div style="color:var(--text-muted);padding:0.6rem 0">${(data && data.message) || t('sl_mc_fetch_fail', 'Simulation failed, please try again later')}</div>`;

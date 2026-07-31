@@ -49,6 +49,7 @@ from typing import Dict
 import numpy as np
 
 from services.technical_analysis_service import fetch_ohlc_history
+from services.i18n import get_translations
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ def simulate(
     horizon_days: int = 252,
     n_simulations: int = DEFAULT_N_SIMULATIONS,
     period: str = "2y",
+    lang: str = None,
 ) -> Dict:
     """
     Returns:
@@ -142,11 +144,30 @@ def simulate(
         "max_drawdown_p50_pct": round(float(drawdown_p50), 2),
         "max_drawdown_p5_pct": round(float(drawdown_p5), 2),
         "method": "bootstrap resampling of real daily log returns (i.i.d., not block-bootstrap)",
-        "note": (
-            f"基於 {symbol} 過去 {len(log_returns)} 個真實交易日嘅日回報，"
-            f"獨立同分布抽樣重組 {n_simulations} 次模擬未來 {horizon_days} 個交易日嘅可能路徑。"
-            "呢個方法假設每日回報互相獨立，唔會保留真實市場嘅波動聚集／自相關特性，"
-            "亦唔對應任何特定歷史事件（例如2008／2020），僅反映呢隻股票自身近期統計特性，"
-            "並非精確預測，不構成投資建議。"
-        ),
+        "note": _build_note(symbol, len(log_returns), n_simulations, horizon_days, lang),
     }
+
+
+# 2026-07-31 fix ("モンテカルロ・シミュレーション...基於AAPL過去500個真實交易日..."
+# staying in Cantonese even on a Japanese-language page): `note` used to be a
+# single hardcoded Traditional Chinese f-string with zero regard for the
+# `lang` the caller actually wanted, unlike the rest of the localized UI
+# chrome around it. Now looks up sl_mc_note_template from services/i18n.py
+# (same per-language-dict pattern used for historical_analog_service.py and
+# technical_analysis_service.py's equivalent fixes), falling back to the
+# original Chinese wording for zh-HK/zh-TW/unset lang.
+def _build_note(symbol: str, n_observations: int, n_simulations: int, horizon_days: int, lang: str) -> str:
+    tr = get_translations(lang) if lang and lang not in ("zh-HK", "zh-TW") else None
+    template = (tr or {}).get("sl_mc_note_template") or (
+        "基於 {symbol} 過去 {n} 個真實交易日嘅日回報，"
+        "獨立同分布抽樣重組 {sims} 次模擬未來 {horizon} 個交易日嘅可能路徑。"
+        "呢個方法假設每日回報互相獨立，唔會保留真實市場嘅波動聚集／自相關特性，"
+        "亦唔對應任何特定歷史事件（例如2008／2020），僅反映呢隻股票自身近期統計特性，"
+        "並非精確預測，不構成投資建議。"
+    )
+    return (
+        template.replace("{symbol}", symbol)
+        .replace("{n}", str(n_observations))
+        .replace("{sims}", str(n_simulations))
+        .replace("{horizon}", str(horizon_days))
+    )

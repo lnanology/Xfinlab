@@ -328,7 +328,8 @@ async function runAnomalySearch(symbolOverride) {
   historyBox.innerHTML = '';
 
   try {
-    const res = await fetch(`${API}/anomaly/search/${encodeURIComponent(ticker)}`);
+    const _anomLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const res = await fetch(`${API}/anomaly/search/${encodeURIComponent(ticker)}` + (_anomLang ? `?lang=${encodeURIComponent(_anomLang)}` : ''));
     const data = await res.json();
     if (data.status !== 'ok') {
       throw new Error(data.message || t('anom_search_error', '檢查失敗，請重試'));
