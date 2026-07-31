@@ -34,6 +34,16 @@ ENDPOINT_WEIGHT = {
     "events": 1,
     "sentiment": 1,
     "debate": 5,
+    # 2026-07-31: AI Intelligence Engine feed (api/intelligence.py's
+    # /v1/intel/latest + /v1/intel/{ticker}) -- each call can cluster
+    # several headlines into up to `max_clusters` AI_NEWS_OBJECTs, and
+    # each cluster may trigger up to 2 AI calls (Phase 1 summary + Phase 3
+    # narrative) plus real OHLC/market-structure/historical-analog lookups
+    # per affected ticker (Phase 2). Weighted heavier than `debate` (which
+    # is a fixed 4-call cost) since this endpoint's cost scales with
+    # max_clusters -- still a placeholder pending real cost-based pricing,
+    # same caveat as every other number in this dict.
+    "intel": 8,
 }
 
 

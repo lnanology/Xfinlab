@@ -29,6 +29,7 @@ from services import api_key_service, intelligence_quota_service
 from services import rss_news_service
 from services.finbert_sentiment_service import is_available as finbert_available, analyze_batch
 from services.agent_debate_service import is_available as debate_available, run_debate
+from services.intelligence_pipeline_service import build_intelligence_feed
 from api.admin import verify_admin
 
 router = APIRouter()
@@ -286,6 +287,65 @@ def intelligence_debate(
         raise HTTPException(status_code=503, detail=result.get("message", "Debate engine unavailable"))
 
     return _envelope(data=result, meta={"ticker": ticker})
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 (2026-07-31): AI Intelligence Engine feed -- the "AI_NEWS_OBJECT"
+# product from the user's proposal (see services/intelligence_pipeline_service
+# .py's docstring for the full Phase 1-3 pipeline this wraps). Unlike
+# /v1/events above (raw per-article headlines), these two endpoints return
+# ORIGINAL structured analysis: same-event headline clusters with real
+# entity/sentiment/quant fields and an AI-written narrative -- the
+# "fact extraction, not republishing" product the user's proposal asked
+# for. Weighted heavily in the quota counter (see
+# intelligence_quota_service.ENDPOINT_WEIGHT["intel"]) since it's the most
+# expensive endpoint in this router.
+#
+# Route ordering matters: /intel/latest must be registered BEFORE
+# /intel/{ticker} so FastAPI doesn't match "latest" as a ticker path param.
+# ---------------------------------------------------------------------------
+
+@router.get("/intelligence/v1/intel/latest")
+def intelligence_latest(
+    limit: int = 5,
+    lang: str = "zh-HK",
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "intel")
+
+    # Caps how many event-clusters get the full (up to 2-AI-call +
+    # per-ticker quant lookup) treatment per request -- see
+    # build_intelligence_feed()'s own cost-note docstring.
+    limit = max(1, min(limit, 10))
+
+    result = rss_news_service.get_all_headlines(limit=60)
+    if result["status"] != "ok" or not result["items"]:
+        return _envelope(data=[], error=result.get("message") or "No recent events found")
+
+    feed = build_intelligence_feed(result["items"], max_clusters=limit, lang=lang)
+    return _envelope(data=feed, meta={"count": len(feed)})
+
+
+@router.get("/intelligence/v1/intel/{ticker}")
+def intelligence_ticker(
+    ticker: str,
+    limit: int = 5,
+    lang: str = "zh-HK",
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "intel")
+
+    limit = max(1, min(limit, 10))
+    ticker = ticker.upper()
+
+    result = rss_news_service.search_headlines(query=ticker, limit=60)
+    if result["status"] != "ok" or not result["items"]:
+        return _envelope(data=[], error=result.get("message") or f"No recent events found for {ticker}")
+
+    feed = build_intelligence_feed(result["items"], max_clusters=limit, lang=lang)
+    return _envelope(data=feed, meta={"ticker": ticker, "count": len(feed)})
 
 
 # ---------------------------------------------------------------------------
