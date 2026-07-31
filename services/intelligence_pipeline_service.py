@@ -13,12 +13,17 @@ Pipeline:
     -> services.ai_news_object_service.build_news_object()  (Phase 1: structured object)
     -> services.news_impact_engine.enrich_with_quant_signals()  (Phase 2: real quant fields)
     -> services.ai_journalist_service.add_narrative()   (Phase 3: readable narrative)
+    -> services.event_chain_service.add_event_chain()   (Phase 5: non-causal cross-asset stats)
+
+(Phase 4 is this module + api/intelligence.py's endpoints wrapping the
+above -- there's no separate Phase 4 function to call.)
 
 Cost/latency note: each cluster can trigger up to 2 AI calls (Phase 1
 summary + Phase 3 narrative) plus real OHLC/market-structure/historical-
-analog lookups per affected ticker (Phase 2). `max_clusters` bounds this
-per request -- callers (api/intelligence.py) should keep it small and
-weight the API-key quota accordingly (see services/intelligence_quota_service
+analog lookups per affected ticker (Phase 2) plus up to MAX_CHAIN_EDGES
+more paired OHLC lookups (Phase 5). `max_clusters` bounds this per
+request -- callers (api/intelligence.py) should keep it small and weight
+the API-key quota accordingly (see services/intelligence_quota_service
 .ENDPOINT_WEIGHT["intel"]), same cost-awareness already applied to the
 debate endpoint (weight 5) for its 4 sequential LLM calls.
 """
@@ -30,6 +35,7 @@ from services.news_dedup_engine import cluster_headlines
 from services.ai_news_object_service import build_news_object
 from services.news_impact_engine import enrich_with_quant_signals
 from services.ai_journalist_service import add_narrative
+from services.event_chain_service import add_event_chain
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +71,7 @@ def build_intelligence_feed(
         try:
             obj = build_news_object(cluster, generate_ai_summary=generate_narrative)
             obj = enrich_with_quant_signals(obj)
+            obj = add_event_chain(obj)
             if generate_narrative:
                 obj = add_narrative(obj, lang=lang)
             feed.append(obj)
