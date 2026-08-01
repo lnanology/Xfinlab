@@ -601,10 +601,23 @@
       <button onclick="toggleDropdown()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:6px">
         <span id="userName" data-i18n="dash_account_default">Account</span> ▾
       </button>
-      <div id="dropdown" style="display:none;position:absolute;right:0;top:40px;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:160px;z-index:100;overflow:hidden">
+      <!-- 2026-08-01 fix ("LINE登入完之後 走位" -- dropdown blew out sideways
+           and overlapped the page after logging in with LINE): LINE accounts
+           without the email OIDC scope get a long synthetic placeholder
+           address (backend/auth/social_login.py: `line_<sub>@line.xfinlab.
+           internal`, sub is a long hex string with no spaces/hyphens to break
+           on). #dropdownEmail below had no word-break, so that one unbreakable
+           token forced this box past its min-width:160px and out past the
+           viewport edge -- normal short Google/password emails never hit
+           this. max-width+box-sizing caps the box itself as a second layer
+           of defense (js/nav.js's shared .xfl-flyout already added
+           word-break:break-all for the same synthetic-email reason; this is
+           dashboard.html's own separate, older hand-built dropdown, which
+           missed that fix). -->
+      <div id="dropdown" style="display:none;position:absolute;right:0;top:40px;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:160px;max-width:min(280px,calc(100vw - 32px));box-sizing:border-box;z-index:100;overflow:hidden">
         <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
           <div style="font-size:0.75rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
-          <div id="dropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
+          <div id="dropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px;word-break:break-all;overflow-wrap:anywhere"></div>
           <div id="dropdownPlan" style="font-size:0.7rem;color:var(--amber);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
           <div id="dropdownPoints" style="font-size:0.72rem;color:var(--muted);margin-top:6px;display:none"></div>
         </div>
