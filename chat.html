@@ -324,7 +324,17 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
      column already recalculates correctly -- guaranteed reachable and
      tappable since nothing is absolutely positioned or off-flow. */
   nav{flex-wrap:wrap}
-  .nav-links{position:static;width:100%;box-shadow:none;background:transparent;backdrop-filter:none;max-height:0;overflow:hidden;transition:max-height 0.3s ease}
+  /* 2026-08-01 fix ("TOPBAR功能滑出分左右各一半" -- nav-links split into
+     2 uneven columns with the right one clipped off-screen, e.g. "News
+     Den[oise]"): this override never set flex-direction, so it fell
+     back to css/style.css's base (non-mobile) .nav-links rule --
+     display:flex with the default row direction + flex-wrap:wrap --
+     instead of that same stylesheet's @media(max-width:768px) column
+     stacking. Every link then wrapped 2-ish per row by available width,
+     and body's site-wide overflow-x:hidden silently clipped whatever
+     didn't fit instead of showing a horizontal scrollbar. column forces
+     one link per row like every other page's mobile dropdown. */
+  .nav-links{position:static;width:100%;box-shadow:none;background:transparent;backdrop-filter:none;max-height:0;overflow:hidden;transition:max-height 0.3s ease;flex-direction:column;flex-wrap:nowrap}
   .nav-links.open{max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 
   /* 2026-07-24 fix ("CHAT下面個輸入 放錄音旁 自動調整"): css/style.css's
