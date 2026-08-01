@@ -35,11 +35,28 @@
     return (typeof I18N !== "undefined" && I18N.translations && I18N.translations[key]) || fallback;
   }
 
+  // 2026-08-01 ("ICON圖案...建議全站用SVG Icons"): every language's
+  // theme_toggle_light/dark string has "☀️ "/"🌙 " baked into the
+  // translated text itself (services/i18n.py, all 47 languages) --
+  // emoji render inconsistently across OS/browser and can't be
+  // recolored via CSS. Strip that leading emoji+space here (Unicode
+  // property escape, matches any pictographic char + optional variation
+  // selector) and prepend a proper inline SVG (sun/moon, Lucide-style,
+  // currentColor) instead -- zero i18n.py changes needed since every
+  // language keeps its own translated word after the emoji.
+  var ICON_SUN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+  var ICON_MOON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>';
+
+  function stripEmoji(s) {
+    try { return s.replace(/^\p{Extended_Pictographic}️?\s*/u, ""); } catch (e) { return s.replace(/^\S+\s*/, ""); }
+  }
+
   function renderLabel(btn, theme) {
     if (!btn) return;
     var label = "dark" === theme ? tt("theme_toggle_light", "☀️ Light") : tt("theme_toggle_dark", "🌙 Dark");
     var aria = "dark" === theme ? tt("theme_aria_switch_light", "Switch to light theme") : tt("theme_aria_switch_dark", "Switch to dark theme");
-    btn.textContent = label;
+    var icon = "dark" === theme ? ICON_SUN : ICON_MOON;
+    btn.innerHTML = icon + stripEmoji(label);
     btn.setAttribute("aria-label", aria);
   }
 
