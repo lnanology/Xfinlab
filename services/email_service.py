@@ -8,6 +8,13 @@ load_dotenv()
 
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
+# 2026-08-01: was hardcoded to smtp.gmail.com -- now configurable so this
+# can send via a real support@xfinlab.com mailbox (e.g. Namecheap Private
+# Email: mail.privateemail.com:587) instead of only a personal Gmail
+# account. Defaults preserve the exact previous behavior if these two
+# env vars are left unset, so this is a no-op change until you set them.
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 
 
 class EmailService:
@@ -35,7 +42,7 @@ class EmailService:
             html_part = MIMEText(html_body, 'html')
             msg.attach(html_part)
 
-            with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
                 server.starttls()
                 server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
                 server.send_message(msg)
