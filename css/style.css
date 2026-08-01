@@ -625,6 +625,19 @@ footer {
     background: var(--bg-card);
     box-shadow: 0 12px 24px rgba(0,0,0,0.12);
     flex-direction: column;
+    /* 2026-08-02 fix ("手機 TOPBAR 滑出選功能時，顯示要左6個右邊6個"): the
+       base (desktop) .nav-links rule above sets flex-wrap:wrap so a wide
+       row of 9-13 links can spill onto extra ROWS instead of squeezing/
+       breaking mid-word. This mobile override switches to a vertical
+       column but never reset flex-wrap back to nowrap -- so with
+       flex-direction:column + flex-wrap:wrap, once the stacked links'
+       total height passed .nav-links.open's max-height cap, flexbox
+       started a second COLUMN to its right instead of just scrolling
+       within the single column that overflow-y:auto below was meant to
+       provide, splitting ~13 links into two side-by-side halves. nowrap
+       forces one true column; overflow-y:auto (unchanged) handles any
+       remaining overflow with a scrollbar instead of a second column. */
+    flex-wrap: nowrap;
     gap: 0;
     overflow: hidden;
     max-height: 0;
