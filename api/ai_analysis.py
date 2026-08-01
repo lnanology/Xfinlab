@@ -146,15 +146,34 @@ async def ai_analysis(body: dict):
     flat = max(5, 100 - bull - bear)
 
     # Risks
+    # 2026-08-02 fix (task #611, "風險可控：目前市場狀況相對穩定...在用英文時
+    # 顯示中文"): all 4 of these title/desc pairs were hardcoded Chinese
+    # literals rendered directly into #riskList's textContent (see
+    # ai-analysis.html's `li.textContent=`${item.title}：${item.desc}``),
+    # with zero regard for `lang` -- unlike the `conclusion` field a few
+    # lines below, which already branches on the same is_zh_default flag.
+    # Reuses that exact convention (Chinese for the zh-HK/zh-TW/zh-CN
+    # default, English otherwise) instead of adding a second translation
+    # mechanism to this file.
     risks = []
-    if risk_result["risk_level"] == "HIGH":
-        risks.append({"title": "高風險警告", "desc": "市場波動較大，需謹慎操作"})
-    if volume_ratio < 0.5:
-        risks.append({"title": "成交量偏低", "desc": "流動性不足，難以大量進出"})
-    if trend == "bearish":
-        risks.append({"title": "下降趨勢", "desc": "價格處於下降通道，注意止損"})
-    if not risks:
-        risks.append({"title": "風險可控", "desc": "目前市場狀況相對穩定"})
+    if is_zh_default:
+        if risk_result["risk_level"] == "HIGH":
+            risks.append({"title": "高風險警告", "desc": "市場波動較大，需謹慎操作"})
+        if volume_ratio < 0.5:
+            risks.append({"title": "成交量偏低", "desc": "流動性不足，難以大量進出"})
+        if trend == "bearish":
+            risks.append({"title": "下降趨勢", "desc": "價格處於下降通道，注意止損"})
+        if not risks:
+            risks.append({"title": "風險可控", "desc": "目前市場狀況相對穩定"})
+    else:
+        if risk_result["risk_level"] == "HIGH":
+            risks.append({"title": "High risk warning", "desc": "Market volatility is elevated -- trade with caution"})
+        if volume_ratio < 0.5:
+            risks.append({"title": "Low trading volume", "desc": "Liquidity is limited, making large position changes difficult"})
+        if trend == "bearish":
+            risks.append({"title": "Downtrend", "desc": "Price is in a downward channel -- watch your stop-loss"})
+        if not risks:
+            risks.append({"title": "Risk manageable", "desc": "Current market conditions are relatively stable"})
 
     # Conclusion
     # 2026-07-19 fix: was hardcoded Chinese regardless of `lang` (see the

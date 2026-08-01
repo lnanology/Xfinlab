@@ -15,7 +15,7 @@ def agent_debate_status():
 
 
 @router.get("/agent-debate/{symbol}")
-def agent_debate(symbol: str, token: str = None):
+def agent_debate(symbol: str, token: str = None, lang: str = None):
     """
     2026-07-20 fix: this endpoint used to take no token param at all and
     never touched services/quota_middleware.py, so AI辯論 (4 sequential
@@ -62,6 +62,6 @@ def agent_debate(symbol: str, token: str = None):
     except Exception:
         context["regime"] = None
 
-    result = run_debate(symbol, context)
+    result = run_debate(symbol, context, lang=lang)
     record_ai_token_usage(user_id)
     return result

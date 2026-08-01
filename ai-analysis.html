@@ -308,7 +308,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <details class="xfl-accordion" id="debateAccordion" style="display:none">
       <summary data-i18n="aa_debate_title">▶ 🗣️ AI辯論 Agent Debate</summary>
       <div class="xfl-accordion-body">
-        <button type="button" id="debateRunBtn" class="primary-btn" style="height:38px;padding:0 14px">開始辯論</button>
+        <button type="button" id="debateRunBtn" class="primary-btn" style="height:38px;padding:0 14px" data-i18n="aa_debate_run_btn">Start Debate</button>
         <div id="debateBody" style="margin-top:0.8rem"></div>
       </div>
     </details>
@@ -975,8 +975,18 @@ document.getElementById('debateRunBtn').addEventListener('click', async () => {
   if (!_xflLastAnalyzedSymbol) return;
   const btn = document.getElementById('debateRunBtn');
   const body = document.getElementById('debateBody');
+  // 2026-08-02 fix (task #611, "開始辯論...在用英文時顯示中文"): every
+  // string in this handler -- the button's running/idle labels, the
+  // Verdict label, and all 3 error/unavailable messages -- was a hardcoded
+  // Traditional Chinese literal with zero regard for the site's selected
+  // UI language. Uses the same (I18N.translations[key]||fallback) lookup
+  // pattern already used elsewhere on this page (see the `tr`/`tr2` consts
+  // above) so zh-TW/zh-HK/zh-CN keep the original Chinese wording (added
+  // to services/i18n.py) while every other language falls back to the
+  // English text below instead of silently showing Chinese.
+  const dbg = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
   btn.disabled = true;
-  btn.textContent = '辯論緊...';
+  btn.textContent = dbg('aa_debate_running_btn', 'Debating…');
   try {
     // 2026-07-20 fix: this used to call with no token at all, so AI辯論
     // (4 sequential LLM calls per run) rode completely outside the
@@ -986,27 +996,28 @@ document.getElementById('debateRunBtn').addEventListener('click', async () => {
     // their monthly budget and js/quota.js's global 429 handler can
     // catch quota_exceeded the same way it does everywhere else.
     const debateToken = localStorage.getItem('xfinlab_token') || '';
-    const res = await fetch(`${API_BASE}/api/agent-debate/${encodeURIComponent(_xflLastAnalyzedSymbol)}?token=${encodeURIComponent(debateToken)}`);
+    const debateLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const res = await fetch(`${API_BASE}/api/agent-debate/${encodeURIComponent(_xflLastAnalyzedSymbol)}?token=${encodeURIComponent(debateToken)}&lang=${encodeURIComponent(debateLang)}`);
     const d = await res.json();
     if (!d.available) {
-      body.innerHTML = `<div style="color:var(--text-muted)">${d.message || 'AI辯論暫時未開放。'}</div>`;
+      body.innerHTML = `<div style="color:var(--text-muted)">${d.message || dbg('aa_debate_unavailable_fallback', 'AI Debate is currently unavailable.')}</div>`;
     } else if (d.error) {
-      body.innerHTML = `<div style="color:var(--accent-red)">辯論失敗：${d.error}</div>`;
+      body.innerHTML = `<div style="color:var(--accent-red)">${dbg('aa_debate_failed_prefix', 'Debate failed: ')}${d.error}</div>`;
     } else {
       const args = d.arguments || {};
       body.innerHTML = `
         <div style="margin-bottom:0.6rem"><strong>🐂 Bull：</strong>${args.bull || '-'}</div>
         <div style="margin-bottom:0.6rem"><strong>🐻 Bear：</strong>${args.bear || '-'}</div>
         <div style="margin-bottom:0.6rem"><strong>🛡️ Risk Manager：</strong>${args.risk_manager || '-'}</div>
-        <div style="margin-bottom:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color)"><strong>⚖️ 仲裁：</strong>${d.verdict || '-'}</div>
+        <div style="margin-bottom:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color)"><strong>⚖️ ${dbg('aa_debate_verdict_label', 'Verdict')}：</strong>${d.verdict || '-'}</div>
         <div style="font-size:0.72rem;color:var(--text-muted)">${d.disclaimer || ''}</div>
       `;
     }
   } catch (e) {
-    body.innerHTML = `<div style="color:var(--accent-red)">辯論失敗，請稍後重試。</div>`;
+    body.innerHTML = `<div style="color:var(--accent-red)">${dbg('aa_debate_failed_retry', 'Debate failed, please try again later.')}</div>`;
   } finally {
     btn.disabled = false;
-    btn.textContent = '開始辯論';
+    btn.textContent = dbg('aa_debate_run_btn', 'Start Debate');
   }
 });
 

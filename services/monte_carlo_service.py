@@ -88,11 +88,22 @@ def simulate(
         {"available": False, "message": "..."} -- not enough real history,
             or the fetch itself failed
     """
+    # 2026-08-02 fix (task #611, "BRK 嘅真實歷史數據唔夠...在用英文時顯示
+    # 中文"): every early-return `message` below was a hardcoded Cantonese
+    # literal with zero regard for `lang`, unlike this same function's
+    # `note` field (_build_note, further down) which already looks up a
+    # per-language template via get_translations(). Reuses that file's own
+    # is_zh_default convention -- Chinese for the zh-HK/zh-TW/zh-CN
+    # default, English otherwise -- so stress-lab.html's `data.message ||
+    # ...` render path (see that file's runMonteCarlo()) never shows
+    # Chinese to a non-Chinese-language user again.
+    is_zh_default = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
+
     symbol = (symbol or "").upper().strip()
     if not symbol:
-        return {"available": False, "message": "請輸入股票代號"}
+        return {"available": False, "message": "請輸入股票代號" if is_zh_default else "Please enter a ticker symbol"}
     if amount is None or amount <= 0:
-        return {"available": False, "message": "投入金額必須大於零"}
+        return {"available": False, "message": "投入金額必須大於零" if is_zh_default else "Investment amount must be greater than zero"}
 
     horizon_days = max(1, min(int(horizon_days or 252), MAX_HORIZON_DAYS))
     n_simulations = max(100, min(int(n_simulations or DEFAULT_N_SIMULATIONS), MAX_N_SIMULATIONS))
@@ -100,16 +111,23 @@ def simulate(
     try:
         df = fetch_ohlc_history(symbol, period=period, interval="1d")
     except Exception as e:
-        return {"available": False, "message": f"攞唔到 {symbol} 嘅歷史數據：{e}"}
+        msg = f"攞唔到 {symbol} 嘅歷史數據：{e}" if is_zh_default else f"Could not fetch historical data for {symbol}: {e}"
+        return {"available": False, "message": msg}
 
     if df is None or "Close" not in df.columns or len(df) < MIN_OBSERVATIONS + 1:
-        return {"available": False, "message": f"{symbol} 嘅真實歷史數據唔夠（需要至少 {MIN_OBSERVATIONS} 個交易日）"}
+        msg = (
+            f"{symbol} 嘅真實歷史數據唔夠（需要至少 {MIN_OBSERVATIONS} 個交易日）"
+            if is_zh_default
+            else f"{symbol} doesn't have enough real historical data (needs at least {MIN_OBSERVATIONS} trading days)"
+        )
+        return {"available": False, "message": msg}
 
     closes = df["Close"].astype(float).values
     log_returns = np.diff(np.log(closes))
     log_returns = log_returns[np.isfinite(log_returns)]
     if len(log_returns) < MIN_OBSERVATIONS:
-        return {"available": False, "message": f"{symbol} 有效歷史回報樣本唔夠"}
+        msg = f"{symbol} 有效歷史回報樣本唔夠" if is_zh_default else f"{symbol} doesn't have enough valid historical return samples"
+        return {"available": False, "message": msg}
 
     rng = np.random.default_rng()
     # Draw an (n_simulations x horizon_days) matrix of real historical

@@ -41,6 +41,7 @@ from typing import Dict
 
 from ai import ai_router
 from ai.ai_router import get_ai_response
+from services.i18n import ai_language_instruction
 
 logger = logging.getLogger(__name__)
 
@@ -83,12 +84,28 @@ _PERSONA_PROMPTS = {
 }
 
 
-def run_debate(symbol: str, context: Dict) -> Dict:
+def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
     """
     Returns:
         {"available": False, "message": "..."}  -- if DEEPINFRA_API_KEY isn't set
         {"available": True, "arguments": {...}, "verdict": "...", "error": None}
         {"available": True, "error": "..."}      -- if a call failed mid-debate
+
+    2026-08-02 fix (task #611, "開始辯論...在用英文時顯示中文，跟進所有語言
+    轉換"): this function used to hardcode its unavailable-message and
+    disclaimer in Traditional Chinese, and never told the 4 underlying LLM
+    calls what language to answer in at all -- so every Bull/Bear/Risk
+    Manager argument and the Arbiter's verdict always came back in
+    Cantonese regardless of the site's selected UI language. `lang` (the
+    same I18N.currentLang code every other endpoint on this page already
+    threads through) now does two things: (1) picks the Chinese vs English
+    static string below (same is_zh_default convention used elsewhere in
+    this codebase, e.g. api/ai_analysis.py's `conclusion` field) and (2) is
+    passed through services/i18n.py's ai_language_instruction() helper --
+    the exact same helper api/chat.py, api/company_compare.py,
+    api/chart_analysis.py and api/news_denoise.py already use -- and
+    appended to every persona/arbiter prompt so DeepSeek actually answers
+    in the requested language instead of always defaulting to Chinese.
 
     2026-07-20 fix: this feature previously had ZERO resource accounting --
     api/agent_debate.py's endpoint took no token param and never called
@@ -109,11 +126,21 @@ def run_debate(symbol: str, context: Dict) -> Dict:
     single-call feature, which correctly reflects this feature's real
     resource weight without inventing a number.
     """
+    is_zh_default = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
     if not is_available():
         return {
             "available": False,
-            "message": "AI辯論功能需要設定 DEEPINFRA_API_KEY 先可以使用，暫時未開放。",
+            "message": (
+                "AI辯論功能需要設定 DEEPINFRA_API_KEY 先可以使用，暫時未開放。"
+                if is_zh_default
+                else "The AI Debate feature is not yet enabled."
+            ),
         }
+
+    # Empty for the Chinese default (the persona prompts below are already
+    # written in Cantonese) -- only appended when a non-Chinese lang was
+    # requested, same guard api/ai_analysis.py's is_zh_default check uses.
+    lang_instruction = "" if is_zh_default else f" {ai_language_instruction(lang)}"
 
     summary = _context_summary(symbol, context)
     arguments = {}
@@ -121,14 +148,14 @@ def run_debate(symbol: str, context: Dict) -> Dict:
 
     try:
         for persona, instruction in _PERSONA_PROMPTS.items():
-            prompt = f"{instruction}\n\n真實數據：\n{summary}"
+            prompt = f"{instruction}{lang_instruction}\n\n真實數據：\n{summary}"
             arguments[persona] = get_ai_response(prompt, max_tokens=_MAX_TOKENS, provider=_PROVIDER).strip()
             total_tokens += ai_router.get_last_usage_tokens()
 
         arbiter_prompt = (
             "你係一個中立嘅仲裁者。下面有3個分析員嘅意見（Bull/Bear/Risk Manager），"
             "睇完之後用3-4句總結邊一方論點比較有數據支持，並且指出如果要跟，最需要留意嘅一點係咩。"
-            "唔好加入你自己未提供嘅新數據，只可以評論返3個分析員已經講嘅嘢。\n\n"
+            f"唔好加入你自己未提供嘅新數據，只可以評論返3個分析員已經講嘅嘢。{lang_instruction}\n\n"
             f"Bull：{arguments['bull']}\n\n"
             f"Bear：{arguments['bear']}\n\n"
             f"Risk Manager：{arguments['risk_manager']}"
@@ -145,7 +172,11 @@ def run_debate(symbol: str, context: Dict) -> Dict:
             "available": True,
             "arguments": arguments,
             "verdict": verdict,
-            "disclaimer": "以上由AI角色扮演生成，僅供參考角度，並非投資建議。",
+            "disclaimer": (
+                "以上由AI角色扮演生成，僅供參考角度，並非投資建議。"
+                if is_zh_default
+                else "The above is AI role-play generated content, for reference only -- not investment advice."
+            ),
             "error": None,
         }
     except Exception as e:
