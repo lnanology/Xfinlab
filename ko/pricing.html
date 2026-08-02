@@ -187,9 +187,20 @@
 <a data-i18n="nav_home" href="/ko/index.html">홈</a>
 <a data-i18n="nav_dashboard" href="/dashboard.html">대시보드</a>
 <a data-i18n="nav_pricing" href="/ko/pricing.html">가격</a>
-<a class="btn-nav" data-i18n="nav_login" href="/login.html">로그인</a>
+<a id="navSignInBtn" class="btn-nav" data-i18n="nav_login" href="/login.html">로그인</a>
 </div>
 </nav>
+<script>
+(function(){
+  try {
+    if (localStorage.getItem('xfinlab_token')) {
+      var el = document.getElementById('navSignInBtn');
+      if (el) el.style.display = 'none';
+    }
+  } catch (e) {}
+})();
+</script>
+
 <main>
 <!-- Hero -->
 <div class="hero">

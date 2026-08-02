@@ -209,9 +209,20 @@
     <a href="index.html" data-i18n="nav_home">首頁</a>
     <a href="dashboard.html" data-i18n="nav_dashboard">Dashboard</a>
     <a href="pricing.html" data-i18n="nav_pricing">Pricing</a>
-    <a href="login.html" class="btn-nav" data-i18n="nav_login">Sign In</a>
+    <a id="navSignInBtn" href="login.html" class="btn-nav" data-i18n="nav_login">Sign In</a>
   </div>
 </nav>
+<script>
+(function(){
+  try {
+    if (localStorage.getItem('xfinlab_token')) {
+      var el = document.getElementById('navSignInBtn');
+      if (el) el.style.display = 'none';
+    }
+  } catch (e) {}
+})();
+</script>
+
 
 <main>
 

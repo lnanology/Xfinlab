@@ -187,9 +187,20 @@
 <a data-i18n="nav_home" href="/zh-CN/index.html">首页</a>
 <a data-i18n="nav_dashboard" href="/dashboard.html">控制台</a>
 <a data-i18n="nav_pricing" href="/zh-CN/pricing.html">定价</a>
-<a class="btn-nav" data-i18n="nav_login" href="/login.html">登录</a>
+<a id="navSignInBtn" class="btn-nav" data-i18n="nav_login" href="/login.html">登录</a>
 </div>
 </nav>
+<script>
+(function(){
+  try {
+    if (localStorage.getItem('xfinlab_token')) {
+      var el = document.getElementById('navSignInBtn');
+      if (el) el.style.display = 'none';
+    }
+  } catch (e) {}
+})();
+</script>
+
 <main>
 <!-- Hero -->
 <div class="hero">
