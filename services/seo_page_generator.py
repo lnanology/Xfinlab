@@ -47,6 +47,7 @@ _CORE_PAGES = {
     "reset-password.html", "verify-email.html", "intelligence-api.html", "news.html",
     "nasdaq.html", "pe-calculator.html", "dcf-calculator.html",
     "position-size-calculator.html", "compound-interest-calculator.html",
+    "widgets.html",
 }
 
 

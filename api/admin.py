@@ -85,6 +85,11 @@ _DEFAULT_FLAGS = {
     # unsubscribe endpoints keep working regardless (only the daily send
     # step checks this flag).
     "email_digest_engine": True,
+    # Growth OS Phase 4 (2026-08-02): gates api/widgets.py's two public
+    # data endpoints (sentiment-index/heatmap). embed.js itself always
+    # loads (so a third-party page embedding it never gets a 404) but
+    # renders nothing meaningful while this is off.
+    "widget_engine": True,
 }
 
 def init_feature_flags_table():
@@ -437,6 +442,28 @@ def email_digest_send_now(token: str, request: Request):
         raise HTTPException(status_code=400, detail="No signals available today")
     result = send_daily_digest(variants["email_subject"], variants["email_body"])
     return {"status": "ok", **result}
+
+@router.get("/admin/widgets/stats")
+def widget_stats(token: str, request: Request):
+    """Growth OS Phase 4 -- today's + all-time embed-view counts per
+    widget type, from api/widgets.py's widget_embed_log table (created
+    lazily on first embed load, so this tolerates the table not existing
+    yet on a fresh deploy)."""
+    verify_admin(token, "widget_stats", request)
+    conn = get_db()
+    try:
+        today = datetime.now(timezone.utc).date().isoformat()
+        rows = conn.execute(
+            "SELECT widget_type, SUM(views) as total, "
+            "SUM(CASE WHEN log_date = ? THEN views ELSE 0 END) as today "
+            "FROM widget_embed_log GROUP BY widget_type",
+            (today,),
+        ).fetchall()
+        return {"widgets": [{"widget_type": r["widget_type"], "total_views": r["total"], "today_views": r["today"]} for r in rows]}
+    except Exception:
+        return {"widgets": []}
+    finally:
+        conn.close()
 
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):

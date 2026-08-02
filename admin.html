@@ -188,6 +188,7 @@
     <div class="nav-item" onclick="showPage('content')"><span class="icon">📢</span> Content Center</div>
     <div class="nav-item" onclick="showPage('seo')"><span class="icon">🌐</span> SEO Page Engine</div>
     <div class="nav-item" onclick="showPage('email')"><span class="icon">📧</span> Email Engine</div>
+    <div class="nav-item" onclick="showPage('widgets')"><span class="icon">🧩</span> Widget Engine</div>
 
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
@@ -484,6 +485,32 @@
       </div>
     </div>
 
+    <!-- Growth OS Phase 4 (2026-08-02): Widget Engine. Two embeddable
+         widgets (Market Sentiment Index, Signal Strength Heatmap) any
+         third-party site can drop in via a single <script> tag -- see
+         api/widgets.py + widgets.html (the public embed-code gallery).
+         Gated by the widget_engine feature flag. -->
+    <div class="page" id="page-widgets">
+      <div class="page-title">Widget Engine</div>
+      <div class="page-sub">Embeddable widgets for third-party sites -- see widgets.html for the public gallery + embed codes</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Embed Views</span>
+          <button class="btn btn-sm btn-purple" onclick="loadWidgetStats()">🔄 Refresh</button>
+        </div>
+        <div id="widgetStats"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Public Gallery</div>
+        <div style="font-size:0.85rem;color:var(--muted)">
+          <a href="https://www.xfinlab.com/widgets.html" target="_blank" style="color:var(--accent)">xfinlab.com/widgets.html</a>
+          &nbsp;— live previews + copy-paste embed codes for both widgets.
+        </div>
+      </div>
+    </div>
+
     <!-- Feature Flags -->
     <div class="page" id="page-flags">
       <div class="page-title">Feature Flags</div>
@@ -603,6 +630,7 @@ const FLAGS_DESC = {
   seo_auto_engine: 'Allow SEO Page Engine to generate new ticker landing pages',
   content_engine_multilang: 'Generate EN/ES social variants alongside the daily ZH content',
   email_digest_engine: 'Send the daily signals email to confirmed subscribers',
+  widget_engine: 'Serve live data to embeddable widgets on third-party sites',
 };
 
 // Auto login
@@ -949,6 +977,7 @@ function showPage(name) {
   if (name === 'content') loadContentVariants();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
+  if (name === 'widgets') loadWidgetStats();
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -1118,6 +1147,28 @@ async function sendEmailDigestNow() {
     result.innerHTML = `<span style="color:var(--green)">✅ Sent to ${data.sent}/${data.total_confirmed} confirmed subscribers${data.failed ? ` (${data.failed} failed)` : ''}</span>`;
   } catch (e) {
     result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  }
+}
+
+// Growth OS Phase 4 -- Widget Engine panel.
+async function loadWidgetStats() {
+  const el = document.getElementById('widgetStats');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/widgets/stats?token=${adminToken}`);
+    const data = await res.json();
+    const widgets = data.widgets || [];
+    if (!widgets.length) {
+      el.innerHTML = '<div class="empty">No embed views logged yet</div>';
+      return;
+    }
+    el.innerHTML = widgets.map(w => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span>${escapeHtml(w.widget_type)}</span>
+        <span><b>${w.today_views}</b> today &nbsp;·&nbsp; <b>${w.total_views}</b> all-time</span>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading widget stats</div>';
   }
 }
 
