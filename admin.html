@@ -186,6 +186,7 @@
     <div class="nav-section">Content</div>
     <div class="nav-item" onclick="showPage('telegram')"><span class="icon">✈️</span> Telegram Publisher</div>
     <div class="nav-item" onclick="showPage('content')"><span class="icon">📢</span> Content Center</div>
+    <div class="nav-item" onclick="showPage('seo')"><span class="icon">🌐</span> SEO Page Engine</div>
 
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
@@ -394,6 +395,63 @@
         </div>
         <div id="cvMeta" style="font-size:0.72rem;color:var(--muted);margin-bottom:12px"></div>
         <div id="cvBody"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 1 (2026-08-02): AI SEO Engine -- turns the earlier
+         hand-built ticker-page batch (tasks #453-502) into an admin-
+         controlled generator. See services/seo_page_generator.py and
+         api/admin.py's /admin/seo/* endpoints. Gated by the
+         seo_auto_engine feature flag on the Feature Flags page. -->
+    <div class="page" id="page-seo">
+      <div class="page-title">SEO Page Engine</div>
+      <div class="page-sub">Generate new ticker/ETF/forex/crypto landing pages, auto-added to sitemap.xml</div>
+
+      <div class="panel">
+        <div class="panel-title">Current Coverage</div>
+        <div id="seoStats" style="font-size:0.85rem;color:var(--text)">
+          <span class="empty"><span class="spinner"></span></span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Generate a New Page</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Ticker</label>
+            <input id="seoTicker" placeholder="e.g. COIN" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Company / Asset Name</label>
+            <input id="seoName" placeholder="e.g. Coinbase Global Inc." style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Category</label>
+            <select id="seoCategory" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+              <option value="stock">Stock</option>
+              <option value="etf">ETF</option>
+              <option value="crypto">Cryptocurrency</option>
+              <option value="forex">Forex Pair</option>
+              <option value="index">Index</option>
+              <option value="commodity">Commodity</option>
+              <option value="bond">Bond</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Related Tickers (comma-separated, optional)</label>
+            <input id="seoRelated" placeholder="e.g. AAPL,MSFT" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+          </div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="generateSeoPage()">⚡ Generate Page</button>
+        <div id="seoGenResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Suggested Next Pages (from site's own ticker search data, ranked by popularity)</span>
+          <button class="btn btn-sm btn-purple" onclick="loadSeoSuggestions()">🔄 Refresh</button>
+        </div>
+        <div id="seoSuggestions"><div class="empty"><span class="spinner"></span></div></div>
       </div>
     </div>
 
@@ -857,6 +915,7 @@ function showPage(name) {
   if (name === 'auditlog') loadAuditLog();
   if (name === 'security') loadSecurityScan();
   if (name === 'content') loadContentVariants();
+  if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -915,6 +974,75 @@ async function regenerateContentVariants() {
     renderContentVariants(data);
   } catch (e) {
     body.innerHTML = '<div class="empty">Regenerate failed</div>';
+  }
+}
+
+// Growth OS Phase 1 -- SEO Page Engine panel. Reads/writes
+// api/admin.py's /admin/seo/* endpoints (services/seo_page_generator.py).
+async function loadSeoStats() {
+  const el = document.getElementById('seoStats');
+  el.innerHTML = '<span class="empty"><span class="spinner"></span></span>';
+  try {
+    const res = await fetch(`${API}/admin/seo/pages?token=${adminToken}`);
+    const data = await res.json();
+    el.innerHTML = `<b>${data.count}</b> ticker/comparison pages live &nbsp;·&nbsp; <b>${data.generated_by_engine}</b> created via this engine`;
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading SEO stats</div>';
+  }
+}
+
+async function loadSeoSuggestions() {
+  const el = document.getElementById('seoSuggestions');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/seo/suggestions?token=${adminToken}`);
+    const data = await res.json();
+    const cands = data.candidates || [];
+    if (!cands.length) {
+      el.innerHTML = '<div class="empty">No candidates found (or all covered)</div>';
+      return;
+    }
+    el.innerHTML = cands.map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span><b>${escapeHtml(c.symbol)}</b> — ${escapeHtml(c.name)} <span style="color:var(--muted);font-size:0.75rem">(${escapeHtml(c.type)}, popularity ${c.popularity})</span></span>
+        <button class="btn btn-sm btn-green" onclick="prefillSeoForm('${escapeHtml(c.symbol)}','${escapeHtml(c.name).replace(/'/g,"\\'")}','${escapeHtml(c.type)}')">Use</button>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading suggestions</div>';
+  }
+}
+
+function prefillSeoForm(symbol, name, type) {
+  document.getElementById('seoTicker').value = symbol;
+  document.getElementById('seoName').value = name;
+  const catMap = {stock:'stock', crypto:'crypto', forex:'forex', etf:'etf', index:'index', commodity:'commodity', bond:'bond'};
+  document.getElementById('seoCategory').value = catMap[type] || 'stock';
+}
+
+async function generateSeoPage() {
+  const ticker = document.getElementById('seoTicker').value.trim();
+  const company_name = document.getElementById('seoName').value.trim();
+  const category = document.getElementById('seoCategory').value;
+  const related = document.getElementById('seoRelated').value.split(',').map(s => s.trim()).filter(Boolean);
+  const result = document.getElementById('seoGenResult');
+  if (!ticker || !company_name) {
+    result.innerHTML = '<span style="color:var(--red)">Ticker and name are required</span>';
+    return;
+  }
+  result.innerHTML = '<span class="spinner"></span> Generating...';
+  try {
+    const res = await fetch(`${API}/admin/seo/generate?token=${adminToken}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ticker, company_name, category, related})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Created ${data.path} (added to sitemap.xml)</span>`;
+    loadSeoStats();
+    loadSeoSuggestions();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
   }
 }
 

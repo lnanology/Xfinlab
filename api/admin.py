@@ -63,6 +63,14 @@ _DEFAULT_FLAGS = {
     "intel_plan_free_visible": True,
     "intel_plan_pro_visible": True,
     "intel_plan_enterprise_visible": True,
+    # Growth OS Phase 1 (2026-08-02): AI SEO Engine. Gates the
+    # /admin/seo/generate endpoint below -- when off, generation is
+    # refused even with a valid admin token, so the whole page-creation
+    # pipeline can be paused instantly (e.g. mid-investigation of a bad
+    # generated page) without touching code or env vars. Read-only
+    # endpoints (/admin/seo/pages, /admin/seo/suggestions) are unaffected
+    # since they can't modify anything.
+    "seo_auto_engine": True,
 }
 
 def init_feature_flags_table():
@@ -326,6 +334,56 @@ def regenerate_content_variants(token: str, request: Request):
     variants = generate_content_variants(cache)
     save_variants(date.today().isoformat(), variants)
     return variants
+
+@router.get("/admin/seo/pages")
+def seo_list_pages(token: str, request: Request):
+    """Growth OS Phase 1 -- read-only: how many ticker/comparison SEO
+    landing pages exist right now (glob of the repo root, see
+    services/seo_page_generator.py), plus how many of those were created
+    via this engine specifically (vs. the earlier hand-built batch)."""
+    verify_admin(token, "seo_list_pages", request)
+    from services.seo_page_generator import list_existing_pages
+    return list_existing_pages()
+
+@router.get("/admin/seo/suggestions")
+def seo_suggestions(token: str, request: Request, limit: int = 30):
+    """Growth OS Phase 1 -- read-only: assets from the site's own
+    autocomplete.js ticker universe that don't have a landing page yet,
+    ranked by their existing popularity score. Answers "what should I
+    generate next" instead of guessing."""
+    verify_admin(token, "seo_suggestions", request)
+    from services.seo_page_generator import suggest_candidates
+    return {"candidates": suggest_candidates(limit=min(limit, 100))}
+
+@router.post("/admin/seo/generate")
+def seo_generate(token: str, request: Request, body: dict = {}):
+    """Growth OS Phase 1 -- creates one new ticker landing page + appends
+    it to sitemap.xml. Gated by the seo_auto_engine feature flag so it can
+    be paused instantly from the Feature Flags panel. Never overwrites an
+    existing page (services/seo_page_generator.py's create_ticker_page
+    raises FileExistsError instead)."""
+    verify_admin(token, "seo_generate", request)
+    conn = get_db()
+    row = conn.execute("SELECT enabled FROM feature_flags WHERE key='seo_auto_engine'").fetchone()
+    conn.close()
+    if row is not None and not row["enabled"]:
+        raise HTTPException(status_code=403, detail="SEO Auto Engine is currently disabled (Feature Flags)")
+
+    ticker = (body.get("ticker") or "").strip()
+    company_name = (body.get("company_name") or "").strip()
+    category = (body.get("category") or "stock").strip()
+    related = body.get("related") or []
+    if not ticker or not company_name:
+        raise HTTPException(status_code=400, detail="ticker and company_name are required")
+
+    from services.seo_page_generator import create_ticker_page
+    try:
+        result = create_ticker_page(ticker, company_name, category, related)
+    except FileExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "ok", **result}
 
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
