@@ -132,6 +132,33 @@
   .user-topbar-flyout.open { display: block; }
   .user-topbar-flyout a { display: block; padding: 10px 14px; color: var(--text); text-decoration: none; font-size: 0.82rem; }
   .user-topbar-flyout a:hover { background: var(--bg); color: var(--accent); }
+  /* 2026-08-02 fix ("手機的首頁按ACCOUNT滑出來個框向左邊伸左睇唔到,
+     ACCOUNT名太長 分2行 整個框不能全看到"): this flyout only ever had
+     `right:0` with no left-edge/viewport safeguard, unlike js/nav.js's
+     own shared `.xfl-flyout` (used on every OTHER page's Account widget)
+     which already got a `@media(max-width:480px)` fixed-centered
+     override, and dashboard.html's own #dropdown which already got a
+     word-break fix -- both fixes this page's hand-rolled
+     .user-topbar-flyout never received. On narrow screens `right:0`
+     relative to the small settings button let the box's real content
+     width (email address + 4 menu rows) grow left past the viewport's
+     left edge with nothing to stop it, and #topbarDropdownEmail below
+     had no word-break so one long unbreakable token (e.g. LINE's
+     synthetic placeholder email) forced the box even wider still.
+     Reusing the exact same mobile-safe pattern already proven on this
+     site's other flyouts. */
+  #topbarDropdownEmail { word-break: break-all; overflow-wrap: anywhere; }
+  @media (max-width: 480px) {
+    .user-topbar-flyout {
+      position: fixed;
+      left: 50%;
+      right: auto;
+      top: auto;
+      transform: translateX(-50%);
+      width: min(280px, calc(100vw - 32px));
+      max-width: calc(100vw - 32px);
+    }
+  }
 
   /* Hero */
   .hero { max-width: 1160px; margin: 0 auto; padding: 90px 24px 60px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
@@ -935,6 +962,15 @@ function initUserTopbar() {
     settingsBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       flyout.classList.toggle('open');
+      // 2026-08-02 fix: on narrow screens .user-topbar-flyout switches to
+      // position:fixed + left:50% (see its @media rule above), which needs
+      // its own `top` set in JS -- same approach js/nav.js's shared
+      // .xfl-flyout already uses -- since a fixed-position element can't
+      // rely on `top:calc(100%+6px)` (that's relative to its normal
+      // in-flow position, which no longer applies once fixed).
+      if (flyout.classList.contains('open') && window.innerWidth <= 480) {
+        flyout.style.top = (settingsBtn.getBoundingClientRect().bottom + 8) + 'px';
+      }
     });
     document.addEventListener('click', function() {
       flyout.classList.remove('open');
@@ -960,8 +996,15 @@ async function topbarCopyReferral() {
 }
 
 function topbarShareXfinlab() {
-  // 重用js/share-widget.js已經起好嗰個site-wide Share面板，唔使喺呢度
-  // 重新起多一次分享UI。
+  // 2026-08-02 fix ("手機的share XFINLAB導航無效 電腦也是"): used to just
+  // btn.click() the floating share widget's OWN corner button, which only
+  // toggles its small dropdown panel next to itself (bottom-right corner,
+  // or inside the mobile bottom dock) -- triggered from this Account menu
+  // near the TOP of the page, that corner panel was easy to never notice
+  // opening, looking like the click did nothing. js/share-widget.js now
+  // exposes xflOpenShareWidget() which opens the SAME widget's centered,
+  // impossible-to-miss QR/link modal directly instead.
+  if (typeof window.xflOpenShareWidget === 'function') { window.xflOpenShareWidget(); return; }
   const btn = document.getElementById('shareWidgetBtn');
   if (btn) { btn.click(); return; }
   navigator.clipboard.writeText('https://www.xfinlab.com/');

@@ -247,4 +247,20 @@
   } else {
     buildWidget();
   }
+
+  // 2026-08-02 fix ("手機的share XFINLAB導航無效 電腦也是"): pages that
+  // reuse this widget from a REMOTE menu item (index.html's Account
+  // flyout, via topbarShareXfinlab()) used to just synthetically click
+  // #shareWidgetBtn -- which only toggles the small corner dropdown
+  // panel anchored next to this widget's own floating button (bottom-
+  // right of the viewport, or moved into the bottom mobile dock by
+  // js/mobile-widget-dock.js). Triggered from a menu near the TOP of the
+  // page, that corner panel is easy to never notice opening at all,
+  // making the click look like it did nothing. Exposing this global so
+  // any page can open the SAME centered, impossible-to-miss QR/link
+  // modal directly instead, regardless of where it was triggered from.
+  window.xflOpenShareWidget = function () {
+    ensureQrModal();
+    toggleQrModal(true);
+  };
 }();
