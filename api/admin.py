@@ -71,6 +71,13 @@ _DEFAULT_FLAGS = {
     # endpoints (/admin/seo/pages, /admin/seo/suggestions) are unaffected
     # since they can't modify anything.
     "seo_auto_engine": True,
+    # Growth OS Phase 2 (2026-08-02): gates the EN/ES multi-language
+    # social-content fan-out in services/content_repurpose_service.py's
+    # generate_content_variants_multilang(), called from api/
+    # market_pulse.py's daily job. Off = only the original "zh" variants
+    # (twitter/threads/facebook/linkedin/instagram/discord/reddit/email/
+    # push) are generated, matching pre-Phase-2 behavior exactly.
+    "content_engine_multilang": True,
 }
 
 def init_feature_flags_table():
@@ -329,9 +336,24 @@ def regenerate_content_variants(token: str, request: Request):
     verify_admin(token, "regenerate_content_variants", request)
     from datetime import date
     from api.market_pulse import _compute_free_signals
-    from services.content_repurpose_service import generate_content_variants, save_variants
+    from services.content_repurpose_service import (
+        generate_content_variants,
+        generate_content_variants_multilang,
+        save_variants,
+    )
     cache = _compute_free_signals()
     variants = generate_content_variants(cache)
+    # Growth OS Phase 2: match the daily job's behavior (api/market_pulse.py)
+    # so a manual regenerate doesn't silently drop the EN/ES fan-out --
+    # same content_engine_multilang flag check.
+    conn = get_db()
+    row = conn.execute("SELECT enabled FROM feature_flags WHERE key='content_engine_multilang'").fetchone()
+    conn.close()
+    if row is None or row["enabled"]:
+        try:
+            variants["multilang"] = generate_content_variants_multilang(cache)
+        except Exception:
+            pass
     save_variants(date.today().isoformat(), variants)
     return variants
 

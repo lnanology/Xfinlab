@@ -571,6 +571,8 @@ const FLAGS_DESC = {
   intel_plan_free_visible: 'Show "Free" tier card on intelligence-api.html',
   intel_plan_pro_visible: 'Show "Pro" tier card on intelligence-api.html',
   intel_plan_enterprise_visible: 'Show "Enterprise" tier card on intelligence-api.html',
+  seo_auto_engine: 'Allow SEO Page Engine to generate new ticker landing pages',
+  content_engine_multilang: 'Generate EN/ES social variants alongside the daily ZH content',
 };
 
 // Auto login
@@ -928,11 +930,27 @@ const CV_FIELDS = [
   {key: 'threads', label: 'Threads'},
   {key: 'facebook', label: 'Facebook'},
   {key: 'linkedin', label: 'LinkedIn'},
+  {key: 'instagram', label: 'Instagram Caption'},
+  {key: 'discord', label: 'Discord Announcement'},
+  {key: 'reddit_title', label: 'Reddit — Title'},
+  {key: 'reddit_body', label: 'Reddit — Body'},
   {key: 'email_subject', label: 'Email — Subject'},
   {key: 'email_body', label: 'Email — Body'},
   {key: 'push_title', label: 'Push — Title'},
   {key: 'push_body', label: 'Push — Body'},
 ];
+
+// Growth OS Phase 2: EN/ES fan-out (services/content_repurpose_service.py's
+// generate_content_variants_multilang, gated by the content_engine_multilang
+// feature flag). Only these 3 fields per language since that's all the
+// multilang generator produces (no instagram/discord/reddit variants for
+// EN/ES yet -- see that function's own scoping note).
+const CV_MULTILANG_FIELDS = [
+  {key: 'twitter', label: 'X / Twitter'},
+  {key: 'facebook', label: 'Facebook'},
+  {key: 'linkedin', label: 'LinkedIn'},
+];
+const CV_MULTILANG_NAMES = {en: 'English', es: 'Español'};
 
 function renderContentVariants(data) {
   const meta = document.getElementById('cvMeta');
@@ -943,7 +961,7 @@ function renderContentVariants(data) {
     return;
   }
   meta.textContent = `日期: ${data.date} — 內容唔會自動出街，複製落去各平台自己嘅發文工具`;
-  body.innerHTML = CV_FIELDS.map(f => `
+  let html = CV_FIELDS.map(f => `
     <div style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <span style="font-size:0.78rem;color:var(--label);font-weight:600">${f.label}</span>
@@ -951,6 +969,33 @@ function renderContentVariants(data) {
       </div>
       <textarea readonly style="width:100%;min-height:70px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:0.8rem;font-family:inherit;resize:vertical" id="cvField-${f.key}">${escapeHtml(data[f.key] || '')}</textarea>
     </div>`).join('');
+
+  const ml = data.multilang || {};
+  const mlLangs = Object.keys(ml).filter(l => l !== 'zh' && ml[l] && ml[l].available);
+  if (mlLangs.length) {
+    html += `<div style="margin:20px 0 8px;font-size:0.78rem;color:var(--label);font-weight:600;border-top:1px solid var(--border);padding-top:14px">🌐 Multi-Language (EN/ES)</div>`;
+    mlLangs.forEach(lang => {
+      html += CV_MULTILANG_FIELDS.map(f => `
+        <div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:0.78rem;color:var(--label);font-weight:600">${CV_MULTILANG_NAMES[lang] || lang} — ${f.label}</span>
+            <button class="btn btn-sm btn-green" onclick="copyMultilangField('${lang}','${f.key}', this)">⧉ Copy</button>
+          </div>
+          <textarea readonly style="width:100%;min-height:70px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:0.8rem;font-family:inherit;resize:vertical" id="cvField-ml-${lang}-${f.key}">${escapeHtml((ml[lang] || {})[f.key] || '')}</textarea>
+        </div>`).join('');
+    });
+  }
+  body.innerHTML = html;
+}
+
+function copyMultilangField(lang, key, btn) {
+  const el = document.getElementById(`cvField-ml-${lang}-${key}`);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
 }
 
 async function loadContentVariants() {

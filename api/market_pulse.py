@@ -382,6 +382,23 @@ def _lookup_plan(token: Optional[str]) -> str:
         return "free"
 
 
+def _feature_flag_enabled(key: str, default: bool = True) -> bool:
+    """Best-effort feature-flag lookup, same feature_flags table api/
+    admin.py's Feature Flags panel writes to. Fails open to `default` if
+    the table/row doesn't exist yet or the DB is unreachable -- a flag
+    check must never be the reason a daily job crashes."""
+    try:
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+        conn = sqlite3.connect(db_path)
+        row = conn.execute("SELECT enabled FROM feature_flags WHERE key=?", (key,)).fetchone()
+        conn.close()
+        if row is None:
+            return default
+        return bool(row[0])
+    except Exception:
+        return default
+
+
 def _notify_free_signals_ready(today: str, cache: Dict):
     # Best-effort daily push. Guarded by a persisted push_send_log row so
     # this only ever fires once per calendar day no matter how many
@@ -432,12 +449,28 @@ def _notify_free_signals_ready(today: str, cache: Dict):
     # blocked by) the two notification sends above.
     try:
         from services.push_service import already_sent_today, mark_sent_today
-        from services.content_repurpose_service import generate_content_variants, save_variants
+        from services.content_repurpose_service import (
+            generate_content_variants,
+            generate_content_variants_multilang,
+            save_variants,
+        )
 
         cv_key = "content_variants_daily"
         if already_sent_today(cv_key, today):
             return
         variants = generate_content_variants(cache)
+        # Growth OS Phase 2 (2026-08-02): also fan out EN/ES social
+        # variants using the same signals, gated by the
+        # content_engine_multilang feature flag (default ON) so it can be
+        # switched off from the admin panel without a redeploy if it's
+        # ever not wanted. Best-effort within the already-best-effort
+        # outer try/except -- a failure here must not lose the base "zh"
+        # variants that already succeeded above.
+        try:
+            if _feature_flag_enabled("content_engine_multilang"):
+                variants["multilang"] = generate_content_variants_multilang(cache)
+        except Exception:
+            pass
         save_variants(today, variants)
         mark_sent_today(cv_key, today)
     except Exception:
