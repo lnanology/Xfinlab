@@ -88,6 +88,38 @@
     top: 0;
     z-index: 100;
     backdrop-filter: blur(12px);
+    /* 2026-08-02 fix ("右上3個導航放整齊D...之間距離不要貼緊", "手機
+       按ACCOUNT SHARE導航不動"): dashboard.html has always been fully
+       self-contained (its own <style> block, never links css/style.css --
+       see this file's other "never used css/style.css" comments), so it
+       never picked up css/style.css's #xflTopRightGroup flex/gap rule
+       (line ~258 there). js/nav.js (AI Chat + search icon) and
+       js/theme-toggle.js both inject their buttons into that shared
+       #xflTopRightGroup div assuming that rule exists -- on THIS page the
+       div was a bare, totally unstyled block element, so its 3 injected
+       buttons rendered back-to-back with zero gap between them (the
+       "貼緊" complaint) as a 4th unconstrained flex child of <nav>, wide
+       enough on narrow screens to visually collide with/cover this page's
+       own #accountBtn button next to it -- explaining why tapping
+       Account/Share appeared to do nothing on mobile (the tap was landing
+       on the invisible overlapping group instead). flex-wrap here lets
+       the row wrap onto a 2nd line instead of overflowing/overlapping
+       when everything can't fit on one row. */
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  /* Mirrors css/style.css's own #xflTopRightGroup rule so js/nav.js's
+     and js/theme-toggle.js's injected AI Chat / Search / Theme buttons
+     get the same grouped-with-a-gap layout here as on every other page
+     (this page just never had the chance to inherit it, see comment
+     above). */
+  #xflTopRightGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
   }
 
   .nav-brand {
