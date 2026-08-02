@@ -118,6 +118,13 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <button id="pushSubscribeBtn" onclick="togglePushSubscribe()" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:6px 12px;border-radius:99px;font-size:0.78rem;cursor:pointer;font-family:inherit;white-space:nowrap">
       🔔 <span data-i18n="freesig_push_subscribe">訂閱每日提醒</span>
     </button>
+    <span id="emailSubForm" style="display:inline-flex;gap:6px;align-items:center">
+      <input id="emailSubInput" type="email" placeholder="your@email.com" data-i18n-placeholder="freesig_email_placeholder" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:6px 10px;border-radius:99px;font-size:0.78rem;font-family:inherit;width:150px">
+      <button onclick="submitEmailSubscribe()" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:6px 12px;border-radius:99px;font-size:0.78rem;cursor:pointer;font-family:inherit;white-space:nowrap">
+        📧 <span data-i18n="freesig_email_subscribe">訂閱每日Email</span>
+      </button>
+    </span>
+    <span id="emailSubStatus" style="font-size:0.75rem;color:var(--text-secondary)"></span>
   </div>
 
   <div class="signals-list" id="signalsList">
@@ -248,6 +255,41 @@ async function togglePushSubscribe() {
     alert(t('freesig_push_error', '未能開啟通知，請檢查瀏覽器權限設定。'));
   }
   updatePushButton();
+}
+
+// Growth OS Phase 3: Email Engine opt-in. Double opt-in (see services/
+// email_digest_service.py) -- this just requests the confirmation email,
+// nothing is sent to the address until the user clicks the link in it.
+async function submitEmailSubscribe() {
+  const input = document.getElementById('emailSubInput');
+  const status = document.getElementById('emailSubStatus');
+  const email = input.value.trim();
+  if (!email || !email.includes('@')) {
+    status.textContent = t('freesig_email_invalid', '請輸入有效email');
+    status.style.color = 'var(--red, #ef4444)';
+    return;
+  }
+  status.textContent = '...';
+  status.style.color = 'var(--text-secondary)';
+  try {
+    const res = await fetch(`${API}/email/subscribe`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    if (data.status === 'already_confirmed') {
+      status.textContent = t('freesig_email_already', '已經訂閱咗喇 ✓');
+    } else {
+      status.textContent = t('freesig_email_sent', '確認email已寄出，請check你個inbox');
+      input.value = '';
+    }
+    status.style.color = 'var(--green, #22c55e)';
+  } catch (e) {
+    status.textContent = t('freesig_email_error', '訂閱失敗，請稍後再試');
+    status.style.color = 'var(--red, #ef4444)';
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {

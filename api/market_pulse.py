@@ -476,6 +476,26 @@ def _notify_free_signals_ready(today: str, cache: Dict):
     except Exception:
         pass
 
+    # Growth OS Phase 3 (2026-08-02): actually send the email_subject/
+    # email_body drafts above to confirmed email_digest_service
+    # subscribers, via the SMTP mailbox already used for verify-email/
+    # password-reset (services/email_service.py). Own idempotency key +
+    # own try/except -- a mail-server hiccup must never affect the
+    # Telegram push, content variants, or free-signals cache above.
+    try:
+        from services.push_service import already_sent_today, mark_sent_today
+        if _feature_flag_enabled("email_digest_engine"):
+            ed_key = "email_digest_daily"
+            if not already_sent_today(ed_key, today):
+                from services.content_repurpose_service import generate_content_variants
+                from services.email_digest_service import send_daily_digest
+                v = generate_content_variants(cache)
+                if v.get("available"):
+                    send_daily_digest(v["email_subject"], v["email_body"])
+                mark_sent_today(ed_key, today)
+    except Exception:
+        pass
+
 
 def _refresh_free_signals_cache():
     """Recompute the free-signals cache for "today" and fire the daily

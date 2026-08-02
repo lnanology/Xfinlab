@@ -187,6 +187,7 @@
     <div class="nav-item" onclick="showPage('telegram')"><span class="icon">✈️</span> Telegram Publisher</div>
     <div class="nav-item" onclick="showPage('content')"><span class="icon">📢</span> Content Center</div>
     <div class="nav-item" onclick="showPage('seo')"><span class="icon">🌐</span> SEO Page Engine</div>
+    <div class="nav-item" onclick="showPage('email')"><span class="icon">📧</span> Email Engine</div>
 
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
@@ -455,6 +456,34 @@
       </div>
     </div>
 
+    <!-- Growth OS Phase 3 (2026-08-02): Email Engine. Uses the same SMTP
+         mailbox already configured for verify-email/password-reset
+         (services/email_service.py) -- no new SendGrid/Mailgun account.
+         Double opt-in: subscribe -> confirmation email -> click to
+         confirm (see services/email_digest_service.py). Gated by the
+         email_digest_engine feature flag. -->
+    <div class="page" id="page-email">
+      <div class="page-title">Email Engine</div>
+      <div class="page-sub">Daily signals digest, sent via the existing SMTP mailbox to double-opt-in subscribers</div>
+
+      <div class="panel">
+        <div class="panel-title">Subscribers</div>
+        <div id="emailStats" style="font-size:0.85rem;color:var(--text)">
+          <span class="empty"><span class="spinner"></span></span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Manual Send</span>
+          <button class="btn btn-sm btn-purple" onclick="sendEmailDigestNow()">📤 Send Today's Digest Now</button>
+        </div>
+        <div id="emailSendResult" style="margin-top:10px;font-size:0.8rem;color:var(--muted)">
+          Bypasses the once-per-day guard -- use for testing or resending after a fix. Sends the same email_subject/email_body shown in Content Center.
+        </div>
+      </div>
+    </div>
+
     <!-- Feature Flags -->
     <div class="page" id="page-flags">
       <div class="page-title">Feature Flags</div>
@@ -573,6 +602,7 @@ const FLAGS_DESC = {
   intel_plan_enterprise_visible: 'Show "Enterprise" tier card on intelligence-api.html',
   seo_auto_engine: 'Allow SEO Page Engine to generate new ticker landing pages',
   content_engine_multilang: 'Generate EN/ES social variants alongside the daily ZH content',
+  email_digest_engine: 'Send the daily signals email to confirmed subscribers',
 };
 
 // Auto login
@@ -918,6 +948,7 @@ function showPage(name) {
   if (name === 'security') loadSecurityScan();
   if (name === 'content') loadContentVariants();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
+  if (name === 'email') loadEmailStats();
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -1062,6 +1093,32 @@ function prefillSeoForm(symbol, name, type) {
   document.getElementById('seoName').value = name;
   const catMap = {stock:'stock', crypto:'crypto', forex:'forex', etf:'etf', index:'index', commodity:'commodity', bond:'bond'};
   document.getElementById('seoCategory').value = catMap[type] || 'stock';
+}
+
+// Growth OS Phase 3 -- Email Engine panel.
+async function loadEmailStats() {
+  const el = document.getElementById('emailStats');
+  el.innerHTML = '<span class="empty"><span class="spinner"></span></span>';
+  try {
+    const res = await fetch(`${API}/admin/email/stats?token=${adminToken}`);
+    const data = await res.json();
+    el.innerHTML = `<b>${data.confirmed}</b> confirmed &nbsp;·&nbsp; <b>${data.pending}</b> pending confirmation &nbsp;·&nbsp; <b>${data.total}</b> total`;
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading email stats</div>';
+  }
+}
+
+async function sendEmailDigestNow() {
+  const result = document.getElementById('emailSendResult');
+  result.innerHTML = '<span class="spinner"></span> Sending...';
+  try {
+    const res = await fetch(`${API}/admin/email/send-now?token=${adminToken}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Sent to ${data.sent}/${data.total_confirmed} confirmed subscribers${data.failed ? ` (${data.failed} failed)` : ''}</span>`;
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  }
 }
 
 async function generateSeoPage() {

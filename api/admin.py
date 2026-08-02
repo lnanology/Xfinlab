@@ -78,6 +78,13 @@ _DEFAULT_FLAGS = {
     # (twitter/threads/facebook/linkedin/instagram/discord/reddit/email/
     # push) are generated, matching pre-Phase-2 behavior exactly.
     "content_engine_multilang": True,
+    # Growth OS Phase 3 (2026-08-02): gates the actual daily email send in
+    # api/market_pulse.py (services/email_digest_service.py's
+    # send_daily_digest, via the existing SMTP mailbox). Off = confirmed
+    # subscribers simply don't get today's email; subscribe/confirm/
+    # unsubscribe endpoints keep working regardless (only the daily send
+    # step checks this flag).
+    "email_digest_engine": True,
 }
 
 def init_feature_flags_table():
@@ -405,6 +412,30 @@ def seo_generate(token: str, request: Request, body: dict = {}):
         raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "ok", **result}
+
+@router.get("/admin/email/stats")
+def email_digest_stats(token: str, request: Request):
+    """Growth OS Phase 3 -- subscriber counts for the admin panel."""
+    verify_admin(token, "email_digest_stats", request)
+    from services.email_digest_service import get_stats
+    return get_stats()
+
+@router.post("/admin/email/send-now")
+def email_digest_send_now(token: str, request: Request):
+    """Manual on-demand send -- bypasses the daily job's once-per-day
+    idempotency guard, same rationale as /admin/content-variants/
+    regenerate above (e.g. testing this feature, or resending after
+    fixing a bad subject line)."""
+    verify_admin(token, "email_digest_send_now", request)
+    from api.market_pulse import _compute_free_signals
+    from services.content_repurpose_service import generate_content_variants
+    from services.email_digest_service import send_daily_digest
+    cache = _compute_free_signals()
+    variants = generate_content_variants(cache)
+    if not variants.get("available"):
+        raise HTTPException(status_code=400, detail="No signals available today")
+    result = send_daily_digest(variants["email_subject"], variants["email_body"])
     return {"status": "ok", **result}
 
 @router.delete("/admin/users/{user_id}")
