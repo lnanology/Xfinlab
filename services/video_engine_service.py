@@ -322,24 +322,41 @@ def _build_ssml(sentence: str) -> str:
     sentence came from _ai_rewrite_narration() or the _SCRIPT template
     fallback.
 
-    2026-08-04 fix (user-reported: EN/ES/JA/KO video generation failing
-    with "TTS API error (400): Invalid SSML. Newer voices like Neural2
-    require valid SSML."): this used to also wrap percentage figures in
-    <emphasis level="moderate">. Google Cloud TTS's Neural2 voices (which
-    is what en/es/ja/ko map to in tts_service._VOICE_MAP -- Standard/
-    Wavenet voices don't exist for those languages in Neural2 quality)
-    only support a restricted SSML tag subset: <speak>, <p>, <s>,
-    <break>, <phoneme>, <sub>. <emphasis> is NOT in that subset and the
-    whole request gets rejected with a 400 the instant it appears --
-    that's why this only broke on en/es/ja/ko (Neural2) and not zh-HK
-    (Standard) / zh-CN/zh-TW (Wavenet), which DO support <emphasis> and
-    so never surfaced the bug. Dropped <emphasis> entirely rather than
-    branching per-voice-tier: <break> alone is supported across every
-    tier (Standard/Wavenet/Neural2) and already carries most of the
-    pacing benefit, so this is the simplest fix that can't regress the
-    same way again if Google changes voice-tier availability later."""
+    2026-08-04 fix #1 (user-reported: EN/ES/JA/KO video generation
+    failing with "TTS API error (400): Invalid SSML. Newer voices like
+    Neural2 require valid SSML."): this used to also wrap percentage
+    figures in <emphasis level="moderate">. That turned out NOT to be
+    the actual bug (Google's docs confirm Neural2 does support
+    <emphasis>) -- removing it was a red herring that didn't fix the
+    error, kept here only as dead-end history since the real bug (below)
+    was hiding underneath it.
+
+    2026-08-04 fix #2 (the REAL bug, found after fix #1 didn't resolve
+    the user's repeat report): the punctuation->pause regex used to be
+    `re.sub(..., r"\1<break time=\"250ms\"/>", ...)`. In a Python raw
+    string, `\"` does NOT become a plain `"` -- Python's raw-string rule
+    keeps the backslash AND the quote as two literal characters (the
+    backslash only exists to stop the quote from closing the string
+    literal). So that regex was actually inserting the literal text
+    `<break time=\"250ms\"/>` -- with a real backslash character sitting
+    right where the attribute value's opening quote should be -- into
+    every single narration line, in every language. That's malformed
+    XML (confirmed here by parsing the old output with
+    xml.etree.ElementTree: "not well-formed (invalid token)"), which is
+    exactly what Google's error message is complaining about. This only
+    surfaced as a user-visible failure on Neural2 voices (en/es/ja/ko)
+    because Google's error message itself says newer voices *require*
+    valid SSML -- Standard/Wavenet (zh-HK/zh-CN/zh-TW) apparently parse
+    more leniently and tolerated the malformed tag, which is why this
+    bug shipped unnoticed and fix #1 (which didn't touch this line)
+    didn't fix anything. Fixed by using single quotes for the attribute
+    value (`time='250ms'`) instead of escaped double quotes -- no
+    escaping needed inside a double-quoted raw string, so there's no
+    slot for this exact mistake to recur. Verified the new output
+    parses cleanly with ElementTree for both English and Chinese
+    sample sentences."""
     escaped = sentence.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    escaped = re.sub(r"([，,、。.！!？?])", r"\1<break time=\"250ms\"/>", escaped)
+    escaped = re.sub(r"([，,、。.！!？?])", r"\1<break time='250ms'/>", escaped)
     return f"<speak>{escaped}</speak>"
 
 
