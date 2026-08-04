@@ -27,8 +27,26 @@
 # image) has no CJK glyphs at all. Noto Sans CJK is one font file that
 # covers Simplified/Traditional Chinese, Japanese, and Korean, so a
 # single addition covers all 5 CJK narration languages at once.
+# 2026-08-04 second addition: fonts-noto-core + fonts-noto-unhinted, for
+# the Video Engine's 9-language expansion to pt/fr/de/hi/id/ar/ru/bn/ur.
+# fr/de/pt/ru only need Latin/Cyrillic (already covered by DejaVuSans,
+# so those 4 didn't strictly need this), but hi (Devanagari), bn
+# (Bengali), and ar/ur (Arabic script) have NO glyphs in either
+# DejaVuSans or NotoSansCJK -- same "tofu box" bug class as the CJK fix
+# above, confirmed locally: this sandbox's font directory has zero
+# Arabic/Devanagari/Bengali coverage before this change. fonts-noto-core
+# + fonts-noto-unhinted together pull in Google's Noto Sans variants for
+# these scripts (exact installed file names aren't hardcoded anywhere --
+# services/video_engine_service.py's _scan_fonts()/_find_script_font()
+# do a runtime directory scan + keyword match instead, so this stays
+# correct even if the exact file names inside these packages ever
+# change). Verified locally that Pillow 12.2.0 (the exact version pinned
+# in requirements.txt) bundles libraqm, so Arabic/Urdu right-to-left
+# reordering and letter-shaping happen automatically once a font with
+# the right glyphs is present -- no extra Python dependency needed for
+# that part.
 dependsOn = ["setup"]
-aptPkgs = ["ffmpeg", "fonts-noto-cjk"]
+aptPkgs = ["ffmpeg", "fonts-noto-cjk", "fonts-noto-core", "fonts-noto-unhinted"]
 
 [phases.litestream]
 dependsOn = ["setup"]

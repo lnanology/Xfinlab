@@ -48,6 +48,30 @@ _TIMEOUT_SECONDS = 30
 # the actual available tiers), plus ja/ko (real Neural2 voices exist for
 # both). Every name below is a real entry in Google's own TTS voice
 # catalog (cloud.google.com/text-to-speech/docs/voices) -- none invented.
+#
+# 2026-08-04 second expansion (user request: pt/fr/de/hi/id/ar/ru/bn/ur):
+# verified every one of these 9 locales is real via Google's own
+# text-to-speech/docs/chirp3-hd language-availability table (ar-XA,
+# bn-IN, fr-FR, de-DE, pt-BR, hi-IN, id-ID, ru-RU, ur-IN all listed
+# there -- Chirp3-HD is a newer premium tier layered on top of an
+# existing base language, so its presence confirms the locale itself is
+# real). Voice-name confirmation depth varies by language, documented
+# honestly instead of guessing uniformly:
+#   - ar-XA-Wavenet-A, bn-IN-Wavenet-A: directly confirmed present, with
+#     that exact name, in Google's own supported-voices table.
+#   - fr-FR-Wavenet-A, ru-RU-Wavenet-A: confirmed via independent
+#     secondary sources quoting the exact voice name.
+#   - pt-BR-Wavenet-C: confirmed via secondary source.
+#   - de-DE / hi-IN / id-ID / ur-IN: no independently-fetchable source
+#     gave the exact per-voice name (Google's own voice-list page is too
+#     large to fetch in full), so these use "<code>-Standard-A", the one
+#     naming pattern verified with zero exceptions across every single
+#     language actually inspected in Google's own table (ar-XA, bn-IN,
+#     bg-BG, hr-HR, cs-CZ, da-DK, yue-HK all have a Standard-A voice) --
+#     the safe universal baseline rather than an invented higher-tier
+#     name. If this is ever wrong for one of these 4, synthesize() below
+#     surfaces the real Google API error message, never a fabricated
+#     success.
 _VOICE_MAP = {
     "zh-HK": {"languageCode": "yue-HK", "name": "yue-HK-Standard-A"},
     "zh": {"languageCode": "yue-HK", "name": "yue-HK-Standard-A"},
@@ -57,6 +81,15 @@ _VOICE_MAP = {
     "ko": {"languageCode": "ko-KR", "name": "ko-KR-Neural2-A"},
     "en": {"languageCode": "en-US", "name": "en-US-Neural2-D"},
     "es": {"languageCode": "es-US", "name": "es-US-Neural2-B"},
+    "pt": {"languageCode": "pt-BR", "name": "pt-BR-Wavenet-C"},
+    "fr": {"languageCode": "fr-FR", "name": "fr-FR-Wavenet-A"},
+    "de": {"languageCode": "de-DE", "name": "de-DE-Standard-A"},
+    "hi": {"languageCode": "hi-IN", "name": "hi-IN-Standard-A"},
+    "id": {"languageCode": "id-ID", "name": "id-ID-Standard-A"},
+    "ar": {"languageCode": "ar-XA", "name": "ar-XA-Wavenet-A"},
+    "ru": {"languageCode": "ru-RU", "name": "ru-RU-Wavenet-A"},
+    "bn": {"languageCode": "bn-IN", "name": "bn-IN-Wavenet-A"},
+    "ur": {"languageCode": "ur-IN", "name": "ur-IN-Standard-A"},
 }
 _DEFAULT_LANG = "en"
 
