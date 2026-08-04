@@ -1,19 +1,27 @@
 [phases.ffmpeg]
 # Growth OS Phase 7 (2026-08-04): system-level ffmpeg/ffprobe binaries for
-# services/video_engine_service.py's video rendering pipeline. FIX
+# services/video_engine_service.py's video rendering pipeline. FIX #1
 # (2026-08-04): this was originally named [phases.setup], which broke
 # production -- defining a phase named "setup" in nixpacks.toml REPLACES
 # Nixpacks' auto-detected Python provider setup phase entirely rather
 # than merging with it, which dropped python/pip from the build image
 # ("python: command not found"). Using a distinct phase name + explicit
 # dependsOn=["setup"] is purely additive instead: it runs after the
-# real setup phase without touching it. services/video_engine_
-# service.py's is_available() checks shutil.which("ffmpeg") at runtime
-# and degrades to {"available": False} if this package is ever missing
-# for any reason, so a problem here can only disable the one optional
-# video feature, never break the app.
+# real setup phase without touching it.
+# FIX #2 (2026-08-04): using nixPkgs=["ffmpeg"] pulled ffmpeg's shared
+# libraries (libstdc++ etc, via a newer gcc-lib) from a nix store path
+# built against a newer glibc than the one actually present in the
+# runtime image, causing "GLIBC_2.38 not found" at runtime even though
+# the build itself succeeded. Switched to aptPkgs instead: apt packages
+# link against the base image's own glibc (the same one Python/every
+# other runtime library already uses), so there's no cross-toolchain
+# version mismatch. services/video_engine_service.py's is_available()
+# still checks shutil.which("ffmpeg") at runtime and degrades to
+# {"available": False} if this package is ever missing for any reason,
+# so a problem here can only disable the one optional video feature,
+# never break the app.
 dependsOn = ["setup"]
-nixPkgs = ["ffmpeg"]
+aptPkgs = ["ffmpeg"]
 
 [phases.litestream]
 dependsOn = ["setup"]
