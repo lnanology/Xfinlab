@@ -1027,7 +1027,7 @@ function scrollToDemo() {
 
 function goAnalyze() {
   const ticker = normalizeGlobalTicker(document.getElementById('heroTicker').value);
-  if (!ticker) { alert('請輸入股票代號'); return; }
+  if (!ticker) { alert(t('idx_alert_no_ticker', '請輸入股票代號')); return; }
   // ai-analysis.html 淨係識讀「symbols」呢個query param（見佢個
   // DOMContentLoaded監聽），唔識「ticker」，所以之前傳錯param name
   // 會令個頁面靜靜哋乜都冇顯示，睇落好似個輸入格「用唔到」。
@@ -1040,7 +1040,7 @@ document.getElementById('heroTicker').addEventListener('input', function() {
 
 function goAskAi() {
   const q = document.getElementById('heroAskAi').value.trim();
-  if (!q) { alert('請輸入你想問嘅問題'); return; }
+  if (!q) { alert(t('idx_alert_no_question', '請輸入你想問嘅問題')); return; }
   // chat.html's existing ?q= handler (see chat.html's DOMContentLoaded
   // listener) prefills #inputBox and auto-sends -- same mechanism the
   // ai-analysis.html/screener.html "唔明？直接問AI" links use.
@@ -1148,7 +1148,7 @@ async function loadHeroResult() {
     const res = await fetch(`${API}/hero-showcase`);
     const data = await res.json();
     if (!data.available || !Array.isArray(data.items) || data.items.length === 0) {
-      body.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;padding:20px 0;text-align:center">暫時無法載入即時結果</div>`;
+      body.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;padding:20px 0;text-align:center">${t('idx_hero_load_fail', '暫時無法載入即時結果')}</div>`;
       heroItems = [];
       return;
     }

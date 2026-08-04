@@ -40,38 +40,40 @@
   footer a { color: var(--accent); text-decoration: none; }
 </style>
 <script src="js/theme-toggle.js"></script>
+<script src="js/i18n.js"></script>
 </head>
 <body>
 <nav><a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<span>FIN</span>LAB</a></nav>
 <main>
   <div class="box" id="content">
     <div class="spinner"></div>
-    <div class="title">驗證中...</div>
-    <div class="desc">請稍候，正在驗證你的電郵地址</div>
+    <div class="title" data-i18n="ve_verifying_title">驗證中...</div>
+    <div class="desc" data-i18n="ve_verifying_desc">請稍候，正在驗證你的電郵地址</div>
   </div>
 </main>
 
-<footer>XFINLAB © 2026 · 驗證電郵 · <a href="privacy.html">私隱政策</a></footer>
+<footer>XFINLAB © 2026 · <span data-i18n="ve_page_name">驗證電郵</span> · <a href="privacy.html" data-i18n="nav_privacy">私隱政策</a></footer>
 
 <script>
 const API = "https://api.xfinlab.com/api";
 const token = new URLSearchParams(window.location.search).get('token');
+function t(key, fallback) { return (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
 async function verify() {
   if (!token) {
-    showResult('❌', '無效連結', '驗證連結無效，請重新申請。', false);
+    showResult('❌', t('ve_invalid_link_title', '無效連結'), t('ve_invalid_link_desc', '驗證連結無效，請重新申請。'), false);
     return;
   }
   try {
     const res = await fetch(`${API}/auth/verify-email?token=${token}`);
     const data = await res.json();
     if (res.ok) {
-      showResult('✅', '驗證成功！', '你的電郵已成功驗證，現在可以使用全部功能。', true);
+      showResult('✅', t('ve_success_title', '驗證成功！'), t('ve_success_desc', '你的電郵已成功驗證，現在可以使用全部功能。'), true);
     } else {
-      showResult('❌', '驗證失敗', data.detail || '連結無效或已過期', false);
+      showResult('❌', t('ve_fail_title', '驗證失敗'), data.detail || t('ve_fail_default_desc', '連結無效或已過期'), false);
     }
   } catch(e) {
-    showResult('❌', '連接錯誤', '請確保 API 正在運行', false);
+    showResult('❌', t('auth_error_connection_title', '連接錯誤'), t('auth_error_connection_desc', '請確保 API 正在運行'), false);
   }
 }
 
@@ -80,7 +82,7 @@ function showResult(icon, title, desc, success) {
     <div class="icon">${icon}</div>
     <div class="title">${title}</div>
     <div class="desc">${desc}</div>
-    <a href="${success ? 'dashboard.html' : 'login.html'}" class="btn">${success ? '前往 Dashboard' : '返回登入'}</a>
+    <a href="${success ? 'dashboard.html' : 'login.html'}" class="btn">${success ? t('ve_btn_dashboard', '前往 Dashboard') : t('auth_back_to_login', '返回登入')}</a>
   `;
 }
 
