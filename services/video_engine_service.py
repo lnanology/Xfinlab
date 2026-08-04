@@ -1,9 +1,8 @@
 """Growth OS Phase 7 (2026-08-04): AI Video Engine -- turns today's real
 free signals (api/market_pulse.py's _compute_free_signals(), the exact
 same data free-signals.html/the Telegram push/the email digest already
-use) into a short narrated vertical video (1080x1920, TikTok/Shorts/
-Reels-shaped) for distribution channels where a text post gets no
-traction but a short video does.
+use) into a short narrated video for distribution channels where a text
+post gets no traction but a short video does.
 
 Honesty note on scope (matches this codebase's standing anti-
 fabrication rule -- see e.g. stress-lab.html's Monte Carlo fix,
@@ -20,34 +19,47 @@ this docstring says so plainly rather than overselling it.
 
 Pipeline (all via ffmpeg subprocess calls + Pillow-rendered PNG slides):
   1. Build a short script per slide (intro + up to 3 signals + outro).
-  2. TTS each slide's line separately (services/tts_service.py) so each
+     Tries an AI rewrite first (_ai_rewrite_narration(), via the same
+     ai/ai_router.py used site-wide for chat/analysis) so the narration
+     reads like a professional summary instead of a filled-in template;
+     falls back to the honest, always-available _SCRIPT templates below
+     if the AI call fails, times out, or returns the wrong shape -- this
+     is a best-effort quality upgrade, never a hard dependency.
+  2. Wrap each line in simple SSML (_build_ssml(): short pauses after
+     clause punctuation, emphasis on percentage figures) -- Google Cloud
+     TTS parses SSML natively, no extra dependency.
+  3. TTS each slide's line separately (services/tts_service.py) so each
      slide can be timed to its own narration clip's real duration.
-  3. Render each slide as a 1080x1920 PNG: XFINLAB branding, ticker,
-     direction, confidence, and a real candlestick strip.
-  4. ffmpeg concat-demuxer the images (each held for its matching
+  4. Render each slide as a PNG (size depends on the chosen aspect
+     ratio): XFINLAB branding, ticker, direction, confidence, a real
+     candlestick strip, and (on signal slides) a burned-in caption of
+     the actual narration line, for silent/muted autoplay feeds.
+  5. ffmpeg concat-demuxer the images (each held for its matching
      narration duration) into a silent video.
-  5. ffmpeg filter_complex-concat the narration clips into one audio
+  6. ffmpeg filter_complex-concat the narration clips into one audio
      track, then mux it onto the silent video.
 
 Storage: Railway's filesystem is NOT persisted across deploys/restarts
 (litestream.yml only replicates xfinlab.db, never arbitrary files) --
 this writes only ONE rolling file (generated_videos/daily_video_latest
-.mp4), regenerated once a day, never treated as a permanent archive.
+.mp4), regenerated on demand, never treated as a permanent archive.
 That's an accepted tradeoff for a daily marketing asset, not a defect;
 if a durable archive is ever wanted, that's a separate follow-up
 (uploading to real object storage), not something to fake here.
 
 is_available() gates on BOTH services.tts_service.is_available() (needs
 GOOGLE_TTS_API_KEY) AND the `ffmpeg`/`ffprobe` binaries actually being on
-PATH (added via nixpacks.toml's nixPkgs for the Railway build) -- if
+PATH (added via nixpacks.toml's aptPkgs for the Railway build) -- if
 either is missing, every entrypoint here returns {"available": False,
 "message": ...} instead of raising, so a misconfigured deploy degrades
 this ONE optional feature instead of crashing anything else.
 """
 import os
+import re
 import shutil
 import subprocess
 import tempfile
+import textwrap
 from datetime import date, datetime, timezone
 from typing import List, Optional
 
@@ -59,23 +71,59 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinla
 _OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "generated_videos")
 _OUTPUT_FILENAME = "daily_video_latest.mp4"
 
-_WIDTH, _HEIGHT = 1080, 1920
-_BG_COLOR = (8, 12, 20)
-_ACCENT = (0, 212, 255)
-_GREEN = (34, 197, 94)
-_RED = (239, 68, 68)
-_MUTED = (148, 163, 184)
-_WHITE = (226, 232, 240)
+# 2026-08-04: aspect ratio options. "9:16" (vertical) is the original
+# Shorts/Reels/TikTok shape; "1:1" (square) suits an Instagram feed
+# post; "16:9" (landscape) suits YouTube/X. All layout math in
+# _render_slide() below is proportional to whichever (width, height)
+# is passed in, not hardcoded to one shape.
+_ASPECT_RATIOS = {
+    "9:16": (1080, 1920),
+    "1:1": (1080, 1080),
+    "16:9": (1920, 1080),
+}
+_DEFAULT_ASPECT = "9:16"
 
-# 2026-08-04: narration copy kept in just 2 languages (zh-HK/en), same
-# deliberately-narrower-than-the-47-language-site-convention scope
-# decision content_repurpose_service.py's EN/ES social fan-out already
-# established for backend-generated marketing copy.
+# 2026-08-04: visual themes. "dark" is the original look; "light" is a
+# minimal/bright alternative for contexts where a dark video looks out
+# of place (e.g. embedded on a light-themed page). "fg" = foreground
+# text color (kept a distinct name from the old "white" constant since
+# it's dark text in the light theme).
+_THEMES = {
+    "dark": {
+        "bg": (8, 12, 20), "accent": (0, 212, 255), "green": (34, 197, 94),
+        "red": (239, 68, 68), "muted": (148, 163, 184), "fg": (226, 232, 240),
+    },
+    "light": {
+        "bg": (248, 250, 252), "accent": (37, 99, 235), "green": (22, 163, 74),
+        "red": (220, 38, 38), "muted": (100, 116, 139), "fg": (15, 23, 42),
+    },
+}
+_DEFAULT_THEME = "dark"
+
+# 2026-08-04 expansion (user request: more narration languages): grew
+# from zh-HK/en to 7 languages. Kept deliberately narrower than the
+# 47-language site-wide i18n convention (same precedent as
+# content_repurpose_service.py's EN/ES-only social fan-out) -- these are
+# the languages services/tts_service.py has a real Google voice for.
+# Every entry here is used as (a) the honest fallback if the AI rewrite
+# below fails, and (b) the prompt-language hint for the AI rewrite.
 _SCRIPT = {
     "zh-HK": {
         "intro": "XFINLAB 今日AI市場速覽。",
         "signal": "{ticker}，{direction}，信心度 {confidence} 巴仙。",
         "outro": "以上為技術面參考，並非投資建議。想睇更多，去 xfinlab.com。",
+        "direction_label": {"bullish": "偏多", "bearish": "偏空", "neutral": "中性"},
+    },
+    "zh-CN": {
+        "intro": "XFINLAB 今日AI市场速览。",
+        "signal": "{ticker}，{direction}，信心度 {confidence} 百分比。",
+        "outro": "以上为技术面参考，并非投资建议。想了解更多，请访问 xfinlab.com。",
+        "direction_label": {"bullish": "偏多", "bearish": "偏空", "neutral": "中性"},
+    },
+    "zh-TW": {
+        "intro": "XFINLAB 今日AI市場速覽。",
+        "signal": "{ticker}，{direction}，信心度 {confidence} 百分比。",
+        "outro": "以上為技術面參考，並非投資建議。想了解更多，請造訪 xfinlab.com。",
         "direction_label": {"bullish": "偏多", "bearish": "偏空", "neutral": "中性"},
     },
     "en": {
@@ -84,6 +132,34 @@ _SCRIPT = {
         "outro": "This is technical reference only, not investment advice. More at xfinlab.com.",
         "direction_label": {"bullish": "bullish", "bearish": "bearish", "neutral": "neutral"},
     },
+    "es": {
+        "intro": "El resumen diario del mercado con IA de XFINLAB.",
+        "signal": "{ticker}: {direction}, {confidence} por ciento de confianza.",
+        "outro": "Esto es solo referencia técnica, no es asesoría de inversión. Más en xfinlab.com.",
+        "direction_label": {"bullish": "alcista", "bearish": "bajista", "neutral": "neutral"},
+    },
+    "ja": {
+        "intro": "XFINLABの本日のAI市場スナップショットです。",
+        "signal": "{ticker}、{direction}、信頼度 {confidence} パーセント。",
+        "outro": "これは技術的参考情報であり、投資助言ではありません。詳細は xfinlab.com へ。",
+        "direction_label": {"bullish": "強気", "bearish": "弱気", "neutral": "中立"},
+    },
+    "ko": {
+        "intro": "XFINLAB의 오늘의 AI 시장 스냅샷입니다.",
+        "signal": "{ticker}, {direction}, 신뢰도 {confidence} 퍼센트.",
+        "outro": "이것은 기술적 참고 자료일 뿐이며 투자 조언이 아닙니다. 자세한 내용은 xfinlab.com에서 확인하세요.",
+        "direction_label": {"bullish": "강세", "bearish": "약세", "neutral": "중립"},
+    },
+}
+
+_AI_LANG_NAMES = {
+    "zh-HK": "Cantonese (Hong Kong, Traditional Chinese written form, spoken-Cantonese phrasing)",
+    "zh-CN": "Mandarin Chinese (Simplified characters, Mainland China)",
+    "zh-TW": "Mandarin Chinese (Traditional characters, Taiwan)",
+    "en": "English",
+    "es": "Spanish",
+    "ja": "Japanese",
+    "ko": "Korean",
 }
 
 
@@ -136,7 +212,8 @@ def _log_generation(status: str, message: str = "", duration_sec: Optional[float
 def get_status() -> dict:
     """Admin panel status: availability + the most recent generation
     attempt's outcome (success or failure, with the real error message
-    -- never hidden)."""
+    -- never hidden) + the option lists the admin UI needs to populate
+    its language/aspect-ratio/theme dropdowns from a single call."""
     conn = _get_db()
     row = conn.execute(
         "SELECT * FROM video_generation_log ORDER BY id DESC LIMIT 1"
@@ -148,74 +225,181 @@ def get_status() -> dict:
         "ffmpeg_present": _ffmpeg_available(),
         "output_exists": os.path.exists(os.path.join(_OUTPUT_DIR, _OUTPUT_FILENAME)),
         "last_run": dict(row) if row else None,
+        "languages": list(_SCRIPT.keys()),
+        "aspect_ratios": list(_ASPECT_RATIOS.keys()),
+        "themes": list(_THEMES.keys()),
     }
 
 
+# 2026-08-04 fix: DejaVuSans (the only font this module used to try) has
+# NO Chinese/Japanese/Korean glyphs at all -- every CJK character (5 of
+# this module's 7 narration languages, plus the bilingual disclaimer
+# footer on every slide regardless of language) was rendering as tofu
+# boxes. nixpacks.toml now installs fonts-noto-cjk (Noto Sans CJK, one
+# font file covering Simplified/Traditional Chinese + Japanese + Korean
+# + Latin), tried first; DejaVu stays as a fallback for the Latin-only
+# case if that package is ever missing, then Pillow's own bitmap font as
+# the last resort so a font problem can never crash the render.
+_FONT_CANDIDATES = (
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+)
+
+
 def _get_font(size: int) -> ImageFont.FreeTypeFont:
-    # DejaVuSans is bundled with Pillow's own test fonts on most Linux
-    # distros (and Railway's nixpacks Python image); fall back to
-    # Pillow's built-in bitmap font if it's genuinely missing rather
-    # than crashing the whole render over a cosmetic font choice.
-    for path in (
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    ):
+    size = max(int(size), 8)
+    for path in _FONT_CANDIDATES:
         if os.path.exists(path):
             try:
-                return ImageFont.truetype(path, size)
+                return ImageFont.truetype(path, size, index=0)
             except Exception:
                 pass
     return ImageFont.load_default()
 
 
-def _render_slide(kind: str, signal: Optional[dict], lang: str) -> Image.Image:
-    img = Image.new("RGB", (_WIDTH, _HEIGHT), _BG_COLOR)
+def _ai_rewrite_narration(signals: List[dict], lang: str) -> Optional[List[str]]:
+    """Best-effort quality upgrade: ask the site's existing AI router
+    (ai/ai_router.py, the same one chat.html/ai-analysis.html use) to
+    rewrite the slide narration into natural, professional spoken copy
+    instead of the fixed fill-in-the-blank _SCRIPT templates below.
+    Returns None -- never a partial/malformed list -- on ANY failure
+    (import error, API error, timeout, wrong line count), so the caller
+    always has a clean signal to fall back to the honest template
+    script. This is deliberately optional: is_available() and every
+    other entrypoint in this module work identically whether or not
+    this succeeds."""
+    try:
+        from ai.ai_router import get_ai_response
+    except Exception:
+        return None
+
+    lang_name = _AI_LANG_NAMES.get(lang, "English")
+    expected_lines = len(signals) + 2  # intro + one per signal + outro
+
+    facts = []
+    for s in signals:
+        direction = (s.get("confluence_direction") or "neutral").lower()
+        facts.append(f"- {s.get('ticker', '?')}: direction={direction}, confidence={s.get('confluence_confidence_pct', 0)}%")
+    facts_block = "\n".join(facts)
+
+    prompt = (
+        f"You are writing a SHORT spoken video-narration script in {lang_name} for a daily "
+        f"AI financial market signal video. Output EXACTLY {expected_lines} lines, one "
+        f"sentence per line, no numbering, no markdown, no quotation marks:\n"
+        f"Line 1: a 1-sentence intro mentioning XFINLAB and today's AI market snapshot.\n"
+        f"Lines 2 through {expected_lines - 1}: one natural sentence per signal below, in a "
+        f"professional financial-news tone (not a robotic template), stating the ticker, its "
+        f"direction, and its confidence percentage.\n"
+        f"Line {expected_lines}: a 1-sentence closing disclaimer that this is technical "
+        f"reference only, not investment advice, mentioning xfinlab.com.\n\n"
+        f"Signals:\n{facts_block}\n\n"
+        f"Output ONLY the {expected_lines} lines of narration text, nothing else."
+    )
+
+    try:
+        response = get_ai_response(prompt, max_tokens=400, reasoning_effort="low")
+    except Exception:
+        return None
+
+    if not response:
+        return None
+
+    lines = [ln.strip(" \t\"'") for ln in response.strip().split("\n") if ln.strip()]
+    if len(lines) != expected_lines:
+        return None
+    return lines
+
+
+def _build_ssml(sentence: str) -> str:
+    """Wraps a plain narration sentence in simple SSML: emphasis on any
+    percentage figure (the number viewers care most about) and a short
+    pause after clause-ending punctuation, for more natural pacing than
+    one flat monotone run-on. Applied uniformly regardless of whether
+    the sentence came from _ai_rewrite_narration() or the _SCRIPT
+    template fallback."""
+    escaped = sentence.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    escaped = re.sub(
+        r"(\d+(?:\.\d+)?\s?(?:%|percent|巴仙|百分比|por ciento|パーセント|퍼센트))",
+        r'<emphasis level="moderate">\1</emphasis>',
+        escaped,
+    )
+    escaped = re.sub(r"([，,、。.！!？?])", r"\1<break time=\"250ms\"/>", escaped)
+    return f"<speak>{escaped}</speak>"
+
+
+def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: str,
+                   width: int, height: int, colors: dict) -> Image.Image:
+    img = Image.new("RGB", (width, height), colors["bg"])
     draw = ImageDraw.Draw(img)
 
+    pad_x = int(width * 0.055)
+    header_font_size = int(height * 0.033)
+    sub_font_size = int(height * 0.017)
+
     # Branding header, every slide.
-    draw.text((60, 70), "XFINLAB", font=_get_font(64), fill=_ACCENT)
-    draw.text((60, 150), "AI Market Signal", font=_get_font(32), fill=_MUTED)
+    draw.text((pad_x, int(height * 0.036)), "XFINLAB", font=_get_font(header_font_size), fill=colors["accent"])
+    draw.text((pad_x, int(height * 0.036) + header_font_size + 6), "AI Market Signal",
+              font=_get_font(sub_font_size), fill=colors["muted"])
+    header_bottom = int(height * 0.036) + header_font_size + sub_font_size + int(height * 0.03)
 
     if kind == "intro":
-        text = _SCRIPT[lang]["intro"]
-        draw.text((60, 800), text, font=_get_font(56), fill=_WHITE)
+        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 26))):
+            draw.text((pad_x, int(height * 0.42) + i * int(height * 0.037)), line,
+                      font=_get_font(int(height * 0.032)), fill=colors["fg"])
     elif kind == "outro":
-        text = _SCRIPT[lang]["outro"]
-        # Wrap manually at a fixed char count -- no textwrap dependency
-        # surprises, good enough for a short disclaimer line.
-        import textwrap
-        for i, line in enumerate(textwrap.wrap(text, width=18)):
-            draw.text((60, 800 + i * 70), line, font=_get_font(48), fill=_WHITE)
+        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 26))):
+            draw.text((pad_x, int(height * 0.42) + i * int(height * 0.033)), line,
+                      font=_get_font(int(height * 0.027)), fill=colors["fg"])
     else:  # "signal"
         direction = (signal.get("confluence_direction") or "neutral").lower()
-        color = _GREEN if direction == "bullish" else (_RED if direction == "bearish" else _MUTED)
-        direction_label = _SCRIPT[lang]["direction_label"].get(direction, direction)
+        color = colors["green"] if direction == "bullish" else (colors["red"] if direction == "bearish" else colors["muted"])
+        direction_label = _SCRIPT.get(lang, _SCRIPT["en"])["direction_label"].get(direction, direction)
 
-        draw.text((60, 260), signal["ticker"], font=_get_font(120), fill=_WHITE)
-        draw.text((60, 400), signal.get("label", ""), font=_get_font(36), fill=_MUTED)
-        draw.text((60, 470), direction_label.upper(), font=_get_font(56), fill=color)
+        y = header_bottom
+        draw.text((pad_x, y), signal["ticker"], font=_get_font(int(height * 0.062)), fill=colors["fg"])
+        y += int(height * 0.075)
+        draw.text((pad_x, y), signal.get("label", ""), font=_get_font(int(height * 0.019)), fill=colors["muted"])
+        y += int(height * 0.035)
+        draw.text((pad_x, y), direction_label.upper(), font=_get_font(int(height * 0.029)), fill=color)
+        y += int(height * 0.042)
         conf = signal.get("confluence_confidence_pct")
         if conf is not None:
-            draw.text((60, 550), f"{conf}%", font=_get_font(90), fill=color)
+            draw.text((pad_x, y), f"{conf}%", font=_get_font(int(height * 0.047)), fill=color)
+        y += int(height * 0.09)
 
         # Real candlestick strip from real OHLC data -- honesty per this
         # module's docstring: a genuine (if simplified) chart, not a
-        # decorative placeholder.
+        # decorative placeholder. Leaves room below for the caption band
+        # + disclaimer footer.
         candles = signal.get("_candles") or []
-        if candles:
-            _draw_candles(draw, candles, x0=60, y0=750, w=_WIDTH - 120, h=500)
+        candle_bottom = height - int(height * 0.2)
+        if candles and candle_bottom > y:
+            _draw_candles(draw, candles, x0=pad_x, y0=y, w=width - 2 * pad_x, h=candle_bottom - y, colors=colors)
+
+        # Burned-in caption of the actual spoken sentence -- lets silent/
+        # muted autoplay viewers (the default on most social feeds)
+        # follow along without sound. Skipped on intro/outro slides
+        # since their main on-screen text already IS the caption.
+        cap_y = height - int(height * 0.145)
+        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 24))[:3]):
+            draw.text((pad_x, cap_y + i * int(height * 0.025)), line,
+                      font=_get_font(int(height * 0.021)), fill=colors["fg"])
 
     # Disclaimer footer on every slide -- same standing site-wide rule
     # (see risk-warning.html / every AI-analysis page) that any signal-
     # like content carries a non-advice disclaimer.
-    draw.text((60, _HEIGHT - 140), "技術面參考，並非投資建議 / Not investment advice",
-              font=_get_font(24), fill=_MUTED)
+    draw.text((pad_x, height - int(height * 0.073)), "技術面參考，並非投資建議 / Not investment advice",
+              font=_get_font(int(height * 0.0125)), fill=colors["muted"])
 
     return img
 
 
-def _draw_candles(draw: ImageDraw.ImageDraw, candles: List[dict], x0: int, y0: int, w: int, h: int):
-    if not candles:
+def _draw_candles(draw: ImageDraw.ImageDraw, candles: List[dict], x0: int, y0: int, w: int, h: int, colors: dict):
+    if not candles or h <= 0:
         return
     highs = [c["high"] for c in candles]
     lows = [c["low"] for c in candles]
@@ -231,7 +415,7 @@ def _draw_candles(draw: ImageDraw.ImageDraw, candles: List[dict], x0: int, y0: i
 
     for i, c in enumerate(candles):
         cx = x0 + slot_w * i + slot_w / 2
-        color = _GREEN if c["close"] >= c["open"] else _RED
+        color = colors["green"] if c["close"] >= c["open"] else colors["red"]
         # Wick.
         draw.line([(cx, y_for(c["high"])), (cx, y_for(c["low"]))], fill=color, width=2)
         # Body.
@@ -268,11 +452,13 @@ def _ffprobe_duration(path: str) -> float:
         return 3.0  # safe fallback slide length if ffprobe's own output is ever unparseable
 
 
-def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3) -> dict:
+def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
+                          aspect_ratio: str = _DEFAULT_ASPECT, theme: str = _DEFAULT_THEME) -> dict:
     """Real end-to-end render. Returns {"available": False, "message":
     ...} immediately if TTS or ffmpeg aren't configured -- never
     attempts a partial render. On success returns {"available": True,
-    "path": ..., "duration_sec": ..., "slides_count": ...}."""
+    "path": ..., "duration_sec": ..., "slides_count": ..., "lang": ...,
+    "aspect_ratio": ..., "theme": ..., "used_ai_script": bool}."""
     if not is_available():
         msg = "Video Engine unavailable: " + (
             "GOOGLE_TTS_API_KEY not set" if not tts_service.is_available() else "ffmpeg/ffprobe not found on PATH"
@@ -282,6 +468,10 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3) -> dict:
 
     lang = lang if lang in _SCRIPT else "en"
     script = _SCRIPT[lang]
+    width, height = _ASPECT_RATIOS.get(aspect_ratio, _ASPECT_RATIOS[_DEFAULT_ASPECT])
+    aspect_ratio = aspect_ratio if aspect_ratio in _ASPECT_RATIOS else _DEFAULT_ASPECT
+    colors = _THEMES.get(theme, _THEMES[_DEFAULT_THEME])
+    theme = theme if theme in _THEMES else _DEFAULT_THEME
 
     try:
         from api.market_pulse import _compute_free_signals
@@ -301,25 +491,34 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3) -> dict:
 
     slides = [("intro", None)] + [("signal", s) for s in signals] + [("outro", None)]
 
+    # Template narration is built first as the honest, always-available
+    # fallback; the AI rewrite (if it succeeds and returns the right
+    # number of lines) replaces it wholesale, never partially -- a mix
+    # of AI-written and template lines would be a worse, inconsistent
+    # result than picking one source cleanly.
+    template_texts = []
+    for kind, s in slides:
+        if kind == "intro":
+            template_texts.append(script["intro"])
+        elif kind == "outro":
+            template_texts.append(script["outro"])
+        else:
+            direction = (s.get("confluence_direction") or "neutral").lower()
+            template_texts.append(script["signal"].format(
+                ticker=s["ticker"],
+                direction=script["direction_label"].get(direction, direction),
+                confidence=s.get("confluence_confidence_pct", 0),
+            ))
+
+    ai_texts = _ai_rewrite_narration(signals, lang)
+    used_ai_script = ai_texts is not None
+    narration_texts = ai_texts if used_ai_script else template_texts
+
     workdir = tempfile.mkdtemp(prefix="xfl_video_")
     try:
-        narration_texts = []
-        for kind, s in slides:
-            if kind == "intro":
-                narration_texts.append(script["intro"])
-            elif kind == "outro":
-                narration_texts.append(script["outro"])
-            else:
-                direction = (s.get("confluence_direction") or "neutral").lower()
-                narration_texts.append(script["signal"].format(
-                    ticker=s["ticker"],
-                    direction=script["direction_label"].get(direction, direction),
-                    confidence=s.get("confluence_confidence_pct", 0),
-                ))
-
         audio_paths = []
         for i, text in enumerate(narration_texts):
-            tts_result = tts_service.synthesize(text, lang=lang)
+            tts_result = tts_service.synthesize(_build_ssml(text), lang=lang, ssml=True)
             if not tts_result.get("available"):
                 _log_generation("error", f"TTS failed on slide {i}: {tts_result.get('message')}")
                 return {"available": False, "message": f"TTS failed: {tts_result.get('message')}"}
@@ -333,7 +532,7 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3) -> dict:
         image_list_path = os.path.join(workdir, "images.txt")
         with open(image_list_path, "w") as f:
             for i, ((kind, s), dur) in enumerate(zip(slides, durations)):
-                img = _render_slide(kind, s, lang)
+                img = _render_slide(kind, s, lang, narration_texts[i], width, height, colors)
                 img_path = os.path.join(workdir, f"slide_{i}.png")
                 img.save(img_path)
                 f.write(f"file '{img_path}'\nduration {dur}\n")
@@ -368,12 +567,21 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3) -> dict:
         )
 
         total_duration = sum(durations)
-        _log_generation("ok", f"Generated with {len(signals)} signals", total_duration, len(slides))
+        _log_generation(
+            "ok",
+            f"Generated with {len(signals)} signals ({lang}, {aspect_ratio}, {theme} theme, "
+            f"AI script: {'yes' if used_ai_script else 'no (template fallback)'})",
+            total_duration, len(slides),
+        )
         return {
             "available": True,
             "path": final_path,
             "duration_sec": round(total_duration, 1),
             "slides_count": len(slides),
+            "lang": lang,
+            "aspect_ratio": aspect_ratio,
+            "theme": theme,
+            "used_ai_script": used_ai_script,
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }
     except subprocess.CalledProcessError as e:

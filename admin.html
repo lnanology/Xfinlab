@@ -610,8 +610,42 @@
         <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
           Runs synchronously (TTS calls + ffmpeg render can take up to ~1-2 minutes). Requires the
           <code>video_engine</code> flag to be ON (Feature Flags page) and a valid <code>GOOGLE_TTS_API_KEY</code>
-          set in Railway's environment variables.
+          set in Railway's environment variables. AI script rewrite is attempted automatically (falls back to
+          the honest template script if it fails) -- no toggle needed.
         </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Language</label>
+            <select id="videoLangSelect" class="btn btn-sm" style="cursor:pointer">
+              <option value="zh-HK">粵語 zh-HK</option>
+              <option value="zh-CN">普通话 zh-CN</option>
+              <option value="zh-TW">國語 zh-TW</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Aspect Ratio</label>
+            <select id="videoAspectSelect" class="btn btn-sm" style="cursor:pointer">
+              <option value="9:16">9:16 (Shorts/Reels)</option>
+              <option value="1:1">1:1 (IG Feed)</option>
+              <option value="16:9">16:9 (YouTube/X)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Theme</label>
+            <select id="videoThemeSelect" class="btn btn-sm" style="cursor:pointer">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:12px;cursor:pointer">
+          <input type="checkbox" id="videoPostTelegram">
+          Also post to the matching-language Telegram channel on success
+        </label>
         <button class="btn btn-sm btn-purple" onclick="generateVideoNow()" id="videoGenerateBtn">▶ Generate Now</button>
         <div id="videoGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
       </div>
@@ -1453,16 +1487,26 @@ async function loadVideoStatus() {
 async function generateVideoNow() {
   const btn = document.getElementById('videoGenerateBtn');
   const result = document.getElementById('videoGenerateResult');
+  const lang = document.getElementById('videoLangSelect').value;
+  const aspect = document.getElementById('videoAspectSelect').value;
+  const theme = document.getElementById('videoThemeSelect').value;
+  const postTelegram = document.getElementById('videoPostTelegram').checked;
   btn.disabled = true;
   result.innerHTML = '<span class="spinner"></span> Generating (this can take up to ~1-2 minutes)...';
   try {
-    const res = await fetch(`${API}/admin/video/generate?token=${adminToken}`, {method: 'POST'});
+    const params = new URLSearchParams({
+      token: adminToken, lang, aspect_ratio: aspect, theme,
+      post_to_telegram: postTelegram ? 'true' : 'false',
+    });
+    const res = await fetch(`${API}/admin/video/generate?${params.toString()}`, {method: 'POST'});
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.status);
     if (data.available === false) {
       result.innerHTML = `<span style="color:var(--red)">⚠️ ${escapeHtml(data.message || 'Video Engine unavailable')}</span>`;
     } else {
-      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides</span>`;
+      const aiNote = data.used_ai_script ? ' · AI script' : ' · template script';
+      const tgNote = postTelegram ? (data.telegram_posted ? ' · posted to Telegram ✅' : ' · Telegram post failed/skipped') : '';
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides${aiNote}${tgNote}</span>`;
     }
     loadVideoStatus();
   } catch (e) {

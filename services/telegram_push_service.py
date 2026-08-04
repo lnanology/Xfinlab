@@ -155,3 +155,57 @@ def push_daily_signals_to_telegram(cache: dict):
             send_telegram_message(chat_id, message)
     except Exception:
         pass
+
+
+def send_telegram_video(chat_id: str, file_path: str, caption: str = "") -> bool:
+    """Growth OS Phase 7 (2026-08-04): upload one local video file to one
+    Telegram chat/channel via the Bot API's sendVideo (multipart file
+    upload, not a URL -- the video lives on Railway's local ephemeral
+    disk, not at a public URL Telegram could fetch). Returns True on
+    success, False on any failure (missing token/chat_id, file missing,
+    network error, non-200 response) -- never raises, same best-effort
+    posture as send_telegram_message above."""
+    token = _bot_token()
+    if not token or not chat_id or not file_path or not os.path.exists(file_path):
+        return False
+    try:
+        with open(file_path, "rb") as f:
+            res = requests.post(
+                f"{TELEGRAM_API_BASE}/bot{token}/sendVideo",
+                data={"chat_id": chat_id, "caption": caption[:1024]},
+                files={"video": f},
+                timeout=60,
+            )
+        return res.status_code == 200
+    except Exception:
+        return False
+
+
+# Growth OS Phase 7: maps a Video Engine narration language to the
+# matching Telegram channel env var. Cantonese/Mandarin variants all
+# fan into the one Chinese channel (there's only one configured); ja/ko
+# have no dedicated channel yet, so those are simply skipped (best-
+# effort, not an error) until one is ever added.
+_VIDEO_CHANNEL_ENV_BY_LANG = {
+    "zh-HK": "TELEGRAM_ZH_CHANNEL_ID", "zh-CN": "TELEGRAM_ZH_CHANNEL_ID",
+    "zh-TW": "TELEGRAM_ZH_CHANNEL_ID", "zh": "TELEGRAM_ZH_CHANNEL_ID",
+    "en": "TELEGRAM_CHANNEL_ID",
+    "es": "TELEGRAM_ES_CHANNEL_ID",
+}
+
+
+def push_video_to_telegram(lang: str, file_path: str, caption: str = "") -> bool:
+    """Best-effort: send the Video Engine's finished mp4 to whichever
+    Telegram channel matches its narration language. Returns False (not
+    an exception) if there's no channel configured for that language,
+    the bot token is unset, or the send itself fails -- callers (api/
+    admin.py's manual Generate Now trigger) treat this purely as an
+    informational extra, never something that should fail the
+    generation response it's attached to."""
+    env_key = _VIDEO_CHANNEL_ENV_BY_LANG.get(lang)
+    if not env_key:
+        return False
+    chat_id = os.getenv(env_key, "")
+    if not chat_id:
+        return False
+    return send_telegram_video(chat_id, file_path, caption)

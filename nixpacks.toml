@@ -20,8 +20,15 @@
 # {"available": False} if this package is ever missing for any reason,
 # so a problem here can only disable the one optional video feature,
 # never break the app.
+# 2026-08-04 addition: fonts-noto-cjk, so services/video_engine_service.py
+# can actually render Chinese/Japanese/Korean text (ticker labels,
+# disclaimer footer, and the 5 of 7 narration languages that are CJK)
+# instead of tofu boxes -- DejaVuSans (the only font previously on this
+# image) has no CJK glyphs at all. Noto Sans CJK is one font file that
+# covers Simplified/Traditional Chinese, Japanese, and Korean, so a
+# single addition covers all 5 CJK narration languages at once.
 dependsOn = ["setup"]
-aptPkgs = ["ffmpeg"]
+aptPkgs = ["ffmpeg", "fonts-noto-cjk"]
 
 [phases.litestream]
 dependsOn = ["setup"]

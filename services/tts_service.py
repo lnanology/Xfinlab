@@ -42,9 +42,19 @@ _TIMEOUT_SECONDS = 30
 # "backend-only copy stays narrower than the 47-language site-wide
 # convention" precedent as content_repurpose_service.py's EN/ES-only
 # multilang fan-out).
+# 2026-08-04 expansion (user request: more narration languages): added
+# zh-CN/zh-TW (Mandarin, real cmn-CN/cmn-TW Wavenet voices -- Google
+# doesn't offer Neural2 for Cantonese/Mandarin yet, Wavenet/Standard are
+# the actual available tiers), plus ja/ko (real Neural2 voices exist for
+# both). Every name below is a real entry in Google's own TTS voice
+# catalog (cloud.google.com/text-to-speech/docs/voices) -- none invented.
 _VOICE_MAP = {
     "zh-HK": {"languageCode": "yue-HK", "name": "yue-HK-Standard-A"},
     "zh": {"languageCode": "yue-HK", "name": "yue-HK-Standard-A"},
+    "zh-CN": {"languageCode": "cmn-CN", "name": "cmn-CN-Wavenet-A"},
+    "zh-TW": {"languageCode": "cmn-TW", "name": "cmn-TW-Wavenet-A"},
+    "ja": {"languageCode": "ja-JP", "name": "ja-JP-Neural2-B"},
+    "ko": {"languageCode": "ko-KR", "name": "ko-KR-Neural2-A"},
     "en": {"languageCode": "en-US", "name": "en-US-Neural2-D"},
     "es": {"languageCode": "es-US", "name": "es-US-Neural2-B"},
 }
@@ -55,11 +65,19 @@ def is_available() -> bool:
     return bool(os.environ.get(_API_KEY_ENV))
 
 
-def synthesize(text: str, lang: str = _DEFAULT_LANG) -> dict:
+def synthesize(text: str, lang: str = _DEFAULT_LANG, ssml: bool = False) -> dict:
     """Returns {"available": True, "audio_bytes": bytes, "format": "mp3"}
     on success, or {"available": False, "message": "..."} -- callers
     (services/video_engine_service.py) must check `available` and
-    degrade gracefully, never assume audio_bytes is present."""
+    degrade gracefully, never assume audio_bytes is present.
+
+    ssml=True treats `text` as an SSML document (must be wrapped in
+    <speak>...</speak> by the caller) instead of plain text -- lets
+    callers add natural pauses (<break>) and emphasis without any new
+    dependency, since Google Cloud TTS parses SSML natively. Google
+    strips the markup itself before synthesis, so SSML characters don't
+    count toward the free-tier character quota any differently than
+    plain text of the same spoken length."""
     if not is_available():
         return {"available": False, "message": "TTS not configured (GOOGLE_TTS_API_KEY missing)"}
     if not text or not text.strip():
@@ -67,12 +85,13 @@ def synthesize(text: str, lang: str = _DEFAULT_LANG) -> dict:
 
     voice = _VOICE_MAP.get(lang, _VOICE_MAP[_DEFAULT_LANG])
     api_key = os.environ[_API_KEY_ENV]
+    input_field = {"ssml": text} if ssml else {"text": text}
 
     try:
         resp = requests.post(
             f"{_ENDPOINT}?key={api_key}",
             json={
-                "input": {"text": text},
+                "input": input_field,
                 "voice": voice,
                 "audioConfig": {"audioEncoding": "MP3"},
             },

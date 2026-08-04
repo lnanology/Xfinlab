@@ -606,7 +606,8 @@ def video_engine_status(token: str, request: Request):
     return get_status()
 
 @router.post("/admin/video/generate")
-def video_engine_generate(token: str, lang: str = "zh-HK", request: Request = None):
+def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "9:16",
+                           theme: str = "dark", post_to_telegram: bool = False, request: Request = None):
     """Growth OS Phase 7 -- on-demand "Generate Now" trigger for the admin
     panel, so this can be tested/verified before wiring any automatic
     daily schedule. Gated by the video_engine flag (default OFF) on top
@@ -615,7 +616,14 @@ def video_engine_generate(token: str, lang: str = "zh-HK", request: Request = No
     stale/cached admin.html session if the feature's been intentionally
     turned off. Runs synchronously and returns the result dict as-is
     (including a graceful {"available": False, "message": ...} if TTS or
-    ffmpeg isn't actually configured on this deploy)."""
+    ffmpeg isn't actually configured on this deploy).
+
+    2026-08-04 v2: lang/aspect_ratio/theme are now real choices (see
+    services/video_engine_service.py's _SCRIPT/_ASPECT_RATIOS/_THEMES).
+    post_to_telegram defaults to False and is an explicit per-click admin
+    opt-in, not automatic -- repeatedly clicking Generate Now while
+    testing shouldn't quietly spam a live public channel every time;
+    the admin has to tick the box each time they actually want that."""
     verify_admin(token, "video_engine_generate", request)
     flags = {r["key"]: r["enabled"] for r in get_db().execute(
         "SELECT key, enabled FROM feature_flags WHERE key='video_engine'"
@@ -623,7 +631,16 @@ def video_engine_generate(token: str, lang: str = "zh-HK", request: Request = No
     if not flags.get("video_engine", 0):
         raise HTTPException(status_code=403, detail="video_engine feature flag is off")
     from services.video_engine_service import generate_daily_video
-    return generate_daily_video(lang=lang)
+    result = generate_daily_video(lang=lang, aspect_ratio=aspect_ratio, theme=theme)
+    if post_to_telegram and result.get("available"):
+        try:
+            from services.telegram_push_service import push_video_to_telegram
+            result["telegram_posted"] = push_video_to_telegram(
+                lang, result["path"], caption="XFINLAB Daily AI Market Signal"
+            )
+        except Exception:
+            result["telegram_posted"] = False
+    return result
 
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
