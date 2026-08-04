@@ -191,6 +191,7 @@
     <div class="nav-item" onclick="showPage('widgets')"><span class="icon">🧩</span> Widget Engine</div>
     <div class="nav-item" onclick="showPage('apiusage')"><span class="icon">🔑</span> API Usage</div>
     <div class="nav-item" onclick="showPage('referral')"><span class="icon">🎁</span> Referral Engine</div>
+    <div class="nav-item" onclick="showPage('video')"><span class="icon">🎬</span> Video Engine</div>
 
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
@@ -582,6 +583,40 @@
       </div>
     </div>
 
+    <!-- Growth OS Phase 7 (2026-08-04): Video Engine. Renders REAL K-line
+         data as static candlestick slide images narrated by real Google
+         Cloud TTS, timed to match its own narration clip's actual
+         duration -- a data-slide-plus-narration video, not a fully
+         animated chart-drawing sequence (see services/video_engine_
+         service.py's own docstring for the full honesty-scoped
+         description). Requires GOOGLE_TTS_API_KEY to be set in Railway;
+         until then this correctly shows "unavailable" below, which is
+         expected, not a bug. Gated by the video_engine flag (default
+         OFF, see Feature Flags page) on top of that env var. -->
+    <div class="page" id="page-video">
+      <div class="page-title">Video Engine</div>
+      <div class="page-sub">Daily AI-narrated market-signal short video (services/video_engine_service.py)</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Status</span>
+          <button class="btn btn-sm btn-purple" onclick="loadVideoStatus()">🔄 Refresh</button>
+        </div>
+        <div id="videoStatus"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Generate Now</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
+          Runs synchronously (TTS calls + ffmpeg render can take up to ~1-2 minutes). Requires the
+          <code>video_engine</code> flag to be ON (Feature Flags page) and a valid <code>GOOGLE_TTS_API_KEY</code>
+          set in Railway's environment variables.
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="generateVideoNow()" id="videoGenerateBtn">▶ Generate Now</button>
+        <div id="videoGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+    </div>
+
     <!-- Feature Flags -->
     <div class="page" id="page-flags">
       <div class="page-title">Feature Flags</div>
@@ -702,6 +737,7 @@ const FLAGS_DESC = {
   content_engine_multilang: 'Generate EN/ES social variants alongside the daily ZH content',
   email_digest_engine: 'Send the daily signals email to confirmed subscribers',
   widget_engine: 'Serve live data to embeddable widgets on third-party sites',
+  video_engine: 'Allow daily short-video generation (needs GOOGLE_TTS_API_KEY env var + ffmpeg)',
 };
 
 // Auto login
@@ -1051,6 +1087,7 @@ function showPage(name) {
   if (name === 'widgets') loadWidgetStats();
   if (name === 'apiusage') loadApiUsage();
   if (name === 'referral') loadReferralStats();
+  if (name === 'video') loadVideoStatus();
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -1373,6 +1410,60 @@ async function saveReferralConfig(key) {
     result.innerHTML = `<span style="color:var(--green)">✅ ${REFERRAL_CONFIG_LABELS[key].label} updated to ${value}</span>`;
   } catch (e) {
     result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  }
+}
+
+// Growth OS Phase 7 -- Video Engine status + on-demand generation trigger.
+async function loadVideoStatus() {
+  const el = document.getElementById('videoStatus');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/video/status?token=${adminToken}`);
+    const s = await res.json();
+    if (!res.ok) throw new Error(s.detail || res.status);
+    const lr = s.last_run;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+        <div><div style="font-size:1.1rem;font-weight:700;color:${s.tts_configured ? 'var(--green)' : 'var(--red)'}">${s.tts_configured ? 'Configured' : 'Not configured'}</div><div style="font-size:0.72rem;color:var(--muted)">GOOGLE_TTS_API_KEY</div></div>
+        <div><div style="font-size:1.1rem;font-weight:700;color:${s.ffmpeg_present ? 'var(--green)' : 'var(--red)'}">${s.ffmpeg_present ? 'Present' : 'Missing'}</div><div style="font-size:0.72rem;color:var(--muted)">ffmpeg / ffprobe</div></div>
+        <div><div style="font-size:1.1rem;font-weight:700;color:${s.output_exists ? 'var(--green)' : 'var(--muted)'}">${s.output_exists ? 'Yes' : 'None yet'}</div><div style="font-size:0.72rem;color:var(--muted)">Last video on disk</div></div>
+      </div>
+      ${lr ? `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:4px">Last generation attempt</div>
+        <div style="font-size:0.85rem">
+          <strong style="color:${lr.status === 'ok' ? 'var(--green)' : 'var(--red)'}">${escapeHtml(lr.status || '')}</strong>
+          &middot; ${escapeHtml(lr.created_at || '')}
+          ${lr.duration_sec != null ? `&middot; ${lr.duration_sec}s` : ''}
+          ${lr.slides_count ? `&middot; ${lr.slides_count} slides` : ''}
+        </div>
+        ${lr.message ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">${escapeHtml(lr.message)}</div>` : ''}
+      </div>` : '<div style="margin-top:14px;font-size:0.8rem;color:var(--muted)">No generation attempts yet.</div>'}
+    `;
+  } catch (e) {
+    el.innerHTML = `<div class="empty">Connection error loading video status</div>`;
+  }
+}
+
+async function generateVideoNow() {
+  const btn = document.getElementById('videoGenerateBtn');
+  const result = document.getElementById('videoGenerateResult');
+  btn.disabled = true;
+  result.innerHTML = '<span class="spinner"></span> Generating (this can take up to ~1-2 minutes)...';
+  try {
+    const res = await fetch(`${API}/admin/video/generate?token=${adminToken}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    if (data.available === false) {
+      result.innerHTML = `<span style="color:var(--red)">⚠️ ${escapeHtml(data.message || 'Video Engine unavailable')}</span>`;
+    } else {
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides</span>`;
+    }
+    loadVideoStatus();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
   }
 }
 

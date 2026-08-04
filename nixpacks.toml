@@ -1,3 +1,15 @@
+[phases.setup]
+# Growth OS Phase 7 (2026-08-04): system-level ffmpeg/ffprobe binaries for
+# services/video_engine_service.py's video rendering pipeline. Nixpacks
+# merges this nixPkgs list with the auto-detected Python provider's own
+# setup phase (it does NOT replace it) -- this is purely additive, the
+# existing Python/pip toolchain is untouched. services/video_engine_
+# service.py's is_available() checks shutil.which("ffmpeg") at runtime
+# and degrades to {"available": False} if this package is ever missing
+# for any reason, so a problem here can only disable the one optional
+# video feature, never break the app.
+nixPkgs = ["ffmpeg"]
+
 [phases.litestream]
 dependsOn = ["setup"]
 cmds = [

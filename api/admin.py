@@ -90,6 +90,16 @@ _DEFAULT_FLAGS = {
     # loads (so a third-party page embedding it never gets a 404) but
     # renders nothing meaningful while this is off.
     "widget_engine": True,
+    # Growth OS Phase 7 (2026-08-04): gates the Video Engine's daily
+    # short-video generation (services/video_engine_service.py). Default
+    # OFF -- same "credential-dependent feature defaults off" pattern as
+    # google_login/line_login/whatsapp_otp above, since this needs a real
+    # GOOGLE_TTS_API_KEY set in Railway before it can do anything (the
+    # service's own is_available() check degrades gracefully either way,
+    # but there's no reason to let the admin panel's "Generate Now"
+    # button attempt a call that's guaranteed to fail before that env var
+    # is actually configured).
+    "video_engine": False,
 }
 
 def init_feature_flags_table():
@@ -582,6 +592,38 @@ def set_referral_config(key: str, value: int, token: str = None, request: Reques
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("message", "Invalid config key"))
     return result
+
+@router.get("/admin/video/status")
+def video_engine_status(token: str, request: Request):
+    """Growth OS Phase 7 -- admin-panel status check: is GOOGLE_TTS_API_KEY
+    set, is ffmpeg present on this deploy, and metadata (status/duration/
+    slide count) for the most recent generation attempt (success or
+    failure), from services/video_engine_service.py's video_generation_log
+    table. Always returns a usable dict even on a fresh deploy with no
+    video ever generated."""
+    verify_admin(token, "video_engine_status", request)
+    from services.video_engine_service import get_status
+    return get_status()
+
+@router.post("/admin/video/generate")
+def video_engine_generate(token: str, lang: str = "zh-HK", request: Request = None):
+    """Growth OS Phase 7 -- on-demand "Generate Now" trigger for the admin
+    panel, so this can be tested/verified before wiring any automatic
+    daily schedule. Gated by the video_engine flag (default OFF) on top
+    of the admin-token check -- this is the heaviest single operation in
+    Growth OS (TTS calls + ffmpeg render), so it must never run from a
+    stale/cached admin.html session if the feature's been intentionally
+    turned off. Runs synchronously and returns the result dict as-is
+    (including a graceful {"available": False, "message": ...} if TTS or
+    ffmpeg isn't actually configured on this deploy)."""
+    verify_admin(token, "video_engine_generate", request)
+    flags = {r["key"]: r["enabled"] for r in get_db().execute(
+        "SELECT key, enabled FROM feature_flags WHERE key='video_engine'"
+    ).fetchall()}
+    if not flags.get("video_engine", 0):
+        raise HTTPException(status_code=403, detail="video_engine feature flag is off")
+    from services.video_engine_service import generate_daily_video
+    return generate_daily_video(lang=lang)
 
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
