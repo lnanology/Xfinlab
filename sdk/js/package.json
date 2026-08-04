@@ -1,0 +1,17 @@
+{
+  "name": "xfinlab-intelligence",
+  "version": "0.1.0",
+  "description": "Official JavaScript/Node client for the XFINLAB Intelligence API",
+  "main": "xfinlab.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lnanology/Xfinlab.git",
+    "directory": "sdk/js"
+  },
+  "homepage": "https://www.xfinlab.com/intelligence-api.html",
+  "keywords": ["xfinlab", "finance", "stocks", "sentiment", "news", "api-client"]
+}

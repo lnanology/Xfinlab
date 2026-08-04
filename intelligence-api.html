@@ -100,6 +100,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
     <div class="hero-ctas">
       <a href="#access" class="btn-primary">Request Early Access</a>
       <a href="#endpoints" class="btn-ghost">See the endpoints</a>
+      <a href="#sdks" class="btn-ghost">SDKs</a>
     </div>
   </div>
 
@@ -137,6 +138,36 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
         <div class="ep-name">Monte Carlo Stress Test</div>
         <div class="ep-desc">A real historical-bootstrap simulation — resamples a symbol's own real daily returns thousands of times to report percentile ending values and drawdowns for a given horizon. Never an LLM-estimated number. Weighted 3x in quota.</div>
       </div>
+    </div>
+  </div>
+
+  <div class="section" id="sdks">
+    <div class="section-title">Official SDKs</div>
+    <div class="section-sub">Thin, zero-magic wrappers -- one method per endpoint, the same JSON you'd get from a raw HTTP call. Not yet on PyPI/npm (no paying developers yet to justify that maintenance overhead) -- install straight from the repo for now.</div>
+    <div class="endpoints">
+      <div class="ep-card">
+        <span class="ep-tag">Python</span>
+        <div class="ep-name">xfinlab-intelligence</div>
+        <div class="ep-desc" style="font-family:monospace;font-size:0.78rem;white-space:pre-wrap;word-break:break-all">pip install "git+https://github.com/lnanology/Xfinlab.git#subdirectory=sdk/python"</div>
+        <div class="ep-desc" style="margin-top:10px">
+          <code>from xfinlab_intelligence import XfinlabClient</code><br>
+          <code>client = XfinlabClient(api_key="xfl_...")</code><br>
+          <code>client.sentiment("AAPL")</code>
+        </div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">JavaScript / Node</span>
+        <div class="ep-name">xfinlab-intelligence</div>
+        <div class="ep-desc" style="font-family:monospace;font-size:0.78rem;white-space:pre-wrap;word-break:break-all">npm install "github:lnanology/Xfinlab#path:sdk/js"</div>
+        <div class="ep-desc" style="margin-top:10px">
+          <code>const { XfinlabClient } = require('xfinlab-intelligence');</code><br>
+          <code>const client = new XfinlabClient('xfl_...');</code><br>
+          <code>await client.sentiment('AAPL');</code>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:18px">
+      <a href="https://github.com/lnanology/Xfinlab/tree/main/sdk" target="_blank" class="btn-ghost">View SDK source on GitHub</a>
     </div>
   </div>
 

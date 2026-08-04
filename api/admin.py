@@ -465,6 +465,97 @@ def widget_stats(token: str, request: Request):
     finally:
         conn.close()
 
+@router.get("/admin/intelligence/usage")
+def intelligence_usage(token: str, request: Request):
+    """Growth OS Phase 5 (2026-08-04) -- devrel view over the Intelligence
+    API's real usage, joining three tables that were each built for a
+    narrower purpose and never had a combined admin view before:
+    api_keys (admin-issued), self_serve_api_keys (automated free-tier
+    signup, services/api_key_service.py), and intelligence_api_usage
+    (per-key per-day weighted-call counter, services/
+    intelligence_quota_service.py). No new table -- purely a read-side
+    join for visibility, same "packaging, not new infrastructure" posture
+    as api/intelligence.py itself.
+
+    Per-key `last_used_at` and issuance metadata come from whichever of
+    the two key tables issued it; usage counts come from
+    intelligence_api_usage keyed by the raw key string, matching how
+    api/intelligence.py's _check_and_spend_quota() already writes to it."""
+    verify_admin(token, "intelligence_usage", request)
+    conn = get_db()
+    try:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        # Usage totals per key, computed once and looked up by key below
+        # rather than re-querying per row.
+        usage_rows = conn.execute(
+            "SELECT api_key, SUM(count) as total, "
+            "SUM(CASE WHEN date = ? THEN count ELSE 0 END) as today "
+            "FROM intelligence_api_usage GROUP BY api_key",
+            (today,),
+        ).fetchall()
+        usage_by_key = {
+            r["api_key"]: {"today_calls": r["today"] or 0, "total_calls": r["total"] or 0}
+            for r in usage_rows
+        }
+
+        keys = []
+        try:
+            admin_rows = conn.execute(
+                "SELECT ak.key as key, ak.tier as tier, ak.active as active, "
+                "ak.created_at as created_at, ak.last_used_at as last_used_at, "
+                "u.email as email "
+                "FROM api_keys ak LEFT JOIN users u ON u.id = ak.user_id"
+            ).fetchall()
+            for r in admin_rows:
+                keys.append({
+                    "source": "admin_issued",
+                    "email": r["email"],
+                    "tier": r["tier"],
+                    "active": bool(r["active"]),
+                    "created_at": r["created_at"],
+                    "last_used_at": r["last_used_at"],
+                    "key_preview": r["key"][:8] + "..." + r["key"][-4:],
+                    **usage_by_key.get(r["key"], {"today_calls": 0, "total_calls": 0}),
+                })
+        except Exception:
+            pass  # api_keys table not present yet on a fresh deploy
+
+        try:
+            self_serve_rows = conn.execute(
+                "SELECT key, email, tier, active, created_at, last_used_at "
+                "FROM self_serve_api_keys"
+            ).fetchall()
+            for r in self_serve_rows:
+                keys.append({
+                    "source": "self_serve",
+                    "email": r["email"],
+                    "tier": r["tier"],
+                    "active": bool(r["active"]),
+                    "created_at": r["created_at"],
+                    "last_used_at": r["last_used_at"],
+                    "key_preview": r["key"][:8] + "..." + r["key"][-4:],
+                    **usage_by_key.get(r["key"], {"today_calls": 0, "total_calls": 0}),
+                })
+        except Exception:
+            pass  # self_serve_api_keys table not present yet on a fresh deploy
+
+        # Sort most-active-today first -- the devrel-relevant ordering for
+        # "who's actually using this right now".
+        keys.sort(key=lambda k: k["today_calls"], reverse=True)
+
+        overview = {
+            "total_keys": len(keys),
+            "active_keys": sum(1 for k in keys if k["active"]),
+            "calls_today": sum(k["today_calls"] for k in keys),
+            "calls_all_time": sum(k["total_calls"] for k in keys),
+        }
+        return {"overview": overview, "keys": keys}
+    except Exception:
+        return {"overview": {"total_keys": 0, "active_keys": 0, "calls_today": 0, "calls_all_time": 0}, "keys": []}
+    finally:
+        conn.close()
+
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
     verify_admin(token, f"delete_user:{user_id}", request)

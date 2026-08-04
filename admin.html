@@ -189,6 +189,7 @@
     <div class="nav-item" onclick="showPage('seo')"><span class="icon">🌐</span> SEO Page Engine</div>
     <div class="nav-item" onclick="showPage('email')"><span class="icon">📧</span> Email Engine</div>
     <div class="nav-item" onclick="showPage('widgets')"><span class="icon">🧩</span> Widget Engine</div>
+    <div class="nav-item" onclick="showPage('apiusage')"><span class="icon">🔑</span> API Usage</div>
 
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
@@ -507,6 +508,42 @@
         <div style="font-size:0.85rem;color:var(--muted)">
           <a href="https://www.xfinlab.com/widgets.html" target="_blank" style="color:var(--accent)">xfinlab.com/widgets.html</a>
           &nbsp;— live previews + copy-paste embed codes for both widgets.
+        </div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 5 (2026-08-04): GitHub + Developer Engine. The SDKs
+         themselves (sdk/python, sdk/js) are static files in the repo, not a
+         running service -- there's nothing to "control" here. What this
+         panel adds is devrel visibility: real per-key usage of the
+         Intelligence API (api/intelligence.py), joining api_keys/
+         self_serve_api_keys with intelligence_api_usage via
+         GET /admin/intelligence/usage. No feature flag needed since this
+         is a read-only reporting view, not something that can misbehave
+         in production. -->
+    <div class="page" id="page-apiusage">
+      <div class="page-title">API Usage</div>
+      <div class="page-sub">Intelligence API devrel tracking -- who's using it, how much, on which tier</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Overview</span>
+          <button class="btn btn-sm btn-purple" onclick="loadApiUsage()">🔄 Refresh</button>
+        </div>
+        <div id="apiUsageOverview"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Keys</div>
+        <div id="apiUsageKeys"><div class="empty">Loading...</div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">SDKs</div>
+        <div style="font-size:0.85rem;color:var(--muted);line-height:1.7">
+          Official Python + JavaScript clients live in the repo under <code>sdk/python</code> and <code>sdk/js</code>
+          (not yet published to PyPI/npm -- see <code>sdk/README.md</code> for why and the current install path).
+          Linked from <a href="https://www.xfinlab.com/intelligence-api.html" target="_blank" style="color:var(--accent)">intelligence-api.html</a>'s Developers section.
         </div>
       </div>
     </div>
@@ -978,6 +1015,7 @@ function showPage(name) {
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
   if (name === 'widgets') loadWidgetStats();
+  if (name === 'apiusage') loadApiUsage();
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -1169,6 +1207,58 @@ async function loadWidgetStats() {
       </div>`).join('');
   } catch (e) {
     el.innerHTML = '<div class="empty">Connection error loading widget stats</div>';
+  }
+}
+
+// Growth OS Phase 5 -- API Usage / devrel panel (GET /admin/intelligence/usage).
+async function loadApiUsage() {
+  const overviewEl = document.getElementById('apiUsageOverview');
+  const keysEl = document.getElementById('apiUsageKeys');
+  overviewEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  keysEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/intelligence/usage?token=${adminToken}`);
+    const data = await res.json();
+    const ov = data.overview || {};
+    overviewEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_keys ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Total keys</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.active_keys ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Active keys</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.calls_today ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Weighted calls today</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.calls_all_time ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Weighted calls all-time</div></div>
+      </div>`;
+
+    const keys = data.keys || [];
+    if (!keys.length) {
+      keysEl.innerHTML = '<div class="empty">No API keys issued yet</div>';
+      return;
+    }
+    keysEl.innerHTML = `
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+        <thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px">Key</th><th style="padding:6px 8px">Email</th>
+          <th style="padding:6px 8px">Tier</th><th style="padding:6px 8px">Source</th>
+          <th style="padding:6px 8px">Today</th><th style="padding:6px 8px">All-time</th>
+          <th style="padding:6px 8px">Status</th>
+        </tr></thead>
+        <tbody>
+          ${keys.map(k => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px;font-family:monospace">${escapeHtml(k.key_preview || '')}</td>
+              <td style="padding:6px 8px">${escapeHtml(k.email || '—')}</td>
+              <td style="padding:6px 8px">${escapeHtml(k.tier || '—')}</td>
+              <td style="padding:6px 8px">${k.source === 'self_serve' ? 'Self-serve' : 'Admin-issued'}</td>
+              <td style="padding:6px 8px"><b>${k.today_calls ?? 0}</b></td>
+              <td style="padding:6px 8px">${k.total_calls ?? 0}</td>
+              <td style="padding:6px 8px">${k.active ? '<span style="color:var(--green)">active</span>' : '<span style="color:var(--muted)">revoked</span>'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      </div>`;
+  } catch (e) {
+    overviewEl.innerHTML = '<div class="empty">Connection error loading API usage</div>';
+    keysEl.innerHTML = '';
   }
 }
 

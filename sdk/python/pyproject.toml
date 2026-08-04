@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xfinlab-intelligence"
+version = "0.1.0"
+description = "Official Python client for the XFINLAB Intelligence API"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "XFINLAB" }]
+dependencies = ["requests>=2.25"]
+keywords = ["xfinlab", "finance", "stocks", "sentiment", "news", "api-client"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Office/Business :: Financial",
+]
+
+[project.urls]
+Homepage = "https://www.xfinlab.com/intelligence-api.html"
+Repository = "https://github.com/lnanology/Xfinlab"
+
+[tool.setuptools]
+packages = ["xfinlab_intelligence"]
