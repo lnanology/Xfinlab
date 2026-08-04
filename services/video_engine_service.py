@@ -26,8 +26,9 @@ Pipeline (all via ffmpeg subprocess calls + Pillow-rendered PNG slides):
      if the AI call fails, times out, or returns the wrong shape -- this
      is a best-effort quality upgrade, never a hard dependency.
   2. Wrap each line in simple SSML (_build_ssml(): short pauses after
-     clause punctuation, emphasis on percentage figures) -- Google Cloud
-     TTS parses SSML natively, no extra dependency.
+     clause punctuation) -- Google Cloud TTS parses SSML natively, no
+     extra dependency. Deliberately limited to <break> only (see
+     _build_ssml()'s own docstring): Neural2 voices reject <emphasis>.
   3. TTS each slide's line separately (services/tts_service.py) so each
      slide can be timed to its own narration clip's real duration.
   4. Render each slide as a PNG (size depends on the chosen aspect
@@ -315,18 +316,29 @@ def _ai_rewrite_narration(signals: List[dict], lang: str) -> Optional[List[str]]
 
 
 def _build_ssml(sentence: str) -> str:
-    """Wraps a plain narration sentence in simple SSML: emphasis on any
-    percentage figure (the number viewers care most about) and a short
-    pause after clause-ending punctuation, for more natural pacing than
-    one flat monotone run-on. Applied uniformly regardless of whether
-    the sentence came from _ai_rewrite_narration() or the _SCRIPT
-    template fallback."""
+    """Wraps a plain narration sentence in simple SSML: a short pause
+    after clause-ending punctuation, for more natural pacing than one
+    flat monotone run-on. Applied uniformly regardless of whether the
+    sentence came from _ai_rewrite_narration() or the _SCRIPT template
+    fallback.
+
+    2026-08-04 fix (user-reported: EN/ES/JA/KO video generation failing
+    with "TTS API error (400): Invalid SSML. Newer voices like Neural2
+    require valid SSML."): this used to also wrap percentage figures in
+    <emphasis level="moderate">. Google Cloud TTS's Neural2 voices (which
+    is what en/es/ja/ko map to in tts_service._VOICE_MAP -- Standard/
+    Wavenet voices don't exist for those languages in Neural2 quality)
+    only support a restricted SSML tag subset: <speak>, <p>, <s>,
+    <break>, <phoneme>, <sub>. <emphasis> is NOT in that subset and the
+    whole request gets rejected with a 400 the instant it appears --
+    that's why this only broke on en/es/ja/ko (Neural2) and not zh-HK
+    (Standard) / zh-CN/zh-TW (Wavenet), which DO support <emphasis> and
+    so never surfaced the bug. Dropped <emphasis> entirely rather than
+    branching per-voice-tier: <break> alone is supported across every
+    tier (Standard/Wavenet/Neural2) and already carries most of the
+    pacing benefit, so this is the simplest fix that can't regress the
+    same way again if Google changes voice-tier availability later."""
     escaped = sentence.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    escaped = re.sub(
-        r"(\d+(?:\.\d+)?\s?(?:%|percent|巴仙|百分比|por ciento|パーセント|퍼센트))",
-        r'<emphasis level="moderate">\1</emphasis>',
-        escaped,
-    )
     escaped = re.sub(r"([，,、。.！!？?])", r"\1<break time=\"250ms\"/>", escaped)
     return f"<speak>{escaped}</speak>"
 
