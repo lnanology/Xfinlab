@@ -556,6 +556,33 @@ def intelligence_usage(token: str, request: Request):
     finally:
         conn.close()
 
+@router.get("/admin/referral/stats")
+def referral_stats(token: str, request: Request):
+    """Growth OS Phase 6 (2026-08-04) -- referral stats dashboard: total
+    codes generated, total successful referrals, total paid (annual-Pro)
+    conversions, and a top-referrers leaderboard. Also returns the
+    current reward-amount config so the admin panel can render the
+    overview and the editable reward form from one call."""
+    verify_admin(token, "referral_stats", request)
+    from services.referral_service import ReferralService
+    return ReferralService.get_admin_dashboard()
+
+@router.post("/admin/referral/config/{key}")
+def set_referral_config(key: str, value: int, token: str = None, request: Request = None):
+    """Growth OS Phase 6 -- toggle one referral reward amount (points
+    bonuses, Pro-grant days, or the Pro+ threshold) live, no redeploy.
+    `value` is a plain int query/body param (FastAPI accepts it as a
+    query param here, matching this file's existing convention for
+    simple scalar admin actions -- see issue_key()/mark_annual_pro()
+    above). Validated against the known key whitelist in
+    services/referral_service.py's set_config()."""
+    verify_admin(token, f"set_referral_config:{key}", request)
+    from services.referral_service import set_config
+    result = set_config(key, value)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Invalid config key"))
+    return result
+
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
     verify_admin(token, f"delete_user:{user_id}", request)

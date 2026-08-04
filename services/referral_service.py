@@ -54,11 +54,93 @@ REFERRAL_PROGRESS_TARGET = 5
 REFERRAL_PRO_GRANT_DAYS = 365
 REFERRAL_PROPLUS_THRESHOLD = 5
 
+# Growth OS Phase 6 (2026-08-04): the 5 numbers above were previously
+# hardcoded module constants -- fine while there was one person deciding
+# the numbers, but the user's own Phase 6 brief asks for "toggle reward
+# amounts" from the admin panel without a redeploy. Rather than a
+# boolean feature_flags row (that table is specifically for on/off
+# switches -- see api/admin.py's _DEFAULT_FLAGS docstring), this is a
+# small parallel key/value table for *numeric* config, read through
+# get_config() below. The module constants above remain as the seeded
+# defaults and as a readable fallback if the table/row is ever missing
+# (e.g. a fresh DB before init_referral_config_table() has run) -- every
+# read site is a get_config(key, MODULE_CONSTANT) call, never a bare
+# table read that could silently return None.
+_REFERRAL_CONFIG_DEFAULTS = {
+    "referrer_base_bonus": REFERRER_BASE_BONUS,
+    "new_user_welcome_bonus": NEW_USER_WELCOME_BONUS,
+    "referrer_quick_action_bonus": REFERRER_QUICK_ACTION_BONUS,
+    "referral_pro_grant_days": REFERRAL_PRO_GRANT_DAYS,
+    "referral_proplus_threshold": REFERRAL_PROPLUS_THRESHOLD,
+}
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def init_referral_config_table():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS referral_config (
+            key TEXT PRIMARY KEY,
+            value INTEGER NOT NULL,
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    existing = {r["key"] for r in conn.execute("SELECT key FROM referral_config").fetchall()}
+    for key, default_value in _REFERRAL_CONFIG_DEFAULTS.items():
+        if key not in existing:
+            conn.execute(
+                "INSERT INTO referral_config (key, value) VALUES (?, ?)",
+                (key, default_value),
+            )
+    conn.commit()
+    conn.close()
+
+
+init_referral_config_table()
+
+
+def get_config(key: str) -> int:
+    """Read one referral reward number, falling back to the module-level
+    default (never None) if the table/row doesn't exist yet -- e.g. a
+    fresh DB where this module was imported before
+    init_referral_config_table() finished, or a key that predates a
+    given deploy."""
+    default = _REFERRAL_CONFIG_DEFAULTS.get(key)
+    conn = get_db()
+    try:
+        row = conn.execute("SELECT value FROM referral_config WHERE key=?", (key,)).fetchone()
+        return row["value"] if row else default
+    except Exception:
+        return default
+    finally:
+        conn.close()
+
+
+def get_all_config() -> dict:
+    return {key: get_config(key) for key in _REFERRAL_CONFIG_DEFAULTS}
+
+
+def set_config(key: str, value: int) -> dict:
+    """Admin-only write path (see api/admin.py's
+    POST /admin/referral/config/{key}) -- validates the key against the
+    known whitelist so this can't be used to inject an arbitrary new
+    row."""
+    if key not in _REFERRAL_CONFIG_DEFAULTS:
+        return {"success": False, "message": f"Unknown config key: {key}"}
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO referral_config (key, value, updated_at) VALUES (?, ?, datetime('now')) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
+        (key, value),
+    )
+    conn.commit()
+    conn.close()
+    return {"success": True, "key": key, "value": value}
 
 
 def init_referral_table():
@@ -200,16 +282,25 @@ class ReferralService:
         conn.commit()
         conn.close()
 
-        referrer_bonus = REFERRER_BASE_BONUS + (REFERRER_QUICK_ACTION_BONUS if quick_action else 0)
+        # Growth OS Phase 6: read the live admin-configurable amounts
+        # (get_config() falls back to the module constants above if the
+        # referral_config table/row is missing) rather than the bare
+        # constants directly, so an admin toggle takes effect on the very
+        # next referral with no redeploy.
+        base_bonus = get_config("referrer_base_bonus")
+        quick_bonus = get_config("referrer_quick_action_bonus")
+        welcome_bonus = get_config("new_user_welcome_bonus")
+
+        referrer_bonus = base_bonus + (quick_bonus if quick_action else 0)
         add_bonus_points(referrer_id, referrer_bonus)
-        add_bonus_points(new_user_id, NEW_USER_WELCOME_BONUS)
+        add_bonus_points(new_user_id, welcome_bonus)
 
         return {
             "success": True,
             "message": "Referral applied",
             "referrer_points": referrer_bonus,
             "referrer_quick_action_bonus": quick_action,
-            "new_user_points": NEW_USER_WELCOME_BONUS,
+            "new_user_points": welcome_bonus,
         }
 
     @staticmethod
@@ -264,10 +355,10 @@ class ReferralService:
         ).fetchone()["c"]
         conn.close()
 
-        tier = "proplus" if paid_conversions >= REFERRAL_PROPLUS_THRESHOLD else "pro"
+        tier = "proplus" if paid_conversions >= get_config("referral_proplus_threshold") else "pro"
 
         from services.points_service import grant_temp_upgrade
-        expires_at = grant_temp_upgrade(referrer_id, tier, REFERRAL_PRO_GRANT_DAYS)
+        expires_at = grant_temp_upgrade(referrer_id, tier, get_config("referral_pro_grant_days"))
 
         return {
             "success": True,
@@ -348,3 +439,54 @@ class ReferralService:
         row = conn.execute("SELECT COUNT(*) as c FROM referral_uses").fetchone()
         conn.close()
         return {"total_successful_referrals": row["c"]}
+
+    @staticmethod
+    def get_admin_dashboard(top_n: int = 20) -> dict:
+        """Growth OS Phase 6 (2026-08-04) -- admin-facing referral stats
+        dashboard (GET /admin/referral/stats). Read-only aggregate over
+        the same referrals/referral_uses tables the user-facing
+        get_stats()/get_global_stats() already use -- no new tables, no
+        new write paths, just a devrel-style rollup for the admin panel."""
+        conn = get_db()
+        try:
+            total_codes = conn.execute("SELECT COUNT(*) as c FROM referrals").fetchone()["c"]
+            total_uses = conn.execute("SELECT COUNT(*) as c FROM referral_uses").fetchone()["c"]
+            total_paid = conn.execute(
+                "SELECT COUNT(*) as c FROM referral_uses WHERE converted_paid_pro=1"
+            ).fetchone()["c"]
+
+            top_rows = conn.execute(
+                """
+                SELECT r.referral_code, r.referred_count, r.created_at, u.email
+                FROM referrals r
+                LEFT JOIN users u ON u.id = r.user_id
+                WHERE r.referred_count > 0
+                ORDER BY r.referred_count DESC
+                LIMIT ?
+                """,
+                (top_n,),
+            ).fetchall()
+            top_referrers = [
+                {
+                    "email": r["email"],
+                    "referral_code": r["referral_code"],
+                    "referred_count": r["referred_count"],
+                    "created_at": r["created_at"],
+                }
+                for r in top_rows
+            ]
+        except Exception:
+            total_codes = total_uses = total_paid = 0
+            top_referrers = []
+        finally:
+            conn.close()
+
+        return {
+            "overview": {
+                "total_codes_generated": total_codes,
+                "total_successful_referrals": total_uses,
+                "total_paid_conversions": total_paid,
+            },
+            "top_referrers": top_referrers,
+            "config": get_all_config(),
+        }

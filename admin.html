@@ -190,6 +190,7 @@
     <div class="nav-item" onclick="showPage('email')"><span class="icon">📧</span> Email Engine</div>
     <div class="nav-item" onclick="showPage('widgets')"><span class="icon">🧩</span> Widget Engine</div>
     <div class="nav-item" onclick="showPage('apiusage')"><span class="icon">🔑</span> API Usage</div>
+    <div class="nav-item" onclick="showPage('referral')"><span class="icon">🎁</span> Referral Engine</div>
 
     <div class="nav-section">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
@@ -545,6 +546,39 @@
           (not yet published to PyPI/npm -- see <code>sdk/README.md</code> for why and the current install path).
           Linked from <a href="https://www.xfinlab.com/intelligence-api.html" target="_blank" style="color:var(--accent)">intelligence-api.html</a>'s Developers section.
         </div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 6 (2026-08-04): Referral Engine polish. QR code +
+         personal link + progress UI were already shipped earlier
+         (js/nav.js's referral modal, real QR via api.qrserver.com -- not
+         fabricated). What was missing was admin visibility + control:
+         a stats dashboard (services/referral_service.py's
+         get_admin_dashboard()) and the ability to tune the 5 reward
+         numbers (points bonuses, Pro-grant days, Pro+ threshold) live via
+         the new referral_config table, instead of editing module
+         constants and redeploying. -->
+    <div class="page" id="page-referral">
+      <div class="page-title">Referral Engine</div>
+      <div class="page-sub">Referral stats + live-adjustable reward amounts (services/referral_service.py)</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Overview</span>
+          <button class="btn btn-sm btn-purple" onclick="loadReferralStats()">🔄 Refresh</button>
+        </div>
+        <div id="referralOverview"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Reward Amounts</div>
+        <div id="referralConfigForm"><div class="empty"><span class="spinner"></span></div></div>
+        <div id="referralConfigResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Top Referrers</div>
+        <div id="referralTopList"><div class="empty">Loading...</div></div>
       </div>
     </div>
 
@@ -1016,6 +1050,7 @@ function showPage(name) {
   if (name === 'email') loadEmailStats();
   if (name === 'widgets') loadWidgetStats();
   if (name === 'apiusage') loadApiUsage();
+  if (name === 'referral') loadReferralStats();
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -1259,6 +1294,85 @@ async function loadApiUsage() {
   } catch (e) {
     overviewEl.innerHTML = '<div class="empty">Connection error loading API usage</div>';
     keysEl.innerHTML = '';
+  }
+}
+
+// Growth OS Phase 6 -- Referral Engine dashboard + reward-amount toggles.
+const REFERRAL_CONFIG_LABELS = {
+  referrer_base_bonus: {label: 'Referrer base bonus', unit: 'points'},
+  new_user_welcome_bonus: {label: 'New user welcome bonus', unit: 'points'},
+  referrer_quick_action_bonus: {label: 'Referrer quick-action bonus (<=2 days old)', unit: 'points'},
+  referral_pro_grant_days: {label: 'Annual-Pro referral grant length', unit: 'days'},
+  referral_proplus_threshold: {label: 'Paid conversions needed for Pro+', unit: 'conversions'},
+};
+
+async function loadReferralStats() {
+  const overviewEl = document.getElementById('referralOverview');
+  const formEl = document.getElementById('referralConfigForm');
+  const topEl = document.getElementById('referralTopList');
+  overviewEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  formEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  topEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/referral/stats?token=${adminToken}`);
+    const data = await res.json();
+    const ov = data.overview || {};
+    overviewEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_codes_generated ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Codes generated</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_successful_referrals ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Successful referrals</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_paid_conversions ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Paid (annual-Pro) conversions</div></div>
+      </div>`;
+
+    const cfg = data.config || {};
+    formEl.innerHTML = Object.entries(REFERRAL_CONFIG_LABELS).map(([key, meta]) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:0.82rem">${meta.label}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" id="refCfg_${key}" value="${cfg[key] ?? ''}" style="width:90px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-primary,transparent);color:inherit">
+          <span style="font-size:0.72rem;color:var(--muted)">${meta.unit}</span>
+          <button class="btn btn-sm btn-purple" onclick="saveReferralConfig('${key}')">Save</button>
+        </div>
+      </div>`).join('');
+
+    const top = data.top_referrers || [];
+    topEl.innerHTML = top.length ? `
+      <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+        <thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Code</th><th style="padding:6px 8px">Referred</th>
+        </tr></thead>
+        <tbody>
+          ${top.map(r => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px">${escapeHtml(r.email || '—')}</td>
+              <td style="padding:6px 8px;font-family:monospace">${escapeHtml(r.referral_code || '')}</td>
+              <td style="padding:6px 8px"><b>${r.referred_count ?? 0}</b></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : '<div class="empty">No referrals yet</div>';
+  } catch (e) {
+    overviewEl.innerHTML = '<div class="empty">Connection error loading referral stats</div>';
+    formEl.innerHTML = '';
+    topEl.innerHTML = '';
+  }
+}
+
+async function saveReferralConfig(key) {
+  const input = document.getElementById(`refCfg_${key}`);
+  const result = document.getElementById('referralConfigResult');
+  const value = parseInt(input.value, 10);
+  if (isNaN(value) || value < 0) {
+    result.innerHTML = '<span style="color:var(--red)">Enter a valid non-negative number</span>';
+    return;
+  }
+  result.innerHTML = '<span class="spinner"></span> Saving...';
+  try {
+    const res = await fetch(`${API}/admin/referral/config/${key}?token=${adminToken}&value=${value}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ ${REFERRAL_CONFIG_LABELS[key].label} updated to ${value}</span>`;
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
   }
 }
 
