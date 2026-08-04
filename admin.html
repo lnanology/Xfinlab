@@ -1439,6 +1439,11 @@ async function loadVideoStatus() {
         </div>
         ${lr.message ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">${escapeHtml(lr.message)}</div>` : ''}
       </div>` : '<div style="margin-top:14px;font-size:0.8rem;color:var(--muted)">No generation attempts yet.</div>'}
+      ${s.output_exists ? `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <video src="${API}/video/latest" controls preload="metadata" style="width:100%;max-width:320px;border-radius:8px;display:block;margin-bottom:8px"></video>
+        <a href="${API}/video/latest" target="_blank" class="btn btn-sm btn-purple" style="text-decoration:none;display:inline-block">⬇ Open / Download Video</a>
+      </div>` : ''}
     `;
   } catch (e) {
     el.innerHTML = `<div class="empty">Connection error loading video status</div>`;
