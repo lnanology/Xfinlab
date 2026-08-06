@@ -60,6 +60,17 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 .ai-summary-box{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;line-height:1.6}
 
 .xfl-accordion{border:1px solid var(--border-color);border-radius:10px;margin-bottom:0.6rem;overflow:hidden}
+/* 2026-08-06 fix ("agent debate 的 start debate 按不出來"): js/mobile-
+   widget-dock.js docks TG/points/share/etc widgets into a solid fixed
+   bottom bar (#xflMobileDock, ~90-110px tall with the iOS safe-area
+   inset) above every accordion on this page. Opening an accordion whose
+   summary happens to sit in the lower half of the viewport reveals its
+   body -- including buttons like Start Debate -- directly into that
+   dock strip, where taps land on the dock instead of the button
+   underneath. scroll-margin-bottom reserves that same height so the
+   scrollIntoView() call below (fired on every accordion toggle) never
+   parks the newly-revealed content behind the dock. */
+@media (max-width:768px){ .xfl-accordion{ scroll-margin-bottom: 110px; } }
 .xfl-accordion summary{cursor:pointer;padding:0.8rem 1rem;font-weight:600;list-style:none;display:flex;align-items:center;justify-content:space-between;background:var(--bg-card)}
 .xfl-accordion summary::-webkit-details-marker{display:none}
 .xfl-accordion summary::after{content:'▶';font-size:0.75rem;color:var(--text-muted);transition:transform 0.15s}
@@ -1040,6 +1051,26 @@ window.addEventListener('DOMContentLoaded', () => {
     autoAttachTickerAutocomplete('#symbolInput', {multi: true});
   }
   checkDebateAvailability();
+});
+
+// 2026-08-06 fix ("agent debate 的 start debate 按不出來"): opening any
+// .xfl-accordion (Historical Analog, Scenario Lab, Agent Debate, etc.)
+// reveals its body directly below the summary the user just tapped. On
+// mobile that summary is very often already sitting in the lower part
+// of the viewport (long results page), so the newly-revealed content --
+// including buttons like "Start Debate" -- lands underneath
+// js/mobile-widget-dock.js's solid fixed-bottom widget bar, which
+// visually and interactively swallows the tap before it ever reaches
+// the real button. scrollIntoView() respects the scroll-margin-bottom
+// reserved on .xfl-accordion above, nudging the page so the opened
+// section (and anything inside it) always clears the dock.
+document.querySelectorAll('.xfl-accordion').forEach(function (acc) {
+  acc.addEventListener('toggle', function () {
+    if (!acc.open) return;
+    requestAnimationFrame(function () {
+      acc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
 });
 
 // 2026-07-18 fix: input box had no Enter-key handling at all -- had to

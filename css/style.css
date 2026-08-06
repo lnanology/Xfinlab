@@ -643,7 +643,18 @@ footer {
     max-height: 0;
     transition: max-height 0.3s ease;
     backdrop-filter: blur(20px);
-    z-index: 200;
+    /* 2026-08-06 fix ("TOPBAR滑出滑不到最後3個功能 要滑到過屏幕一半"): js/
+       mobile-widget-dock.js (task #609) docks TG/feedback/points/share/
+       free-signals/language-switcher widgets into one fixed-bottom bar,
+       #xflMobileDock, at z-index:1000 (1001 for its flyout panels) on
+       every mobile page. This dropdown's old z-index:200 sat well BELOW
+       that, so the dock bar visually and interactively covered the
+       bottom ~90-100px of the open nav panel -- exactly the last 2-3
+       links in a typical 9-13 link list -- both hiding them and eating
+       their taps. Raised above the dock (and its flyouts) so the full
+       link list is always reachable regardless of which floating
+       widgets happen to be present on a given page. */
+    z-index: 1500;
   }
 
   .nav-link {
