@@ -412,13 +412,21 @@ def _notify_free_signals_ready(today: str, cache: Dict):
         if already_sent_today(key, today):
             return
 
-        top = (cache.get("signals") or [])[:1]
-        top_ticker = top[0]["ticker"] if top else None
-        body = f"今日焦點：{top_ticker}" if top_ticker else "睇下今日邊啲資產訊號最強。"
+        # 2026-08-06 (Positioning batch, task #669): rewritten away from a
+        # single-ticker directional push ("今日焦點：{ticker}") into a
+        # neutral "today's brief is ready" notice, matching the same
+        # multi-point-brief framing used by the Telegram push (see
+        # services/telegram_push_service.py's 2026-08-06 rewrite) -- the
+        # notification itself can't fit a full brief, so instead of naming
+        # one ticker with an implied direction it just tells the user how
+        # many assets today's research watchlist covers and links to the
+        # actual multi-section market-brief.html page for the real content.
+        n = len(cache.get("signals") or [])
+        body = f"今日研究關注清單已更新，涵蓋 {n} 項資產。" if n else "今日市場情報已更新。"
         send_push_to_all({
-            "title": "🎯 XFINLAB 今日免費訊號已出爐",
+            "title": "📊 XFINLAB 每日市場情報已出爐",
             "body": body,
-            "url": "/free-signals.html",
+            "url": "/market-brief.html",
         })
         mark_sent_today(key, today)
     except Exception:

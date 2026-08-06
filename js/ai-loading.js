@@ -5,7 +5,7 @@ var e=[
   {icon:"📰",key:"ai_loading_step_news",label:"Reading News..."},
   {icon:"📈",key:"ai_loading_step_charts",label:"Scanning Charts..."},
   {icon:"🧠",key:"ai_loading_step_research",label:"Building Research..."},
-  {icon:"🎯",key:"ai_loading_step_score",label:"Calculating Decision Score..."},
+  {icon:"🎯",key:"ai_loading_step_score",label:"Calculating Research Score..."},
   {icon:"📄",key:"ai_loading_step_report",label:"Generating Final Report..."}
 ],a=0,t=null,n=0,i=!1,l=null,o=null;
 function c(){l&&l.querySelectorAll(".xfl-step").forEach(function(e){var a=parseInt(e.getAttribute("data-i"),10);e.classList.toggle("active",a===n),e.classList.toggle("done",a<n)})}

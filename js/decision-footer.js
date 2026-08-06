@@ -98,7 +98,7 @@
       if (opts.decisionScore !== null && opts.decisionScore !== undefined) {
         stats.push(
           '<div class="xfl-df-stat"><div class="xfl-df-num' + (lowConfidence ? ' xfl-df-muted' : '') + '">'
-          + opts.decisionScore + '</div><div class="xfl-df-label">Decision Score™</div></div>'
+          + opts.decisionScore + '</div><div class="xfl-df-label">Research Score™</div></div>'
         );
       }
 

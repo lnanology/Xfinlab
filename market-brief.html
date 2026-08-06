@@ -131,7 +131,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <span id="signalsDate" data-i18n="freesig_loading">載入中…</span>
     <span data-i18n="freesig_data_source">即市技術分析（真實價格數據，非AI猜測）</span>
     <button id="pushSubscribeBtn" onclick="togglePushSubscribe()" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:6px 12px;border-radius:99px;font-size:0.78rem;cursor:pointer;font-family:inherit;white-space:nowrap">
-      🔔 <span data-i18n="freesig_push_subscribe">訂閱每日提醒</span>
+      🔔 <span data-i18n="freesig_push_subscribe">訂閱每日市場情報</span>
     </button>
     <span id="emailSubForm" style="display:inline-flex;gap:6px;align-items:center">
       <input id="emailSubInput" type="email" placeholder="your@email.com" data-i18n-placeholder="freesig_email_placeholder" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:6px 10px;border-radius:99px;font-size:0.78rem;font-family:inherit;width:150px">
@@ -254,7 +254,7 @@ function updatePushButton() {
   const subscribed = window.XFLPush.isSubscribed();
   btn.querySelector('span').textContent = subscribed
     ? t('freesig_push_subscribed', '已訂閱提醒 ✓')
-    : t('freesig_push_subscribe', '訂閱每日提醒');
+    : t('freesig_push_subscribe', '訂閱每日市場情報');
 }
 
 async function togglePushSubscribe() {

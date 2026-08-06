@@ -246,7 +246,7 @@ class ReportGenerator:
 
         summary_rows = [['Metric', 'Value']]
         if decision_score is not None:
-            summary_rows.append(['Decision Score™', str(decision_score)])
+            summary_rows.append(['Research Score™', str(decision_score)])
         if confidence_pct is not None:
             summary_rows.append(['Confidence™', f"{confidence_pct}%"])
         if risk_label:
