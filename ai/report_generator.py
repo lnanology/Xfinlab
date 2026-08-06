@@ -18,6 +18,22 @@ C_SURFACE = HexColor('#0d1525')
 C_PURPLE = HexColor('#7c3aed')
 
 
+def _AI_PDF_METADATA(ticker: str) -> dict:
+    """EU AI Act Art.50(2) good-faith machine-readable marking for PDF
+    output -- see services/ai_provenance.py for the full rationale. These
+    become the PDF's Info dictionary fields (Title/Author/Subject/Keywords),
+    which any PDF metadata reader can inspect programmatically -- the
+    practical equivalent, for a static document, of the JSON provenance
+    block used on live API responses."""
+    return dict(
+        title=f"XFINLAB Investment Research Report — {ticker}",
+        author="XFINLAB AI",
+        subject="AI-generated financial research report. Not investment advice.",
+        creator="XFINLAB AI Report Generator",
+        keywords="ai-generated,xfinlab,eu-ai-act-art50-marking,not-investment-advice",
+    )
+
+
 class ReportGenerator:
     """XFINLAB Report Generator - Creates professional PDF investment reports"""
 
@@ -45,7 +61,8 @@ class ReportGenerator:
             rightMargin=20*mm,
             leftMargin=20*mm,
             topMargin=20*mm,
-            bottomMargin=20*mm
+            bottomMargin=20*mm,
+            **_AI_PDF_METADATA(ticker)
         )
 
         styles = getSampleStyleSheet()
@@ -213,7 +230,8 @@ class ReportGenerator:
 
         doc = SimpleDocTemplate(
             filename, pagesize=A4,
-            rightMargin=20*mm, leftMargin=20*mm, topMargin=20*mm, bottomMargin=20*mm
+            rightMargin=20*mm, leftMargin=20*mm, topMargin=20*mm, bottomMargin=20*mm,
+            **_AI_PDF_METADATA(ticker)
         )
         styles = getSampleStyleSheet()
         story = []
@@ -231,7 +249,7 @@ class ReportGenerator:
             fontSize=8, fontName='Helvetica', textColor=C_MUTED, spaceAfter=4)
 
         story.append(Paragraph("XFINLAB", title_style))
-        story.append(Paragraph(f"Decision Report — {ticker}", subtitle_style))
+        story.append(Paragraph(f"Investment Research Report — {ticker}", subtitle_style))
         story.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y %H:%M')}", muted_style))
         story.append(HRFlowable(width="100%", thickness=1, color=C_ACCENT, spaceAfter=20))
 

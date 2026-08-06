@@ -10,6 +10,11 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from services.request_ip import get_client_ip
 from services.safe_json import SafeJSONResponse
+from services.ai_provenance import (
+    is_ai_content_route,
+    MARKING_HEADER_NAME,
+    MARKING_HEADER_VALUE,
+)
 from api.market import router as market_router
 from api.analyze import router as analyze_router
 from api.event import router as event_router
@@ -148,6 +153,19 @@ async def add_security_headers(request: Request, call_next):
         response.headers.setdefault(
             "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
         )
+    return response
+
+
+# EU AI Act Article 50(2) good-faith machine-readable marking (see
+# services/ai_provenance.py for the full rationale + deadline context).
+# Applies only to the explicit allow-list of AI-content-generating routes so
+# purely mechanical endpoints (auth/quota/points/push/watchlist CRUD etc.)
+# don't carry a misleading "AI-generated" marker.
+@app.middleware("http")
+async def add_ai_content_marking(request: Request, call_next):
+    response = await call_next(request)
+    if is_ai_content_route(request.url.path):
+        response.headers.setdefault(MARKING_HEADER_NAME, MARKING_HEADER_VALUE)
     return response
 
 

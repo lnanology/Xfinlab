@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from ai.ai_router import get_ai_response_with_escalation
 from services.i18n import ai_language_instruction
 from services.ticker_shorthand import build_context_note
+from services.ai_provenance import ai_provenance
 
 router = APIRouter()
 
@@ -179,6 +180,11 @@ async def chat(body: dict):
             "status": "ok",
             "answer": answer,
             "conversation_id": conversation_id,
+            # EU AI Act Art.50(2) machine-readable marking -- see
+            # services/ai_provenance.py. Only on the real-answer path: the
+            # except-branch below returns a static fallback string, which
+            # isn't itself AI-generated content.
+            "_ai_provenance": ai_provenance("XFINLAB Research Copilot"),
         }
     except Exception:
         return {
