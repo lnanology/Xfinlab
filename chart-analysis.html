@@ -1386,15 +1386,39 @@ async function requestBacktestCompare(){
       throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
     }
     const data = json.data;
+    // 2026-08-06 fix ("以下的地方顯示語言不一至...勝率 56.2%（16次交易）·
+    // 平均回報 3.22% · 最大回撤 14.04%"): this row template hardcoded raw
+    // Traditional/Cantonese Chinese regardless of UI language -- backend
+    // stats (win_rate_pct/trade_count/avg_return_pct/max_drawdown_pct) are
+    // plain numbers, so building the sentence here with a translated
+    // template (ca_bt_stats_line, 47 languages) instead of relying on any
+    // backend-supplied Chinese text.
     const rows = (data.strategies || []).map(s => {
       const label = btStrategyLabel(s.strategy);
       const st = s.stats || {};
       if(st.trade_count === 0){
-        return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">${st.note || '冇觸發交易訊號'}</div></div>`;
+        return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">${t('ca_bt_no_trades','回測期間冇觸發任何交易訊號，無法計算統計數字。')}</div></div>`;
       }
-      return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">勝率 ${st.win_rate_pct}%（${st.trade_count}次交易）· 平均回報 ${st.avg_return_pct}% · 最大回撤 ${st.max_drawdown_pct}%</div></div>`;
+      const statsLine = t('ca_bt_stats_line','勝率 {rate}%（{count}次交易）· 平均回報 {return}% · 最大回撤 {drawdown}%')
+        .replace('{rate}', st.win_rate_pct).replace('{count}', st.trade_count)
+        .replace('{return}', st.avg_return_pct).replace('{drawdown}', st.max_drawdown_pct);
+      return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">${statsLine}</div></div>`;
     }).join('');
     const caveats = (data.strategies && data.strategies[0] && data.strategies[0].caveats) || [];
+    // The backend (services/backtest_service.py) returns disclaimer/
+    // caveats as fixed, hardcoded Chinese sentences with no lang param --
+    // map the exact raw strings to translated keys here, same pattern as
+    // this page's existing VOLATILITY_KEYS/PULSE_LABEL_KEYS-style lookups.
+    const BT_DISCLAIMER_KEYS = {
+      '以上排名純粹基於歷史回測勝率排序，並非投資建議，亦不保證未來表現。': 'ca_bt_disclaimer',
+    };
+    const BT_CAVEAT_KEYS = {
+      '未計入手續費/滑點，實際表現會較差。': 'ca_bt_caveat_fees',
+      '支撐/阻力型訊號（依賴未來K棒確認嘅fractal swing point）刻意冇加入呢個回測，避免未來數據滲入歷史判斷。': 'ca_bt_caveat_sr_excluded',
+      '細樣本（交易次數少）嘅勝率統計學上唔可靠，請留意 stats.trade_count。': 'ca_bt_caveat_small_sample',
+      '過去表現不代表未來結果，呢個唔係投資建議。': 'ca_bt_caveat_no_advice',
+    };
+    function trBtText(raw, map){ const key = map[raw]; return key ? t(key, raw) : raw; }
 
     // 2026-07-20: this info (how much real history the backtest above
     // actually used) existed in the API response all along but was never
@@ -1419,8 +1443,8 @@ async function requestBacktestCompare(){
 
     out.innerHTML = `<div class="upload-hint" style="margin-bottom:0.5rem">${rangeLine}</div>`
       + rows
-      + `<div class="upload-hint" style="margin-top:0.6rem">${data.disclaimer || ''}</div>`
-      + (caveats.length ? `<div class="upload-hint" style="margin-top:0.3rem">${caveats.join(' ')}</div>` : '');
+      + `<div class="upload-hint" style="margin-top:0.6rem">${trBtText(data.disclaimer || '', BT_DISCLAIMER_KEYS)}</div>`
+      + (caveats.length ? `<div class="upload-hint" style="margin-top:0.3rem">${caveats.map(c => trBtText(c, BT_CAVEAT_KEYS)).join(' ')}</div>` : '');
   } catch (err) {
     out.innerHTML = `<div class="upload-hint">${t('ca_backtest_fail','策略回測查詢失敗，請重試')}</div>`;
   } finally {
