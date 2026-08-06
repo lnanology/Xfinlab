@@ -47,6 +47,20 @@ _PULSE_LABELS = {
     "SPY": "美股大盤", "QQQ": "科技股", "DIA": "道瓊工業", "IWM": "小型股",
     "XLK": "科技板塊", "XLF": "金融板塊", "XLE": "能源板塊", "BTC-USD": "加密貨幣",
 }
+# NOTE (2026-08-06 investigation, "首頁有語言不一至...Top Risk：能源板塊
+# (XLE)"): these labels are deliberately Chinese-only and this endpoint
+# deliberately takes no `lang` param. index.html's PULSE_LABEL_KEYS/
+# trPulseLabel() (see the 2026-07-25 fix comment there) is the established
+# site-wide pattern for this exact basket -- it maps every raw Chinese label
+# string this dict can produce to an i18n key already translated across all
+# 47 languages, and every OTHER consumer of `.label` on the homepage
+# (pulseGrid cards, Top Opportunity, the 9-category board) already calls
+# trPulseLabel() before rendering. The actual bug was that the "Today's AI
+# Outlook" bottomEl/"Top Risk" line was the one place that rendered
+# `data.bottom_sector.label` raw instead of through trPulseLabel() -- fixed
+# in index.html's loadMarketPulse(), not here. Adding a second, backend-side
+# English-only translation path here would fork this into two competing
+# translation mechanisms for the same data.
 
 _CACHE_TTL_SECONDS = 300
 _cache: Optional[Dict] = None

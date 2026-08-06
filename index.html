@@ -1342,7 +1342,7 @@ async function loadMarketPulse() {
     const overallEl = document.getElementById('pulseOverall');
     if (overallEl) {
       const _overallConf = (data.confidence_pct != null && typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(data.confidence_pct, 'pulse-overall') : data.confidence_pct;
-      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · Confidence ${_overallConf != null ? _overallConf + '%' : '--'} · ${trVolatility(data.volatility_desc)}`;
+      overallEl.innerHTML = `${t('idx_pulse_overall_label','整體：')}<strong>${trDirection(data.overall_sentiment)}</strong> · ${t('freesig_confidence_label','Confidence')} ${_overallConf != null ? _overallConf + '%' : '--'} · ${trVolatility(data.volatility_desc)}`;
       // 2026-07-19 fix: this element keeps its static data-i18n="outlook_loading"
       // attribute even after we overwrite its innerHTML with real data --
       // I18N.apply() only looks at the attribute, not at whether the
@@ -1360,7 +1360,18 @@ async function loadMarketPulse() {
     const bottomEl = document.getElementById('pulseBottom');
     if (bottomEl) {
       if (data.bottom_sector) {
-        bottomEl.innerHTML = `<svg viewBox="0 0 24 24" width="0.9em" height="0.9em" style="vertical-align:-0.1em" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21.5 20a1 1 0 0 1-.87 1.5H3.37A1 1 0 0 1 2.5 20L12 3.5z"/><line x1="12" y1="9" x2="12" y2="13.5"/><circle cx="12" cy="16.8" r="0.9" fill="var(--amber)" stroke="none"/></svg> ${t('idx_pulse_top_risk','Top Risk')}：<strong>${data.bottom_sector.label}（${data.bottom_sector.ticker}）</strong> · ${trDirection(data.bottom_sector.confluence_direction)}`;
+        // 2026-08-06 fix ("首頁有語言不一至...Top Risk：能源板塊（XLE）"):
+        // this was the one place on the homepage that rendered
+        // `.label` raw instead of through trPulseLabel() -- every other
+        // consumer (pulseGrid cards, Top Opportunity, the 9-category
+        // board, all below) already wraps it, which is why only this
+        // "Top Risk" line leaked a raw Chinese sector name into English
+        // UI mode. Also: idx_pulse_top_risk now bakes in the right-
+        // language colon itself (matching idx_pulse_overall_label's
+        // convention, so 47/47 languages get the correct colon style
+        // instead of a hardcoded full-width "：" appended after
+        // whatever language t() returned).
+        bottomEl.innerHTML = `<svg viewBox="0 0 24 24" width="0.9em" height="0.9em" style="vertical-align:-0.1em" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21.5 20a1 1 0 0 1-.87 1.5H3.37A1 1 0 0 1 2.5 20L12 3.5z"/><line x1="12" y1="9" x2="12" y2="13.5"/><circle cx="12" cy="16.8" r="0.9" fill="var(--amber)" stroke="none"/></svg> ${t('idx_pulse_top_risk','Top Risk: ')}<strong>${trPulseLabel(data.bottom_sector.label)}（${data.bottom_sector.ticker}）</strong> · ${trDirection(data.bottom_sector.confluence_direction)}`;
         bottomEl.style.display = 'block';
       } else {
         bottomEl.style.display = 'none';
