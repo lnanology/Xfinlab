@@ -80,7 +80,7 @@ class ReportGenerator:
         story.append(HRFlowable(width="100%", thickness=1, color=C_ACCENT, spaceAfter=20))
 
         # ── Score Summary Table ──────────────────────────
-        story.append(Paragraph("INVESTMENT SCORES", section_style))
+        story.append(Paragraph("RESEARCH SCORES", section_style))
 
         final_score = analysis.get('final_score', 0)
         rating = analysis.get('rating', research.get('ai_recommendation', 'N/A'))
