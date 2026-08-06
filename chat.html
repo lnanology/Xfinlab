@@ -750,7 +750,12 @@ const TERM_LIST = [
   // vocabulary. Chinese variants added too since the site's own nav links
   // use these Chinese labels (see resolveNavTarget() below, which already
   // recognizes both phrasings for the numbered-options-card flow).
-  'Free Signals', 'AI Analysis', 'Chart Analysis', 'AI市場分析', 'K線分析', '免費信號'
+  'Free Signals', 'AI Analysis', 'Chart Analysis', 'AI市場分析', 'K線分析', '免費信號',
+  // 2026-08-06 (Positioning batch, task #663): Free Signals renamed to
+  // Market Brief site-wide (see /market-brief.html). Old terms kept above
+  // so cached/older chat history still linkifies; new terms added here so
+  // the model's fresh replies (which now say "Market Brief") also work.
+  'Market Brief', '市場快訊'
 ];
 
 // 2026-07-27 fix ("以下字或相關字句要導航可搜 要跟全語言"): the TERM_LIST
@@ -963,7 +968,7 @@ function escAttr(s) {
 // "短線/長線" style questions, etc) is unaffected and still uses the
 // existing sendQuick() behaviour.
 function resolveNavTarget(label) {
-  if (/free\s*signals|免費(?:信|訊)號/i.test(label)) return 'free-signals.html';
+  if (/market\s*brief|市場快訊|free\s*signals|免費(?:信|訊)號/i.test(label)) return 'market-brief.html';
   if (/chart\s*analysis|圖表分析|k線分析/i.test(label)) return 'chart-analysis.html';
   if (/ai\s*analysis|ai\s*市場分析|ai\s*分析/i.test(label)) return 'ai-analysis.html';
   return null;

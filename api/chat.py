@@ -55,12 +55,16 @@ async def chat(body: dict):
     # cards; the honesty redirect below is now phrased as exactly that kind
     # of list, in the model's OWN language, so the redirect becomes 3
     # clickable cards instead of a wall of prose. chat.html's
-    # resolveNavTarget() recognizes "Free Signals"/"AI Analysis"/"Chart
+    # resolveNavTarget() recognizes "Market Brief"/"AI Analysis"/"Chart
     # Analysis" by name and routes those specific cards to the real page
     # instead of re-asking the same question in chat -- so the model should
     # keep using those exact English feature names (never translate/rename
     # them) even when the rest of its answer is in another language.
-    NAV_CARD_NAMES = "Free Signals、AI Analysis、Chart Analysis"
+    # 2026-08-06 (Positioning batch, task #663): "Free Signals" renamed to
+    # "Market Brief" site-wide (free-signals.html -> market-brief.html) --
+    # chat.html's resolveNavTarget() still recognizes the old name too, but
+    # the model should say the new one going forward.
+    NAV_CARD_NAMES = "Market Brief、AI Analysis、Chart Analysis"
 
     # 2026-07-23 fix ("打口語唔得...可以做到好似CLAUDE咁嗎", then "口語同俚語
     # 全世界都要加入"): the old prompt (a) told the model to steer any
@@ -94,7 +98,7 @@ async def chat(body: dict):
         "要老實話畀用戶知你冇即時數據；跟住用返用戶自己嗰種語言，"
         "以編號列表形式（1. 2. 3.）畀返最多3個選擇，叫佢去下面3個真係接返即市數據嘅功能度睇實際數字——"
         f"呢3個功能嘅名一定要原字照用（唔好翻譯/改寫/加多餘字）：{NAV_CARD_NAMES}，例如：\n"
-        "1. 去 Free Signals 睇每日免費即市信號\n"
+        "1. 去 Market Brief 睇每日市場摘要\n"
         "2. 去 AI Analysis 做完整技術分析\n"
         "3. 去 Chart Analysis 睇即時K線走勢\n"
         "（呢個列表格式好緊要，因為前端會將呢啲編號選項自動變成可以直接撳入去嗰功能嘅卡片，"
@@ -122,6 +126,20 @@ async def chat(body: dict):
         "呢類直接嘅買賣指令字眼，改用中性描述（例如「數據偏向睇好」「訊號偏向睇淡」「市場情緒中性」）"
         "去形容你觀察到嘅市場狀況，並喺相關回答入面提提用戶呢啲係資訊整理，實際投資決定要自己諗清楚"
         "或者請教持牌財務顧問。"
+        # 2026-08-06 (Positioning batch, task #663): SEC "Publisher
+        # Exclusion" (Investment Advisers Act SS202(a)(11)(D)) requires
+        # research content to be impersonal/non-tailored to stay outside
+        # investment-adviser regulation -- this instruction keeps the
+        # model's OUTPUT structure (not just wording) consistent with that:
+        # same objective analysis for a given asset regardless of who's
+        # asking, never a plan customized to one user's personal portfolio/
+        # holdings/risk profile (unless the user is explicitly running a
+        # hypothetical/educational scenario with numbers they typed in).
+        "同時要留意：你嘅分析係客觀、一般性嘅市場研究，唔係為個別用戶度身訂造嘅財務規劃——"
+        "同一個資產，唔同用戶問都應該攞到同一套客觀分析，唔好因為用戶提過自己嘅財務狀況、"
+        "風險承受能力或者持倉就將分析包裝成「為你度身」嘅個人化建議；"
+        "如果用戶純粹係想拎自己嘅數字做假設性情境試算（例如「如果我有10萬蚊分配落AAPL會點」），"
+        "可以照計，但要講清楚呢個係基於佢提供數字嘅假設性教育示範，唔係實際理財建議。"
         f"{history_text}\n\n{context_note}用戶問題：{query}"
     )
 

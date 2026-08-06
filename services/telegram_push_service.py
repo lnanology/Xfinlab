@@ -96,6 +96,19 @@ def send_telegram_message(chat_id: str, text: str, parse_mode: str = "Markdown")
         return False
 
 
+# 2026-08-06 (Positioning batch, task #666): rewrote this from a
+# single-ticker "🚀 BUY NVDA"-style signal list into a multi-point
+# aggregated research brief, per the corrected Paddle-compliance read:
+# Bloomberg's "Five Things You Need to Know" and Morningstar's daily
+# note are automatic daily pushes too (industry-standard, not itself
+# risky) -- what actually distinguishes a regulated "signal service"
+# is CONTENT FORMAT (one ticker + a direct buy/sell command) vs. a
+# section-headed brief with a Research Score + bias per line, an
+# educational note, and an explicit disclaimer. This keeps the exact
+# same underlying data (still the real confluence engine output, no
+# new fabricated fields) -- only the framing/labels/section structure
+# changed, so it stays honest about what it actually is: a formula-
+# derived reference score, not a personalized trade instruction.
 def _fmt_signal_line(sig: dict, lang: str) -> str:
     ticker = sig.get("ticker", "?")
     raw_label = sig.get("label") or sig.get("asset_class_label") or ""
@@ -111,30 +124,69 @@ def _fmt_signal_line(sig: dict, lang: str) -> str:
     dir_emoji = "🟢" if raw_direction == "偏多" else ("🔴" if raw_direction == "偏空" else "⚪")
     label = _tr(raw_label, _LABEL_KEYS, lang)
     direction = _tr(raw_direction, _DIRECTION_KEYS, lang)
-    return f"{dir_emoji} *{ticker}* {label} — {direction} ({conf_str})"
+    score_word = {"zh": "研究評分", "es": "Puntuación"}.get(lang, "Research Score")
+    return f"{dir_emoji} *{ticker}* {label} — {score_word} {conf_str} ({direction})"
+
+
+_WATCHLIST_HEADER = {
+    "en": "📋 *Today's Research Watchlist*",
+    "zh": "📋 *今日研究關注清單*",
+    "es": "📋 *Lista de Investigación de Hoy*",
+}
+_INSIGHT_HEADER = {
+    "en": "💡 *Research Insight*",
+    "zh": "💡 *研究洞察*",
+    "es": "💡 *Perspectiva de Investigación*",
+}
+_NO_SIGNALS = {
+    "en": "No standout research items today.",
+    "zh": "今日暫無突出研究項目。",
+    "es": "Hoy no hay elementos de investigación destacados.",
+}
+_INSIGHT_TEMPLATE = {
+    "en": "Today's highest-confidence read is {ticker} ({label}) at {conf}% via XFINLAB's multi-factor confluence model (trend + risk + news sentiment). This reflects current data patterns, not a guarantee of future price direction.",
+    "zh": "今日信心度最高嘅係 {ticker}（{label}），透過XFINLAB多因子綜合模型（趨勢+風險+新聞情緒）得出 {conf}%。呢個反映現時數據形態，並非對未來走勢嘅保證。",
+    "es": "La lectura de mayor confianza hoy es {ticker} ({label}) con {conf}% según el modelo multifactorial de XFINLAB (tendencia + riesgo + sentimiento de noticias). Esto refleja patrones de datos actuales, no una garantía de la dirección futura del precio.",
+}
+_DISCLAIMER = {
+    "en": "⚠️ Research information only. Not investment advice. Final decisions remain with the investor.",
+    "zh": "⚠️ 僅供研究參考，不構成投資建議。最終投資決定權在於閣下本人。",
+    "es": "⚠️ Solo información de investigación. No es asesoría de inversión. La decisión final es del inversor.",
+}
+_FULL_RESEARCH_LABEL = {"en": "Full research", "zh": "完整研究", "es": "Investigación completa"}
 
 
 def _build_message(cache: dict, lang: str) -> str:
     signals = (cache.get("signals") or [])[:5]
     date_str = cache.get("date", "")
     lines = [_fmt_signal_line(s, lang) for s in signals]
-    body = "\n".join(lines) if lines else {
-        "en": "No strong signals today.",
-        "zh": "今日暫無強烈訊號。",
-        "es": "Hoy no hay señales fuertes.",
-    }.get(lang, "No strong signals today.")
+    body = "\n".join(lines) if lines else _NO_SIGNALS.get(lang, _NO_SIGNALS["en"])
 
-    if lang == "zh":
-        header = f"🎯 *XFINLAB 每日免費訊號* — {date_str}\n\n"
-        footer = "\n\n免費完整分析: https://www.xfinlab.com/free-signals.html\n⚠️ 僅供參考，不構成投資建議。"
-    elif lang == "es":
-        header = f"🎯 *Señales Diarias Gratuitas de XFINLAB* — {date_str}\n\n"
-        footer = "\n\nAnálisis completo gratis: https://www.xfinlab.com/free-signals.html\n⚠️ Solo con fines informativos, no es asesoría de inversión."
-    else:
-        header = f"🎯 *XFINLAB Daily Free Signals* — {date_str}\n\n"
-        footer = "\n\nFull free analysis: https://www.xfinlab.com/free-signals.html\n⚠️ For informational purposes only, not investment advice."
+    insight = ""
+    if signals:
+        top = max(signals, key=lambda s: s.get("confluence_confidence_pct") or 0)
+        top_label = _tr(top.get("label") or top.get("asset_class_label") or "", _LABEL_KEYS, lang)
+        top_conf = top.get("confluence_confidence_pct")
+        if top_conf is not None:
+            insight = _INSIGHT_TEMPLATE.get(lang, _INSIGHT_TEMPLATE["en"]).format(
+                ticker=top.get("ticker", "?"), label=top_label, conf=top_conf
+            )
 
-    return header + body + footer
+    title = {"zh": "XFINLAB 每日市場情報", "es": "Inteligencia de Mercado Diaria XFINLAB"}.get(
+        lang, "XFINLAB Daily Market Intelligence"
+    )
+    header = f"📊 *{title}* — {date_str}\n\n"
+    sections = [f"{_WATCHLIST_HEADER.get(lang, _WATCHLIST_HEADER['en'])}\n{body}"]
+    if insight:
+        sections.append(f"{_INSIGHT_HEADER.get(lang, _INSIGHT_HEADER['en'])}\n{insight}")
+
+    full_research = _FULL_RESEARCH_LABEL.get(lang, _FULL_RESEARCH_LABEL["en"])
+    footer = (
+        f"\n\n{full_research}: https://www.xfinlab.com/market-brief.html"
+        f"\n{_DISCLAIMER.get(lang, _DISCLAIMER['en'])}"
+    )
+
+    return header + "\n\n".join(sections) + footer
 
 
 def push_daily_signals_to_telegram(cache: dict):

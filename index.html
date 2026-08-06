@@ -16,7 +16,7 @@
      framing (payment-processor compliance batch; see engines/scoring_engine.py
      and api/ai_analysis.py for the matching BUY/SELL -> Bullish/Bearish fix). -->
 <title>XFINLAB — AI Market Data & Analytics</title>
-<meta name="description" content="XFINLAB：機構級AI市場數據分析平台。Decision Score™、Confidence™、RiskDNA™ —— 用真實市場數據為股票、ETF同加密貨幣提供AI數據分析。">
+<meta name="description" content="XFINLAB：機構級AI投資研究平台。Research Score™、Confidence™、RiskDNA™ —— 用真實市場數據為股票、ETF同加密貨幣提供AI研究分析。">
 <link rel="canonical" href="https://www.xfinlab.com/">
 <!-- hreflang alternates (auto-generated, see gen_lang_pages.py) -->
 <link rel="alternate" hreflang="en" href="https://www.xfinlab.com/">
@@ -55,7 +55,7 @@
   "url": "https://www.xfinlab.com/",
   "logo": "https://www.xfinlab.com/img/logo-mark-512.png",
   "image": "https://www.xfinlab.com/img/logo-mark-512.png",
-  "description": "XFINLAB是機構級AI市場數據分析平台，提供Decision Score、Confidence、RiskDNA等真實市場數據驅動嘅AI數據分析，涵蓋股票、ETF同加密貨幣。",
+  "description": "XFINLAB是機構級AI投資研究平台，提供Research Score、Confidence、RiskDNA等真實市場數據驅動嘅AI研究分析，涵蓋股票、ETF同加密貨幣。",
   "sameAs": [
     "https://t.me/xfinlab_daily",
     "https://t.me/xfinlab_zh",
@@ -681,7 +681,7 @@
      一樣用真實Confluence Engine計，唔係AI估。放喺Outlook上面，等訪客
      一開始就見到「而家邊隻最強」。 -->
 <div class="top-opp-section">
-  <div class="section-label topopp-label" data-i18n="topopp_label">🏆 Top Opportunity</div>
+  <div class="section-label topopp-label" data-i18n="topopp_label">🏆 Today's Research Highlights</div>
   <div class="top-opp-grid" id="topOppGrid">
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
@@ -836,12 +836,12 @@
     <div class="faq-a" data-i18n="faq3_a">Today's AI Outlook同各Engine™每次查詢都用即市數據；首頁市場脈搏每5分鐘更新一次。</div>
   </div>
   <div class="faq-item">
-    <div class="faq-q" data-i18n="faq4_q">AI如何分析？Decision Score™點計出嚟？</div>
-    <div class="faq-a" data-i18n="faq4_a">每個Engine™嘅數值指標（趨勢/RSI/MACD/支撐阻力）100%基於真實數據計算；AI負責型態辨識同文字解讀。Decision Score™係將多個真實訊號嘅一致程度轉化做0-100分，僅供參考，唔構成投資建議。</div>
+    <div class="faq-q" data-i18n="faq4_q">AI如何分析？Research Score™點計出嚟？</div>
+    <div class="faq-a" data-i18n="faq4_a">每個Engine™嘅數值指標（趨勢/RSI/MACD/支撐阻力）100%基於真實數據計算；AI負責型態辨識同文字解讀。Research Score™係將多個真實技術因子嘅一致程度轉化做0-100分，僅供研究參考，唔構成投資建議。詳見<a href="methodology.html">Methodology</a>。</div>
   </div>
   <div class="faq-item">
     <div class="faq-q" data-i18n="faq5_q">會唔會直接推薦邊隻股票買賣？</div>
-    <div class="faq-a" data-i18n="faq5_a">唔會。XFINLAB提供Decision Score™同分析參考，最終買賣決定由你自己判斷同承擔。</div>
+    <div class="faq-a" data-i18n="faq5_a">唔會。XFINLAB提供Research Score™同分析參考，最終買賣決定由你自己判斷同承擔。</div>
   </div>
   <div class="faq-item">
     <div class="faq-q" data-i18n="faq6_q">有冇免費版？</div>
@@ -1134,7 +1134,7 @@ function renderHeroItem(data) {
     <div class="ai-result-score-row">
       <div>
         <div class="ai-result-score">${data.decision_score}</div>
-        <div class="ai-result-score-label">Decision Score™</div>
+        <div class="ai-result-score-label">Research Score™</div>
       </div>
       <div class="ai-result-dir ${dirClass}">${data.direction}</div>
     </div>
