@@ -64,14 +64,31 @@ class TechnicalAnalysisService:
         symbol: str,
         period: str = "6mo",
         interval: str = "1d",
+        lang: Optional[str] = None,
     ) -> Dict:
+        # 2026-08-08 fix ("3481.TW 歷史數據不足，無法計算技術指標" showing
+        # in English UI mode): these 2 early-return error strings sit
+        # BEFORE translate_technical_analysis() runs, and that function
+        # explicitly skips any dict with an "error" key (see its docstring
+        # below) -- so this Cantonese text reached api/ai_analysis.py's
+        # data_warning (and ai-analysis.html's warning box) completely
+        # unconditionally, regardless of the site's selected language.
+        # Mirrors the exact _t(key, fallback) + get_translations(lang)
+        # pattern services/historical_analog_service.py already uses for
+        # its own near-identical "insufficient historical data" message.
+        is_zh_default = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
+        tr = None if is_zh_default else get_translations(lang)
+
+        def _t(key, fallback):
+            return tr.get(key, fallback) if tr else fallback
+
         try:
             df = self._fetch_history(symbol, period, interval)
         except Exception as e:
-            return {"error": f"攞唔到 {symbol} 嘅歷史數據：{str(e)}"}
+            return {"error": _t("ts_err_fetch", "攞唔到 {symbol} 嘅歷史數據：{error}").format(symbol=symbol, error=str(e))}
 
         if df is None or df.empty or len(df) < 20:
-            return {"error": f"{symbol} 歷史數據不足，無法計算技術指標"}
+            return {"error": _t("ts_err_insufficient", "{symbol} 歷史數據不足，無法計算技術指標").format(symbol=symbol)}
 
         df = df.dropna()
         closes = df["Close"]
@@ -1331,7 +1348,7 @@ def translate_technical_analysis(tech: Dict, lang: Optional[str]) -> Dict:
 def get_technical_analysis(
     symbol: str, period: str = "6mo", interval: str = "1d", lang: Optional[str] = None
 ) -> Dict:
-    tech = technical_service.get_analysis(symbol, period, interval)
+    tech = technical_service.get_analysis(symbol, period, interval, lang=lang)
     is_zh_or_none = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
     if is_zh_or_none or not tech or "error" in tech:
         return tech
@@ -1369,7 +1386,7 @@ def get_technical_analysis_raw_and_translated(
     fetch, so using both costs nothing extra over calling
     get_technical_analysis() alone.
     """
-    raw = technical_service.get_analysis(symbol, period, interval)
+    raw = technical_service.get_analysis(symbol, period, interval, lang=lang)
     is_zh_or_none = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
     if is_zh_or_none or not raw or "error" in raw:
         return raw, raw

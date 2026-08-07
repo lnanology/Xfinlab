@@ -38,7 +38,18 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
 .footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
 
-@media(max-width:768px){.prob-section{flex-direction:column}}
+/* 2026-08-08 fix ("字跟% 沒在一起 分開了"): flex-direction:column made
+   the label/bar/percentage stack in three separate lines on mobile,
+   visually detaching each label (e.g. "Bullish Probability") from its
+   own percentage (e.g. "15%") with the full-width bar wedged between
+   them. Now label+percentage stay on one row (bar wraps to its own
+   full-width row below), so the number sits right next to its label. */
+@media(max-width:768px){
+  .prob-section{flex-wrap:wrap;row-gap:0.3rem}
+  .prob-label{width:auto;flex:1;text-align:left;order:1}
+  .prob-pct{order:2;width:auto!important}
+  .prob-bar{order:3;flex-basis:100%;width:100%}
+}
 
 /* ---- Layered-UX pass (2026-07-18) ---- */
 .hero-card{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:1.4rem 1.6rem;margin-bottom:1rem}
@@ -230,17 +241,17 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
         <div class="prob-section">
           <div class="prob-label" data-i18n="aa_bull_label">偏多機率</div>
           <div class="prob-bar"><div id="bullFill" class="prob-fill bull" style="width:0%"></div></div>
-          <div style="width:60px;text-align:right;color:var(--text2)" id="bullPct">-</div>
+          <div class="prob-pct" style="width:60px;text-align:right;color:var(--text2)" id="bullPct">-</div>
         </div>
         <div class="prob-section">
           <div class="prob-label" data-i18n="aa_flat_label">盤整機率</div>
           <div class="prob-bar"><div id="flatFill" class="prob-fill flat" style="width:0%"></div></div>
-          <div style="width:60px;text-align:right;color:var(--text2)" id="flatPct">-</div>
+          <div class="prob-pct" style="width:60px;text-align:right;color:var(--text2)" id="flatPct">-</div>
         </div>
         <div class="prob-section">
           <div class="prob-label" data-i18n="aa_bear_label">偏空機率</div>
           <div class="prob-bar"><div id="bearFill" class="prob-fill bear" style="width:0%"></div></div>
-          <div style="width:60px;text-align:right;color:var(--text2)" id="bearPct">-</div>
+          <div class="prob-pct" style="width:60px;text-align:right;color:var(--text2)" id="bearPct">-</div>
         </div>
       </div>
     </details>
@@ -350,18 +361,18 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 
     <!-- Quick actions -->
     <div class="quick-actions" id="quickActions" style="display:none">
-      <a id="qaCompare" href="#">🆚 比較其他資產</a>
-      <button id="qaWatchlist" type="button">☆ 加入Watchlist</button>
-      <button id="qaJournal" type="button">📓 加入Decision Journal</button>
+      <a id="qaCompare" href="#" data-i18n="aa_qa_compare">🆚 比較其他資產</a>
+      <button id="qaWatchlist" type="button" data-i18n="aa_qa_watchlist">☆ 加入Watchlist</button>
+      <button id="qaJournal" type="button" data-i18n="aa_qa_journal">📓 加入Decision Journal</button>
       <button id="qaDownloadReport" type="button" data-i18n="report_download_pdf">📄 下載 PDF 報告</button>
-      <a href="market-brief.html">🔔 設定Alert</a>
+      <a href="market-brief.html" data-i18n="aa_qa_alert">🔔 設定Alert</a>
       <!-- 2026-07-25 ("唔明？直接問AI"): a low-friction fallback for anyone
            who read the result above but doesn't know what to do with it --
            hands the ticker + rating straight to chat.html's existing
            ?q= auto-send (see chat.html's DOMContentLoaded handler), so
            the question lands already loaded with context instead of the
            user having to re-type the ticker from scratch in a blank chat. -->
-      <a id="qaAskAi" href="chat.html">🤖 唔明？直接問AI</a>
+      <a id="qaAskAi" href="chat.html" data-i18n="aa_qa_ask_ai">🤖 唔明？直接問AI</a>
     </div>
   </div>
 
@@ -799,7 +810,7 @@ async function runAnalysis(){
       const qaJournal = document.getElementById('qaJournal');
       qaJournal.onclick = async () => {
         const journalToken = localStorage.getItem('xfinlab_token');
-        if (!journalToken) { alert('請先登入先可以用Decision Journal'); return; }
+        if (!journalToken) { alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_journal_login_required'])||'Please log in first to use Decision Journal'); return; }
         try {
           await fetch(`${API_BASE}/api/decision-journal/add/${encodeURIComponent(symbols[0])}?token=${encodeURIComponent(journalToken)}`, {
             method: 'POST',
@@ -813,7 +824,7 @@ async function runAnalysis(){
               snapshot: { dashboard: dash, regime: data.regime, scenario: scen }
             })
           });
-          qaJournal.textContent = '✅ 已加入Journal';
+          qaJournal.textContent = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_journal_added'])||'✅ Added to Journal';
         } catch (e) {
           console.error(e);
         }
@@ -906,7 +917,7 @@ async function runAnalysis(){
         qaDownloadReport.onclick = async () => {
           const originalText = qaDownloadReport.textContent;
           qaDownloadReport.disabled = true;
-          qaDownloadReport.textContent = '⏳ 生成緊...';
+          qaDownloadReport.textContent = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_report_generating'])||'⏳ Generating...';
           try {
             const reportToken = localStorage.getItem('xfinlab_token') || '';
             const resp = await fetch(`${API_BASE}/api/report/generate${reportToken ? '?token=' + encodeURIComponent(reportToken) : ''}`, {
@@ -936,7 +947,7 @@ async function runAnalysis(){
             URL.revokeObjectURL(url);
           } catch (e) {
             console.error(e);
-            alert('報告生成失敗，請稍後再試');
+            alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_report_gen_fail'])||'Report generation failed, please try again later');
           } finally {
             qaDownloadReport.disabled = false;
             qaDownloadReport.textContent = originalText;
