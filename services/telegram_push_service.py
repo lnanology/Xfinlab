@@ -246,6 +246,31 @@ _VIDEO_CHANNEL_ENV_BY_LANG = {
 }
 
 
+# 2026-08-08 fix ("TG 自動發出去到TG 群的D字都要跟法規, 而家重顯示緊 XFINLAB
+# Daily Free Signals"): api/admin.py's video-post trigger used to hard-code
+# caption="XFINLAB Daily AI Market Signal" for every language -- the word
+# "Signal" is exactly the regulated-vocabulary term this whole site moved
+# away from (task #666/#669/#671, matching _build_message()'s title dict
+# above), and it never varied by lang despite this function taking one.
+# Reuses the SAME compliant "XFINLAB Daily Market Intelligence" framing as
+# the text push above instead of a second, drifted copy of that decision.
+_VIDEO_CAPTION_BY_LANG = {
+    "zh-HK": "📊 XFINLAB 每日市場情報 · 影片版\n僅供研究參考，不構成投資建議。",
+    "zh-CN": "📊 XFINLAB 每日市场情报 · 视频版\n仅供研究参考，不构成投资建议。",
+    "zh-TW": "📊 XFINLAB 每日市場情報 · 影片版\n僅供研究參考，不構成投資建議。",
+    "zh": "📊 XFINLAB 每日市場情報 · 影片版\n僅供研究參考，不構成投資建議。",
+    "en": "📊 XFINLAB Daily Market Intelligence · Video\nResearch information only. Not investment advice.",
+    "es": "📊 Inteligencia de Mercado Diaria XFINLAB · Video\nSolo información de investigación. No es asesoría de inversión.",
+}
+
+
+def video_caption(lang: str) -> str:
+    """Compliant, language-aware default caption for daily video posts --
+    exported so api/admin.py's Generate Now trigger no longer needs its
+    own hard-coded, English-only, non-compliant string."""
+    return _VIDEO_CAPTION_BY_LANG.get(lang, _VIDEO_CAPTION_BY_LANG["en"])
+
+
 def push_video_to_telegram(lang: str, file_path: str, caption: str = "") -> bool:
     """Best-effort: send the Video Engine's finished mp4 to whichever
     Telegram channel matches its narration language. Returns False (not
@@ -260,4 +285,4 @@ def push_video_to_telegram(lang: str, file_path: str, caption: str = "") -> bool
     chat_id = os.getenv(env_key, "")
     if not chat_id:
         return False
-    return send_telegram_video(chat_id, file_path, caption)
+    return send_telegram_video(chat_id, file_path, caption or video_caption(lang))

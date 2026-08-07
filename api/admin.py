@@ -634,10 +634,14 @@ def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "
     result = generate_daily_video(lang=lang, aspect_ratio=aspect_ratio, theme=theme)
     if post_to_telegram and result.get("available"):
         try:
+            # 2026-08-08 fix: used to hard-code caption="XFINLAB Daily AI
+            # Market Signal" for every language -- non-compliant wording
+            # ("Signal") and never actually varied by lang. Let
+            # push_video_to_telegram fall back to its own lang-aware,
+            # compliant default (services/telegram_push_service.video_caption)
+            # instead of passing a caption here at all.
             from services.telegram_push_service import push_video_to_telegram
-            result["telegram_posted"] = push_video_to_telegram(
-                lang, result["path"], caption="XFINLAB Daily AI Market Signal"
-            )
+            result["telegram_posted"] = push_video_to_telegram(lang, result["path"])
         except Exception:
             result["telegram_posted"] = False
     return result

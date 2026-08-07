@@ -162,7 +162,7 @@ def generate_content_variants(cache: dict, lang: str = "zh") -> dict:
     top = signals[0]
     top_line = _signal_plain_line(top, lang)
     all_lines = [_signal_plain_line(s, lang) for s in signals]
-    link = f"{SITE_URL}/free-signals.html"
+    link = f"{SITE_URL}/market-brief.html"
     disclaimer = "⚠️ 僅供參考，不構成投資建議。"
 
     # X / Twitter -- hard 280-character ceiling, so build short and
@@ -280,24 +280,34 @@ def generate_content_variants(cache: dict, lang: str = "zh") -> dict:
 # the languages that already have a live channel avoids generating dozens
 # of variants nobody will ever post, while still making it a one-line
 # change to add a language here once a new channel exists for it.
+# 2026-08-08 fix ("TG 自動發出去到TG 群的D字都要跟法規, 而家重顯示緊 XFINLAB
+# Daily Free Signals"): this scaffold's "daily_title"/"focus" wording still
+# used the regulated "Signal(s)" vocabulary this site moved away from
+# everywhere else (task #666/#669/#671, services/telegram_push_service.py's
+# "XFINLAB Daily Market Intelligence" framing) -- the exact phrase a human
+# (AJ) could still copy out of the admin panel into any channel, Telegram
+# included. Aligned to the same compliant title/framing telegram_push_
+# service.py already uses, and fixed the "full_analysis" link, which still
+# pointed at the old /free-signals.html URL (now a redirect stub -- see
+# that file's own comment) instead of the live /market-brief.html page.
 _SCAFFOLD = {
     "en": {
-        "focus": "🎯 Today's Top Signal",
+        "focus": "🎯 Today's Top Research Item",
         "full_analysis": "Full AI analysis (free)",
         "disclaimer": "⚠️ For informational purposes only, not investment advice.",
-        "daily_title": "XFINLAB Daily Free Signals",
+        "daily_title": "XFINLAB Daily Market Intelligence",
         "methodology": "Ranking based on live technical analysis (trend, momentum, volume confluence) -- not hand-picked or AI-invented.",
         "hashtags": "#investing #stocks #AI",
-        "intro": "Here's today's highest-confidence signal, straight from real-time technical data:",
+        "intro": "Here's today's highest-confidence research item, straight from real-time technical data:",
     },
     "es": {
-        "focus": "🎯 Señal Destacada de Hoy",
+        "focus": "🎯 Punto de Investigación Destacado de Hoy",
         "full_analysis": "Análisis completo de IA (gratis)",
         "disclaimer": "⚠️ Solo con fines informativos, no es asesoría de inversión.",
-        "daily_title": "Señales Gratuitas Diarias de XFINLAB",
+        "daily_title": "Inteligencia de Mercado Diaria XFINLAB",
         "methodology": "Clasificación basada en análisis técnico en tiempo real (tendencia, momentum, volumen) -- no elegido a mano ni inventado por IA.",
         "hashtags": "#inversión #acciones #IA",
-        "intro": "Esta es la señal de mayor confianza de hoy, directamente de datos técnicos en tiempo real:",
+        "intro": "Este es el punto de investigación de mayor confianza de hoy, directamente de datos técnicos en tiempo real:",
     },
 }
 
@@ -322,7 +332,7 @@ def generate_content_variants_multilang(cache: dict, langs=("zh", "en", "es")) -
             out[lang] = {"available": False, "date": date_str}
             continue
         lines = [_signal_plain_line(s, lang) for s in signals]
-        link = f"{SITE_URL}/free-signals.html"
+        link = f"{SITE_URL}/market-brief.html"
         twitter = f"{scaffold['focus']} {date_str}\n{lines[0]}\n\n{scaffold['full_analysis']} 👉 {link}\n{scaffold['hashtags']}"
         if len(twitter) > 280:
             twitter = twitter[:277] + "..."
