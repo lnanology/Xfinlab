@@ -56,7 +56,7 @@ AI_CONTENT_ROUTE_PREFIXES = (
     "/api/compare",
     "/api/company-compare",
     "/api/stress-lab",
-    "/api/chart-analysis",
+    "/api/chart-search",
     "/api/global-macro",
     "/api/agent-debate",
     "/api/historical-analog",

@@ -9,11 +9,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>XFINLAB — Chart Engine™ AI K線圖分析</title>
-<meta name="description" content="AI K線圖分析 — 上傳截圖或搜尋代號，即時支撐/阻力/型態識別同技術指標分析。">
+<meta name="description" content="AI K線圖分析 — 搜尋任何全球代號，即時支撐/阻力/型態識別同技術指標分析。">
 <link rel="canonical" href="https://www.xfinlab.com/chart-analysis.html">
 <meta name="robots" content="index, follow">
 <meta property="og:title" content="AI K線圖分析 — XFINLAB">
-<meta property="og:description" content="AI K線圖分析 — 上傳截圖或搜尋代號，即時支撐/阻力/型態識別同技術指標分析。">
+<meta property="og:description" content="AI K線圖分析 — 搜尋任何全球代號，即時支撐/阻力/型態識別同技術指標分析。">
 <meta property="og:url" content="https://www.xfinlab.com/chart-analysis.html">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=20260802">
@@ -113,18 +113,11 @@
   <h1 class="page-title" data-i18n="ca_title">AI K線圖分析</h1>
   <p class="page-sub" data-i18n="ca_sub_search">打入任何全球代號，AI 即刻用真實歷史數據畫出K線圖同技術分析。</p>
 
-  <!-- 2026-07-26 fix: this tab bar (the only way to reach upload mode, and
-       therefore the only way to reach Pattern Details -- AI-vision pattern
-       recognition needs an actual screenshot, it can't run on ticker-
-       search data) used to default to display:none and only reveal itself
-       behind a ?mode=upload URL param "for developers". That effectively
-       removed the upload feature from the real UI ("而家無上載圖片功能"
-       complaint) -- there was no visible link/button to ever add that
-       param. Visible by default again so both modes are reachable. -->
-  <div class="mode-tabs" id="modeTabs" style="display:flex;gap:0.5rem;margin-bottom:0.8rem">
-    <button type="button" class="mode-tab" id="tabSearch" onclick="switchMode('search')" data-i18n="ca_mode_search">🔍 搜尋代號（免上傳）</button>
-    <button type="button" class="mode-tab" id="tabUpload" onclick="switchMode('upload')" data-i18n="ca_mode_upload">📷 上傳截圖</button>
-  </div>
+  <!-- 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用" --
+       completely remove the upload-screenshot feature, confirmed via
+       clarifying question). This used to be a 2-tab bar (search /
+       upload); now search is the only mode, so the tab bar itself is
+       gone -- the search panel below is simply always visible. -->
 
   <div class="panel" id="searchPanel">
     <label class="input-label" for="tickerSearchInput" data-i18n="ca_search_label">股票代號</label>
@@ -137,37 +130,6 @@
   </div>
 
   <div id="searchErrorBanner" style="display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid var(--accent-red,#DC2626);color:var(--accent-red,#DC2626);font-size:0.85rem"></div>
-
-  <div class="panel" id="uploadPanel" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
-      <div style="flex:1;min-width:240px">
-        <label class="input-label" data-i18n="ca_upload_label">圖片上傳</label>
-        <div class="uploader">
-          <div id="uploadArea" class="upload-area" tabindex="0">
-            <div style="font-size:1.4rem;color:var(--text3)" data-i18n="ca_upload_cta">📷 拖放或點擊上傳</div>
-            <div class="upload-hint" data-i18n="ca_upload_hint">支援：手機截圖 / TradingView / 券商截圖（JPG, PNG, WebP）</div>
-            <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" style="display:none">
-          </div>
-          <div class="preview-area" id="previewArea">
-            <div style="text-align:center;color:var(--text3);font-size:0.9rem" data-i18n="ca_no_image">尚未上傳圖片</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="width:260px;min-width:200px">
-        <label class="input-label" for="symbolInput" data-i18n="ca_symbol_label">股票代號（選填）</label>
-        <input id="symbolInput" type="text" data-i18n-placeholder="ca_symbol_placeholder" placeholder="例如 AAPL、0700.HK" style="width:100%;padding:0.5rem 0.6rem;border-radius:6px;border:1px solid var(--border2);background:var(--navy3);color:var(--text);margin-bottom:0.6rem">
-        <div class="upload-hint" style="margin-top:-0.4rem;margin-bottom:0.6rem" data-i18n="ca_symbol_hint">填咗代號，支撐/阻力/RSI/MACD將用真實歷史數據計算，AI只負責型態辨識</div>
-        <div class="panel" style="padding:0.8rem;background:var(--navy2);border:1px solid var(--border);border-radius:6px">
-          <div class="meta-line" id="uploadName" data-i18n="ca_file_label">檔案：-</div>
-          <div class="meta-line" id="uploadTime" data-i18n="ca_time_label">時間：-</div>
-          <div style="margin-top:0.8rem">
-            <button class="primary-btn" id="analyzeBtn" onclick="runImageAnalysis()" disabled data-i18n="ca_run_btn">🔍 執行 AI 分析</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div class="panel" id="klineChartPanel" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem">
@@ -261,23 +223,6 @@
       <div id="shareBar"></div>
 
     </div>
-
-    <aside class="analysis-side" id="analysisSide" style="display:none">
-      <h4 style="margin-top:0" data-i18n="ca_side_original_img">原始圖片</h4>
-      <div id="sidePreview" style="background:var(--navy3);border-radius:6px;padding:0.6rem;text-align:center">
-        <div style="color:var(--text3)" id="sidePreviewText" data-i18n="ca_side_not_uploaded">尚未上傳</div>
-        <img id="sideImg" src="" alt="preview" style="max-width:100%;display:none;margin-top:0.6rem;border-radius:4px">
-      </div>
-
-      <div style="margin-top:0.8rem">
-        <h4 style="margin:0.2rem 0" data-i18n="ca_side_upload_time_title">上傳時間</h4>
-        <div class="meta-line" id="sideUploadTime">-</div>
-      </div>
-
-      <div style="margin-top:0.8rem">
-        <button class="btn-secondary" id="downloadBtn" style="width:100%;display:none" data-i18n="ca_download_btn">⬇ 下載圖片</button>
-      </div>
-    </aside>
   </div>
 
 </div>
@@ -287,33 +232,11 @@
 </footer>
 
 <script>
-// Drag & drop + preview + mock analysis
-const uploadArea = document.getElementById('uploadArea');
-const fileInput = document.getElementById('fileInput');
-const previewArea = document.getElementById('previewArea');
-const analyzeBtn = document.getElementById('analyzeBtn');
-const sideImg = document.getElementById('sideImg');
-
-function preventDefaults(e){e.preventDefault();e.stopPropagation();}
-['dragenter','dragover','dragleave','drop'].forEach(eventName=>{
-  uploadArea.addEventListener(eventName, preventDefaults, false)
-});
-
-uploadArea.addEventListener('click', ()=> fileInput.click());
-uploadArea.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') fileInput.click(); });
-
-uploadArea.addEventListener('dragover', ()=> uploadArea.classList.add('dragover'));
-uploadArea.addEventListener('dragleave', ()=> uploadArea.classList.remove('dragover'));
-
-uploadArea.addEventListener('drop', (e)=>{
-  uploadArea.classList.remove('dragover');
-  const dt = e.dataTransfer;
-  const files = dt.files;
-  handleFiles(files);
-});
-
-fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
-
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): the
+// drag/drop upload widget + handleFiles() image-reader that used to live
+// here are gone along with the rest of upload-screenshot mode. t()/
+// CA_DIRECTION_MAP/CA_CONFIDENCE_MAP below are still used by the search-
+// mode result rendering further down this file, so they stay.
 function t(key, fallback){
   return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback;
 }
@@ -334,46 +257,6 @@ function caConfidenceLabel(confidence){
   const key = CA_CONFIDENCE_MAP[confidence];
   return key ? t(key, confidence) : confidence;
 }
-function handleFiles(files){
-  if(!files || files.length===0) return;
-  const f = files[0];
-  const allowed = ['image/jpeg','image/png','image/webp'];
-  if(!allowed.includes(f.type)){
-    alert(t('ca_alert_bad_format', '僅支援 JPG / PNG / WebP 格式'));
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    previewArea.innerHTML = '';
-    const img = document.createElement('img');
-    img.src = ev.target.result; img.className='preview-img';
-    previewArea.appendChild(img);
-
-    // side preview
-    sideImg.src = ev.target.result; sideImg.style.display='block';
-    document.getElementById('sidePreviewText').style.display='none';
-    document.getElementById('downloadBtn').style.display='block';
-    document.getElementById('downloadBtn').onclick = ()=>{
-      const a = document.createElement('a'); a.href = ev.target.result; a.download = f.name || 'chart.png'; a.click();
-    }
-
-    // meta
-    document.getElementById('uploadName').textContent = t('ca_file_label','檔案：-').replace('-', '') + (f.name || 'image');
-    const now = new Date();
-    const timestr = now.toLocaleString();
-    document.getElementById('uploadTime').textContent = t('ca_time_label','時間：-').replace('-', '') + timestr;
-    document.getElementById('sideUploadTime').textContent = timestr;
-
-    // enable analyze
-    analyzeBtn.disabled = false;
-
-    // store for analysis (real image data + filename)
-    uploadArea.dataset.filename = f.name || '';
-    window.__uploadedImageDataUrl = ev.target.result;
-  }
-  reader.readAsDataURL(f);
-}
-
 const API = 'https://api.xfinlab.com/api';
 
 // Analytics tracking (same pattern as dashboard.html) — Chart Analysis
@@ -873,29 +756,10 @@ function renderPatternDetails(patterns, directions) {
   });
 }
 
-function switchMode(mode) {
-  const isSearch = mode === 'search';
-  document.getElementById('searchPanel').style.display = isSearch ? 'block' : 'none';
-  document.getElementById('uploadPanel').style.display = isSearch ? 'none' : 'block';
-  document.getElementById('tabSearch').classList.toggle('active', isSearch);
-  document.getElementById('tabUpload').classList.toggle('active', !isSearch);
-  // 右邊「原始圖片／上傳時間」個側欄淨係上傳截圖模式先有意思，搜尋
-  // 代號模式冇上傳圖片可以顯示，所以一齊收埋，並且將analysis-section
-  // 由兩欄(1fr 320px)變返一欄(1fr)，唔會留低一舊空白。
-  const analysisSide = document.getElementById('analysisSide');
-  const analysisSection = document.getElementById('analysisSection');
-  if (analysisSide) analysisSide.style.display = isSearch ? 'none' : 'block';
-  if (analysisSection) analysisSection.classList.toggle('single-col', isSearch);
-  if (!isSearch) {
-    document.getElementById('klineChartPanel').style.display = 'none';
-    document.getElementById('patternBlock').style.display = 'block';
-    document.getElementById('patternSummaryRow').style.display = 'flex';
-    document.getElementById('aiCommentaryBlock').style.display = 'none';
-    document.getElementById('marketStructureBlock').style.display = 'none';
-    document.getElementById('mtfBlock').style.display = 'none';
-    document.getElementById('backtestBlock').style.display = 'none';
-  }
-}
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): switchMode()
+// used to toggle between search/upload panels + the now-removed analysisSide
+// aside. Search is now the page's only mode (analysisSection already has
+// class="single-col" by default in the static HTML), so this is gone.
 
 document.getElementById('tickerSearchInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') runTickerSearch();
@@ -1456,209 +1320,33 @@ async function requestBacktestCompare(){
 // Prefill from a shared Chart Search link (?symbol=...&mode=search) so
 // sharing genuinely re-runs the same real analysis rather than showing a
 // frozen screenshot of it.
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): the
+// urlMode==='upload' branch + switchMode() calls are gone along with
+// switchMode() itself; search is the only mode now, so this always
+// prefills+runs a ticker search if ?symbol= is present. #symbolInput no
+// longer exists in the DOM (it was upload-mode-only), so that autocomplete
+// attach call is gone too.
 (function initChartAnalysisMode(){
   // Pre-populate the 17 Q&A cards with the "-" not-yet-analyzed placeholder
   // (matches the old static markup's pre-search look) so the block never
-  // renders as an empty box before the user's first search/upload.
+  // renders as an empty box before the user's first search.
   renderPatternDetails({});
 
   const params = new URLSearchParams(location.search);
   const urlSymbol = params.get('symbol');
-  const urlMode = params.get('mode');
-  if (urlMode === 'upload') {
-    // 2026-07-26: modeTabs is visible by default now (see markup above),
-    // so this branch just needs to preselect the upload tab when linked
-    // to directly -- no longer needs to force-unhide anything.
-    switchMode('upload');
-  } else {
-    switchMode('search');
-    if (urlSymbol) {
-      document.getElementById('tickerSearchInput').value = urlSymbol;
-      runTickerSearch(urlSymbol);
-    }
+  if (urlSymbol) {
+    document.getElementById('tickerSearchInput').value = urlSymbol;
+    runTickerSearch(urlSymbol);
   }
   if (typeof autoAttachTickerAutocomplete === 'function') {
     autoAttachTickerAutocomplete('#tickerSearchInput');
-    autoAttachTickerAutocomplete('#symbolInput');
   }
 })();
 
-async function runImageAnalysis(){
-  const dataUrl = window.__uploadedImageDataUrl;
-  if(!dataUrl){
-    alert(t('ca_alert_no_image','請先上傳圖片'));
-    return;
-  }
-
-  analyzeBtn.disabled = true; analyzeBtn.textContent=t('ca_analyzing','分析中...');
-  if (typeof window.startAiLoading === 'function') window.startAiLoading();
-  hideSearchError();
-
-  try {
-    // dataUrl looks like: data:image/png;base64,AAAA....
-    const commaIndex = dataUrl.indexOf(',');
-    const meta = dataUrl.substring(5, dataUrl.indexOf(';')); // e.g. image/png
-    const base64Data = dataUrl.substring(commaIndex + 1);
-
-    const symbol = (document.getElementById('symbolInput').value || '').trim();
-
-    const response = await fetch(`${API}/chart-analysis`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        image: base64Data,
-        mime_type: meta || 'image/jpeg',
-        symbol: symbol,
-        token: localStorage.getItem('xfinlab_token') || undefined
-      })
-    });
-
-    const json = await response.json();
-
-    if(json.status !== 'ok'){
-      throw new Error(json.message || '分析失敗');
-    }
-
-    const res = json.data;
-    if (symbol) trackEvent('search', {ticker: symbol.toUpperCase()});
-    const usedRealData = res.data_source === 'real_market_data+ai_vision_patterns';
-    safeSetText('dataSourceTag', usedRealData
-      ? t('ca_data_source_real','（支撐/阻力/RSI/MACD 來自真實歷史數據，型態辨識來自AI視覺）')
-      : t('ca_data_source_ai_only','（未填代號 — 全部由AI視覺估算，準確度較低）'));
-
-    const noRealData = t('ca_no_real_data','未有真實數據');
-    safeSetText('trendValue', res.trend || '-');
-    safeSetText('supportValue', res.support || '-');
-    safeSetText('resistanceValue', res.resistance || '-');
-    safeSetText('fibValue', res.fibonacci_0618 != null ? res.fibonacci_0618 : noRealData);
-    if(res.confluence){
-      const c = res.confluence;
-      safeSetText('confluenceValue', `${caDirectionLabel(c.direction)}（${t('ca_reco_confidence_label','信心')}${caConfidenceLabel(c.confidence)}，${c.signals_counted}${t('ca_signals_counted_suffix','個訊號')}）`);
-    } else {
-      safeSetText('confluenceValue', noRealData);
-    }
-    safeSetText('volumeZone', res.volume || '-');
-    safeSetText('rsiValue', res.rsi || '-');
-    safeSetText('macdValue', res.macd || '-');
-    const patterns = res.patterns || {};
-    safeSetText('patternSummary',
-      Object.values(patterns).filter(p => p === '可能').length > 0 ? t('ca_pattern_detected','偵測到若干型態') : t('ca_pattern_not_detected','未偵測到明顯型態'));
-    safeSetText('riskTips', res.risk || t('ca_no_risk','無顯著風險提示'));
-    safeSetText('recommendationValue', res.recommendation || '-');
-
-    // Phase 1 Pattern Intelligence expansion: 7 -> 17 patterns (AI-vision,
-    // image-upload flow). 2026-07-26: extracted into the shared
-    // renderPatternDetails() helper (defined near safeSetText above) so
-    // search mode's real-swing-point-geometry patterns can reuse the
-    // exact same rendering logic.
-    renderPatternDetails(patterns);
-
-    // Decision Report™ footer -- only when we have the real confluence
-    // engine output (i.e. a symbol was supplied and technical_analysis_
-    // service succeeded). Same (score+100)/2 mapping as api/hero_showcase.py
-    // and api/pipeline_api.py; RiskDNA™ decoded with the exact thresholds
-    // engines/risk_engine.py's assess() already uses server-side.
-    if (typeof window.renderDecisionFooter === 'function') {
-      if (res.confluence) {
-        const c = res.confluence;
-        const decisionScore = Math.round(((c.score + 100) / 2) * 10) / 10;
-        let riskLabel = null;
-        if (res.volume_ratio != null) {
-          const volatility = res.volume_ratio * 15;
-          riskLabel = volatility < 20 ? 'Low' : volatility <= 40 ? 'Medium' : 'High';
-        }
-        const reasons = [].concat(c.bullish_signals || [], c.bearish_signals || []);
-        const dl = res.decision_levels;
-        window.renderDecisionFooter('decisionFooter', {
-          decisionScore: decisionScore,
-          confidencePct: c.confidence_pct,
-          probSeed: (symbol || 'upload') + 'confidence',
-          riskLabel: riskLabel,
-          keyReasons: reasons.length ? reasons : null,
-          suggestedAction: res.recommendation || null,
-          entryPrice: dl ? dl.entry : null,
-          stopLoss: dl ? dl.stop_loss : null,
-          takeProfits: dl ? dl.take_profits : null,
-          riskReward: dl ? dl.risk_reward : null,
-          riskPct: dl ? dl.risk_pct : null
-        });
-        if (typeof window.renderBrokerCta === 'function') {
-          window.renderBrokerCta('brokerCta');
-        }
-        const downloadReportBtn2 = document.getElementById('downloadReportBtn');
-        if (downloadReportBtn2) {
-          downloadReportBtn2.style.display = 'inline-block';
-          downloadReportBtn2.onclick = async () => {
-            const originalText = downloadReportBtn2.textContent;
-            downloadReportBtn2.disabled = true;
-            downloadReportBtn2.textContent = '⏳ 生成緊...';
-            try {
-              const reportToken = localStorage.getItem('xfinlab_token') || '';
-              const resp = await fetch(`${API_BASE}/api/report/generate${reportToken ? '?token=' + encodeURIComponent(reportToken) : ''}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  ticker: symbol || 'ASSET',
-                  decisionScore: decisionScore,
-                  confidencePct: c.confidence_pct,
-                  riskLabel: riskLabel,
-                  keyReasons: reasons.length ? reasons : null,
-                  suggestedAction: res.recommendation || null,
-                  stopLoss: dl ? dl.stop_loss : null,
-                  takeProfits: dl ? dl.take_profits : null,
-                  riskPct: dl ? dl.risk_pct : null
-                })
-              });
-              if (!resp.ok) throw new Error('report generation failed');
-              const blob = await resp.blob();
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `${symbol || 'asset'}_XFINLAB_Report.pdf`;
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-              URL.revokeObjectURL(url);
-            } catch (e) {
-              console.error(e);
-              alert('報告生成失敗，請稍後再試');
-            } finally {
-              downloadReportBtn2.disabled = false;
-              downloadReportBtn2.textContent = originalText;
-            }
-          };
-        }
-      } else {
-        // AI-vision-only fallback (no symbol supplied) -- no real numeric
-        // composite score exists, so honestly show nothing rather than a
-        // fabricated Decision Score™.
-        window.renderDecisionFooter('decisionFooter', {});
-        var brokerCtaEl2 = document.getElementById('brokerCta');
-        if (brokerCtaEl2) brokerCtaEl2.innerHTML = '';
-        var downloadReportBtnEl2 = document.getElementById('downloadReportBtn');
-        if (downloadReportBtnEl2) downloadReportBtnEl2.style.display = 'none';
-      }
-    }
-
-    // Share System -- Image/PDF only, NO Link. Unlike ai-analysis.html,
-    // the input here is an uploaded image, which isn't something a URL
-    // query param can carry, so a "shareable link that re-runs the same
-    // analysis" isn't honestly possible on this page. Omitting the Link
-    // button rather than shipping a broken/fake one.
-    if (typeof window.renderShareBar === 'function') {
-      window.renderShareBar('shareBar', 'resultContent', {
-        filename: `xfinlab-chart-analysis-${symbol || 'result'}`
-      });
-    }
-
-  } catch (err) {
-    console.error('[chart-analysis] runImageAnalysis failed:', err);
-    showSearchError(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
-  } finally {
-    analyzeBtn.disabled = false; analyzeBtn.textContent=t('ca_run_btn','🔍 執行 AI 分析');
-    if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
-  }
-}
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): runImageAnalysis()
+// used to POST an uploaded screenshot to the now-deleted backend
+// POST /chart-analysis endpoint (api/chart_analysis.py). Its only caller
+// was the analyzeBtn onclick, which was removed along with uploadPanel.
 
 // keep navbar behavior consistent
 function toggleNav(){
