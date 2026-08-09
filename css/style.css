@@ -20,9 +20,17 @@
   /* Borders / UI */
   --border-color: #000000; /* black border, per explicit request */
 
-  /* Accents */
-  --accent-blue: #2563EB;
-  --accent-blue-strong: #1D4ED8;
+  /* Accents -- 2026-08-09: site-wide rebrand, blue -> darker orange
+     (AJ picked orange from 3 homepage mockup options, then asked for it
+     applied site-wide + slightly darker). Variable NAME kept as
+     --accent-blue/--blue/--blue2 rather than renamed: hundreds of
+     existing references across every page use these names, and a
+     find-replace rename of the name itself (not just the value) buys
+     nothing functionally while risking a missed reference somewhere.
+     Read this as "the site's primary accent variable", not literally
+     blue. */
+  --accent-blue: #D35400;
+  --accent-blue-strong: #A83E00;
   --accent-orange: #F59E0B;
   --accent-red: #DC2626;
   --accent-green: #16A34A;
@@ -41,7 +49,7 @@
   --text2: var(--text-secondary);
   --text3: var(--text-muted);
   --border: var(--border-color);
-  --border2: rgba(37,99,235,0.06);
+  --border2: rgba(211,84,0,0.06);
   --green: var(--accent-green);
   --red: var(--accent-red);
 }
@@ -60,14 +68,14 @@
 
   --border-color: #1e2d45;
 
-  --accent-blue: #00d4ff;
-  --accent-blue-strong: #00a8cc;
+  --accent-blue: #F97316;
+  --accent-blue-strong: #DB6A0F;
   --accent-orange: #f59e0b;
   --accent-red: #ef4444;
   --accent-green: #10b981;
 
   --soft-shadow: 0 6px 18px rgba(0,0,0,0.3);
-  --border2: rgba(0,212,255,0.12);
+  --border2: rgba(249,115,22,0.12);
 }
 
 /* Base resets */

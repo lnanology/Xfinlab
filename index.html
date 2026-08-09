@@ -85,15 +85,18 @@
     --bg: #FFFFFF;
     --surface: #FFFFFF;
     --border: #000000;
-    /* 2026-08-09 homepage-only accent swap (AJ picked this from 3 visual
-       options): was --accent:#2563EB (blue), now warm orange. Scoped to
-       THIS page's own local :root inside its own <style> block -- css/
-       style.css's shared --accent-blue (used by every button/link on
-       every OTHER page: pricing, login, dashboard, etc.) is untouched,
-       so this is a homepage-only visual, zero risk of a site-wide
-       rebrand nobody signed off on. */
-    --accent: #E67E22;
-    --accent-rgb: 230,126,34;
+    /* 2026-08-09: AJ picked orange from 3 visual mockup options (this
+       page's local --accent, was #2563EB blue) -- then asked for it
+       slightly darker AND applied site-wide. This value (#D35400,
+       "pumpkin") is now the SAME hex used by css/style.css's shared
+       --accent-blue (light) / --accent-blue-strong dark-mode variant,
+       so every page's buttons/links/accents match this page's. See
+       css/style.css's :root and [data-theme="dark"] blocks for the
+       shared definition -- this page keeps its own local copy only
+       because its whole <style> block was already structured with a
+       page-local --accent var before this rebrand. */
+    --accent: #D35400;
+    --accent-rgb: 211,84,0;
     --accent-text: #FFFFFF;
     --text: #000000;
     --muted: #666666;
@@ -110,8 +113,8 @@
     --bg: #080c14;
     --surface: #0d1525;
     --border: #1e2d45;
-    --accent: #FB923C;
-    --accent-rgb: 251,146,60;
+    --accent: #F97316;
+    --accent-rgb: 249,115,22;
     --accent-text: #000000;
     --text: #e2e8f0;
     --muted: #64748b;
@@ -447,7 +450,7 @@
   .step-plus { color: var(--border); font-size: 1.2rem; flex-shrink: 0; }
   .step-box-bonus { flex-direction: row; width: auto; min-width: 320px; max-width: 480px; min-height: auto; border-style: dashed; padding: 16px 32px; gap: 10px; }
   .step-box-bonus .step-num { margin: 0; }
-  .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(37,99,235,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; flex-shrink: 0; }
+  .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(211,84,0,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; flex-shrink: 0; }
   .step-title { font-size: 0.9rem; font-weight: 600; line-height: 1.35; }
   .step-arrow { color: var(--border); font-size: 1.4rem; flex-shrink: 0; }
   /* Mobile: stack the 3 steps vertically and centered instead of

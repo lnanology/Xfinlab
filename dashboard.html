@@ -29,7 +29,7 @@
     --surface: #FFFFFF;
     --surface2: #F8FAFC;
     --border: #000000;
-    --accent: #2563EB;
+    --accent: #D35400;
     --accent2: #7c3aed;
     --green: #16A34A;
     --red: #DC2626;
@@ -51,7 +51,7 @@
     --surface: #0d1525;
     --surface2: #111d30;
     --border: #1e2d45;
-    --accent: #00d4ff;
+    --accent: #F97316;
     --accent2: #7c3aed;
     --green: #10b981;
     --red: #ef4444;
@@ -572,8 +572,8 @@
 
   /* AI SUMMARY */
   .ai-summary {
-    background: linear-gradient(135deg, rgba(0,212,255,0.06), rgba(124,58,237,0.06));
-    border: 1px solid rgba(0,212,255,0.2);
+    background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(124,58,237,0.06));
+    border: 1px solid rgba(249,115,22,0.2);
     border-radius: 10px;
     padding: 16px 20px;
     margin-top: 16px;
@@ -839,7 +839,7 @@
 
 <script>
 const API = "https://api.xfinlab.com/api";
-const ALLOC_COLORS = ["#00d4ff","#7c3aed","#10b981","#f59e0b","#ef4444"];
+const ALLOC_COLORS = ["#F97316","#7c3aed","#10b981","#f59e0b","#ef4444"];
 
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
@@ -909,7 +909,7 @@ async function runFullAnalysis() {
     if (analysisRes.status === 429) {
       const quotaErr = await analysisRes.json();
       const msg = quotaErr?.detail?.message || t('dash_quota_exceeded', '今日免費分析額度已用完，請升級Pro繼續使用');
-      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#00d4ff">${t('dash_view_plans','查看方案')}</a></div>`;
+      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#F97316">${t('dash_view_plans','查看方案')}</a></div>`;
       document.getElementById('researchContent').innerHTML = '';
       return;
     }
@@ -1413,7 +1413,7 @@ loadDecisionJournal();
     <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border);color:var(--text);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
     <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border);color:var(--text);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
   </div>
-  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:var(--accent);color:#000;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.3)">
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:var(--accent);color:#000;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(211,84,0,0.3)">
     ✈️ <span data-i18n="dash_tg_btn">TG Updates</span>
   </button>
 </div>
@@ -1469,7 +1469,7 @@ async function submitFeedback() {
 
 <div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_dashboard">Dashboard</span> · <a href="privacy.html" style="color:var(--accent-blue,#2563EB);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="terms.html" style="color:var(--accent-blue,#2563EB);text-decoration:none">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#2563EB);text-decoration:none">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#2563EB);text-decoration:none">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#2563EB);text-decoration:none">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#2563EB);text-decoration:none">Cookie Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#2563EB);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#2563EB);text-decoration:none">AI Disclaimer</a></div>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_dashboard">Dashboard</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Cookie Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none">AI Disclaimer</a></div>
 </footer>
 
 <script src="js/cookie-consent.js"></script>
