@@ -21,7 +21,7 @@
         6 existing core widgets; a 7th competing for mobile screen space
         there would crowd it. */
 (function () {
-  var SUPPORT_URL = ""; // e.g. "https://ko-fi.com/xfinlab" -- fill in once the account exists
+  var SUPPORT_URL = "https://ko-fi.com/xfinlab"; // 2026-08-09: live -- AJ's Ko-fi page
 
   if (!SUPPORT_URL) return; // silently no-op, see docstring above
 
