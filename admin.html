@@ -651,9 +651,13 @@
             </select>
           </div>
         </div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:12px;cursor:pointer">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:6px;cursor:pointer">
           <input type="checkbox" id="videoPostTelegram">
           Also post to the matching-language Telegram channel on success
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:12px;cursor:pointer">
+          <input type="checkbox" id="videoUploadYoutube">
+          Also upload to YouTube (unlisted) on success -- needs GOOGLE_YT_* env vars set
         </label>
         <button class="btn btn-sm btn-purple" onclick="generateVideoNow()" id="videoGenerateBtn">▶ Generate Now</button>
         <div id="videoGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
@@ -683,6 +687,10 @@
           <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
             <input type="checkbox" id="videoChatPostTelegram">
             Also post to the matching-language Telegram channel on success
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
+            <input type="checkbox" id="videoChatUploadYoutube">
+            Also upload to YouTube (unlisted) on success
           </label>
         </div>
         <button class="btn btn-sm btn-purple" onclick="generateCustomVideo()" id="videoChatGenerateBtn">▶ Generate from Chat</button>
@@ -1523,6 +1531,15 @@ async function loadVideoStatus() {
   }
 }
 
+function _youtubeResultNote(data) {
+  // 2026-08-09: shared YouTube-upload result formatter for both video panels.
+  if (!data.youtube) return '';
+  if (data.youtube.available && data.youtube.url) {
+    return ` · uploaded to YouTube ✅ <a href="${data.youtube.url}" target="_blank">${escapeHtml(data.youtube.url)}</a>`;
+  }
+  return ` · YouTube upload failed: ${escapeHtml(data.youtube.message || 'unknown error')}`;
+}
+
 async function generateVideoNow() {
   const btn = document.getElementById('videoGenerateBtn');
   const result = document.getElementById('videoGenerateResult');
@@ -1530,12 +1547,14 @@ async function generateVideoNow() {
   const aspect = document.getElementById('videoAspectSelect').value;
   const theme = document.getElementById('videoThemeSelect').value;
   const postTelegram = document.getElementById('videoPostTelegram').checked;
+  const uploadYoutube = document.getElementById('videoUploadYoutube').checked;
   btn.disabled = true;
   result.innerHTML = '<span class="spinner"></span> Generating (this can take up to ~1-2 minutes)...';
   try {
     const params = new URLSearchParams({
       token: adminToken, lang, aspect_ratio: aspect, theme,
       post_to_telegram: postTelegram ? 'true' : 'false',
+      upload_to_youtube: uploadYoutube ? 'true' : 'false',
     });
     const res = await fetch(`${API}/admin/video/generate?${params.toString()}`, {method: 'POST'});
     const data = await res.json();
@@ -1545,7 +1564,7 @@ async function generateVideoNow() {
     } else {
       const aiNote = data.used_ai_script ? ' · AI script' : ' · template script';
       const tgNote = postTelegram ? (data.telegram_posted ? ' · posted to Telegram ✅' : ' · Telegram post failed/skipped') : '';
-      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides${aiNote}${tgNote}</span>`;
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides${aiNote}${tgNote}</span>${_youtubeResultNote(data)}`;
     }
     loadVideoStatus();
   } catch (e) {
@@ -1561,6 +1580,7 @@ async function generateCustomVideo() {
   const prompt = document.getElementById('videoChatPrompt').value.trim();
   const numSlides = parseInt(document.getElementById('videoChatSlides').value, 10);
   const postTelegram = document.getElementById('videoChatPostTelegram').checked;
+  const uploadYoutube = document.getElementById('videoChatUploadYoutube').checked;
   if (!prompt) {
     result.innerHTML = '<span style="color:var(--red)">Type a request first.</span>';
     return;
@@ -1571,7 +1591,7 @@ async function generateCustomVideo() {
     const res = await fetch(`${API}/admin/video/generate-custom?token=${adminToken}`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({prompt, num_slides: numSlides, post_to_telegram: postTelegram}),
+      body: JSON.stringify({prompt, num_slides: numSlides, post_to_telegram: postTelegram, upload_to_youtube: uploadYoutube}),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.status);
@@ -1580,7 +1600,7 @@ async function generateCustomVideo() {
     } else {
       const tgNote = postTelegram ? (data.telegram_posted ? ' · posted to Telegram ✅' : ' · Telegram post failed/skipped') : '';
       const chartNote = data.chart_ticker ? ` · chart: ${escapeHtml(data.chart_ticker)}` : '';
-      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides · ${escapeHtml(data.lang || '')} · ${escapeHtml(data.aspect_ratio || '')}${chartNote}${tgNote}</span>`;
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides · ${escapeHtml(data.lang || '')} · ${escapeHtml(data.aspect_ratio || '')}${chartNote}${tgNote}</span>${_youtubeResultNote(data)}`;
     }
     loadVideoStatus();
   } catch (e) {

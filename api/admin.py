@@ -605,9 +605,32 @@ def video_engine_status(token: str, request: Request):
     from services.video_engine_service import get_status
     return get_status()
 
+def _youtube_video_metadata(lang: str, topic: str = None) -> dict:
+    """2026-08-09: shared title/description builder for the YouTube
+    auto-upload option on both video endpoints below. Description always
+    carries the same non-advice disclaimer + AI-disclosure link the rest
+    of the site uses (see ai-disclaimer.html, tasks #653/#679-686) --
+    YouTube descriptions are public-facing content just like any other
+    XFINLAB output, so they get the same compliance floor."""
+    if topic:
+        title = f"XFINLAB: {topic.strip()[:80]}"
+    else:
+        from datetime import datetime, timezone
+        title = f"XFINLAB Daily Market Update - {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+    description = (
+        (f"{topic.strip()}\n\n" if topic else "")
+        + "AI-generated market commentary from XFINLAB (xfinlab.com). "
+        "General information only, not investment advice. See "
+        "https://www.xfinlab.com/ai-disclaimer.html and "
+        "https://www.xfinlab.com/risk-warning.html for details."
+    )
+    return {"title": title, "description": description, "tags": ["XFINLAB", "market analysis", "AI"]}
+
+
 @router.post("/admin/video/generate")
 def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "9:16",
-                           theme: str = "dark", post_to_telegram: bool = False, request: Request = None):
+                           theme: str = "dark", post_to_telegram: bool = False,
+                           upload_to_youtube: bool = False, request: Request = None):
     """Growth OS Phase 7 -- on-demand "Generate Now" trigger for the admin
     panel, so this can be tested/verified before wiring any automatic
     daily schedule. Gated by the video_engine flag (default OFF) on top
@@ -644,6 +667,13 @@ def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "
             result["telegram_posted"] = push_video_to_telegram(lang, result["path"])
         except Exception:
             result["telegram_posted"] = False
+    if upload_to_youtube and result.get("available"):
+        try:
+            from services.youtube_upload_service import upload_video
+            meta = _youtube_video_metadata(lang)
+            result["youtube"] = upload_video(result["path"], meta["title"], meta["description"], meta["tags"])
+        except Exception as e:
+            result["youtube"] = {"available": False, "message": str(e)}
     return result
 
 @router.post("/admin/video/generate-custom")
@@ -670,6 +700,7 @@ async def video_engine_generate_custom(token: str, request: Request, body: dict 
     prompt = (body or {}).get("prompt", "")
     num_slides = int((body or {}).get("num_slides", 4) or 4)
     post_to_telegram = bool((body or {}).get("post_to_telegram", False))
+    upload_to_youtube = bool((body or {}).get("upload_to_youtube", False))
     from services.video_engine_service import generate_custom_video
     result = generate_custom_video(prompt, num_slides=num_slides)
     if post_to_telegram and result.get("available"):
@@ -678,6 +709,13 @@ async def video_engine_generate_custom(token: str, request: Request, body: dict 
             result["telegram_posted"] = push_video_to_telegram(result.get("lang", "en"), result["path"])
         except Exception:
             result["telegram_posted"] = False
+    if upload_to_youtube and result.get("available"):
+        try:
+            from services.youtube_upload_service import upload_video
+            meta = _youtube_video_metadata(result.get("lang", "en"), topic=result.get("topic"))
+            result["youtube"] = upload_video(result["path"], meta["title"], meta["description"], meta["tags"])
+        except Exception as e:
+            result["youtube"] = {"available": False, "message": str(e)}
     return result
 
 @router.delete("/admin/users/{user_id}")
