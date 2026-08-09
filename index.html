@@ -154,10 +154,12 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* Logged-in top bar -- 淨係isLoggedIn()先顯示，見initUserTopbar() */
-  .user-topbar { background: var(--surface); }
-  .user-topbar-inner { max-width: 1160px; margin: 0 auto; padding: 8px 24px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-  .user-topbar-name { font-size: 0.82rem; color: var(--text); font-weight: 600; margin-right: auto; }
+  /* Logged-in Account widget -- 淨係isLoggedIn()先顯示，見initUserTopbar().
+     2026-08-10: used to be a standalone full-width bar (.user-topbar-inner
+     wrapper) stacked below <nav>; now lives directly inside <nav id="idxNav">
+     as a plain flex item (its own display:block gets blockified by the
+     flex formatting context, so no extra display rule needed here), level
+     with the logo per AJ's "跟帳戶平" request. */
   .user-topbar-btn { background: transparent; border: 1px solid var(--border); color: var(--label); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; text-decoration: none; font-family: inherit; transition: border-color 0.2s, color 0.2s; }
   .user-topbar-btn:hover { border-color: var(--accent); color: var(--accent); }
   /* Settings掣加個滑出式flyout，指住/撳落去會現出「帳戶」呢個選項，
@@ -636,6 +638,35 @@
     </div>
     <a href="intelligence-api.html" data-i18n="nav_api" style="font-size:1rem;color:var(--text2,#475569);text-decoration:none">API</a>
   </div>
+
+  <!-- 2026-08-10 (AJ: "把 LOGO 功能 API 放平 不要貼頂，跟帳戶平"): the
+       Account widget used to live in its own separate .user-topbar wrapper
+       block stacked below this nav element, making 2 visually separate bars.
+       Moved here as a 3rd flex child of #idxNav so justify-content:space-between
+       naturally right-aligns it level with the logo (idxNavFeatGroup stays
+       independently centered via its own position:absolute, unaffected).
+       #userTopbar keeps its id/display:none default (toggled to 'block' by
+       initUserTopbar() below) so js/nav.js's shared account-widget
+       auto-injector still correctly bails out via
+       `if(document.getElementById("userTopbar"))return` -- see comment
+       above this <nav>. Also dropped the old "👤 <name>" greeting span
+       (#userTopbarName) since it's redundant next to this "👤 帳戶" button. -->
+  <div class="user-topbar" id="userTopbar" style="display:none">
+    <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
+      <button type="button" class="user-topbar-btn" id="topbarSettingsBtn">👤 <span data-i18n="topbar_account">帳戶</span></button>
+      <div class="user-topbar-flyout" id="topbarSettingsFlyout" style="min-width:220px">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="font-size:0.72rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
+          <div id="topbarDropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
+          <div id="topbarDropdownPlan" style="font-size:0.7rem;color:var(--amber);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
+        </div>
+        <a href="pricing.html" style="color:var(--amber)">⭐ <span data-i18n="dash_view_plans">View Plans</span></a>
+        <a href="#" onclick="topbarCopyReferral(); return false;">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
+        <a href="#" onclick="topbarShareXfinlab(); return false;">📤 <span data-i18n="dash_menu_share">Share XFINLAB</span></a>
+        <a href="#" onclick="topbarLogout(); return false;" style="color:var(--red)">↩ <span data-i18n="dash_menu_signout">Sign Out</span></a>
+      </div>
+    </div>
+  </div>
 </nav>
 <style>
   #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
@@ -666,26 +697,6 @@
   });
 })();
 </script>
-
-<div class="user-topbar" id="userTopbar" style="display:none">
-  <div class="user-topbar-inner">
-    <span class="user-topbar-name" id="userTopbarName">👤</span>
-    <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
-      <button type="button" class="user-topbar-btn" id="topbarSettingsBtn">👤 <span data-i18n="topbar_account">帳戶</span></button>
-      <div class="user-topbar-flyout" id="topbarSettingsFlyout" style="min-width:220px">
-        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
-          <div style="font-size:0.72rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
-          <div id="topbarDropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
-          <div id="topbarDropdownPlan" style="font-size:0.7rem;color:var(--amber);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
-        </div>
-        <a href="pricing.html" style="color:var(--amber)">⭐ <span data-i18n="dash_view_plans">View Plans</span></a>
-        <a href="#" onclick="topbarCopyReferral(); return false;">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
-        <a href="#" onclick="topbarShareXfinlab(); return false;">📤 <span data-i18n="dash_menu_share">Share XFINLAB</span></a>
-        <a href="#" onclick="topbarLogout(); return false;" style="color:var(--red)">↩ <span data-i18n="dash_menu_signout">Sign Out</span></a>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Hero -->
 <div class="hero" data-reveal>
@@ -1102,8 +1113,6 @@ function initUserTopbar() {
   if (bar) bar.style.display = 'block';
   try {
     const user = JSON.parse(localStorage.getItem('xfinlab_user') || '{}');
-    const nameEl = document.getElementById('userTopbarName');
-    if (nameEl && user.name) nameEl.textContent = '👤 ' + user.name.split(' ')[0];
     // 帳戶flyout入面嗰個email/PLAN，同dashboard.html個accountBtn dropdown
     // 一樣直接讀返localStorage嗰份xfinlab_user，唔使多打一次API。
     const emailEl = document.getElementById('topbarDropdownEmail');
