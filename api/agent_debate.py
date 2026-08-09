@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from services.agent_debate_service import is_available, run_debate
+from services.research_agency_service import is_available as research_available, run_research
 from services.technical_analysis_service import get_technical_analysis
 
 router = APIRouter()
@@ -63,5 +64,38 @@ def agent_debate(symbol: str, token: str = None, lang: str = None):
         context["regime"] = None
 
     result = run_debate(symbol, context, lang=lang)
+    record_ai_token_usage(user_id)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-09 (Research Agency, XFINLAB_Final_Strategy.md section 6/7,
+# "agency-swarm起多角度research功能"): a deeper, self-sufficient sibling to
+# the endpoint above. Where /agent-debate/{symbol} argues from whatever
+# thin context this file happens to build (technical + a rough regime
+# read), /agent-debate/{symbol}/research gathers technical + news/
+# sentiment + macro (via World Engine) + fundamentals itself before any
+# debate agent speaks -- see services/research_agency_service.py's
+# docstring for the full architecture. Same Pro+/quota gating as the
+# existing endpoint; deliberately a separate route rather than a query
+# param on the one above so a client can't accidentally trigger the much
+# heavier (4 real data-gathers + 4 LLM calls) path unintentionally.
+# ---------------------------------------------------------------------------
+
+@router.get("/agent-debate/research/status")
+def research_agency_status():
+    """Same purpose as /agent-debate/status -- frontend gate for whether
+    to show a "Multi-Angle Research" entry point at all."""
+    return {"available": research_available()}
+
+
+@router.get("/agent-debate/{symbol}/research")
+def agent_debate_research(symbol: str, token: str = None, lang: str = None):
+    from services.quota_middleware import check_token_budget, record_ai_token_usage, require_advanced_engine_plan
+
+    require_advanced_engine_plan(token)
+    user_id = check_token_budget(token)
+
+    result = run_research(symbol.upper(), lang=lang)
     record_ai_token_usage(user_id)
     return result
