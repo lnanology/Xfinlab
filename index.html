@@ -85,8 +85,15 @@
     --bg: #FFFFFF;
     --surface: #FFFFFF;
     --border: #000000;
-    --accent: #2563EB;
-    --accent-rgb: 37,99,235;
+    /* 2026-08-09 homepage-only accent swap (AJ picked this from 3 visual
+       options): was --accent:#2563EB (blue), now warm orange. Scoped to
+       THIS page's own local :root inside its own <style> block -- css/
+       style.css's shared --accent-blue (used by every button/link on
+       every OTHER page: pricing, login, dashboard, etc.) is untouched,
+       so this is a homepage-only visual, zero risk of a site-wide
+       rebrand nobody signed off on. */
+    --accent: #E67E22;
+    --accent-rgb: 230,126,34;
     --accent-text: #FFFFFF;
     --text: #000000;
     --muted: #666666;
@@ -103,8 +110,8 @@
     --bg: #080c14;
     --surface: #0d1525;
     --border: #1e2d45;
-    --accent: #00d4ff;
-    --accent-rgb: 0,212,255;
+    --accent: #FB923C;
+    --accent-rgb: 251,146,60;
     --accent-text: #000000;
     --text: #e2e8f0;
     --muted: #64748b;
@@ -113,6 +120,32 @@
     --amber: #f59e0b;
     --red: #ef4444;
     --muted2: #475569;
+  }
+
+  /* 2026-08-09 scroll-reveal ("每區的進入及離開會淡出淡入"): elements
+     tagged data-reveal fade in + move up 20px the first time they enter
+     the viewport (see js/scroll-reveal.js, IntersectionObserver-based).
+     Deliberately one-directional -- once revealed, an element stays
+     visible when scrolled past; it never fades back out on exit, which
+     would be disorienting on re-scroll. data-reveal-stagger children
+     (card grids) fade in with a small per-item delay instead of all at
+     once. prefers-reduced-motion users get the final state immediately,
+     no animation, no vestibular-trigger risk. */
+  [data-reveal] { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  [data-reveal].is-revealed { opacity: 1; transform: translateY(0); }
+  [data-reveal-stagger] > * { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  [data-reveal-stagger].is-revealed > * { opacity: 1; transform: translateY(0); }
+  [data-reveal-stagger].is-revealed > *:nth-child(1) { transition-delay: 0ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(2) { transition-delay: 70ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(3) { transition-delay: 140ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(4) { transition-delay: 210ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(5) { transition-delay: 280ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(6) { transition-delay: 350ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(7) { transition-delay: 420ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(8) { transition-delay: 490ms; }
+  [data-reveal-stagger].is-revealed > *:nth-child(9) { transition-delay: 560ms; }
+  @media (prefers-reduced-motion: reduce) {
+    [data-reveal], [data-reveal-stagger] > * { opacity: 1 !important; transform: none !important; transition: none !important; }
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -561,7 +594,7 @@
 </div>
 
 <!-- Hero -->
-<div class="hero">
+<div class="hero" data-reveal>
   <div class="hero-left">
     <div class="hero-badge" data-i18n="hero_badge">AI that flags the risk — and admits what it doesn't know</div>
     <h1 data-i18n="hero_title">Institutional-grade <span>AI</span> Investment Research</h1>
@@ -613,7 +646,7 @@
 <!-- Trust Numbers (moved up right after Hero -- social proof should land
      early, before feature depth, per CRO research: see
      HOMEPAGE_CRO_REDESIGN_PROPOSAL.md reorder decision record) -->
-<div class="trust-section">
+<div class="trust-section" data-reveal>
   <div class="section-label" data-i18n="trust_label">Trust</div>
   <div class="section-title" data-i18n="trust_title">平台實力</div>
   <div class="stats">
@@ -633,7 +666,7 @@
      basket already used by the Market Pulse widget above -- not a basket
      picked to make this number look good. See that service's own
      docstring for full methodology/caveats. -->
-<div class="trust-section" id="trackRecordSection">
+<div class="trust-section" id="trackRecordSection" data-reveal>
   <div class="section-label" data-i18n="trackrecord_label">Track Record</div>
   <div class="section-title" data-i18n="trackrecord_title">No hype. Just the numbers.</div>
   <p style="color:var(--muted);font-size:0.9rem;max-width:640px;margin:0 auto 20px;text-align:center" data-i18n="trackrecord_subtitle">Our Confluence Engine's real backtested performance on historical data — not simulated, not a live trading record.</p>
@@ -655,7 +688,7 @@
 </div>
 
 <!-- Live AI Result -- "AI is working" showcase -->
-<div class="live-section">
+<div class="live-section" data-reveal>
   <div class="live-box">
     <div class="section-label" style="margin-bottom:6px" data-i18n="live_label">Live AI Result</div>
     <div class="section-title" style="margin-bottom:4px;font-size:1.4rem" data-i18n="live_title">AI 正在分析緊真實市場數據</div>
@@ -680,9 +713,9 @@
      見 api/market_pulse.py 嘅 /api/top-opportunities，同Outlook basket
      一樣用真實Confluence Engine計，唔係AI估。放喺Outlook上面，等訪客
      一開始就見到「而家邊隻最強」。 -->
-<div class="top-opp-section">
+<div class="top-opp-section" data-reveal>
   <div class="section-label topopp-label" data-i18n="topopp_label">🏆 Today's Research Highlights</div>
-  <div class="top-opp-grid" id="topOppGrid">
+  <div class="top-opp-grid" id="topOppGrid" data-reveal-stagger>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_crypto">加密貨幣</div><div class="top-opp-ticker">--</div></div>
@@ -692,10 +725,10 @@
 <!-- 9-Category Opportunity Board -- NEW additional section (2026-07-21),
      sits below Top Opportunity, does not replace it. See
      api/market_pulse.py's /api/opportunity-categories. -->
-<div class="nine-cat-section">
+<div class="nine-cat-section" data-reveal>
   <div class="section-label" data-i18n="nine_section_label">🌐 Market Opportunity Board</div>
   <div class="section-title" style="font-size:1.3rem" data-i18n="nine_section_title">邊度而家有機會？</div>
-  <div class="nine-cat-grid" id="nineCatGrid">
+  <div class="nine-cat-grid" id="nineCatGrid" data-reveal-stagger>
     <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c4 5 7 8.6 7 12.5a7 7 0 1 1-14 0c0-3.9 3-7.5 7-12.5z"/></svg></div><div class="nine-cat-title" data-i18n="nine_flow_title">市場資金流向</div><div class="nine-cat-empty">--</div></div>
     <div class="nine-cat-card"><div class="nine-cat-icon">🌐</div><div class="nine-cat-title" data-i18n="nine_sentiment_title">市場情緒分析</div><div class="nine-cat-empty">--</div></div>
     <div class="nine-cat-card"><div class="nine-cat-icon">🔥</div><div class="nine-cat-title" data-i18n="nine_trending_title">熱門資產</div><div class="nine-cat-empty">--</div></div>
@@ -709,7 +742,7 @@
 </div>
 
 <!-- Today's AI Outlook (Live Market Pulse) -->
-<div class="pulse-section">
+<div class="pulse-section" data-reveal>
   <div class="pulse-box">
     <div class="pulse-head">
       <div class="pulse-title"><span class="pulse-dot"></span><span data-i18n="outlook_title">今日重點</span></div>
@@ -748,7 +781,7 @@
 </div>
 
 <!-- How it works -->
-<div class="how-section">
+<div class="how-section" data-reveal>
   <div class="section-label" data-i18n="how_label">開始好簡單</div>
   <div class="section-title" data-i18n="how_title">3步即刻開始</div>
   <div class="steps-row">
@@ -773,7 +806,7 @@
 </div>
 
 <!-- Anonymous AI Demo -->
-<div class="demo-section" id="demoSection">
+<div class="demo-section" id="demoSection" data-reveal>
   <div class="section-label" data-i18n="demo_label">免費體驗</div>
   <div class="section-title" data-i18n="demo_title">不需註冊，即刻試用</div>
   <p style="color:var(--muted);font-size:0.88rem" data-i18n="demo_smart_subtitle">輸入股票代號，或者直接講你想知咩 -- AI會自動帶你去啱嘅功能</p>
@@ -791,10 +824,10 @@
 </div>
 
 <!-- Pricing summary -->
-<div class="pricing-section">
+<div class="pricing-section" data-reveal>
   <div class="section-label" data-i18n="pricing_label">收費方案</div>
   <div class="section-title" data-i18n="pricing_title">由免費開始</div>
-  <div class="pricing-cards-row">
+  <div class="pricing-cards-row" data-reveal-stagger>
     <a class="price-mini" href="login.html" style="text-decoration:none;color:inherit;cursor:pointer">
       <div class="price-mini-name" data-i18n="pricing_free_name">Free</div>
       <div class="price-mini-amount">$0</div>
@@ -820,7 +853,7 @@
 </div>
 
 <!-- FAQ -->
-<div class="faq-section">
+<div class="faq-section" data-reveal>
   <div class="section-label" style="text-align:center" data-i18n="faq_label">常見問題</div>
   <div class="section-title" style="text-align:center" data-i18n="faq_title">解答你嘅疑慮</div>
   <div class="faq-item">
@@ -1815,5 +1848,6 @@ async function submitFeedback() {
 <script src="js/support-widget.js"></script>
 <script src="js/search-reminder.js"></script>
 <script src="js/mobile-widget-dock.js"></script>
+<script src="js/scroll-reveal.js"></script>
 </body>
 </html>
