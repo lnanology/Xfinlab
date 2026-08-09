@@ -674,6 +674,30 @@ def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: st
         for i, line in enumerate(lines):
             draw.text((pad_x, start_y + i * line_h), line,
                       font=_get_font(int(height * 0.032), lang), fill=colors["fg"])
+    elif kind == "chart":
+        # 2026-08-09 (admin chat-to-video feature): custom-topic slide that
+        # DOES have a real ticker -- e.g. admin typed "make a video about
+        # NVDA earnings". Reuses the same real-OHLC candlestick renderer as
+        # the "signal" branch below (_draw_candles, fed by _fetch_candles's
+        # genuine Alpaca/yfinance data), but without a direction/confidence
+        # call, since a custom-topic video isn't making a confluence-engine
+        # signal claim -- it's just grounding the AI narration in an actual
+        # price chart instead of a blank slide, same anti-fabrication
+        # discipline as the rest of this module.
+        ticker = (signal or {}).get("ticker", "")
+        y = header_bottom
+        draw.text((pad_x, y), ticker, font=_get_font(int(height * 0.062), lang), fill=colors["fg"])
+        y += int(height * 0.09)
+
+        candles = (signal or {}).get("_candles") or []
+        candle_bottom = height - int(height * 0.2)
+        if candles and candle_bottom > y:
+            _draw_candles(draw, candles, x0=pad_x, y0=y, w=width - 2 * pad_x, h=candle_bottom - y, colors=colors)
+
+        cap_y = height - int(height * 0.145)
+        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 24))[:3]):
+            draw.text((pad_x, cap_y + i * int(height * 0.025)), line,
+                      font=_get_font(int(height * 0.021), lang), fill=colors["fg"])
     else:  # "signal"
         direction = _normalize_direction(signal.get("confluence_direction"))
         color = colors["green"] if direction == "bullish" else (colors["red"] if direction == "bearish" else colors["muted"])
@@ -1059,7 +1083,35 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4) -> dict:
         _log_generation("error", f"AI script-writer failed for custom topic: {parsed['topic'][:80]!r}")
         return {"available": False, "message": "AI could not write a script for this request -- try rephrasing it."}
 
-    slides = [("intro", None)] + [("custom", None)] * (num_slides - 2) + [("outro", None)]
+    # 2026-08-09: if the admin's topic names a real ticker (e.g. "make a
+    # video about NVDA earnings"), ground the first body slide in an actual
+    # candlestick chart instead of plain text -- same real-OHLC renderer
+    # ("chart" kind added to _render_slide) that the daily-signals video
+    # already uses. Detection reuses intent_router_service's AI-assisted
+    # classifier (handles conversational/non-English topic text, e.g.
+    # "講吓比特幣", not just literal "NVDA" tokens) rather than duplicating
+    # ticker-parsing logic here. Best-effort: any failure here (AI router
+    # down, no candle data returned) just means plain "custom" text slides,
+    # never blocks the video -- a chart is a bonus, not a requirement.
+    chart_ticker = None
+    chart_candles = []
+    try:
+        from services.intent_router_service import classify_ai
+        classification = classify_ai(parsed["topic"])
+        candidate = (classification or {}).get("ticker")
+        if candidate:
+            candidate = str(candidate).strip().upper()
+            candles = _fetch_candles(candidate, limit=20)
+            if candles:
+                chart_ticker, chart_candles = candidate, candles
+    except Exception:
+        chart_ticker, chart_candles = None, []
+
+    body_kinds = ["custom"] * (num_slides - 2)
+    if chart_ticker and body_kinds:
+        body_kinds[0] = "chart"
+    body_payloads = [{"ticker": chart_ticker, "_candles": chart_candles} if k == "chart" else None for k in body_kinds]
+    slides = [("intro", None)] + list(zip(body_kinds, body_payloads)) + [("outro", None)]
 
     result = _render_video_pipeline(
         slides, narration_texts, lang, aspect_ratio, width, height, colors,
@@ -1068,4 +1120,6 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4) -> dict:
     if result.get("available"):
         result["theme"] = theme
         result["topic"] = parsed["topic"]
+        if chart_ticker:
+            result["chart_ticker"] = chart_ticker
     return result

@@ -1579,7 +1579,8 @@ async function generateCustomVideo() {
       result.innerHTML = `<span style="color:var(--red)">⚠️ ${escapeHtml(data.message || 'Video Engine unavailable')}</span>`;
     } else {
       const tgNote = postTelegram ? (data.telegram_posted ? ' · posted to Telegram ✅' : ' · Telegram post failed/skipped') : '';
-      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides · ${escapeHtml(data.lang || '')} · ${escapeHtml(data.aspect_ratio || '')}${tgNote}</span>`;
+      const chartNote = data.chart_ticker ? ` · chart: ${escapeHtml(data.chart_ticker)}` : '';
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides · ${escapeHtml(data.lang || '')} · ${escapeHtml(data.aspect_ratio || '')}${chartNote}${tgNote}</span>`;
     }
     loadVideoStatus();
   } catch (e) {
