@@ -328,9 +328,12 @@
   /* 2026-07-26 fix: removed border-top -- this full-bleed line sat right
      under the logo/nav row (which is inset to max-width:1160px), so it
      read as a stray disconnected line under the logo rather than a
-     deliberate section divider. Keeps border-bottom to still separate the
-     ticker marquee from the hero below it. */
-  .ticker-section { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 0; overflow: hidden; margin-bottom: 0; }
+     deliberate section divider. */
+  /* 2026-08-10 (AJ: "走馬燈可隱藏黑線嗎"): border-bottom removed too --
+     after the marquee moved to sit directly above the 平台實力 trust
+     section (task #744), this line now read as a second unwanted divider
+     right above that section's own heading, not a deliberate separator. */
+  .ticker-section { background: var(--surface); padding: 16px 0; overflow: hidden; margin-bottom: 0; }
   .ticker-wrap { display: flex; gap: 48px; animation: scroll 30s linear infinite; white-space: nowrap; }
   .ticker-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
   .ticker-symbol { font-weight: 600; color: var(--text); }
