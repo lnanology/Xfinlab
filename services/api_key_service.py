@@ -162,6 +162,53 @@ def revoke_key(key_id: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# 2026-08-09 (task #724, AJ "全做" batch): logged-in-user self-service key
+# view/regenerate for dashboard.html's account area. Reuses the same
+# api_keys table + "raw key shown once" posture as issue_key()/revoke_key()
+# above -- this is NOT a new issuance flow, just a user-facing wrapper: a
+# regenerate is "revoke my own active key(s), then issue_key() a fresh one",
+# scoped strictly to the caller's own user_id (never touches other users'
+# rows, unlike the admin endpoints which take an arbitrary email).
+# ---------------------------------------------------------------------------
+
+def get_my_key_status(email: str) -> dict:
+    """For the dashboard account panel: never returns a raw key (none of
+    the existing rows have it retained -- see issue_key()'s docstring), just
+    whether the user has one and its masked preview/tier/dates."""
+    keys = list_keys_for_email(email)
+    active = [k for k in keys if k["active"]]
+    if not active:
+        return {"has_key": False}
+    k = active[0]
+    return {
+        "has_key": True,
+        "key_preview": k["key_preview"],
+        "tier": k["tier"],
+        "created_at": k["created_at"],
+        "last_used_at": k["last_used_at"],
+    }
+
+
+def regenerate_key_for_user(email: str, tier: str = "free") -> dict:
+    """Revokes every active api_keys row owned by `email`'s user_id, then
+    issues a brand new one. Returns the same shape as issue_key() (raw key
+    included -- shown once, exactly like every other issuance path in this
+    file)."""
+    conn = _get_db()
+    try:
+        user = conn.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+        if not user:
+            return {"error": f"No user found with email {email}"}
+        conn.execute(
+            "UPDATE api_keys SET active=0 WHERE user_id=? AND active=1", (user["id"],)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return issue_key(email, tier)
+
+
+# ---------------------------------------------------------------------------
 # 2026-07-31: Self-serve Free-tier automation (Task #575).
 #
 # Separate table on purpose -- see module docstring. Nothing above this

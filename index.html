@@ -394,6 +394,17 @@
   .top-opp-dir.bear { color: var(--red); }
   .top-opp-dir.neutral { color: var(--amber); }
   .top-opp-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; font-size: 0.72rem; color: var(--muted); }
+  /* 2026-08-09 (AJ ref-image feedback: "圖有呢D動量圖卡片會唔會好D" -- CoinMarketCap-
+     style momentum sparkline on price cards). Plotted from item.sparkline (last 20
+     real closes returned by api/market_pulse.py's _compute_top_opportunities(), zero
+     extra API calls). Pure SVG polyline, no chart library -- this is a tiny inline
+     visual cue, not a real chart (that's what the AI Analysis page's TradingView
+     widget is for). */
+  .top-opp-sparkline { width: 100%; height: 34px; margin: 4px 0 8px; display: block; }
+  .top-opp-sparkline polyline { fill: none; stroke-width: 1.6; }
+  .top-opp-sparkline.bull polyline { stroke: var(--green); }
+  .top-opp-sparkline.bear polyline { stroke: var(--red); }
+  .top-opp-sparkline.neutral polyline { stroke: var(--amber); }
   @media (max-width: 768px) { .top-opp-grid { grid-template-columns: 1fr; } }
 
   /* 9-Category Opportunity Board -- new ADDITIONAL section (2026-07-21),
@@ -438,7 +449,7 @@
   /* How it works */
   .how-section { max-width: 900px; margin: 0 auto; padding: 60px 24px; text-align: center; }
   .steps-row { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
-  .step-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 28px; width: 180px; min-height: 112px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .step-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; width: 200px; min-height: 148px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
   .step-box-clickable { cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
   .step-box-clickable:hover { border-color: var(--accent); transform: translateY(-2px); }
   /* 2026-07-21: was a squarish box sitting next to a separate "+"
@@ -451,7 +462,20 @@
   .step-box-bonus { flex-direction: row; width: auto; min-width: 320px; max-width: 480px; min-height: auto; border-style: dashed; padding: 16px 32px; gap: 10px; }
   .step-box-bonus .step-num { margin: 0; }
   .step-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(211,84,0,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 12px; flex-shrink: 0; }
+  /* 2026-08-09 (task #726, AJ "全做" batch): redesign the 3 plain
+     number-circle+title boxes into fuller "icon cards" -- a bigger icon
+     circle (SVG, not the emoji/plain-digit look), a small numbered badge
+     overlapping its corner (keeps the existing step-ordering cue instead
+     of losing it), and a new one-line description under the title so each
+     step reads as a mini card rather than a bare label. step-box-bonus
+     (the 🔔 subscribe box below) is untouched -- it's deliberately NOT
+     part of the numbered 3-step sequence (see comment above), so it keeps
+     its own simpler row layout. */
+  .step-icon-wrap { position: relative; width: 52px; height: 52px; border-radius: 50%; background: rgba(var(--accent-rgb),0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; flex-shrink: 0; }
+  .step-icon-wrap svg { width: 26px; height: 26px; }
+  .step-num-badge { position: absolute; top: -4px; right: -4px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); }
   .step-title { font-size: 0.9rem; font-weight: 600; line-height: 1.35; }
+  .step-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.4; margin-top: 4px; }
   .step-arrow { color: var(--border); font-size: 1.4rem; flex-shrink: 0; }
   /* Mobile: stack the 3 steps vertically and centered instead of
      letting them wrap awkwardly with the arrows -- each box takes the
@@ -733,14 +757,14 @@
   <div class="section-title" style="font-size:1.3rem" data-i18n="nine_section_title">邊度而家有機會？</div>
   <div class="nine-cat-grid" id="nineCatGrid" data-reveal-stagger>
     <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c4 5 7 8.6 7 12.5a7 7 0 1 1-14 0c0-3.9 3-7.5 7-12.5z"/></svg></div><div class="nine-cat-title" data-i18n="nine_flow_title">市場資金流向</div><div class="nine-cat-empty">--</div></div>
-    <div class="nine-cat-card"><div class="nine-cat-icon">🌐</div><div class="nine-cat-title" data-i18n="nine_sentiment_title">市場情緒分析</div><div class="nine-cat-empty">--</div></div>
-    <div class="nine-cat-card"><div class="nine-cat-icon">🔥</div><div class="nine-cat-title" data-i18n="nine_trending_title">熱門資產</div><div class="nine-cat-empty">--</div></div>
-    <div class="nine-cat-card"><div class="nine-cat-icon">🚀</div><div class="nine-cat-title" data-i18n="nine_growth_title">最快增長資產</div><div class="nine-cat-empty">--</div></div>
-    <div class="nine-cat-card"><div class="nine-cat-icon">🎯</div><div class="nine-cat-title" data-i18n="nine_best_title">最大機會資產</div><div class="nine-cat-empty">--</div></div>
-    <div class="nine-cat-card"><div class="nine-cat-icon">💵</div><div class="nine-cat-title" data-i18n="nine_yield_title">最高收息資產</div><div class="nine-cat-empty">--</div></div>
-    <div class="nine-cat-card"><div class="nine-cat-icon">📈</div><div class="nine-cat-title" data-i18n="nine_long_title">長線投資</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="nine-cat-title" data-i18n="nine_sentiment_title">市場情緒分析</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div><div class="nine-cat-title" data-i18n="nine_trending_title">熱門資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="nine-cat-title" data-i18n="nine_growth_title">最快增長資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/></svg></div><div class="nine-cat-title" data-i18n="nine_best_title">最大機會資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="nine-cat-title" data-i18n="nine_yield_title">最高收息資產</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="nine-cat-title" data-i18n="nine_long_title">長線投資</div><div class="nine-cat-empty">--</div></div>
     <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="7"/><line x1="19" y1="20" x2="19" y2="15"/><line x1="3" y1="20" x2="21" y2="20"/></svg></div><div class="nine-cat-title" data-i18n="nine_mid_title">中線投資</div><div class="nine-cat-empty">--</div></div>
-    <div class="nine-cat-card"><div class="nine-cat-icon">⚡</div><div class="nine-cat-title" data-i18n="nine_short_title">短線投資</div><div class="nine-cat-empty">--</div></div>
+    <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><div class="nine-cat-title" data-i18n="nine_short_title">短線投資</div><div class="nine-cat-empty">--</div></div>
   </div>
 </div>
 
@@ -787,12 +811,24 @@
 <div class="how-section" data-reveal>
   <div class="section-label" data-i18n="how_label">開始好簡單</div>
   <div class="section-title" data-i18n="how_title">3步即刻開始</div>
-  <div class="steps-row">
-    <div class="step-box"><div class="step-num">1</div><div class="step-title" data-i18n="how1">輸入股票代號</div></div>
+  <div class="steps-row" data-reveal-stagger>
+    <div class="step-box">
+      <div class="step-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="step-num-badge">1</span></div>
+      <div class="step-title" data-i18n="how1">輸入股票代號</div>
+      <div class="step-desc" data-i18n="how1_desc">股票、期貨、加密貨幣都得</div>
+    </div>
     <div class="step-arrow">→</div>
-    <div class="step-box"><div class="step-num">2</div><div class="step-title" data-i18n="how2">AI即時分析</div></div>
+    <div class="step-box">
+      <div class="step-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z"/></svg><span class="step-num-badge">2</span></div>
+      <div class="step-title" data-i18n="how2">AI即時分析</div>
+      <div class="step-desc" data-i18n="how2_desc">真實數據計算，幾秒有結果</div>
+    </div>
     <div class="step-arrow">→</div>
-    <div class="step-box"><div class="step-num">3</div><div class="step-title" data-i18n="how3">獲得完整報告</div></div>
+    <div class="step-box">
+      <div class="step-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg><span class="step-num-badge">3</span></div>
+      <div class="step-title" data-i18n="how3">獲得完整報告</div>
+      <div class="step-desc" data-i18n="how3_desc">趨勢、風險、支撐阻力一目了然</div>
+    </div>
   </div>
   <!-- 2026-07-20: 訂閱信號刻意唔編入上面「3步」嘅編號序列 -- Rule of
        Three：標題/步數維持「3步」先有輕鬆易完成嘅心理暗示，去到「4步」
@@ -802,7 +838,7 @@
   <div class="how-bonus-row">
     <div class="step-box step-box-clickable step-box-bonus" onclick="location.href='free-signals.html'">
       <span class="step-plus">+</span>
-      <div class="step-num">🔔</div>
+      <div class="step-num"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
       <div class="step-title" data-i18n="how4">訂閱每日市場快訊</div>
     </div>
   </div>
@@ -1500,6 +1536,20 @@ loadTrackRecord();
 // 每張卡撳落去經過homepagePreviewNavigate()嘅全站一次性preview閘。
 const TOPOPP_ORDER = ['stock', 'futures', 'crypto'];
 const TOPOPP_CLASS_KEYS = {'stock': 'topopp_class_stock', 'futures': 'topopp_class_futures', 'crypto': 'topopp_class_crypto'};
+// 2026-08-09: momentum sparkline SVG for each Top Opportunity card (see CSS
+// comment above .top-opp-sparkline for context). arr = last-20 real closes.
+function renderTopOppSparkline(arr, dirClass) {
+  if (!Array.isArray(arr) || arr.length < 2) return '';
+  const w = 100, h = 30, pad = 2;
+  const min = Math.min.apply(null, arr), max = Math.max.apply(null, arr);
+  const range = (max - min) || 1;
+  const pts = arr.map(function(v, i) {
+    const x = pad + (i / (arr.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  return `<svg class="top-opp-sparkline ${dirClass}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}"/></svg>`;
+}
 async function loadTopOpportunities() {
   const grid = document.getElementById('topOppGrid');
   if (!grid) return;
@@ -1521,10 +1571,12 @@ async function loadTopOpportunities() {
           ${item.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${trVolumeDesc(item.volume_desc)}</span>` : ''}
           ${itemDispConf != null ? `<span>${t('idx_prob_label','機率')}: ${itemDispConf}%</span>` : ''}
         </div>` : '';
+      const sparkHtml = renderTopOppSparkline(item.sparkline, dirClass);
       return `<a class="top-opp-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
         <div class="top-opp-class">${classLabel}</div>
         <div class="top-opp-ticker">${trPulseLabel(item.label)}（${item.ticker}）</div>
         <div class="top-opp-price">$${item.price}</div>
+        ${sparkHtml}
         <div class="top-opp-dir ${dirClass}">${trDirection(item.confluence_direction)}</div>
         ${metaHtml}
       </a>`;
@@ -1573,42 +1625,42 @@ async function loadNineCategories() {
 
     // 2. 市場情緒分析
     const sent = d.sentiment;
-    cards.push(nineCatCard('🌐', 'nine_sentiment_title', '市場情緒分析',
+    cards.push(nineCatCard('<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', 'nine_sentiment_title', '市場情緒分析',
       sent && sent.overall_sentiment ? trDirection(sent.overall_sentiment) : null,
       sent && sent.volatility_desc ? trVolatility(sent.volatility_desc) : '', null));
 
     // 3. 熱門資產
     const trending = d.trending;
     const topTrend = trending && trending.assets && trending.assets[0];
-    cards.push(nineCatCard('🔥', 'nine_trending_title', '熱門資產',
+    cards.push(nineCatCard('<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>', 'nine_trending_title', '熱門資產',
       topTrend ? `${topTrend.name}（${topTrend.symbol}）` : null,
       '', topTrend ? NINE_CAT_HREF(topTrend.symbol) : null));
 
     // 4. 最快增長資產
     const growth = d.fastest_growth;
-    cards.push(nineCatCard('🚀', 'nine_growth_title', '最快增長資產',
+    cards.push(nineCatCard('<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>', 'nine_growth_title', '最快增長資產',
       growth ? `${trPulseLabel(growth.label)}（${growth.ticker}）` : null,
       growth && growth.pct_change_1mo != null ? `${growth.pct_change_1mo > 0 ? '+' : ''}${growth.pct_change_1mo}% (1${t('idx_month_short','個月')})` : '',
       growth ? NINE_CAT_HREF(growth.ticker) : null));
 
     // 5. 最大機會資產
     const best = d.best_opportunity;
-    cards.push(nineCatCard('🎯', 'nine_best_title', '最大機會資產',
+    cards.push(nineCatCard('<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/></svg>', 'nine_best_title', '最大機會資產',
       best ? `${trPulseLabel(best.label)}（${best.ticker}）` : null,
       best ? nineCatDir(best.confluence_direction) : '',
       best ? NINE_CAT_HREF(best.ticker) : null));
 
     // 6. 最高收息資產
     const yieldItem = d.highest_yield;
-    cards.push(nineCatCard('💵', 'nine_yield_title', '最高收息資產',
+    cards.push(nineCatCard('<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', 'nine_yield_title', '最高收息資產',
       yieldItem ? `${trPulseLabel(yieldItem.label)}（${yieldItem.ticker}）` : null,
       yieldItem ? `${t('idx_yield_label','殖利率')}: ${yieldItem.dividend_yield_pct}%` : '',
       yieldItem ? NINE_CAT_HREF(yieldItem.ticker) : null));
 
     // 7/8/9. 長/中/短線投資
-    [['long_term', '📈', 'nine_long_title', '長線投資'],
+    [['long_term', '<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', 'nine_long_title', '長線投資'],
      ['mid_term', '<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="7"/><line x1="19" y1="20" x2="19" y2="15"/><line x1="3" y1="20" x2="21" y2="20"/></svg>', 'nine_mid_title', '中線投資'],
-     ['short_term', '⚡', 'nine_short_title', '短線投資']].forEach(function(entry) {
+     ['short_term', '<svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>', 'nine_short_title', '短線投資']].forEach(function(entry) {
       const key = entry[0], icon = entry[1], titleKey = entry[2], fallback = entry[3];
       const item = d[key];
       cards.push(nineCatCard(icon, titleKey, fallback,
@@ -1852,5 +1904,6 @@ async function submitFeedback() {
 <script src="js/search-reminder.js"></script>
 <script src="js/mobile-widget-dock.js"></script>
 <script src="js/scroll-reveal.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
 </body>
 </html>

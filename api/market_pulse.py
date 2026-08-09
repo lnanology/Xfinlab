@@ -243,6 +243,15 @@ def _compute_top_opportunities() -> Dict:
 
             confluence = tech.get("confluence", {})
             score = confluence.get("score", 0.0)
+            # 2026-08-09 (AJ: CMC-style momentum cards with a mini trend
+            # line): reuse the OHLC bars already fetched for confluence
+            # scoring above -- no new network call, no new AI call, just
+            # the last N real closes. Kept short (20 bars) since this is
+            # a glance-able sparkline on a small homepage card, not a
+            # real chart (full history is one click away on chart-
+            # analysis.html).
+            ohlc = tech.get("ohlc") or []
+            sparkline = [round(float(bar["close"]), 4) for bar in ohlc[-20:] if bar.get("close") is not None]
             candidate = {
                 "ticker": ticker,
                 "label": _TICKER_LABELS.get(ticker, ticker),
@@ -250,6 +259,7 @@ def _compute_top_opportunities() -> Dict:
                 "confluence_direction": confluence.get("direction"),
                 "confluence_confidence_pct": confluence.get("confidence_pct"),
                 "volume_desc": tech.get("volume_desc"),
+                "sparkline": sparkline,
                 "_score": score,
             }
             if best is None or score > best["_score"]:
@@ -266,6 +276,7 @@ def _compute_top_opportunities() -> Dict:
                 "confluence_direction": best["confluence_direction"],
                 "confluence_confidence_pct": best.get("confluence_confidence_pct"),
                 "volume_desc": best.get("volume_desc"),
+                "sparkline": best.get("sparkline") or [],
             }
         else:
             items[asset_class] = {

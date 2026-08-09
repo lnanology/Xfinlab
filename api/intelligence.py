@@ -554,6 +554,46 @@ def world_regions(x_api_key: str = Header(None, alias="X-API-Key")):
 
 
 # ---------------------------------------------------------------------------
+# 2026-08-09 (task #724, AJ "全做" batch): logged-in-user self-service key
+# view/regenerate, for dashboard.html's account area. Auth here is the same
+# `token` query-param + jwt_handler.verify_token() convention already used
+# by backend/auth/auth.py's /auth/me -- NOT the admin `token` param above
+# (that one goes through api.admin.verify_admin, a different secret/check
+# entirely; reusing the param name would be confusing but they're unrelated
+# mechanisms). Never returns a raw key on GET -- consistent with the
+# "shown once at issuance" posture documented in api_key_service.py.
+# ---------------------------------------------------------------------------
+
+def _require_user(token: str) -> str:
+    """Returns the caller's email or raises 401. Local helper (not
+    api/intelligence.py's own _require_api_key, which checks an
+    X-API-Key header for the sold product itself -- this is a normal
+    logged-in-XFINLAB-user check, for the dashboard account page)."""
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+    from backend.auth.jwt_handler import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return payload["sub"]
+
+
+@router.get("/intelligence/v1/my-key")
+def my_key_status(token: str = None):
+    email = _require_user(token)
+    return _envelope(data=api_key_service.get_my_key_status(email))
+
+
+@router.post("/intelligence/v1/my-key/regenerate")
+def my_key_regenerate(token: str = None):
+    email = _require_user(token)
+    result = api_key_service.regenerate_key_for_user(email)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return _envelope(data=result)
+
+
+# ---------------------------------------------------------------------------
 # Admin: key issuance. V1 stopgap only -- no self-serve signup, no billing.
 # ---------------------------------------------------------------------------
 
