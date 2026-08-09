@@ -233,6 +233,27 @@ nav {
   row-gap: 0.5rem;
 }
 
+/* 2026-08-09 (AJ ref-image follow-up: "其他頁 TOPBAR功能全部移動 置中"):
+   on desktop widths, always give .nav-links its own full-width row below
+   the logo, centered -- previously this only happened via the
+   .xfl-nav-wrapped class below, and only once js/nav.js's resize-time
+   measurement detected the link row had already wrapped onto its own
+   line (i.e. only on narrower desktop widths where 9-13 links didn't fit
+   next to the logo). On wide screens it used to sit squeezed against the
+   logo instead, left-aligned by whatever width the right-hand group
+   (chat/account) left over. Unconditional now -- centered every time,
+   any desktop width. Mobile (<=768px) is untouched: .nav-links becomes a
+   hidden hamburger dropdown there (see the 768px media query further
+   down), where centering doesn't apply. */
+@media (min-width: 769px) {
+  .nav-links {
+    flex: 1 1 100%;
+    justify-content: center;
+    order: 3;
+    margin-top: 0.6rem;
+  }
+}
+
 /* 2026-07-20: applied by js/nav.js when it measures .nav-links has
    actually wrapped onto its own line (no longer sharing the first row
    with the logo) -- makes that wrapped row span the full width and
