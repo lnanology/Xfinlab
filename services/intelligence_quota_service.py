@@ -64,6 +64,14 @@ ENDPOINT_WEIGHT = {
     # RSS lookup, since they do a real network fetch + nontrivial compute.
     "technical": 3,
     "stress_test": 3,
+    # 2026-08-09 (World Engine Phase 0): /v1/world/market-map fans out
+    # across up to 10 regions x (1 macro fetch + 1 headline fetch + 1
+    # FinBERT batch call) + 1 global GDELT fetch -- no LLM calls (unlike
+    # `intel`), but real multi-source network I/O that scales with region
+    # count. Weighted between `technical` (single-asset, no fan-out) and
+    # `intel` (LLM-backed) to reflect that shape. Same
+    # pending-business-approval caveat as every other number here.
+    "world_map": 6,
 }
 
 

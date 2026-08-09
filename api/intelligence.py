@@ -504,6 +504,56 @@ def intelligence_stress_test(
 
 
 # ---------------------------------------------------------------------------
+# 2026-08-09 (World Engine Phase 0, XFINLAB_Final_Strategy.md section 5/6/7):
+# repackages GDELT global events + macro (World Bank baseline, FRED/ECB
+# high-frequency overrides for US/Eurozone) + FinBERT sentiment into one
+# "global market map" call across all 10 covered regions. Pure packaging
+# of already-built services (see services/world_engine_service.py's
+# docstring) -- no new AI calls, same honesty posture as the rest of this
+# router. Weighted between `events`/`sentiment` (cheap) and `intel`
+# (multi-region, multi-source fan-out, but zero LLM calls unlike intel).
+# ---------------------------------------------------------------------------
+
+@router.get("/intelligence/v1/world/market-map")
+def world_market_map(
+    regions: Optional[str] = None,
+    news_limit: int = 6,
+    include_sentiment: bool = True,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Global market map: for each region, macro indicators (with source
+    attribution -- world_bank/fred/ecb) + filtered headlines + FinBERT
+    sentiment, plus a top-level global headlines feed. `regions` is an
+    optional comma-separated subset (e.g. "us,hk,china"); omit for all 10.
+    See services/world_engine_service.list_regions() / GET
+    /intelligence/v1/world/regions for valid keys."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "world_map")
+
+    from services.world_engine_service import get_global_market_map
+
+    region_list = [r.strip() for r in regions.split(",") if r.strip()] if regions else None
+    news_limit = max(1, min(news_limit, 20))
+
+    result = get_global_market_map(regions=region_list, news_limit=news_limit, include_sentiment=include_sentiment)
+    if not result.get("available"):
+        return _envelope(data=None, error=result.get("message", "World market map unavailable"))
+
+    return _envelope(data=result, meta={"regions": list(result["regions"].keys())})
+
+
+@router.get("/intelligence/v1/world/regions")
+def world_regions(x_api_key: str = Header(None, alias="X-API-Key")):
+    """No-cost lookup of valid region keys for GET /world/market-map --
+    not quota-weighted since it's static metadata, not a data fetch."""
+    _require_api_key(x_api_key)
+
+    from services.world_engine_service import list_regions
+
+    return _envelope(data=list_regions())
+
+
+# ---------------------------------------------------------------------------
 # Admin: key issuance. V1 stopgap only -- no self-serve signup, no billing.
 # ---------------------------------------------------------------------------
 

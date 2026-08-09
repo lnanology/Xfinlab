@@ -453,10 +453,15 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "parties and marked 'Copyright' in their notes -- those specific "
             "series require contacting the data owner before any non-"
             "personal use, so any series pulled in must be checked for that "
-            "marker before display. NOT YET integrated into any service as "
-            "of this entry -- documented here ahead of building services/"
-            "fred_macro_service.py so the attribution + copyrighted-series "
-            "check ships from day one, not bolted on after."
+            "marker before display. 2026-08-09: integrated via services/"
+            "fred_macro_service.py (World Engine Phase 0) -- the 5 series "
+            "used (FEDFUNDS, CPIAUCSL, UNRATE, T10Y2Y, ICSA) are all "
+            "standard Fed-published series, none carry the third-party "
+            "'Copyright' marker; the mandatory attribution string is "
+            "surfaced on every successful response via that module's "
+            "`attribution` field. Dormant (is_available() False) until "
+            "FRED_API_KEY is set -- a free signup AJ does himself, not an "
+            "account this codebase can create."
         ),
     ),
     "ecb_data_portal": LicenseRecord(

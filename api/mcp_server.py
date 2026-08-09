@@ -140,6 +140,28 @@ _TOOLS = [
             "required": [],
         },
     },
+    {
+        "name": "get_global_market_map",
+        "description": (
+            "Get a cross-region global market snapshot ('World Engine'): macro "
+            "indicators (GDP growth/inflation/unemployment, with source "
+            "attribution -- world_bank/fred/ecb), filtered regional headlines, "
+            "and FinBERT sentiment for each requested region, plus a top-level "
+            "global headlines feed (GDELT). Regions: us, europe, japan, korea, "
+            "china, hk, tw, sea, me, latam. No AI narrative, no directional "
+            "signal -- structured real data only."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "api_key": {"type": "string", "description": "XFINLAB Intelligence API key (X-API-Key). Omit if supplied via HTTP header instead."},
+                "regions": {"type": "string", "description": "Comma-separated region keys, e.g. 'us,hk,china'. Omit for all 10 regions."},
+                "news_limit": {"type": "integer", "description": "Headlines per region, 1-20.", "default": 6},
+                "include_sentiment": {"type": "boolean", "description": "Whether to run FinBERT sentiment on each region's headlines.", "default": True},
+            },
+            "required": [],
+        },
+    },
 ]
 
 
@@ -260,11 +282,30 @@ def _call_get_intelligence_feed(request: Request, arguments: dict) -> dict:
     return _tool_result({"feed": feed, "count": len(feed), "ticker": ticker})
 
 
+def _call_get_global_market_map(request: Request, arguments: dict) -> dict:
+    auth = _auth_and_quota(request, arguments, "world_map")
+    if not auth["ok"]:
+        return _tool_result(auth["message"], is_error=True)
+
+    from services.world_engine_service import get_global_market_map
+
+    regions_arg = arguments.get("regions")
+    region_list = [r.strip() for r in regions_arg.split(",") if r.strip()] if regions_arg else None
+    news_limit = max(1, min(int(arguments.get("news_limit", 6) or 6), 20))
+    include_sentiment = bool(arguments.get("include_sentiment", True))
+
+    result = get_global_market_map(regions=region_list, news_limit=news_limit, include_sentiment=include_sentiment)
+    if not result.get("available"):
+        return _tool_result(result.get("message", "World market map unavailable"), is_error=True)
+    return _tool_result(result)
+
+
 _TOOL_HANDLERS = {
     "get_market_events": _call_get_market_events,
     "get_sentiment": _call_get_sentiment,
     "get_technical_analysis": _call_get_technical_analysis,
     "get_intelligence_feed": _call_get_intelligence_feed,
+    "get_global_market_map": _call_get_global_market_map,
 }
 
 
