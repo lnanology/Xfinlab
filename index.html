@@ -541,6 +541,7 @@
 <script src="js/smart-router.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/prob-display.js"></script>
+<script src="js/sparkline.js"></script>
 <meta property="og:title" content="XFINLAB — AI Market Data & Analytics">
 <meta property="og:description" content="Institutional-grade AI market data & analytics. Analyze Stocks, ETFs & Crypto in under 60 seconds.">
 <meta property="og:url" content="https://www.xfinlab.com/">
@@ -1612,17 +1613,14 @@ const TOPOPP_ORDER = ['stock', 'futures', 'crypto'];
 const TOPOPP_CLASS_KEYS = {'stock': 'topopp_class_stock', 'futures': 'topopp_class_futures', 'crypto': 'topopp_class_crypto'};
 // 2026-08-09: momentum sparkline SVG for each Top Opportunity card (see CSS
 // comment above .top-opp-sparkline for context). arr = last-20 real closes.
+// 2026-08-10 (task #747): now a thin wrapper over the shared js/sparkline.js
+// utility (XflSparkline.render) so the same rendering code is reused by
+// every other asset-card location site-wide -- className keeps this page's
+// existing .top-opp-sparkline sizing/CSS working unchanged.
 function renderTopOppSparkline(arr, dirClass) {
-  if (!Array.isArray(arr) || arr.length < 2) return '';
-  const w = 100, h = 30, pad = 2;
-  const min = Math.min.apply(null, arr), max = Math.max.apply(null, arr);
-  const range = (max - min) || 1;
-  const pts = arr.map(function(v, i) {
-    const x = pad + (i / (arr.length - 1)) * (w - pad * 2);
-    const y = h - pad - ((v - min) / range) * (h - pad * 2);
-    return x.toFixed(1) + ',' + y.toFixed(1);
-  }).join(' ');
-  return `<svg class="top-opp-sparkline ${dirClass}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}"/></svg>`;
+  return (typeof XflSparkline !== 'undefined')
+    ? XflSparkline.render(arr, dirClass, { className: 'top-opp-sparkline' })
+    : '';
 }
 async function loadTopOpportunities() {
   const grid = document.getElementById('topOppGrid');
