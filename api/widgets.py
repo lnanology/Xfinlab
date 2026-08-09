@@ -23,6 +23,7 @@ from datetime import date
 from fastapi import APIRouter, Response
 
 from services.widget_service import get_sentiment_index, get_signal_heatmap
+from services.widget_branding_service import get_branding_for_embed
 
 router = APIRouter()
 
@@ -88,31 +89,71 @@ def widget_heatmap(limit: int = 12):
     return get_signal_heatmap(limit=limit)
 
 
+@router.get("/widgets/branding")
+def widget_branding(key: str = None):
+    """2026-08-09 (white-label Tier A): public lookup embed.js calls when
+    a data-xfl-key attribute is present on the script tag. Always 200s
+    with {"available": False} for a missing/free/invalid key -- never an
+    error, since a failed branding lookup must degrade to today's
+    default XFINLAB-branded rendering, not a broken widget. See
+    services/widget_branding_service.py for the Pro/Enterprise tiering
+    and re-verification-at-read-time contract."""
+    return get_branding_for_embed(key)
+
+
 _EMBED_JS = r"""
 (function() {
   var s = document.currentScript;
   if (!s) return;
   var widget = s.getAttribute('data-xfl-widget') || 'sentiment-index';
   var theme = s.getAttribute('data-xfl-theme') || 'light';
+  var brandKey = s.getAttribute('data-xfl-key') || null;
   var API = 'https://api.xfinlab.com/api/widgets';
   var isDark = theme === 'dark';
   var colors = isDark
     ? {bg:'#0d1525', border:'#1e2d45', text:'#e2e8f0', muted:'#64748b', accent:'#00d4ff'}
     : {bg:'#ffffff', border:'#e2e8f0', text:'#111827', muted:'#6b7280', accent:'#2563eb'};
+  // 2026-08-09 (white-label Tier A): overwritten in place if a valid
+  // Pro/Enterprise data-xfl-key resolves real branding below -- stays
+  // exactly the default XFINLAB palette/badge for every embed that
+  // omits data-xfl-key (i.e. every existing embed today, zero
+  // regression) or whose key isn't Pro/Enterprise.
+  var brand = {available: false};
 
   var wrap = document.createElement('div');
   wrap.style.cssText = 'font-family:Arial,Helvetica,sans-serif;max-width:340px;border:1px solid ' + colors.border + ';border-radius:12px;padding:16px;background:' + colors.bg + ';color:' + colors.text + ';box-sizing:border-box';
-  wrap.innerHTML = '<div style="font-size:0.75rem;color:' + colors.muted + '">Loading XFINLAB widget...</div>';
+  wrap.innerHTML = '<div style="font-size:0.75rem;color:' + colors.muted + '">Loading widget...</div>';
   s.parentNode.insertBefore(wrap, s.nextSibling);
 
   function badge() {
+    // badge_mode: 'hidden' (Enterprise only) -> no badge at all;
+    // 'cobrand' (Pro+) -> "Powered by XFINLAB × {brand_name}"; anything
+    // else (no key, free tier, or lookup failed) -> today's plain
+    // "Powered by XFINLAB", unchanged.
+    if (brand.available && brand.badge_mode === 'hidden') return null;
     var a = document.createElement('a');
     a.href = 'https://www.xfinlab.com';
     a.target = '_blank';
     a.rel = 'noopener';
-    a.textContent = 'Powered by XFINLAB';
+    a.textContent = (brand.available && brand.badge_mode === 'cobrand' && brand.brand_name)
+      ? ('Powered by XFINLAB × ' + brand.brand_name)
+      : 'Powered by XFINLAB';
     a.style.cssText = 'display:block;margin-top:10px;font-size:0.68rem;color:' + colors.accent + ';text-decoration:none;text-align:right';
     return a;
+  }
+
+  function appendBadge(el) {
+    var b = badge();
+    if (b) el.appendChild(b);
+  }
+
+  function logoEl() {
+    if (!brand.available || !brand.logo_url) return null;
+    var img = document.createElement('img');
+    img.src = brand.logo_url;
+    img.alt = brand.brand_name || 'logo';
+    img.style.cssText = 'max-height:20px;max-width:120px;display:block;margin-bottom:6px';
+    return img;
   }
 
   function dirColor(direction) {
@@ -121,15 +162,24 @@ _EMBED_JS = r"""
     return colors.muted;
   }
 
+  function titleText(defaultText) {
+    return (brand.available && brand.brand_name) ? (brand.brand_name + ' · ' + defaultText) : defaultText;
+  }
+
   function renderSentiment(data) {
     wrap.innerHTML = '';
+    var logo = logoEl();
+    if (logo) wrap.appendChild(logo);
     if (!data || !data.available) {
-      wrap.innerHTML = '<div style="font-size:0.78rem;color:' + colors.muted + '">XFINLAB Sentiment Index unavailable right now.</div>';
-      wrap.appendChild(badge());
+      var errEl = document.createElement('div');
+      errEl.style.cssText = 'font-size:0.78rem;color:' + colors.muted;
+      errEl.textContent = 'Market Sentiment Index unavailable right now.';
+      wrap.appendChild(errEl);
+      appendBadge(wrap);
       return;
     }
     var title = document.createElement('div');
-    title.textContent = 'XFINLAB Market Sentiment Index';
+    title.textContent = titleText('Market Sentiment Index');
     title.style.cssText = 'font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:' + colors.muted + ';margin-bottom:8px';
     var scoreEl = document.createElement('div');
     scoreEl.textContent = data.score;
@@ -140,18 +190,23 @@ _EMBED_JS = r"""
     wrap.appendChild(title);
     wrap.appendChild(scoreEl);
     wrap.appendChild(labelEl);
-    wrap.appendChild(badge());
+    appendBadge(wrap);
   }
 
   function renderHeatmap(data) {
     wrap.innerHTML = '';
+    var logo = logoEl();
+    if (logo) wrap.appendChild(logo);
     if (!data || !data.available) {
-      wrap.innerHTML = '<div style="font-size:0.78rem;color:' + colors.muted + '">XFINLAB Signal Heatmap unavailable right now.</div>';
-      wrap.appendChild(badge());
+      var errEl = document.createElement('div');
+      errEl.style.cssText = 'font-size:0.78rem;color:' + colors.muted;
+      errEl.textContent = 'Signal Heatmap unavailable right now.';
+      wrap.appendChild(errEl);
+      appendBadge(wrap);
       return;
     }
     var title = document.createElement('div');
-    title.textContent = 'XFINLAB Signal Strength Heatmap · ' + data.date;
+    title.textContent = titleText('Signal Strength Heatmap') + ' · ' + data.date;
     title.style.cssText = 'font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:' + colors.muted + ';margin-bottom:10px';
     wrap.appendChild(title);
     var grid = document.createElement('div');
@@ -164,16 +219,25 @@ _EMBED_JS = r"""
       grid.appendChild(cell);
     });
     wrap.appendChild(grid);
-    wrap.appendChild(badge());
+    appendBadge(wrap);
+  }
+
+  function renderError() {
+    wrap.innerHTML = '<div style="font-size:0.78rem;color:' + colors.muted + '">Widget failed to load.</div>';
+    appendBadge(wrap);
   }
 
   var endpoint = widget === 'heatmap' ? (API + '/heatmap') : (API + '/sentiment-index');
-  fetch(endpoint).then(function(r) { return r.json(); }).then(function(data) {
+  var brandingFetch = brandKey
+    ? fetch(API + '/branding?key=' + encodeURIComponent(brandKey)).then(function(r) { return r.json(); }).catch(function() { return {available: false}; })
+    : Promise.resolve({available: false});
+
+  Promise.all([fetch(endpoint).then(function(r) { return r.json(); }), brandingFetch]).then(function(results) {
+    var data = results[0];
+    brand = results[1] || {available: false};
+    if (brand.available && brand.accent_color) colors.accent = brand.accent_color;
     if (widget === 'heatmap') { renderHeatmap(data); } else { renderSentiment(data); }
-  }).catch(function() {
-    wrap.innerHTML = '<div style="font-size:0.78rem;color:' + colors.muted + '">XFINLAB widget failed to load.</div>';
-    wrap.appendChild(badge());
-  });
+  }).catch(renderError);
 })();
 """
 

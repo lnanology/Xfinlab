@@ -718,6 +718,33 @@ async def video_engine_generate_custom(token: str, request: Request, body: dict 
             result["youtube"] = {"available": False, "message": str(e)}
     return result
 
+@router.post("/admin/widgets/branding")
+def set_widget_branding(token: str, request: Request, body: dict = {}):
+    """2026-08-09 (white-label Tier A, XFINLAB_Final_Strategy.md P2/P3):
+    admin-only setter for a Pro/Enterprise client's embed-widget branding
+    (services/widget_branding_service.py). No self-serve UI yet -- same
+    "admin sets it up per paying client" convention as
+    /intelligence/admin/issue-key, since Pro/Enterprise billing itself is
+    still manual. body: {api_key, brand_name, accent_color, logo_url,
+    badge_mode}. badge_mode='hidden' (fully remove the XFINLAB badge) is
+    rejected unless the key's tier is 'enterprise' -- the service layer
+    itself enforces this, this endpoint is just the auth gate."""
+    verify_admin(token, "set_widget_branding", request)
+    from services.widget_branding_service import set_branding
+
+    body = body or {}
+    result = set_branding(
+        api_key=body.get("api_key"),
+        brand_name=body.get("brand_name"),
+        accent_color=body.get("accent_color"),
+        logo_url=body.get("logo_url"),
+        badge_mode=body.get("badge_mode", "default"),
+    )
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Failed to set branding"))
+    return result
+
+
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
     verify_admin(token, f"delete_user:{user_id}", request)
