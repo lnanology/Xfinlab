@@ -270,6 +270,8 @@ footer{{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top
 {related_links}
 </div>
 
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+
 <div class="section">
 <h2>Risk Disclaimer</h2>
 <p>This analysis is for informational purposes only and does not constitute financial advice. Always conduct your own research and consult a qualified financial advisor before making investment decisions.</p>
@@ -300,6 +302,8 @@ footer{{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top
 </script>
 <script src="js/cookie-consent.js"></script>
 <script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
 </body>
 </html>
 """
