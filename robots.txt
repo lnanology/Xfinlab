@@ -5,6 +5,11 @@ Disallow: /dashboard.html
 Disallow: /reset-password.html
 Disallow: /forgot-password.html
 Disallow: /verify-email.html
+# 2026-08-09: growth/seo/pages/ (old prototype ticker pages, superseded by
+# the root-level ones with proper canonical/schema) was deleted from the
+# repo, but this stays as a belt-and-braces rule in case any stale CDN/
+# crawler cache still has a reference to the old path.
+Disallow: /growth/
 
 # 2026-07-21: block known aggressive SEO/scraper crawlers that ignore
 # crawl-rate etiquette and exist purely to harvest site content for
