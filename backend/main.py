@@ -60,6 +60,7 @@ from api.global_macro import router as global_macro_router
 from api.decision_journal import router as decision_journal_router
 from api.agent_debate import router as agent_debate_router
 from api.intelligence import router as intelligence_router
+from api.mcp_server import router as mcp_router
 from api.broker_affiliates import router as broker_affiliates_router
 from api.historical_analog import router as historical_analog_router
 from api.captcha import router as captcha_router
@@ -227,6 +228,7 @@ app.include_router(global_macro_router, prefix="/api", tags=["Global Macro"])
 app.include_router(decision_journal_router, prefix="/api", tags=["Decision Journal"])
 app.include_router(agent_debate_router, prefix="/api", tags=["Agent Debate"])
 app.include_router(intelligence_router, prefix="/api", tags=["Intelligence API"])
+app.include_router(mcp_router, prefix="/api", tags=["MCP Server"])
 app.include_router(broker_affiliates_router, prefix="/api", tags=["Broker Affiliates"])
 app.include_router(historical_analog_router, prefix="/api", tags=["Historical Analog"])
 app.include_router(captcha_router, prefix="/api", tags=["Captcha"])
