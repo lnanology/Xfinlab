@@ -646,6 +646,40 @@ def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "
             result["telegram_posted"] = False
     return result
 
+@router.post("/admin/video/generate-custom")
+async def video_engine_generate_custom(token: str, request: Request, body: dict = {}):
+    """2026-08-09 (admin chat-to-video feature, requested as "Video Engine
+    可以加個CHAT更彈性做任何影片嗎" -- confirmed admin-only, not public):
+    sibling to /admin/video/generate above, but instead of the fixed
+    today's-signals format, takes a free-text `prompt` (e.g. "make a video
+    about NVDA earnings, in Spanish, square format") and generates
+    narration/slides for that arbitrary topic via
+    services/video_engine_service.generate_custom_video(). Same
+    admin-token + video_engine feature-flag gating as the daily-video
+    endpoint -- this is still the heaviest single operation in Growth OS
+    (TTS + ffmpeg), a chat text box doesn't change that cost.
+
+    Uses a JSON body (not query params) since `prompt` is free text that
+    can run long, unlike the daily endpoint's short enum-like query params."""
+    verify_admin(token, "video_engine_generate_custom", request)
+    flags = {r["key"]: r["enabled"] for r in get_db().execute(
+        "SELECT key, enabled FROM feature_flags WHERE key='video_engine'"
+    ).fetchall()}
+    if not flags.get("video_engine", 0):
+        raise HTTPException(status_code=403, detail="video_engine feature flag is off")
+    prompt = (body or {}).get("prompt", "")
+    num_slides = int((body or {}).get("num_slides", 4) or 4)
+    post_to_telegram = bool((body or {}).get("post_to_telegram", False))
+    from services.video_engine_service import generate_custom_video
+    result = generate_custom_video(prompt, num_slides=num_slides)
+    if post_to_telegram and result.get("available"):
+        try:
+            from services.telegram_push_service import push_video_to_telegram
+            result["telegram_posted"] = push_video_to_telegram(result.get("lang", "en"), result["path"])
+        except Exception:
+            result["telegram_posted"] = False
+    return result
+
 @router.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, token: str, request: Request):
     verify_admin(token, f"delete_user:{user_id}", request)

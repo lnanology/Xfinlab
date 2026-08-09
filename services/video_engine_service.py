@@ -662,6 +662,18 @@ def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: st
         end_url_font = _get_font(int(height * 0.024), lang)
         end_url_w = _text_width(draw, "xfinlab.com", end_url_font, height * 0.016)
         draw.text((width // 2 - end_url_w / 2, end_y), "xfinlab.com", font=end_url_font, fill=colors["muted"])
+    elif kind == "custom":
+        # 2026-08-09 (admin chat-to-video feature): body slides for an
+        # arbitrary admin-supplied topic, with no ticker/OHLC data to
+        # render -- same simple vertically-centered wrapped-text layout as
+        # "intro" above, reused rather than duplicated since there's no
+        # per-slide structured data to lay out beyond the caption itself.
+        lines = textwrap.wrap(caption_text, width=max(10, width // 24))
+        line_h = int(height * 0.037)
+        start_y = int(height * 0.5) - (len(lines) * line_h) // 2
+        for i, line in enumerate(lines):
+            draw.text((pad_x, start_y + i * line_h), line,
+                      font=_get_font(int(height * 0.032), lang), fill=colors["fg"])
     else:  # "signal"
         direction = _normalize_direction(signal.get("confluence_direction"))
         color = colors["green"] if direction == "bullish" else (colors["red"] if direction == "bearish" else colors["muted"])
@@ -832,6 +844,26 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
     used_ai_script = ai_texts is not None
     narration_texts = ai_texts if used_ai_script else template_texts
 
+    result = _render_video_pipeline(
+        slides, narration_texts, lang, aspect_ratio, width, height, colors,
+        log_note=f"Generated with {len(signals)} signals ({lang}, {aspect_ratio}, {theme} theme, "
+                  f"AI script: {'yes' if used_ai_script else 'no (template fallback)'})",
+    )
+    if result.get("available"):
+        result["theme"] = theme
+        result["used_ai_script"] = used_ai_script
+    return result
+
+
+def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, aspect_ratio: str,
+                            width: int, height: int, colors: dict, log_note: str) -> dict:
+    """Shared TTS -> slide-render -> ffmpeg-assemble pipeline used by both
+    generate_daily_video() (fixed today's-signals content) and
+    generate_custom_video() (arbitrary admin-chat-requested content) --
+    extracted 2026-08-09 so the two content sources don't duplicate this
+    ~80-line ffmpeg/TTS assembly logic. `slides` is a list of (kind,
+    payload) tuples matching len(narration_texts) 1:1, exactly as
+    _render_slide() expects."""
     workdir = tempfile.mkdtemp(prefix="xfl_video_")
     try:
         audio_paths = []
@@ -885,12 +917,7 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
         )
 
         total_duration = sum(durations)
-        _log_generation(
-            "ok",
-            f"Generated with {len(signals)} signals ({lang}, {aspect_ratio}, {theme} theme, "
-            f"AI script: {'yes' if used_ai_script else 'no (template fallback)'})",
-            total_duration, len(slides),
-        )
+        _log_generation("ok", log_note, total_duration, len(slides))
         return {
             "available": True,
             "path": final_path,
@@ -898,8 +925,6 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
             "slides_count": len(slides),
             "lang": lang,
             "aspect_ratio": aspect_ratio,
-            "theme": theme,
-            "used_ai_script": used_ai_script,
             "generated_at": datetime.now(timezone.utc).isoformat(),
         }
     except subprocess.CalledProcessError as e:
@@ -911,3 +936,136 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
         return {"available": False, "message": f"Video generation failed: {e}"}
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
+
+
+_VALID_LANGS = None  # set lazily below to avoid a forward-reference to _SCRIPT
+
+
+def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[List[str]]:
+    """2026-08-09 (admin chat-to-video feature): asks the site's AI router
+    to write narration for an ADMIN-SUPPLIED arbitrary topic, not today's
+    real signals -- so unlike _ai_rewrite_narration() above, there is no
+    real-data fact block to ground the output in. Guardrails here matter
+    more, not less: the prompt explicitly forbids inventing specific
+    numbers (prices/percentages/returns) unless the admin's own topic text
+    supplied them, same "never fabricate a figure" rule this codebase has
+    enforced since the MasterPipeline/Stress-Lab fabricated-number cleanup
+    (tasks #226/#230/#272). Returns None on any failure -- caller must
+    treat that as "cannot generate this custom video", there is no
+    template fallback for an arbitrary topic the way the daily video has."""
+    try:
+        from ai.ai_router import get_ai_response
+    except Exception:
+        return None
+
+    lang_name = _AI_LANG_NAMES.get(lang, "English")
+    body_lines = max(1, num_slides - 2)
+
+    prompt = (
+        f"You are writing a SHORT spoken video-narration script in {lang_name} for XFINLAB, a "
+        f"financial data/research platform. Output EXACTLY {num_slides} lines, one sentence per "
+        f"line, no numbering, no markdown, no quotation marks:\n"
+        f"Line 1: a 1-sentence intro naming XFINLAB and the topic below.\n"
+        f"Lines 2 through {num_slides - 1}: {body_lines} sentence(s) of general, factual "
+        f"commentary on the topic, professional financial-news tone. Do NOT invent specific "
+        f"prices, percentages, dates, or return figures that are not explicitly given in the "
+        f"topic text -- describe concepts, context, and publicly known facts only.\n"
+        f"Line {num_slides}: a 1-sentence closing disclaimer that this is general information "
+        f"only, not investment advice, mentioning xfinlab.com.\n\n"
+        f"Topic (as requested by the XFINLAB team):\n{topic}\n\n"
+        f"Output ONLY the {num_slides} lines of narration text, nothing else."
+    )
+
+    try:
+        response = get_ai_response(prompt, max_tokens=500, reasoning_effort="low")
+    except Exception:
+        return None
+    if not response:
+        return None
+
+    lines = [ln.strip(" \t\"'") for ln in response.strip().split("\n") if ln.strip()]
+    if len(lines) != num_slides:
+        return None
+    return lines
+
+
+def parse_video_chat_request(message: str) -> dict:
+    """2026-08-09: turns one free-text admin chat message (e.g. "make a
+    video about NVDA earnings, in Spanish, square format") into
+    {"topic": ..., "lang": ..., "aspect_ratio": ..., "theme": ...}.
+    Deliberately simple keyword matching, not another AI call -- this is
+    an internal admin tool where a wrong guess just means the admin picks
+    the right dropdown value instead, not worth a second LLM round-trip
+    (and a second point of failure) for. `topic` is always the full
+    original message verbatim, since the AI script-writer in
+    _ai_write_custom_script() needs the complete request anyway, including
+    whatever language/format words a keyword scan might strip out."""
+    text = (message or "").strip()
+    lower = text.lower()
+
+    lang = "zh-HK"
+    for code, name in _AI_LANG_NAMES.items():
+        if code.lower() in lower or name.lower() in lower:
+            lang = code
+            break
+
+    aspect_ratio = _DEFAULT_ASPECT
+    if any(k in lower for k in ("square", "1:1", "instagram", "ig feed")):
+        aspect_ratio = "1:1"
+    elif any(k in lower for k in ("16:9", "landscape", "youtube", "widescreen")):
+        aspect_ratio = "16:9"
+    elif any(k in lower for k in ("9:16", "vertical", "shorts", "reels", "tiktok")):
+        aspect_ratio = "9:16"
+
+    theme = _DEFAULT_THEME
+    if "light theme" in lower or "light mode" in lower or " light " in f" {lower} ":
+        theme = "light"
+    elif "dark theme" in lower or "dark mode" in lower:
+        theme = "dark"
+
+    return {"topic": text, "lang": lang, "aspect_ratio": aspect_ratio, "theme": theme}
+
+
+def generate_custom_video(prompt_text: str, num_slides: int = 4) -> dict:
+    """2026-08-09 (admin chat-to-video feature, requested as "Video Engine
+    可以加個CHAT更彈性做任何影片嗎"): admin-only, free-text-driven video
+    generation, separate from generate_daily_video()'s fixed
+    today's-signals format. Same availability/TTS/ffmpeg gating as
+    generate_daily_video() -- reuses is_available() implicitly via
+    _render_video_pipeline's TTS calls failing gracefully if unconfigured.
+    num_slides is capped to a small range so one chat message can't
+    request an unreasonably long (expensive) render."""
+    if not is_available():
+        msg = "Video Engine unavailable: " + (
+            "GOOGLE_TTS_API_KEY not set" if not tts_service.is_available() else "ffmpeg/ffprobe not found on PATH"
+        )
+        _log_generation("unavailable", msg)
+        return {"available": False, "message": msg}
+
+    if not (prompt_text or "").strip():
+        return {"available": False, "message": "Empty request -- describe what the video should be about."}
+
+    num_slides = max(3, min(8, num_slides))  # intro + at least 1 body + outro, capped at 8 total
+
+    parsed = parse_video_chat_request(prompt_text)
+    lang = parsed["lang"] if parsed["lang"] in _SCRIPT else "en"
+    aspect_ratio = parsed["aspect_ratio"] if parsed["aspect_ratio"] in _ASPECT_RATIOS else _DEFAULT_ASPECT
+    theme = parsed["theme"] if parsed["theme"] in _THEMES else _DEFAULT_THEME
+    width, height = _ASPECT_RATIOS[aspect_ratio]
+    colors = _THEMES[theme]
+
+    narration_texts = _ai_write_custom_script(parsed["topic"], num_slides, lang)
+    if narration_texts is None:
+        _log_generation("error", f"AI script-writer failed for custom topic: {parsed['topic'][:80]!r}")
+        return {"available": False, "message": "AI could not write a script for this request -- try rephrasing it."}
+
+    slides = [("intro", None)] + [("custom", None)] * (num_slides - 2) + [("outro", None)]
+
+    result = _render_video_pipeline(
+        slides, narration_texts, lang, aspect_ratio, width, height, colors,
+        log_note=f"Custom video: {parsed['topic'][:80]!r} ({lang}, {aspect_ratio}, {theme} theme)",
+    )
+    if result.get("available"):
+        result["theme"] = theme
+        result["topic"] = parsed["topic"]
+    return result
