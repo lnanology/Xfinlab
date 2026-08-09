@@ -349,32 +349,14 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
   .input-row{flex-direction:row;align-items:center;flex-wrap:nowrap}
   .input-box{flex:1;min-width:0}
 
-  /* 2026-07-24 fix ("分享 語言 跟 積分 Feedback 橙色預訂每日信號 藍色TG
-     signal 6個係下面 3 3"): these 6 widgets are each injected
-     independently (share-widget.js, i18n.js's language switcher,
-     points-badge.js, plus the inline #fbWidget/#tgWidget blocks further
-     down this file) as separate position:fixed elements scattered across
-     corners -- on narrow screens they overlapped each other and the
-     points badge in particular sat right over the input area ("唔好比積分
-     擋住"). dockMobileWidgets() (below, in the main script block)
-     physically moves all 6 into #mobileWidgetDock, a single bar pinned
-     to the very bottom of the screen, laid out here as 3 columns x 2
-     rows. The !important overrides neutralize each widget's own inline
-     position/inset styles so they behave as normal grid items instead of
-     still trying to float independently. Desktop is untouched; widgets
-     keep their original fixed corners there. */
-  #mobileWidgetDock{position:fixed;left:0;right:0;bottom:0;z-index:1000;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:var(--bg-card);border-top:1px solid var(--border-color);box-shadow:0 -4px 16px rgba(0,0,0,0.15)}
-  #mobileWidgetDock>*{position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;width:100%!important;margin:0!important}
-  #mobileWidgetDock button,#mobileWidgetDock>a{font-size:0.64rem!important;padding:6px 2px!important;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;max-width:100%;border-radius:8px!important;box-shadow:none!important;width:100%!important;text-align:center!important}
-  /* the popover panels (feedback form, TG channel links, share menu,
-     language list) still need to open as an overlay, not squashed inside
-     their now tiny grid cell -- float them centered just above the dock
-     instead of anchored to their (shrunk) parent widget. */
-  #tgPanel,#fbPanel,#sharePanel,#langSwitcher>div:last-child{position:fixed!important;left:50%!important;right:auto!important;bottom:96px!important;top:auto!important;transform:translateX(-50%);width:min(280px,88vw)!important;z-index:1001!important}
-  /* reserve clearance above the docked bar so the input row (and the
-     last message/card behind it) never renders underneath it -- replaces
-     the old, much larger .messages/.welcome padding-bottom below, which
-     was sized for the previous corner-stacked widgets. */
+  /* 2026-08-09 (task #731, AJ ref-image batch): chat.html used to run its
+     own page-local copy of the widget-dock logic here (a 3x2 grid bar,
+     mobile-only -- see git history for the removed #mobileWidgetDock
+     rules/dockMobileWidgets() JS). That's now replaced by the shared
+     js/mobile-widget-dock.js (single round trigger above the quick-ask
+     bubble, same on mobile and desktop) loaded near the end of this file,
+     so chat.html matches every other page instead of having its own
+     divergent bottom-bar design. */
   .input-area{margin-bottom:100px}
   .messages{padding-bottom:110px}
   .welcome{padding-bottom:110px}
@@ -389,26 +371,10 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
   <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
   <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
   <div class="nav-links" id="navLinks">
-    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
-    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
-    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
-    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
     <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
-    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
-    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
-    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
-    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
-    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
-    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
-    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
-    <!-- 2026-07-25 fix: the real "+New Chat" button now lives in .sidebar
-         (see below), but .sidebar is display:none on mobile (<=768px, see
-         the @media(max-width:768px) block below), which would leave mobile
-         users with no way to start a new chat at all. This duplicate stays
-         hidden on desktop (id="newChatBtnMobile", display:none inline) and
-         is only shown by the existing mobile media query below, so it
-         surfaces inside the hamburger dropdown instead. -->
-    <button class="new-chat-btn" id="newChatBtnMobile" onclick="newChat()" data-i18n="chat_new_chat" style="display:none;">＋ 新對話</button>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
   </div>
 </nav>
 
@@ -1124,43 +1090,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
   positionInputTools();
   window.addEventListener('resize', debounce(positionInputTools, 200));
-  dockMobileWidgets();
-  window.addEventListener('resize', debounce(dockMobileWidgets, 200));
 });
 
-// 2026-07-24 fix ("分享 語言 跟 積分 Feedback 橙色預訂每日信號 藍色TG
-// signal 6個係下面 3 3"): moves the 6 independently-injected floating
-// widgets into #mobileWidgetDock (styling in the mobile media query
-// above) on phones/small tablets. Some of these are appended
-// asynchronously by their own script (points-badge.js waits on a fetch;
-// i18n.js's language switcher waits on the translations request), so
-// this can't just run once on DOMContentLoaded -- a MutationObserver on
-// document.body catches each widget the moment it actually appears,
-// however late that is, without needing to poll.
-const MOBILE_DOCK_IDS = ['tgWidget', 'fbWidget', 'xflPointsBadge', 'shareWidget', 'langSwitcher', 'freeSignalsBadge'];
-function dockMobileWidgets() {
-  const isMobile = window.matchMedia('(max-width: 768px)').matches;
-  let dock = document.getElementById('mobileWidgetDock');
-  if (isMobile) {
-    if (!dock) {
-      dock = document.createElement('div');
-      dock.id = 'mobileWidgetDock';
-      document.body.appendChild(dock);
-    }
-    MOBILE_DOCK_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (el && el.parentElement !== dock) dock.appendChild(el);
-    });
-  } else if (dock) {
-    // crossed back to desktop width (e.g. rotating a tablet) -- restore
-    // each widget as a direct body child so it goes back to its own
-    // original fixed corner instead of staying grid-docked.
-    Array.from(dock.children).forEach(el => document.body.appendChild(el));
-  }
-}
-if (document.body) {
-  new MutationObserver(debounce(dockMobileWidgets, 150)).observe(document.body, { childList: true });
-}
+// 2026-08-09 (task #731): the page-local dockMobileWidgets()/
+// MOBILE_DOCK_IDS implementation that used to live here was removed --
+// js/mobile-widget-dock.js (loaded near the end of this file) now does
+// this identically across the whole site, so chat.html no longer needs
+// its own copy.
 
 function debounce(fn, ms) {
   let h;
@@ -1525,5 +1461,7 @@ async function submitFeedback() {
 <script src="js/anti-scrape.js"></script>
 <script src="js/ads.js"></script>
 <script src="js/support-widget.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
 </body>
 </html>
