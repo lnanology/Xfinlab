@@ -17,6 +17,7 @@
 <script src="js/ai-loading.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
+<script src="js/sparkline.js"></script>
 
 <style>nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
 
@@ -251,7 +252,9 @@ async function doScreen(){
     const answer = res?.data?.conclusion || res?.data?.analysis || res?.answer || '';
     if(answer){
       document.getElementById('resultTitle').textContent=`${selText('f_market')} · ${selText('f_sector')} · ${selText('f_risk')} ${t('sc_result_title_suffix','篩選結果')}`;
-      document.getElementById('resultContent').innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
+      const resultContentEl=document.getElementById('resultContent');
+      resultContentEl.innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
+      scAttachSparklines(resultContentEl);
 
       const scAskQ = `我啱啱用篩選器搵咗呢啲條件：市場${market}、行業${sector}、市值${cap}、增長率${growth}、估值${value}、風險${risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？`;
       document.getElementById('scAskAi').href = `chat.html?q=${encodeURIComponent(scAskQ)}`;
@@ -277,13 +280,39 @@ function scIsTableSeparator(line){const t=line.trim();return t.includes('-')&&/^
 function scSplitTableRow(line){let t=line.trim();if(t.startsWith('|'))t=t.slice(1);if(t.endsWith('|'))t=t.slice(0,-1);return t.split('|').map(c=>c.trim());}
 function scEscape(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function scInlineFormat(s){return scEscape(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+// 2026-08-10 (task #747-749, "所有卡片有資產的都加細K線小圖"): AI-generated
+// screener rows have no structured backing data (api/ai_analysis.py returns
+// free-text prose, not a ticker-keyed JSON list -- see js/sparkline.js's
+// module docstring), so a ticker-shaped ID guard here (same pattern as
+// api/anomaly.py's _SYMBOL_RE) decides whether the primary cell is safe to
+// key a sparkline lookup off of -- the AI sometimes writes "AAPL" but can
+// also write a bare company name with no code in that column, which this
+// deliberately does NOT try to fetch a chart for.
+const SC_TICKER_RE = /^[A-Za-z0-9.\-=^]{1,12}$/;
 function scRenderRowCard(header,row){
   let primaryIdx=header.findIndex(h=>/代號|代码|ticker|symbol/i.test(h));
   if(primaryIdx===-1)primaryIdx=0;
   const fields=row.map((cell,i)=>i===primaryIdx?null:
     `<div class="sc-field"><span class="sc-field-label">${scInlineFormat(header[i])}：</span>${scInlineFormat(cell)}</div>`
   ).filter(Boolean).join('');
-  return `<div class="sc-card"><div class="sc-card-title">${scInlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+  const rawTicker=(row[primaryIdx]||'').trim().toUpperCase();
+  const tickerAttr=SC_TICKER_RE.test(rawTicker)?` data-ticker="${scEscape(rawTicker)}"`:'';
+  const sparkSlot=tickerAttr?`<span class="sc-spark" style="display:block;width:90px;margin:4px 0"></span>`:'';
+  return `<div class="sc-card"${tickerAttr}><div class="sc-card-title">${scInlineFormat(row[primaryIdx])}</div>${sparkSlot}${fields}</div>`;
+}
+// Post-render pass: fetch the generic GET /api/sparkline/{ticker} lookup
+// once per card that got a data-ticker attribute above, same client-side
+// pattern as company-compare.html / dashboard.html's watchlist.
+function scAttachSparklines(container){
+  if(typeof XflSparkline==='undefined')return;
+  container.querySelectorAll('.sc-card[data-ticker]').forEach(card=>{
+    const ticker=card.getAttribute('data-ticker');
+    const slot=card.querySelector('.sc-spark');
+    if(!ticker||!slot)return;
+    fetch(`${API_BASE}/api/sparkline/${encodeURIComponent(ticker)}`).then(r=>r.json()).then(d=>{
+      slot.innerHTML=XflSparkline.render(d.sparkline,'neutral',{width:90,height:24,className:'xfl-spark-sm'});
+    }).catch(()=>{});
+  });
 }
 function scRenderTableBlock(tableLines){
   const header=scSplitTableRow(tableLines[0]);

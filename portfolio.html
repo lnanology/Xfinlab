@@ -112,6 +112,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 </footer>
 
 <script src="js/ai-loading.js"></script>
+<script src="js/sparkline.js"></script>
 <script>
 const API = "https://api.xfinlab.com/api";
 const ALLOC_COLORS = ["#F97316","#7c3aed","#10b981","#f59e0b","#ef4444"];
@@ -136,15 +137,25 @@ async function loadPortfolioAllocation() {
     const token = localStorage.getItem('xfinlab_token');
     const res = await fetch(`${API}/portfolio${token ? '?token=' + token : ''}`);
     const data = await res.json();
-    const rows = (data.portfolio || []).map((p, i) => `
+    const rows = (data.portfolio || []).map((p, i) => {
+      // 2026-08-10 (task #747-750, "所有卡片有資產的都加細K線小圖"): small
+      // momentum sparkline next to each holding, same shared utility as
+      // index.html's Top Opportunity cards -- data.portfolio[i].sparkline
+      // is populated server-side by api/portfolio.py from the snapshot
+      // already computed for the allocation math itself (no extra fetch).
+      const dir = (typeof XflSparkline !== 'undefined') ? XflSparkline.dirClass(p.allocation) : 'neutral';
+      const sparkHtml = (typeof XflSparkline !== 'undefined') ? XflSparkline.render(p.sparkline, dir, {width:56,height:22,className:'xfl-spark-sm'}) : '';
+      return `
       <div class="alloc-row">
         <div class="alloc-dot" style="background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
         <div class="alloc-ticker">${p.ticker}</div>
+        ${sparkHtml ? `<div style="width:56px;flex-shrink:0">${sparkHtml}</div>` : ''}
         <div class="alloc-bar-wrap">
           <div class="alloc-bar" style="width:${p.allocation}%;background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
         </div>
         <div class="alloc-pct">${p.allocation}%</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     content.innerHTML = rows ? `<div class="alloc-list">${rows}</div>` : `<div class="empty-box">${t('port_empty','按「計算配置」以查看你嘅組合配置')}</div>`;
     if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'portfolio'});
   } catch (e) {

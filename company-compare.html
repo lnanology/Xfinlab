@@ -242,6 +242,7 @@ footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--n
 <script src="js/ai-loading.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
+<script src="js/sparkline.js"></script>
 <script>
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
@@ -370,7 +371,31 @@ function displayResults(data){
     });
     tableHtml+='</tr>';
   });
+  // 2026-08-10 (task #747-751, "所有卡片有資產的都加細K線小圖"): a 走勢 row
+  // with a small sparkline per company. api/company_compare.py's response
+  // has no OHLC history (its market_data comes from the `.info`-only
+  // MarketDataService, same as the rest of this table) -- rather than
+  // reshape that endpoint, this fetches the generic GET /api/sparkline/
+  // {ticker} lookup once per symbol after the table is already on screen,
+  // same pattern as autocomplete.js's live-search calls.
+  if (symbols.length && typeof XflSparkline !== 'undefined') {
+    tableHtml += `<tr><td class="metric-name">${t('cc_row_trend_chart','走勢')}</td>` +
+      symbols.map(s => `<td class="value-cell neutral-value" id="ccSpark-${CSS.escape(s)}"></td>`).join('') +
+      '</tr>';
+  }
   document.getElementById('tableBody').innerHTML=tableHtml || `<tr><td colspan="99" style="text-align:center;padding:2rem;">${t('cc_no_market_data','暫時未能取得市場數據')}</td></tr>`;
+
+  if (symbols.length && typeof XflSparkline !== 'undefined') {
+    symbols.forEach(s => {
+      fetch(`${API_BASE}/api/sparkline/${encodeURIComponent(s)}`).then(r => r.json()).then(d => {
+        const cell = document.getElementById(`ccSpark-${CSS.escape(s)}`);
+        if (!cell) return;
+        const company = marketData[s] || {};
+        const dir = XflSparkline.dirClass(company.trend === 'bullish' ? 1 : (company.trend === 'bearish' ? -1 : 0));
+        cell.innerHTML = XflSparkline.render(d.sparkline, dir, {width: 90, height: 26, className: 'xfl-spark-sm'}) || '—';
+      }).catch(() => {});
+    });
+  }
 
   const analysisText = data.analysis || data.conclusion || '';
   document.getElementById('analysisContent').innerHTML = analysisText ? formatAnalysis(analysisText) : `<p>${t('cc_no_analysis_content','暫時未能取得分析內容，請稍後重試。')}</p>`;

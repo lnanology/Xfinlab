@@ -679,6 +679,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Market Cap",
         "cc_row_volume_ratio": "Volume Ratio (Today/Average)",
         "cc_row_trend": "Trend (vs 50-day MA)",
+
+        "cc_row_trend_chart": "Trend Chart",
         "cc_row_52w_high": "Near 52-Week High",
         "cc_row_analyst_rating": "Analyst Rating Bias",
         "cc_trend_bullish": "📈 Bullish",
@@ -2247,6 +2249,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Capitalización de Mercado",
         "cc_row_volume_ratio": "Ratio de Volumen (Hoy/Promedio)",
         "cc_row_trend": "Tendencia (vs MA de 50 días)",
+
+        "cc_row_trend_chart": "Gráfico de Tendencia",
         "cc_row_52w_high": "Cerca del Máximo de 52 Semanas",
         "cc_row_analyst_rating": "Sesgo de Calificación de Analistas",
         "cc_trend_bullish": "📈 Alcista",
@@ -3726,6 +3730,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Capitalisation Boursière",
         "cc_row_volume_ratio": "Ratio de Volume (Aujourd'hui/Moyenne)",
         "cc_row_trend": "Tendance (vs MM 50 jours)",
+
+        "cc_row_trend_chart": "Graphique de Tendance",
         "cc_row_52w_high": "Proche du Plus Haut sur 52 Semaines",
         "cc_row_analyst_rating": "Biais des Notations des Analystes",
         "cc_trend_bullish": "📈 Haussier",
@@ -5205,6 +5211,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Marktkapitalisierung",
         "cc_row_volume_ratio": "Volumenverhältnis (Heute/Durchschnitt)",
         "cc_row_trend": "Trend (vs. 50-Tage-MA)",
+
+        "cc_row_trend_chart": "Trenddiagramm",
         "cc_row_52w_high": "Nahe 52-Wochen-Hoch",
         "cc_row_analyst_rating": "Analysten-Bewertungstendenz",
         "cc_trend_bullish": "📈 Bullisch",
@@ -6684,6 +6692,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Capitalizzazione di Mercato",
         "cc_row_volume_ratio": "Rapporto di Volume (Oggi/Media)",
         "cc_row_trend": "Tendenza (vs MA 50 giorni)",
+
+        "cc_row_trend_chart": "Grafico Tendenza",
         "cc_row_52w_high": "Vicino al Massimo di 52 Settimane",
         "cc_row_analyst_rating": "Tendenza Valutazione Analisti",
         "cc_trend_bullish": "📈 Rialzista",
@@ -8163,6 +8173,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Capitalização de Mercado",
         "cc_row_volume_ratio": "Índice de Volume (Hoje/Média)",
         "cc_row_trend": "Tendência (vs MM 50 dias)",
+
+        "cc_row_trend_chart": "Gráfico de Tendência",
         "cc_row_52w_high": "Próximo da Máxima de 52 Semanas",
         "cc_row_analyst_rating": "Viés de Classificação dos Analistas",
         "cc_trend_bullish": "📈 Otimista",
@@ -9642,6 +9654,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Рыночная капитализация",
         "cc_row_volume_ratio": "Отношение объёма (сегодня/среднее)",
         "cc_row_trend": "Тренд (относительно 50-дн. MA)",
+
+        "cc_row_trend_chart": "График Тренда",
         "cc_row_52w_high": "Близко к 52-недельному максимуму",
         "cc_row_analyst_rating": "Уклон рейтингов аналитиков",
         "cc_trend_bullish": "📈 Бычий",
@@ -11121,6 +11135,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Marktkapitalisatie",
         "cc_row_volume_ratio": "Volumeratio (Vandaag/Gemiddeld)",
         "cc_row_trend": "Trend (vs 50-daags MA)",
+
+        "cc_row_trend_chart": "Trendgrafiek",
         "cc_row_52w_high": "Dicht bij 52-weken Hoogtepunt",
         "cc_row_analyst_rating": "Analisten Beoordelingstendens",
         "cc_trend_bullish": "📈 Bullish",
@@ -12600,6 +12616,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Kapitalizacja Rynkowa",
         "cc_row_volume_ratio": "Wskaźnik Wolumenu (Dzisiaj/Średnia)",
         "cc_row_trend": "Trend (vs 50-dniowa MA)",
+
+        "cc_row_trend_chart": "Wykres Trendu",
         "cc_row_52w_high": "Blisko 52-tygodniowego Maksimum",
         "cc_row_analyst_rating": "Tendencja Ocen Analityków",
         "cc_trend_bullish": "📈 Byczy",
@@ -14079,6 +14097,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Capitalizare de Piață",
         "cc_row_volume_ratio": "Raport de Volum (Azi/Medie)",
         "cc_row_trend": "Tendință (vs MA 50 zile)",
+
+        "cc_row_trend_chart": "Grafic Tendință",
         "cc_row_52w_high": "Aproape de Maximul pe 52 Săptămâni",
         "cc_row_analyst_rating": "Tendința Ratingurilor Analiștilor",
         "cc_trend_bullish": "📈 Optimist",
@@ -15558,6 +15578,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Ринкова капіталізація",
         "cc_row_volume_ratio": "Відношення обсягу (сьогодні/середнє)",
         "cc_row_trend": "Тренд (відносно 50-денної MA)",
+
+        "cc_row_trend_chart": "Графік Тренду",
         "cc_row_52w_high": "Близько до 52-тижневого максимуму",
         "cc_row_analyst_rating": "Ухил рейтингів аналітиків",
         "cc_trend_bullish": "📈 Бичачий",
@@ -17037,6 +17059,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Тржишна Капитализација",
         "cc_row_volume_ratio": "Однос Обима (Данас/Просек)",
         "cc_row_trend": "Тренд (у односу на 50-дн MA)",
+
+        "cc_row_trend_chart": "График Тренда",
         "cc_row_52w_high": "Близу 52-недељног Максимума",
         "cc_row_analyst_rating": "Тенденција Оцена Аналитичара",
         "cc_trend_bullish": "📈 Бичји",
@@ -18427,6 +18451,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "市值",
         "cc_row_volume_ratio": "成交量比 (今日/平均)",
         "cc_row_trend": "趨勢 (相對50日均線)",
+
+        "cc_row_trend_chart": "走勢",
         "cc_row_52w_high": "接近52週高位",
         "cc_row_analyst_rating": "分析師評級傾向",
         "cc_trend_bullish": "📈 偏多",
@@ -19906,6 +19932,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "市值",
         "cc_row_volume_ratio": "成交量比 (今日/平均)",
         "cc_row_trend": "趨勢 (相對50日均線)",
+
+        "cc_row_trend_chart": "走勢",
         "cc_row_52w_high": "接近52週高位",
         "cc_row_analyst_rating": "分析師評級傾向",
         "cc_trend_bullish": "📈 偏多",
@@ -21385,6 +21413,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "市值",
         "cc_row_volume_ratio": "成交量比 (今日/平均)",
         "cc_row_trend": "趋势 (相对50日均线)",
+
+        "cc_row_trend_chart": "走势",
         "cc_row_52w_high": "接近52周高位",
         "cc_row_analyst_rating": "分析师评级倾向",
         "cc_trend_bullish": "📈 偏多",
@@ -22953,6 +22983,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "時価総額",
         "cc_row_volume_ratio": "出来高比率（本日/平均）",
         "cc_row_trend": "トレンド（50日移動平均比）",
+
+        "cc_row_trend_chart": "トレンドチャート",
         "cc_row_52w_high": "52週高値に接近",
         "cc_row_analyst_rating": "アナリスト評価傾向",
         "cc_trend_bullish": "📈 強気",
@@ -24432,6 +24464,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "시가총액",
         "cc_row_volume_ratio": "거래량 비율 (오늘/평균)",
         "cc_row_trend": "추세 (50일 이동평균 대비)",
+
+        "cc_row_trend_chart": "추세 차트",
         "cc_row_52w_high": "52주 최고가 근접",
         "cc_row_analyst_rating": "애널리스트 평가 성향",
         "cc_trend_bullish": "📈 강세",
@@ -25911,6 +25945,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "बाजार पूंजीकरण",
         "cc_row_volume_ratio": "वॉल्यूम अनुपात (आज/औसत)",
         "cc_row_trend": "रुझान (50-दिवसीय MA की तुलना में)",
+
+        "cc_row_trend_chart": "ट्रेंड चार्ट",
         "cc_row_52w_high": "52-सप्ताह के उच्च के निकट",
         "cc_row_analyst_rating": "विश्लेषक रेटिंग झुकाव",
         "cc_trend_bullish": "📈 तेजी",
@@ -27390,6 +27426,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "القيمة السوقية",
         "cc_row_volume_ratio": "نسبة الحجم (اليوم/المتوسط)",
         "cc_row_trend": "الاتجاه (مقارنة بمتوسط 50 يومًا)",
+
+        "cc_row_trend_chart": "مخطط الاتجاه",
         "cc_row_52w_high": "قريب من أعلى مستوى في 52 أسبوعًا",
         "cc_row_analyst_rating": "ميل تصنيف المحللين",
         "cc_trend_bullish": "📈 صاعد",
@@ -28869,6 +28907,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Kapitalisasi Pasar",
         "cc_row_volume_ratio": "Rasio Volume (Hari Ini/Rata-rata)",
         "cc_row_trend": "Tren (vs MA 50 hari)",
+
+        "cc_row_trend_chart": "Grafik Tren",
         "cc_row_52w_high": "Mendekati Tertinggi 52 Minggu",
         "cc_row_analyst_rating": "Kecenderungan Peringkat Analis",
         "cc_trend_bullish": "📈 Bullish",
@@ -30348,6 +30388,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "มูลค่าตลาด",
         "cc_row_volume_ratio": "อัตราส่วนปริมาณ (วันนี้/เฉลี่ย)",
         "cc_row_trend": "แนวโน้ม (เทียบกับ MA 50 วัน)",
+
+        "cc_row_trend_chart": "กราฟแนวโน้ม",
         "cc_row_52w_high": "ใกล้จุดสูงสุดในรอบ 52 สัปดาห์",
         "cc_row_analyst_rating": "แนวโน้มการให้คะแนนของนักวิเคราะห์",
         "cc_trend_bullish": "📈 ขาขึ้น",
@@ -31827,6 +31869,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Vốn Hóa Thị Trường",
         "cc_row_volume_ratio": "Tỷ Lệ Khối Lượng (Hôm Nay/Trung Bình)",
         "cc_row_trend": "Xu Hướng (so với MA 50 ngày)",
+
+        "cc_row_trend_chart": "Biểu Đồ Xu Hướng",
         "cc_row_52w_high": "Gần Mức Cao Nhất 52 Tuần",
         "cc_row_analyst_rating": "Xu Hướng Xếp Hạng Của Nhà Phân Tích",
         "cc_trend_bullish": "📈 Tăng Giá",
@@ -33306,6 +33350,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Piyasa Değeri",
         "cc_row_volume_ratio": "Hacim Oranı (Bugün/Ortalama)",
         "cc_row_trend": "Trend (50 günlük MA'ya karşı)",
+
+        "cc_row_trend_chart": "Trend Grafiği",
         "cc_row_52w_high": "52 Haftalık Zirveye Yakın",
         "cc_row_analyst_rating": "Analist Derecelendirme Eğilimi",
         "cc_trend_bullish": "📈 Boğa",
@@ -34785,6 +34831,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "ارزش بازار",
         "cc_row_volume_ratio": "نسبت حجم (امروز/میانگین)",
         "cc_row_trend": "روند (نسبت به MA ۵۰ روزه)",
+
+        "cc_row_trend_chart": "نمودار روند",
         "cc_row_52w_high": "نزدیک به بالاترین ۵۲ هفته",
         "cc_row_analyst_rating": "گرایش رتبه‌بندی تحلیلگران",
         "cc_trend_bullish": "📈 صعودی",
@@ -36264,6 +36312,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "مارکیٹ کیپ",
         "cc_row_volume_ratio": "حجم تناسب (آج/اوسط)",
         "cc_row_trend": "رجحان (50 دن کے MA کے مقابلے)",
+
+        "cc_row_trend_chart": "رجحان چارٹ",
         "cc_row_52w_high": "52 ہفتوں کی بلندی کے قریب",
         "cc_row_analyst_rating": "تجزیہ کار درجہ بندی کا رجحان",
         "cc_trend_bullish": "📈 تیزی",
@@ -37743,6 +37793,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "বাজার মূলধন",
         "cc_row_volume_ratio": "ভলিউম অনুপাত (আজ/গড়)",
         "cc_row_trend": "প্রবণতা (৫০-দিনের MA এর তুলনায়)",
+
+        "cc_row_trend_chart": "ট্রেন্ড চার্ট",
         "cc_row_52w_high": "৫২-সপ্তাহের সর্বোচ্চের কাছাকাছি",
         "cc_row_analyst_rating": "বিশ্লেষক রেটিং প্রবণতা",
         "cc_trend_bullish": "📈 বুলিশ",
@@ -39222,6 +39274,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Market Cap",
         "cc_row_volume_ratio": "Ratio ng Volume (Ngayon/Average)",
         "cc_row_trend": "Uso (vs 50-araw na MA)",
+
+        "cc_row_trend_chart": "Tsart ng Trend",
         "cc_row_52w_high": "Malapit sa 52-Linggong Mataas",
         "cc_row_analyst_rating": "Hilig ng Rating ng Analyst",
         "cc_trend_bullish": "📈 Bullish",
@@ -40701,6 +40755,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Permodalan Pasaran",
         "cc_row_volume_ratio": "Nisbah Volum (Hari Ini/Purata)",
         "cc_row_trend": "Trend (vs MA 50 hari)",
+
+        "cc_row_trend_chart": "Carta Trend",
         "cc_row_52w_high": "Hampir Tertinggi 52 Minggu",
         "cc_row_analyst_rating": "Kecenderungan Penarafan Penganalisis",
         "cc_trend_bullish": "📈 Bullish",
@@ -42180,6 +42236,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Mtaji wa Soko",
         "cc_row_volume_ratio": "Uwiano wa Kiasi (Leo/Wastani)",
         "cc_row_trend": "Mwenendo (dhidi ya MA ya siku 50)",
+
+        "cc_row_trend_chart": "Chati ya Mwelekeo",
         "cc_row_52w_high": "Karibu na Kilele cha Wiki 52",
         "cc_row_analyst_rating": "Mwelekeo wa Ukadiriaji wa Wachambuzi",
         "cc_trend_bullish": "📈 Kupanda",
@@ -43659,6 +43717,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "बजार पूँजीकरण",
         "cc_row_volume_ratio": "भोल्युम अनुपात (आज/औसत)",
         "cc_row_trend": "प्रवृत्ति (५०-दिने MA को तुलनामा)",
+
+        "cc_row_trend_chart": "प्रवृत्ति चार्ट",
         "cc_row_52w_high": "५२-हप्ताको उच्चको नजिक",
         "cc_row_analyst_rating": "विश्लेषक मूल्याङ्कन झुकाव",
         "cc_trend_bullish": "📈 तेजी",
@@ -45138,6 +45198,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "बाजार भांडवल",
         "cc_row_volume_ratio": "व्हॉल्यूम गुणोत्तर (आज/सरासरी)",
         "cc_row_trend": "कल (50-दिवसीय MA च्या तुलनेत)",
+
+        "cc_row_trend_chart": "कल चार्ट",
         "cc_row_52w_high": "52-आठवड्यांच्या उच्चांकाजवळ",
         "cc_row_analyst_rating": "विश्लेषक रेटिंग कल",
         "cc_trend_bullish": "📈 तेजी",
@@ -46617,6 +46679,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "మార్కెట్ క్యాప్",
         "cc_row_volume_ratio": "వాల్యూమ్ నిష్పత్తి (నేడు/సగటు)",
         "cc_row_trend": "ధోరణి (50-రోజుల MA పోలిక)",
+
+        "cc_row_trend_chart": "ట్రెండ్ చార్ట్",
         "cc_row_52w_high": "52-వారాల గరిష్టానికి సమీపంలో",
         "cc_row_analyst_rating": "విశ్లేషకుల రేటింగ్ ధోరణి",
         "cc_trend_bullish": "📈 బుల్లిష్",
@@ -48096,6 +48160,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "சந்தை மூலதனம்",
         "cc_row_volume_ratio": "தொகுதி விகிதம் (இன்று/சராசரி)",
         "cc_row_trend": "போக்கு (50-நாள் MA உடன் ஒப்பிடுகையில்)",
+
+        "cc_row_trend_chart": "போக்கு விளக்கப்படம்",
         "cc_row_52w_high": "52-வார உயர்வுக்கு அருகில்",
         "cc_row_analyst_rating": "ஆய்வாளர் மதிப்பீட்டு போக்கு",
         "cc_trend_bullish": "📈 உயர்வு",
@@ -49575,6 +49641,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "બજાર મૂડીકરણ",
         "cc_row_volume_ratio": "વોલ્યુમ ગુણોત્તર (આજે/સરેરાશ)",
         "cc_row_trend": "વલણ (50-દિવસીય MA ની સરખામણીમાં)",
+
+        "cc_row_trend_chart": "ટ્રેન્ડ ચાર્ટ",
         "cc_row_52w_high": "52-અઠવાડિયાની ઊંચાઈની નજીક",
         "cc_row_analyst_rating": "વિશ્લેષક રેટિંગ વલણ",
         "cc_trend_bullish": "📈 તેજી",
@@ -51054,6 +51122,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "ਮਾਰਕੀਟ ਕੈਪ",
         "cc_row_volume_ratio": "ਵਾਲੀਅਮ ਅਨੁਪਾਤ (ਅੱਜ/ਔਸਤ)",
         "cc_row_trend": "ਰੁਝਾਨ (50-ਦਿਨ MA ਦੇ ਮੁਕਾਬਲੇ)",
+
+        "cc_row_trend_chart": "ਰੁਝਾਨ ਚਾਰਟ",
         "cc_row_52w_high": "52-ਹਫ਼ਤੇ ਦੇ ਉੱਚੇ ਦੇ ਨੇੜੇ",
         "cc_row_analyst_rating": "ਵਿਸ਼ਲੇਸ਼ਕ ਰੇਟਿੰਗ ਰੁਝਾਨ",
         "cc_trend_bullish": "📈 ਤੇਜ਼ੀ",
@@ -52533,6 +52603,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "മാർക്കറ്റ് ക്യാപ്",
         "cc_row_volume_ratio": "വോള്യം അനുപാതം (ഇന്ന്/ശരാശരി)",
         "cc_row_trend": "പ്രവണത (50-ദിന MA യുമായി താരതമ്യം)",
+
+        "cc_row_trend_chart": "ട്രെൻഡ് ചാർട്ട്",
         "cc_row_52w_high": "52-ആഴ്ച ഉയരത്തിന് സമീപം",
         "cc_row_analyst_rating": "അനലിസ്റ്റ് റേറ്റിംഗ് പ്രവണത",
         "cc_trend_bullish": "📈 ബുള്ളിഷ്",
@@ -54012,6 +54084,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "ಮಾರುಕಟ್ಟೆ ಕ್ಯಾಪ್",
         "cc_row_volume_ratio": "ವಾಲ್ಯೂಮ್ ಅನುಪಾತ (ಇಂದು/ಸರಾಸರಿ)",
         "cc_row_trend": "ಪ್ರವೃತ್ತಿ (50-ದಿನ MA ಗೆ ಹೋಲಿಸಿದರೆ)",
+
+        "cc_row_trend_chart": "ಟ್ರೆಂಡ್ ಚಾರ್ಟ್",
         "cc_row_52w_high": "52-ವಾರದ ಗರಿಷ್ಠಕ್ಕೆ ಹತ್ತಿರ",
         "cc_row_analyst_rating": "ವಿಶ್ಲೇಷಕರ ರೇಟಿಂಗ್ ಪ್ರವೃತ್ತಿ",
         "cc_trend_bullish": "📈 ಬುಲ್ಲಿಷ್",
@@ -55491,6 +55565,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "ବଜାର ପୁଞ୍ଜି",
         "cc_row_volume_ratio": "ଭଲ୍ୟୁମ୍ ଅନୁପାତ (ଆଜି/ହାରାହାରି)",
         "cc_row_trend": "ଧାରା (50-ଦିନ MA ତୁଳନାରେ)",
+
+        "cc_row_trend_chart": "ଧାରା ଚାର୍ଟ",
         "cc_row_52w_high": "52-ସପ୍ତାହର ଉଚ୍ଚ ନିକଟରେ",
         "cc_row_analyst_rating": "ବିଶ୍ଳେଷକ ମୂଲ୍ୟାଙ୍କନ ଧାରା",
         "cc_trend_bullish": "📈 ବୁଲିଶ୍",
@@ -56970,6 +57046,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "د بازار پانګه",
         "cc_row_volume_ratio": "د حجم نسبت (نن/اوسط)",
         "cc_row_trend": "رجحان (د 50-ورځني MA پرتله)",
+
+        "cc_row_trend_chart": "روند چارت",
         "cc_row_52w_high": "د 52-اونیزو لوړوالي ته نږدې",
         "cc_row_analyst_rating": "د شنونکو درجه‌بندۍ رجحان",
         "cc_trend_bullish": "📈 غزیدونکی",
@@ -58449,6 +58527,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Kimar Kasuwa",
         "cc_row_volume_ratio": "Rabon Ƙarar (Yau/Matsakaici)",
         "cc_row_trend": "Yanayi (dangane da MA na kwana 50)",
+
+        "cc_row_trend_chart": "Ginshiƙin Yanayi",
         "cc_row_52w_high": "Kusa da Mafi Girma na Makonni 52",
         "cc_row_analyst_rating": "Halin Kimar Masu Bincike",
         "cc_trend_bullish": "📈 Hauhawa",
@@ -59928,6 +60008,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Sermayeya Bazarê",
         "cc_row_volume_ratio": "Rêjeya Hîmê (Îro/Navîn)",
         "cc_row_trend": "Meyl (li gorî MA ya 50-rojî)",
+
+        "cc_row_trend_chart": "Nexşeya Aliyê",
         "cc_row_52w_high": "Nêzî Bilindahiya 52-Hefteyî",
         "cc_row_analyst_rating": "Meyla Nirxandina Analîstan",
         "cc_trend_bullish": "📈 Boğa",
@@ -61407,6 +61489,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "වෙළඳපොළ ප්‍රාග්ධනීකරණය",
         "cc_row_volume_ratio": "පරිමා අනුපාතය (අද/සාමාන්‍ය)",
         "cc_row_trend": "ප්‍රවණතාව (දින 50 MA හා සසඳන විට)",
+
+        "cc_row_trend_chart": "ප්‍රවණතා ප්‍රස්ථාරය",
         "cc_row_52w_high": "සති 52 ඉහළම අගයට ආසන්න",
         "cc_row_analyst_rating": "විශ්ලේෂක ශ්‍රේණිගත කිරීමේ නැඹුරුව",
         "cc_trend_bullish": "📈 බුලිෂ්",
@@ -62886,6 +62970,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Bozor Kapitalizatsiyasi",
         "cc_row_volume_ratio": "Hajm Nisbati (Bugun/O'rtacha)",
         "cc_row_trend": "Tendensiya (50-kunlik MA ga nisbatan)",
+
+        "cc_row_trend_chart": "Trend Diagrammasi",
         "cc_row_52w_high": "52-Haftalik Eng Yuqori Nuqtaga Yaqin",
         "cc_row_analyst_rating": "Tahlilchilar Reytingi Tendensiyasi",
         "cc_trend_bullish": "📈 O'suvchi",
@@ -64365,6 +64451,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Bazar Kapitallaşması",
         "cc_row_volume_ratio": "Həcm Nisbəti (Bu gün/Orta)",
         "cc_row_trend": "Trend (50-günlük MA-ya nisbətən)",
+
+        "cc_row_trend_chart": "Trend Qrafiki",
         "cc_row_52w_high": "52-Həftəlik Ən Yüksək Nöqtəyə Yaxın",
         "cc_row_analyst_rating": "Analitiklərin Reytinq Meyli",
         "cc_trend_bullish": "📈 Yüksəliş",
@@ -65844,6 +65932,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Kapitalisasi Pasar",
         "cc_row_volume_ratio": "Rasio Volume (Dina Iki/Rata-rata)",
         "cc_row_trend": "Tren (dibandhingake MA 50 dina)",
+
+        "cc_row_trend_chart": "Grafik Tren",
         "cc_row_52w_high": "Cedhak Tinggi 52 Minggu",
         "cc_row_analyst_rating": "Kecenderungan Rating Analis",
         "cc_trend_bullish": "📈 Munggah",
@@ -67323,6 +67413,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Kapitalisasi Pasar",
         "cc_row_volume_ratio": "Rasio Volume (Ayeuna/Rata-rata)",
         "cc_row_trend": "Tren (dibandingkeun MA 50 dinten)",
+
+        "cc_row_trend_chart": "Grafik Tren",
         "cc_row_52w_high": "Caket Ka Titik Panghandapna 52 Minggu",
         "cc_row_analyst_rating": "Kacenderungan Rating Analis",
         "cc_trend_bullish": "📈 Naek",
@@ -68719,6 +68811,8 @@ TRANSLATIONS = {
         "cc_row_marketcap": "Market Cap",
         "cc_row_volume_ratio": "Volume Ratio (Today/Average)",
         "cc_row_trend": "Trend (vs 50-day MA)",
+
+        "cc_row_trend_chart": "Trend Chart",
         "cc_row_52w_high": "Near 52-Week High",
         "cc_row_analyst_rating": "Analyst Rating Bias",
         "cc_trend_bullish": "📈 Bullish",

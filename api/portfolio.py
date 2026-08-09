@@ -21,4 +21,12 @@ def portfolio(token: str = None):
         {"ticker": s["ticker"], "final_score": s["market_score"]}
         for s in snapshots
     ]
-    return PortfolioEngine.allocate(screener_results)
+    result = PortfolioEngine.allocate(screener_results)
+    # 2026-08-10 (task #747-750): PortfolioEngine.allocate() only keeps
+    # ticker/allocation -- attach each row's sparkline (already computed by
+    # compute_snapshots() above) back on afterward rather than threading it
+    # through the engine, so the allocation math itself stays untouched.
+    spark_map = {s["ticker"]: s.get("sparkline", []) for s in snapshots}
+    for row in result.get("portfolio", []):
+        row["sparkline"] = spark_map.get(row["ticker"], [])
+    return result

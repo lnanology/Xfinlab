@@ -166,4 +166,9 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
         "ticker": ticker,
         "days_scanned": len([r for r in rows if r.Index.to_pydatetime().replace(tzinfo=None) >= cutoff]),
         "flagged": flagged,
+        # 2026-08-10 (task #747-752, "所有卡片有資產的都加細K線小圖"): last
+        # 20 closes for the shared js/sparkline.js mini-chart -- `hist` is
+        # already sitting in memory from the fetch above, so this is a free
+        # slice, zero extra network calls.
+        "sparkline": [round(float(c), 4) for c in hist["Close"].dropna().tail(20).tolist()],
     }

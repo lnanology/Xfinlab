@@ -516,6 +516,7 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
 <script src="js/free-signals-badge.js"></script>
 <script src="js/ai-loading.js"></script>
 <script src="js/mvp-api.js"></script>
+<script src="js/sparkline.js"></script>
 <script>
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
@@ -704,10 +705,22 @@ async function attachAssetCard(msgDiv, answerText) {
       levelsHtml = `<div class="chat-asset-levels">${parts.join('')}</div>`;
     }
 
-    if (!barHtml && !levelsHtml) return;
+    // 2026-08-10 (task #747-753, "所有卡片有資產的都加細K線小圖"): this
+    // endpoint already fetches + returns OHLC history (data.ohlc, same
+    // {date,open,high,low,close,volume} shape as market_pulse.py's
+    // reference sparkline) to draw the TradingView-style chart elsewhere --
+    // reusing it here for the mini sparkline costs zero extra requests.
+    let sparkHtml = '';
+    if (Array.isArray(data.ohlc) && data.ohlc.length > 1 && typeof XflSparkline !== 'undefined') {
+      const closes = data.ohlc.slice(-20).map(b => b.close).filter(v => typeof v === 'number');
+      const dir = probs ? (bull > bear ? 'bull' : (bear > bull ? 'bear' : 'neutral')) : 'neutral';
+      sparkHtml = XflSparkline.render(closes, dir, {width: 100, height: 28, className: 'xfl-spark-sm'});
+    }
+
+    if (!barHtml && !levelsHtml && !sparkHtml) return;
     const card = document.createElement('div');
     card.className = 'chat-asset-card';
-    card.innerHTML = `<div class="chat-asset-card-head">📊 ${ticker}</div>${barHtml}${legendHtml}${levelsHtml}`;
+    card.innerHTML = `<div class="chat-asset-card-head">📊 ${ticker}</div>${sparkHtml}${barHtml}${legendHtml}${levelsHtml}`;
     const bubble = msgDiv.querySelector('.msg-bubble');
     if (bubble) bubble.appendChild(card);
   } catch (e) {

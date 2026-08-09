@@ -853,6 +853,7 @@
 
 </main>
 
+<script src="js/sparkline.js"></script>
 <script>
 const API = "https://api.xfinlab.com/api";
 const ALLOC_COLORS = ["#F97316","#7c3aed","#10b981","#f59e0b","#ef4444"];
@@ -1330,11 +1331,27 @@ async function loadWatchlist() {
           <span style="color:${color};font-size:0.78rem">${item.trend}</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
+          <span id="dashSpark-${CSS.escape(item.ticker)}" style="width:52px;display:inline-block"></span>
           <span style="font-family:monospace;color:var(--accent)">$${item.price?.toFixed(2) || 'N/A'}</span>
           <button onclick="removeFromWatchlist('${item.ticker}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem">✕</button>
         </div>
       </div>`;
     }).join('');
+    // 2026-08-10 (task #747-754, "所有卡片有資產的都加細K線小圖"): watchlist
+    // items come from api/watchlist.py's `.info`-only MarketDataService
+    // snapshot -- no OHLC history in that response -- so this fetches the
+    // generic GET /api/sparkline/{ticker} lookup once per row after the
+    // list is already on screen, same pattern used on company-compare.html.
+    if (typeof XflSparkline !== 'undefined') {
+      items.forEach(item => {
+        fetch(`${API}/sparkline/${encodeURIComponent(item.ticker)}`).then(r => r.json()).then(d => {
+          const el = document.getElementById(`dashSpark-${CSS.escape(item.ticker)}`);
+          if (!el) return;
+          const dir = item.trend === 'bullish' ? 'bull' : (item.trend === 'bearish' ? 'bear' : 'neutral');
+          el.innerHTML = XflSparkline.render(d.sparkline, dir, {width:52, height:20, className:'xfl-spark-sm'});
+        }).catch(() => {});
+      });
+    }
   } catch(e) {
     document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_load_error','載入失敗')}</div>`;
   }

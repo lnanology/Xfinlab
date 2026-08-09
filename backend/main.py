@@ -53,6 +53,7 @@ from api.email_digest import router as email_digest_router
 from api.widgets import router as widgets_router
 from api.trending import router as trending_router
 from api.ticker_search import router as ticker_search_router
+from api.sparkline import router as sparkline_router
 from api.smart_route import router as smart_route_router
 from api.backtest import router as backtest_router
 from api.rss_news import router as rss_news_router
@@ -221,6 +222,7 @@ app.include_router(email_digest_router, prefix="/api", tags=["Email Digest"])
 app.include_router(widgets_router, prefix="/api", tags=["Widgets"])
 app.include_router(trending_router, prefix="/api", tags=["Trending"])
 app.include_router(ticker_search_router, prefix="/api", tags=["Ticker Search"])
+app.include_router(sparkline_router, prefix="/api", tags=["Sparkline"])
 app.include_router(smart_route_router, prefix="/api", tags=["Smart Route"])
 app.include_router(backtest_router, prefix="/api", tags=["Backtest"])
 app.include_router(rss_news_router, prefix="/api", tags=["RSS News"])

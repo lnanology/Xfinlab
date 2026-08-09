@@ -41,7 +41,10 @@ def anomaly(token: str = None):
             price_change_pct=s.get("price_change_pct", 0.0),
         )
         if result["anomaly_count"] > 0:
-            items.append({"ticker": s["ticker"], **result})
+            # 2026-08-10 (task #747-752): sparkline is already computed by
+            # compute_snapshots() (dashboard_snapshot_service.py) -- pass it
+            # straight through, zero extra fetches.
+            items.append({"ticker": s["ticker"], "sparkline": s.get("sparkline", []), **result})
 
     severity_rank = {"HIGH": 2, "MEDIUM": 1, "NONE": 0}
     overall_severity = "NONE"
@@ -104,6 +107,7 @@ def anomaly_search(ticker: str, lang: str = None):
     return {
         "status": "ok",
         "ticker": s["ticker"],
+        "sparkline": s.get("sparkline", []),
         **result,
     }
 

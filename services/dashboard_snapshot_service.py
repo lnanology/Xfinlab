@@ -18,6 +18,7 @@ from typing import List, Dict, Optional
 from services.market_data_service import MarketDataService
 from services.news_service import NewsService
 from services.watchlist_service import WatchlistService
+from services.sparkline_service import get_recent_closes
 from engines.rule_engine import RuleEngine
 from engines.score_engine import ScoreEngine
 from engines.risk_engine import RiskEngine
@@ -92,8 +93,9 @@ def compute_ticker_snapshot(ticker: str) -> Optional[Dict]:
     )
     risk_score = round(risk_result["overall_risk"], 2)
 
+    resolved_ticker = market.get("symbol", ticker.upper())
     return {
-        "ticker": market.get("symbol", ticker.upper()),
+        "ticker": resolved_ticker,
         "price": market.get("price", 0),
         "volume": market.get("volume", 0),
         "avg_volume": market.get("avg_volume", 0),
@@ -105,6 +107,11 @@ def compute_ticker_snapshot(ticker: str) -> Optional[Dict]:
         # as the proxy, same as api/ai_analysis.py's tech_score does.
         "strategy_score": market_score,
         "risk_score": risk_score,
+        # 2026-08-10 (task #747-751): last-20-closes for the shared
+        # js/sparkline.js mini-chart -- feeds api/portfolio.py's Portfolio
+        # Allocation panel and api/anomaly.py's batch scan, both of which
+        # build their per-ticker items from this snapshot.
+        "sparkline": get_recent_closes(resolved_ticker),
     }
 
 
