@@ -78,6 +78,22 @@
         "font-size:0!important;line-height:1!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;" +
         "overflow:hidden;box-sizing:border-box;position:relative;flex-shrink:0;" +
         "transition:max-height .3s ease,opacity .3s ease,transform .3s ease,margin .3s ease;margin-bottom:8px;}" +
+      // 2026-08-10 (AJ: "加號滑出 ICON 圖置中" -- the ::before glyphs were
+      // drifting off-center inside their round buttons). Emoji glyphs
+      // carry their own font-metric padding (ascent/descent + often extra
+      // right-side advance width baked into the emoji font itself), so
+      // centering them by font-size/line-height alone on an inline box
+      // is unreliable -- it centers the FONT LINE BOX, not the visible
+      // glyph. Making each ::before its own absolutely-positioned flex
+      // box covering the full 44x44 button (the parent already has
+      // position:relative from the shared rule above) centers the glyph
+      // purely by box geometry instead, which is immune to emoji font
+      // metric quirks.
+      "#" + DOCK_ID + " #tgWidget>button::before,#" + DOCK_ID + " #fbWidget>button::before," +
+        "#" + DOCK_ID + " #shareWidget>#shareWidgetBtn::before,#" + DOCK_ID + " #langSwitcher>button::before," +
+        "#" + DOCK_ID + " #xflPointsBadge::before,#" + DOCK_ID + " #freeSignalsBadge::before{" +
+        "position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;" +
+        "justify-content:center;line-height:1}" +
       "#" + DOCK_ID + " #tgWidget>button::before{content:'\\2708';font-size:19px}" +
       "#" + DOCK_ID + " #fbWidget>button::before{content:'\\1F4AC';font-size:18px}" +
       "#" + DOCK_ID + " #shareWidget>#shareWidgetBtn::before{content:'\\1F4E4';font-size:17px}" +

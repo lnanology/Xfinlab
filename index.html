@@ -601,7 +601,7 @@
      toggle is now a floating round button (see js/theme-toggle.js), so
      nothing injects into this <nav> any more; the Account widget below
      (#userTopbar) has always been this page's own separate thing. -->
-<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:none;position:relative">
+<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:none;position:relative">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
     <img src="/img/logo-mark.png" alt="XFINLAB" style="height:50px;width:auto">
     <span style="font-weight:700;font-size:1.4rem;letter-spacing:0.01em">
@@ -614,8 +614,16 @@
        same "TOPBAR functions centered" request applied to every other
        page's nav-links. Falls back to static flex position under 480px
        (see #idxNavFeatGroup media query below) so it can't overlap the
-       logo on narrow phones. -->
-  <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">
+       logo on narrow phones.
+       2026-08-10 (AJ: "功能 API 帳戶 要跟LOGO 底平排"): switched the
+       vertical anchor from top:50%/-50% (centered on nav's full height,
+       which is set by the tallest child -- the 50px logo image) to
+       bottom:0 so its bottom edge sits flush with the nav's own bottom
+       edge, same as #idxNav's other flex children now that #idxNav uses
+       align-items:flex-end below -- all 3 (功能/API/帳戶) read as one
+       bottom-aligned row under the logo instead of being centered at
+       different heights. -->
+  <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px;position:absolute;left:50%;bottom:0;transform:translateX(-50%)">
     <div id="idxNavFeat" style="position:relative">
       <button type="button" id="idxNavFeatBtn" style="background:none;border:none;cursor:pointer;font:inherit;font-family:inherit;font-size:1rem;color:var(--text2,#475569);display:inline-flex;align-items:center;gap:4px;padding:4px 2px">
         <span data-i18n="idx_nav_features">功能</span>
