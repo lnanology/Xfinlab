@@ -187,10 +187,17 @@ nav {
 .nav-brand,
 .logo {
   font-family: 'DM Serif Display', serif;
-  font-size: 1.05rem;
+  /* 2026-08-09 (AJ ref-image follow-up: "上面左邊XFINLAB同右邊的字要大D及
+     平排"): bumped up from 1.05rem so the wordmark doesn't read
+     small/cramped next to the enlarged .nav-link text below --
+     `nav{align-items:center}` already keeps both vertically centered on
+     one row, this was purely a size mismatch. */
+  font-size: 1.3rem;
   color: var(--blue);
   text-decoration: none;
   letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
 }
 
 .nav-brand em,
@@ -296,7 +303,10 @@ nav {
 .nav-link {
   color: var(--text2);
   text-decoration: none;
-  font-size: 0.9rem;
+  /* 2026-08-09 (AJ ref-image follow-up): enlarged alongside .nav-brand
+     above, same reasoning -- was reading noticeably smaller than the
+     logo it sits level with. */
+  font-size: 1rem;
   transition: color 0.2s;
   white-space: nowrap;
 }

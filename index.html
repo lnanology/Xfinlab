@@ -583,15 +583,72 @@
      Overridden inline since this page's nav intentionally has no visible
      divider of its own (the ticker-section right below already provides
      one). -->
+<!-- 2026-08-09 (AJ ref-image follow-up: "首頁放 功能 可滑出看其他功能及 API
+     2個夠，其他分頁還原TOPBAR顯示所有頁功能"): only the homepage keeps the
+     minimal mockup-style nav -- every other function page reverted back
+     to showing its full nav-links list (see ai-analysis.html etc). Here
+     that's just 2 items: a "功能" flyout listing every other function
+     page (so nothing is actually lost, just tucked behind one click) and
+     a direct "API" link. The old `.nav-right` marker this <nav> used to
+     carry (for js/nav.js's/js/theme-toggle.js's shared xflGroupInsert())
+     is gone -- search icon has been removed site-wide and the theme
+     toggle is now a floating round button (see js/theme-toggle.js), so
+     nothing injects into this <nav> any more; the Account widget below
+     (#userTopbar) has always been this page's own separate thing. -->
 <nav style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:none">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
-    <img src="/img/logo-mark.png" alt="XFINLAB" style="height:42px;width:auto">
-    <span style="font-weight:700;font-size:1.15rem;letter-spacing:0.01em">
+    <img src="/img/logo-mark.png" alt="XFINLAB" style="height:50px;width:auto">
+    <span style="font-weight:700;font-size:1.4rem;letter-spacing:0.01em">
       <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#fff;-webkit-text-stroke:1.2px #000;paint-order:stroke fill;">LAB</span>
     </span>
   </a>
-  <span class="nav-right" style="display:none"></span>
+  <div style="display:flex;align-items:center;gap:22px">
+    <div id="idxNavFeat" style="position:relative">
+      <button type="button" id="idxNavFeatBtn" style="background:none;border:none;cursor:pointer;font:inherit;font-family:inherit;font-size:1rem;color:var(--text2,#475569);display:inline-flex;align-items:center;gap:4px;padding:4px 2px">
+        <span data-i18n="idx_nav_features">功能</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div id="idxNavFeatPanel" style="display:none;position:absolute;right:0;top:calc(100% + 10px);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;min-width:190px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:200">
+        <a href="ai-analysis.html" data-i18n="nav_analysis" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI市場分析</a>
+        <a href="chat.html" data-i18n="nav_chat" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI對話</a>
+        <a href="screener.html" data-i18n="nav_screener" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">篩選器</a>
+        <a href="chart-analysis.html" data-i18n="nav_chart" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">K線分析</a>
+        <a href="company-compare.html" data-i18n="nav_compare" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AB公司比較</a>
+        <a href="stress-lab.html" data-i18n="nav_stress" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">壓力測試室</a>
+        <a href="anomaly.html" data-i18n="nav_anomaly" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">異常偵測</a>
+        <a href="portfolio.html" data-i18n="nav_portfolio" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">組合配置</a>
+        <a href="news-denoise.html" data-i18n="nav_news_denoise" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">新聞降噪</a>
+        <a href="probability-scan.html" data-i18n="nav_probability" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">機率掃描</a>
+        <a href="pairs-scan.html" data-i18n="nav_pairs" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">配對套利</a>
+        <a href="market-brief.html" data-i18n="nav_free_signals" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">每日市場快訊</a>
+      </div>
+    </div>
+    <a href="intelligence-api.html" data-i18n="nav_api" style="font-size:1rem;color:var(--text2,#475569);text-decoration:none">API</a>
+  </div>
 </nav>
+<style>
+  #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
+  #idxNavFeat.idx-feat-open #idxNavFeatPanel{display:block}
+  #idxNavFeat.idx-feat-open #idxNavFeatBtn svg{transform:rotate(180deg)}
+  @media (max-width:480px){#idxNavFeatPanel{position:fixed;left:50%;right:auto;top:auto;bottom:auto;transform:translateX(-50%);width:min(280px,calc(100vw - 32px))}}
+</style>
+<script>
+(function(){
+  var wrap = document.getElementById('idxNavFeat');
+  var btn = document.getElementById('idxNavFeatBtn');
+  if(!wrap||!btn) return;
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    wrap.classList.toggle('idx-feat-open');
+  });
+  document.addEventListener('click', function(e){
+    if(!wrap.contains(e.target)) wrap.classList.remove('idx-feat-open');
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') wrap.classList.remove('idx-feat-open');
+  });
+})();
+</script>
 
 <div class="user-topbar" id="userTopbar" style="display:none">
   <div class="user-topbar-inner">

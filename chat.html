@@ -371,10 +371,28 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
   <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
   <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
   <div class="nav-links" id="navLinks">
-    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
-    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
     <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    
     <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <!-- 2026-07-25 fix: the real "+New Chat" button now lives in .sidebar
+         (see below), but .sidebar is display:none on mobile (<=768px, see
+         the @media(max-width:768px) block below), which would leave mobile
+         users with no way to start a new chat at all. This duplicate stays
+         hidden on desktop (id="newChatBtnMobile", display:none inline) and
+         is only shown by the existing mobile media query below, so it
+         surfaces inside the hamburger dropdown instead. -->
+    <button class="new-chat-btn" id="newChatBtnMobile" onclick="newChat()" data-i18n="chat_new_chat" style="display:none;">＋ 新對話</button>
   </div>
 </nav>
 

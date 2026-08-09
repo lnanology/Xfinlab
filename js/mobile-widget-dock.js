@@ -4,10 +4,12 @@
   // redesign, replacing the previous bottom bar (edge-to-edge 3x2 grid on
   // mobile / centered pill on desktop -- see the removed history below)
   // with a single round trigger, styled like js/quick-ask-bubble.js's chat
-  // bubble and positioned directly above it on the right edge. Tapping the
-  // trigger slides the 6 widgets out to its LEFT as round icon buttons;
-  // tapping again (or clicking outside) collapses them back behind it.
-  // Same behavior on mobile and desktop now -- no more separate layouts.
+  // bubble and positioned above it on the right edge (with
+  // js/theme-toggle.js's round moon/sun icon now stacked in between the
+  // two). Tapping the trigger slides the 6 widgets out ABOVE it as round
+  // icon buttons ("右邊個加號向上滑出" -- follow-up from AJ after the first
+  // version slid them out sideways); tapping again (or clicking outside)
+  // collapses them back behind it. Same behavior on mobile and desktop.
   //
   // Each widget keeps its own existing brand color and click behavior
   // (TG panel, Feedback panel, Share panel/QR modal, Language modal all
@@ -39,12 +41,13 @@
   function ensureStyle() {
     if (document.getElementById(STYLE_ID)) return;
     var css =
-      // Row anchored to the right edge, directly above quick-ask-bubble's
-      // #xflQabBtn (bottom:96/104px, 52px tall -- see js/quick-ask-
-      // bubble.js) with the same +62px gap that bubble uses for its own
-      // panel, so the two round triggers read as one connected column.
-      "#" + DOCK_ID + "{position:fixed;right:20px;bottom:158px;z-index:1000;" +
-        "display:flex;align-items:center;}" +
+      // Column anchored to the right edge, above quick-ask-bubble's
+      // #xflQabBtn (bottom:96/104px, 52px) AND js/theme-toggle.js's round
+      // #themeToggleBtn (bottom:158/166px, 48px) -- this trigger sits
+      // right above that at bottom:216/224px, so the three read as one
+      // connected vertical column on the right edge.
+      "#" + DOCK_ID + "{position:fixed;right:20px;bottom:216px;z-index:1000;" +
+        "display:flex;flex-direction:column;align-items:center;}" +
       "#" + TRIGGER_ID + "{order:99;width:48px;height:48px;border-radius:50%;flex-shrink:0;" +
         "background:var(--accent);color:#fff;border:none;cursor:pointer;" +
         "box-shadow:0 6px 20px rgba(var(--accent-rgb),0.4);display:flex;align-items:center;" +
@@ -53,7 +56,7 @@
       "#" + TRIGGER_ID + " svg{transition:transform .25s ease}" +
       "#" + DOCK_ID + ".xfl-dock-open #" + TRIGGER_ID + " svg{transform:rotate(45deg)}" +
       // The 6 widget wrappers/badges themselves stay normal inline-flex
-      // boxes (auto width, no transform) -- only their INNER round
+      // boxes (auto height, no transform) -- only their INNER round
       // trigger is what collapses, so a wrapper never becomes a
       // transformed containing block for its fixed-position panel.
       "#" + DOCK_ID + " #tgWidget,#" + DOCK_ID + " #fbWidget,#" + DOCK_ID + " #shareWidget," +
@@ -64,22 +67,24 @@
       // Shared round-icon look for all 6 collapsible triggers. Text is
       // zeroed out and replaced with a fixed emoji glyph per widget so
       // this never depends on whatever dynamic label the source script
-      // last wrote into the element.
+      // last wrote into the element. Height (not width) is what animates
+      // now, since the reveal direction is vertical (upward) -- width
+      // stays fixed at 44px throughout.
       "#" + DOCK_ID + " #tgWidget>button,#" + DOCK_ID + " #fbWidget>button," +
         "#" + DOCK_ID + " #shareWidget>#shareWidgetBtn,#" + DOCK_ID + " #langSwitcher>button," +
         "#" + DOCK_ID + " #xflPointsBadge,#" + DOCK_ID + " #freeSignalsBadge{" +
-        "width:44px;height:44px;max-width:44px;border-radius:50%!important;" +
+        "width:44px;height:44px;max-height:44px;border-radius:50%!important;" +
         "display:flex!important;align-items:center;justify-content:center;padding:0!important;" +
         "font-size:0!important;line-height:1!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;" +
-        "overflow:hidden;box-sizing:border-box;position:relative;" +
-        "transition:max-width .3s ease,opacity .3s ease,transform .3s ease,margin .3s ease;margin-right:8px;}" +
+        "overflow:hidden;box-sizing:border-box;position:relative;flex-shrink:0;" +
+        "transition:max-height .3s ease,opacity .3s ease,transform .3s ease,margin .3s ease;margin-bottom:8px;}" +
       "#" + DOCK_ID + " #tgWidget>button::before{content:'\\2708';font-size:19px}" +
       "#" + DOCK_ID + " #fbWidget>button::before{content:'\\1F4AC';font-size:18px}" +
       "#" + DOCK_ID + " #shareWidget>#shareWidgetBtn::before{content:'\\1F4E4';font-size:17px}" +
       "#" + DOCK_ID + " #langSwitcher>button::before{content:'\\1F310';font-size:18px}" +
       "#" + DOCK_ID + " #xflPointsBadge::before{content:'\\1F3C5';font-size:18px}" +
       "#" + DOCK_ID + " #freeSignalsBadge::before{content:'\\1F3AF';font-size:18px}" +
-      // Collapsed (default) state: zero width, invisible, unclickable --
+      // Collapsed (default) state: zero height, invisible, unclickable --
       // this is what makes the trigger the only thing visible until
       // opened.
       "#" + DOCK_ID + ":not(.xfl-dock-open) #tgWidget>button,#" + DOCK_ID + ":not(.xfl-dock-open) #fbWidget>button," +
@@ -87,18 +92,19 @@
         "#" + DOCK_ID + ":not(.xfl-dock-open) #langSwitcher>button," +
         "#" + DOCK_ID + ":not(.xfl-dock-open) #xflPointsBadge," +
         "#" + DOCK_ID + ":not(.xfl-dock-open) #freeSignalsBadge{" +
-        "max-width:0;margin-right:0;opacity:0;pointer-events:none;transform:scale(.4)}" +
+        "max-height:0;margin-bottom:0;opacity:0;pointer-events:none;transform:scale(.4)}" +
       "#" + DOCK_ID + ".xfl-dock-open #tgWidget>button,#" + DOCK_ID + ".xfl-dock-open #fbWidget>button," +
         "#" + DOCK_ID + ".xfl-dock-open #shareWidget>#shareWidgetBtn," +
         "#" + DOCK_ID + ".xfl-dock-open #langSwitcher>button," +
         "#" + DOCK_ID + ".xfl-dock-open #xflPointsBadge," +
         "#" + DOCK_ID + ".xfl-dock-open #freeSignalsBadge{" +
         "opacity:1;pointer-events:auto;transform:scale(1)}" +
-      // Popup panels (TG/Feedback/Share) float above the row, same
-      // pattern as before, just re-anchored to the new row position.
+      // Popup panels (TG/Feedback/Share) float above the whole revealed
+      // column so they never overlap the 6 open icons -- 216px trigger
+      // offset + up to 6*(44+8)px of revealed icons + a clearance gap.
       "#tgPanel,#fbPanel,#sharePanel{position:fixed!important;left:auto!important;right:20px!important;" +
-        "bottom:220px!important;top:auto!important;width:min(280px,88vw)!important;z-index:1001!important}" +
-      "@media (max-width:768px){#" + DOCK_ID + "{bottom:168px}#tgPanel,#fbPanel,#sharePanel{bottom:230px}}";
+        "bottom:560px!important;top:auto!important;width:min(280px,88vw)!important;z-index:1001!important}" +
+      "@media (max-width:768px){#" + DOCK_ID + "{bottom:224px}#tgPanel,#fbPanel,#sharePanel{bottom:570px}}";
     var style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = css;

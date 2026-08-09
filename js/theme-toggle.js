@@ -1,20 +1,30 @@
 !function () {
   var STORAGE_KEY = "xfinlab_theme";
+  var STYLE_ID = "xflThemeBtnStyle";
 
-  function xflGroupInsert(navEl, el) {
-    var ORDER = ["xflChatBtn", "xflGSearchBtn", "themeToggleBtn", "xflSettingsWrap"];
-    var g = document.getElementById("xflTopRightGroup");
-    if (!g) {
-      g = document.createElement("div");
-      g.id = "xflTopRightGroup";
-      navEl.appendChild(g);
-    }
-    var idx = ORDER.indexOf(el.id), before = null;
-    for (var i = 0; i < g.children.length; i++) {
-      var cIdx = ORDER.indexOf(g.children[i].id);
-      if (cIdx > -1 && cIdx > idx) { before = g.children[i]; break; }
-    }
-    return before ? g.insertBefore(el, before) : g.appendChild(el), g;
+  // 2026-08-09 (AJ ref-image follow-up: "底色ICON 月亮 放 加號下面 跟CHAT
+  // ICON"): this used to live inside the topbar (#xflTopRightGroup, next
+  // to the search icon/Account widget -- see the removed xflGroupInsert()
+  // copy that lived here). AJ asked for it to leave the topbar entirely
+  // and join the floating round-icon column on the right edge instead --
+  // stacked directly above js/quick-ask-bubble.js's chat bubble, below
+  // js/mobile-widget-dock.js's "+" trigger. It's now always a fixed round
+  // button (never inserted into <nav>) so this file no longer needs to
+  // care whether a page has a <nav>/.nav-links at all.
+  function ensureStyle() {
+    if (document.getElementById(STYLE_ID)) return;
+    var css =
+      "#themeToggleBtn{position:fixed;right:20px;bottom:158px;z-index:1000;width:48px;height:48px;" +
+        "border-radius:50%;background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);" +
+        "color:var(--text-primary,#e2e8f0);cursor:pointer;display:flex;align-items:center;justify-content:center;" +
+        "padding:0;box-shadow:0 4px 14px rgba(0,0,0,0.25);transition:transform .15s,border-color .2s,color .2s}" +
+      "#themeToggleBtn:hover{border-color:var(--accent-orange,#f59e0b);color:var(--accent-orange,#f59e0b);transform:scale(1.08)}" +
+      "#themeToggleBtn svg{margin:0!important}" +
+      "@media (max-width:768px){#themeToggleBtn{bottom:166px}}";
+    var style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = css;
+    document.head.appendChild(style);
   }
 
   function getTheme() {
@@ -44,20 +54,20 @@
   // selector) and prepend a proper inline SVG (sun/moon, Lucide-style,
   // currentColor) instead -- zero i18n.py changes needed since every
   // language keeps its own translated word after the emoji.
-  var ICON_SUN = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
-  var ICON_MOON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>';
+  var ICON_SUN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+  var ICON_MOON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>';
 
-  function stripEmoji(s) {
-    try { return s.replace(/^\p{Extended_Pictographic}️?\s*/u, ""); } catch (e) { return s.replace(/^\S+\s*/, ""); }
-  }
-
+  // 2026-08-09: label text dropped (button is icon-only now, round style
+  // matching the chat bubble/dock trigger) -- aria-label keeps the
+  // translated text for accessibility, stripEmoji() is no longer needed
+  // since nothing renders theme_toggle_light/dark's text any more.
   function renderLabel(btn, theme) {
     if (!btn) return;
-    var label = "dark" === theme ? tt("theme_toggle_light", "☀️ Light") : tt("theme_toggle_dark", "🌙 Dark");
     var aria = "dark" === theme ? tt("theme_aria_switch_light", "Switch to light theme") : tt("theme_aria_switch_dark", "Switch to dark theme");
     var icon = "dark" === theme ? ICON_SUN : ICON_MOON;
-    btn.innerHTML = icon + stripEmoji(label);
+    btn.innerHTML = icon;
     btn.setAttribute("aria-label", aria);
+    btn.title = aria;
   }
 
   function toggleTheme() {
@@ -75,22 +85,15 @@
     var btn = document.getElementById("themeToggleBtn");
     if (btn) {
       renderLabel(btn, getTheme());
-    } else {
-      btn = document.createElement("button");
-      btn.id = "themeToggleBtn";
-      btn.type = "button";
-      btn.onclick = toggleTheme;
-      renderLabel(btn, getTheme());
-      var navLinks = document.querySelector(".nav-links") || document.querySelector(".nav-right");
-      var nav = (navLinks && navLinks.closest("nav")) || document.querySelector("nav");
-      if (nav) {
-        btn.style.cssText = "background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);color:var(--text-primary,#e2e8f0);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:0.8rem;white-space:nowrap;font-family:inherit;flex-shrink:0;";
-        xflGroupInsert(nav, btn);
-      } else {
-        btn.style.cssText = "position:fixed;top:12px;right:16px;z-index:9997;background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);color:var(--text-primary,#e2e8f0);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-family:inherit;";
-        document.body.appendChild(btn);
-      }
+      return;
     }
+    ensureStyle();
+    btn = document.createElement("button");
+    btn.id = "themeToggleBtn";
+    btn.type = "button";
+    btn.onclick = toggleTheme;
+    renderLabel(btn, getTheme());
+    document.body.appendChild(btn);
   }
 
   function deferInit() { setTimeout(ensureButton, 0); }
