@@ -631,12 +631,23 @@
        No more CSS grid / no more order-juggling media query needed, since
        normal flex-wrap already reflows everything correctly at any width. -->
   <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px">
-    <div id="idxNavFeat" style="position:relative">
-      <button type="button" id="idxNavFeatBtn" style="background:none;border:none;cursor:pointer;font:inherit;font-family:inherit;font-size:1rem;color:var(--text2,#475569);display:inline-flex;align-items:center;gap:4px;padding:4px 2px">
+    <!-- 2026-08-10 (AJ: "功能DEL 重做 換方法" -- after repeated reports
+         that the flyout wouldn't open, scrapping the hand-rolled
+         button+div+click-listener version entirely and rebuilding on
+         <details>/<summary>, the browser's own native disclosure widget.
+         Open/close is now handled by the browser itself (no click
+         listener, no classList toggle, no state to get out of sync) --
+         clicking <summary> is guaranteed to work the same way a native
+         checkbox or <select> does, so there is no JS toggle logic left
+         to have a bug in. Only close-on-outside-click/Escape below is
+         still custom JS, and that's pure convenience, not required for
+         basic open/close to function. -->
+    <details id="idxNavFeat" style="position:relative">
+      <summary id="idxNavFeatBtn" style="list-style:none;background:none;border:none;cursor:pointer;font:inherit;font-family:inherit;font-size:1rem;color:var(--text2,#475569);display:inline-flex;align-items:center;gap:4px;padding:4px 2px">
         <span data-i18n="idx_nav_features">功能</span>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"></polyline></svg>
-      </button>
-      <div id="idxNavFeatPanel" style="display:none;position:absolute;right:0;top:calc(100% + 10px);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;min-width:190px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:200">
+      </summary>
+      <div id="idxNavFeatPanel" style="position:absolute;right:0;top:calc(100% + 10px);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;min-width:190px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:200">
         <a href="ai-analysis.html" data-i18n="nav_analysis" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI市場分析</a>
         <a href="chat.html" data-i18n="nav_chat" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI對話</a>
         <a href="screener.html" data-i18n="nav_screener" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">篩選器</a>
@@ -650,7 +661,7 @@
         <a href="pairs-scan.html" data-i18n="nav_pairs" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">配對套利</a>
         <a href="market-brief.html" data-i18n="nav_free_signals" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">每日市場快訊</a>
       </div>
-    </div>
+    </details>
     <a href="intelligence-api.html" data-i18n="nav_api" style="font-size:1rem;color:var(--text2,#475569);text-decoration:none">API</a>
   </div>
 
@@ -689,49 +700,42 @@
 </nav>
 <style>
   #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
-  #idxNavFeat.idx-feat-open #idxNavFeatPanel{display:block}
-  #idxNavFeat.idx-feat-open #idxNavFeatBtn svg{transform:rotate(180deg)}
+  /* <summary> ships a default disclosure triangle in most browsers --
+     hide it since #idxNavFeatBtn already has its own chevron SVG. */
+  #idxNavFeatBtn{list-style:none}
+  #idxNavFeatBtn::-webkit-details-marker{display:none}
+  #idxNavFeat[open] #idxNavFeatBtn svg{transform:rotate(180deg)}
+  /* At rest (not [open]) the panel just isn't rendered at all -- <details>
+     handles that natively, no display:none/block toggling needed. */
   /* 2026-08-10: #idxNav's own flex-wrap + flex:1 0 100% on the logo (see
      inline style above) + justify-content:center already produces "logo
      row, then centered 功能/API/帳戶 row" at every width -- no
      order-juggling media query needed any more. The only thing that still
      genuinely changes under 480px is the flyout panel, which switches to
-     a centered fixed sheet so it doesn't get clipped against the
-     viewport edge. */
+     a normal in-flow block (instead of position:absolute) so it just
+     pushes the rest of the page down below the button -- deliberately
+     avoids the position:fixed + JS-computed `top` trick that caused the
+     earlier invisible-panel bug; a static in-flow element can't end up
+     positioned "somewhere off in the layout" the way a fixed one could. */
   @media (max-width:480px){
     #idxNavFeatGroup{justify-content:center}
-    #idxNavFeatPanel{position:fixed;left:50%;right:auto;top:auto;bottom:auto;transform:translateX(-50%);width:min(280px,calc(100vw - 32px))}
+    #idxNavFeatPanel{position:static;margin:8px auto 0;width:min(280px,calc(100vw - 48px))}
   }
 </style>
 <script>
 (function(){
-  var wrap = document.getElementById('idxNavFeat');
-  var btn = document.getElementById('idxNavFeatBtn');
-  var panel = document.getElementById('idxNavFeatPanel');
-  if(!wrap||!btn) return;
-  // 2026-08-10 fix (AJ: "功能滑不出" -- confirmed via screenshot that this
-  // reproduces at narrow/mobile widths): below 480px #idxNavFeatPanel
-  // switches to position:fixed (see @media rule above) but never had an
-  // explicit `top` set, so with top:auto/bottom:auto both auto a fixed
-  // element falls back to its static in-flow position -- which, once this
-  // panel's wrapper gets bumped to its own row (order:3) below the logo,
-  // computes to somewhere off in the layout instead of directly under the
-  // 功能 button, making the flyout invisible even though the class toggle
-  // and display:block were both firing correctly. #topbarSettingsFlyout
-  // already hit this exact issue and fixes it by setting `top` in JS from
-  // the button's getBoundingClientRect() -- same fix here.
-  btn.addEventListener('click', function(e){
-    e.stopPropagation();
-    wrap.classList.toggle('idx-feat-open');
-    if(wrap.classList.contains('idx-feat-open') && panel && window.innerWidth <= 480){
-      panel.style.top = (btn.getBoundingClientRect().bottom + 10) + 'px';
-    }
-  });
+  // 2026-08-10 (task "功能DEL 重做 換方法"): #idxNavFeat is now a native
+  // <details> element -- clicking <summary> opens/closes it via the
+  // browser's own built-in behavior, no JS required for that part at all.
+  // All that's left here is optional UX polish: closing it when the user
+  // clicks elsewhere on the page, or presses Escape.
+  var details = document.getElementById('idxNavFeat');
+  if(!details) return;
   document.addEventListener('click', function(e){
-    if(!wrap.contains(e.target)) wrap.classList.remove('idx-feat-open');
+    if(details.open && !details.contains(e.target)) details.open = false;
   });
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape') wrap.classList.remove('idx-feat-open');
+    if(e.key === 'Escape') details.open = false;
   });
 })();
 </script>
