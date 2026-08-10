@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formula Engine - 70+ Finance &amp; Math Formulas API - XFINLAB</title>
+<link rel="canonical" href="https://www.xfinlab.com/formula-engine.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="A free, browsable library of 70+ finance, statistics and options-pricing formulas -- technical indicators, risk metrics, Black-Scholes, portfolio theory, time value of money -- each callable directly via the XFINLAB API.">
+<meta name="keywords" content="finance formulas, technical indicator formulas, Black-Scholes calculator, Sharpe ratio formula, formula API, XFINLAB">
+<meta property="og:title" content="Formula Engine - XFINLAB">
+<meta property="og:description" content="70+ finance, statistics and options-pricing formulas, browsable and callable via API.">
+<meta property="og:url" content="https://www.xfinlab.com/formula-engine.html">
+<style>
+:root{--bg:#FFFFFF;--surface:#F8FAFC;--border:#E2E8F0;--text:#000000;--muted:#64748B;--accent:#F97316;--code-bg:#0d1525;--code-text:#e2e8f0}
+[data-theme="dark"]{--bg:#080c14;--surface:#0d1525;--border:#1e2d45;--text:#e2e8f0;--muted:#94a3b8;--accent:#F97316;--code-bg:#000;--code-text:#e2e8f0}
+*{box-sizing:border-box}
+body{font-family:'Inter',Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}
+nav{background:var(--surface);padding:16px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.brand{color:var(--accent);font-weight:700;font-size:1.1rem;text-decoration:none;display:flex;align-items:center}
+.nav-link{color:var(--muted);text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:960px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;color:var(--text);margin-bottom:8px}
+.subtitle{color:var(--muted);margin-bottom:12px;line-height:1.6}
+.api-hint{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:32px;font-size:0.85rem;color:var(--muted)}
+.api-hint code{background:var(--code-bg);color:var(--code-text);padding:2px 6px;border-radius:4px;font-size:0.82em}
+.search-box{width:100%;padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:0.95rem;margin-bottom:28px}
+.search-box:focus{outline:none;border-color:var(--accent)}
+.cat-section{margin-bottom:36px}
+.cat-title{font-size:1.2rem;color:var(--text);margin:0 0 4px;display:flex;align-items:baseline;gap:10px}
+.cat-title .zh{color:var(--muted);font-size:0.85rem;font-weight:400}
+.cat-count{color:var(--muted);font-size:0.78rem;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;transition:border-color .2s;cursor:pointer}
+.card:hover{border-color:var(--accent)}
+.card h3{color:var(--text);font-size:1rem;margin:0 0 6px}
+.card p{color:var(--muted);font-size:0.8rem;line-height:1.5;margin:0}
+.card .params{margin-top:10px;font-size:0.72rem;color:var(--muted)}
+.card .params span{background:var(--code-bg);color:var(--code-text);border-radius:4px;padding:1px 6px;margin-right:4px;display:inline-block;margin-bottom:4px}
+.card.hidden{display:none}
+.cat-section.hidden{display:none}
+.loading,.err{text-align:center;color:var(--muted);padding:60px 0}
+footer{text-align:center;padding:32px;color:var(--muted);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px}
+footer a{color:var(--muted);margin:0 6px;text-decoration:none}
+</style>
+<script src="js/theme-toggle.js"></script>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
+  <span>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tools.html" class="nav-link">Tools</a>
+    <a href="login.html" class="nav-link" data-i18n="nav_login">Sign In</a>
+  </span>
+</nav>
+<main>
+<h1>Formula Engine</h1>
+<p class="subtitle">70+ finance, statistics and options-pricing formulas — technical indicators, risk &amp; performance metrics, Black-Scholes and Greeks, portfolio theory, time value of money, probability &amp; regression, and chart/market-structure math. Every formula below is a pure, well-known calculation (no live market data required) that you can also call directly through the XFINLAB API.</p>
+<div class="api-hint">
+  Call any formula directly: <code>POST /api/formulas/compute/{formula_id}</code> with a JSON body of <code>{"params": {...}}</code> matching the parameters shown on each card. Full catalog as JSON: <code>GET /api/formulas</code>. See the <a href="intelligence-api.html">Intelligence API</a> page for authentication details.
+</div>
+<input type="text" class="search-box" id="formulaSearch" placeholder="Search formulas (e.g. RSI, Sharpe, Black-Scholes)...">
+<div id="catalogRoot"><div class="loading">Loading formula catalog...</div></div>
+</main>
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <span data-i18n="pricing_footer">© 2026 XFINLAB — AI Investment Intelligence Platform</span><br><br>
+  <a href="intelligence-api.html" data-i18n="nav_api">API</a>
+  <a href="tools.html">Free Tools</a>
+  <a href="ai-analysis.html" data-i18n="nav_analysis">AI Analysis</a>
+  <a href="pricing.html" data-i18n="nav_pricing">Pricing</a>
+  <a href="terms.html" data-i18n="pricing_footer_terms">Terms</a>
+  <a href="privacy.html" data-i18n="pricing_footer_privacy">Privacy</a>
+  <a href="risk-warning.html">Risk Warning</a>
+  <a href="ai-disclaimer.html">AI Disclaimer</a>
+  <a href="methodology.html">Methodology</a>
+  <a href="model-limitations.html">Model Limitations</a>
+</footer>
+<script src="js/i18n.js"></script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+<script>
+(function(){
+  var API = 'https://api.xfinlab.com/api';
+  var root = document.getElementById('catalogRoot');
+  var searchBox = document.getElementById('formulaSearch');
+  var allCards = [];
+
+  function paramTag(p){
+    var mark = p.required ? '' : '?';
+    return '<span>' + p.name + mark + ': ' + p.type + '</span>';
+  }
+
+  function render(data){
+    root.innerHTML = '';
+    var grouped = data.grouped;
+    Object.keys(grouped).forEach(function(catId){
+      var cat = grouped[catId];
+      if (!cat.formulas.length) return;
+      var section = document.createElement('div');
+      section.className = 'cat-section';
+      section.dataset.cat = catId;
+      var title = document.createElement('div');
+      title.className = 'cat-title';
+      title.innerHTML = '<span>' + cat.label + '</span><span class="zh">' + cat.label_zh + '</span>';
+      var count = document.createElement('div');
+      count.className = 'cat-count';
+      count.textContent = cat.formulas.length + ' formulas';
+      var grid = document.createElement('div');
+      grid.className = 'grid';
+      cat.formulas.forEach(function(f){
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.search = (f.label + ' ' + f.id + ' ' + f.summary).toLowerCase();
+        card.innerHTML = '<h3>' + f.label + '</h3><p>' + f.summary + '</p><div class="params">' +
+          f.params.map(paramTag).join('') + '</div>';
+        card.title = f.description;
+        grid.appendChild(card);
+        allCards.push(card);
+      });
+      section.appendChild(title);
+      section.appendChild(count);
+      section.appendChild(grid);
+      root.appendChild(section);
+    });
+  }
+
+  fetch(API + '/formulas')
+    .then(function(r){ if (!r.ok) throw new Error('bad response'); return r.json(); })
+    .then(render)
+    .catch(function(){
+      root.innerHTML = '<div class="err">Could not load the formula catalog right now. Please try again shortly.</div>';
+    });
+
+  searchBox.addEventListener('input', function(){
+    var q = searchBox.value.trim().toLowerCase();
+    allCards.forEach(function(card){
+      card.classList.toggle('hidden', q && card.dataset.search.indexOf(q) === -1);
+    });
+    document.querySelectorAll('.cat-section').forEach(function(section){
+      var visible = section.querySelectorAll('.card:not(.hidden)').length;
+      section.classList.toggle('hidden', q && visible === 0);
+    });
+  });
+})();
+</script>
+</body>
+</html>
