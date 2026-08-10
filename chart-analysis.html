@@ -26,17 +26,11 @@
 <style>
 /* Page-specific small adjustments while fully using site style */
 .container{max-width:1000px;margin:0 auto;padding:2.5rem 1.5rem;flex:1}
-.uploader{display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap}
-.upload-area{flex:1;min-width:260px;background:var(--navy2);border:1px dashed var(--border);border-radius:8px;padding:1.2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
-.upload-area.dragover{background:linear-gradient(180deg, rgba(34,58,74,0.6), rgba(17,31,48,0.8));}
 .upload-hint{color:var(--text3);font-size:0.9rem;margin-top:0.6rem;text-align:center}
-.preview-area{width:320px;background:var(--navy3);border:1px solid var(--border2);border-radius:8px;padding:0.8rem}
-.preview-img{width:100%;height:auto;border-radius:4px;display:block}
 .meta-line{font-size:0.82rem;color:var(--text2);margin-top:0.5rem}
 .analysis-section{margin-top:1.2rem;display:grid;grid-template-columns:1fr 320px;gap:1rem}
 .analysis-section.single-col{grid-template-columns:1fr}
 .analysis-main{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
-.analysis-side{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
 .result-row{display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
 .result-label{color:var(--text3);flex-shrink:0}
 .result-value{font-weight:600;color:var(--text);min-width:0;overflow-wrap:break-word;word-break:break-word;text-align:right}
@@ -67,10 +61,7 @@
 .pattern-qa-a.is-not-possible{color:var(--text3)}
 .pattern-qa-a.is-unclear{color:var(--text2)}
 .education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
-@media(max-width:980px){.analysis-section{grid-template-columns:1fr}.preview-area{width:100%}.analysis-side{order:2}}
-@media(max-width:520px){.upload-area{padding:1rem}.uploader{flex-direction:column}.preview-area{width:100%}}
-.mode-tab{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.5rem 0.9rem;border-radius:6px;cursor:pointer;font-size:0.85rem;font-family:inherit}
-.mode-tab.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
+@media(max-width:980px){.analysis-section{grid-template-columns:1fr}}
 .tf-btn{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.3rem 0.7rem;border-radius:5px;cursor:pointer;font-size:0.78rem;font-family:inherit}
 .tf-btn.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
 .tf-btn:disabled{opacity:0.5;cursor:not-allowed}
