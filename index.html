@@ -601,29 +601,31 @@
      toggle is now a floating round button (see js/theme-toggle.js), so
      nothing injects into this <nav> any more; the Account widget below
      (#userTopbar) has always been this page's own separate thing. -->
-<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:none;position:relative">
+<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:12px;border-bottom:none;position:relative">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
     <img src="/img/logo-mark.png" alt="XFINLAB" style="height:50px;width:auto">
     <span style="font-weight:700;font-size:1.4rem;letter-spacing:0.01em">
       <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#fff;-webkit-text-stroke:1.2px #000;paint-order:stroke fill;">LAB</span>
     </span>
   </a>
-  <!-- 2026-08-09 (AJ ref-image follow-up: "功能 API 置中"): absolutely
-       centered on the <nav> as a whole (not just pushed to whatever space
-       justify-content:space-between left after the logo), matching the
-       same "TOPBAR functions centered" request applied to every other
-       page's nav-links. Falls back to static flex position under 480px
-       (see #idxNavFeatGroup media query below) so it can't overlap the
-       logo on narrow phones.
-       2026-08-10 (AJ: "功能 API 帳戶 要跟LOGO 底平排"): switched the
-       vertical anchor from top:50%/-50% (centered on nav's full height,
-       which is set by the tallest child -- the 50px logo image) to
-       bottom:0 so its bottom edge sits flush with the nav's own bottom
-       edge, same as #idxNav's other flex children now that #idxNav uses
-       align-items:flex-end below -- all 3 (功能/API/帳戶) read as one
-       bottom-aligned row under the logo instead of being centered at
-       different heights. -->
-  <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px;position:absolute;left:50%;bottom:0;transform:translateX(-50%)">
+  <!-- 2026-08-09 (AJ ref-image follow-up: "功能 API 置中"): centered on the
+       <nav> as a whole, matching the same "TOPBAR functions centered"
+       request applied to every other page's nav-links.
+       2026-08-10 (AJ: "功能 API 帳戶 要跟LOGO 底平排" then reported
+       "首頁功能滑不開" on desktop): the previous position:absolute +
+       left:50%/bottom:0 approach depended on #idxNav being a flex
+       container with this group taken OUT of flow to self-center --
+       fragile, and apparently broke the flyout toggle. Rebuilt #idxNav
+       as a 3-column CSS grid instead (logo | this group | account) so
+       each item gets its own non-overlapping grid cell -- this group is
+       just a normal grid item now (justify-self:center centers it
+       within its own 1fr track), no absolute positioning, no possible
+       occlusion of the button's click target. align-items:end on the
+       grid (see #idxNav style) still gives the "跟LOGO 底平排"
+       bottom-alignment. Falls back to a stacked flex layout under 480px
+       (see media query below) so 功能/API drop to their own row below
+       the logo on mobile per AJ's "首頁 功能及API 放低". -->
+  <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px;justify-self:center">
     <div id="idxNavFeat" style="position:relative">
       <button type="button" id="idxNavFeatBtn" style="background:none;border:none;cursor:pointer;font:inherit;font-family:inherit;font-size:1rem;color:var(--text2,#475569);display:inline-flex;align-items:center;gap:4px;padding:4px 2px">
         <span data-i18n="idx_nav_features">功能</span>
@@ -680,12 +682,19 @@
   #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
   #idxNavFeat.idx-feat-open #idxNavFeatPanel{display:block}
   #idxNavFeat.idx-feat-open #idxNavFeatBtn svg{transform:rotate(180deg)}
+  /* 2026-08-10 (AJ mobile: "首頁 功能及API 放低"): logo+account share a
+     top row, 功能/API get bumped to their own full-width row below --
+     matches the phone mockup pattern used elsewhere on this page.
+     #idxNav switches from grid to flex+wrap here since a 3-column grid
+     has no "row 2 spans full width" concept without redefining the whole
+     template; flex + explicit `order` + a 100%-basis item achieves the
+     same 2-row result more simply. */
   @media (max-width:480px){
+    #idxNav{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center}
+    #idxNav>a{order:1}
+    #userTopbar{order:2}
+    #idxNavFeatGroup{order:3;flex-basis:100%;justify-content:center;justify-self:auto;margin-top:10px}
     #idxNavFeatPanel{position:fixed;left:50%;right:auto;top:auto;bottom:auto;transform:translateX(-50%);width:min(280px,calc(100vw - 32px))}
-    /* Narrow phones: a logo-independent centered block risks overlapping
-       a wide logo/wordmark -- revert to a normal static flex item (same
-       behavior the un-centered version had) instead of absolute+50%. */
-    #idxNavFeatGroup{position:static;transform:none;gap:14px}
   }
 </style>
 <script>
