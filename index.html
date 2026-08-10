@@ -620,17 +620,21 @@
       <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#fff;-webkit-text-stroke:1.2px #000;paint-order:stroke fill;">LAB</span>
     </span>
   </a>
-  <!-- 2026-08-10 (AJ: "將功能 API 帳戶放低一行" then "功能同API置中"): logo
-       always sits alone on its own row (flex:1 0 100% forces it to wrap
-       onto its own line), and 功能/API/帳戶 always share the row below it
-       as one centered group. #idxNav is a flex-wrap row with
-       justify-content:center, which (with flex-wrap) applies per visual
-       line -- line 1 has only the logo, which is full-width via its own
-       flex:1 0 100% so centering has no visible effect on it; line 2 has
-       this group + #userTopbar packed together and centered as a unit.
-       No more CSS grid / no more order-juggling media query needed, since
-       normal flex-wrap already reflows everything correctly at any width. -->
-  <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px">
+  <!-- 2026-08-10 (AJ: "將功能 API 帳戶放低一行" -> "功能同API置中" -> "帳戶
+       放右邊"): logo always sits alone on its own row (flex:1 0 100%
+       forces it to wrap onto its own line). Row 2 is now its own grid
+       wrapper (#idxNavRow2, also flex:1 0 100% so it takes the full
+       width) with 3 columns 1fr/auto/1fr -- 功能+API sit in the middle
+       (auto) column, which ends up truly centered because the two 1fr
+       side-columns are always forced equal width by the grid algorithm
+       regardless of what's in them; 帳戶 sits in the 3rd column with
+       justify-self:end, pinning it to the right edge independently of
+       the centered group. This replaces the earlier "just flex-wrap the
+       whole row and center everything as one packed unit" approach,
+       which couldn't keep 功能/API centered AND 帳戶 pinned right at the
+       same time. -->
+  <div id="idxNavRow2" style="flex:1 0 100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;column-gap:12px">
+  <div id="idxNavFeatGroup" style="grid-column:2;justify-self:center;display:flex;align-items:center;gap:22px">
     <!-- 2026-08-10 (AJ: "功能DEL 重做 換方法" -- after repeated reports
          that the flyout wouldn't open, scrapping the hand-rolled
          button+div+click-listener version entirely and rebuilding on
@@ -647,7 +651,11 @@
         <span data-i18n="idx_nav_features">功能</span>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </summary>
-      <div id="idxNavFeatPanel" style="position:absolute;right:0;top:calc(100% + 10px);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;min-width:190px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:200">
+      <!-- "滑出置中功能底，字也置中": panel is centered under the 功能
+           button itself (left:50%+translateX(-50%), not right:0-anchored
+           any more) and its links are center-aligned (text-align:center
+           on the container, inherited by the block-level <a>s inside). -->
+      <div id="idxNavFeatPanel" style="position:absolute;left:50%;transform:translateX(-50%);top:calc(100% + 10px);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;min-width:190px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:200;text-align:center">
         <a href="ai-analysis.html" data-i18n="nav_analysis" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI市場分析</a>
         <a href="chat.html" data-i18n="nav_chat" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI對話</a>
         <a href="screener.html" data-i18n="nav_screener" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">篩選器</a>
@@ -665,16 +673,16 @@
     <a href="intelligence-api.html" data-i18n="nav_api" style="font-size:1rem;color:var(--text2,#475569);text-decoration:none">API</a>
   </div>
 
-  <!-- 帳戶 widget is a 3rd flex child of #idxNav, sharing 功能/API's row
-       (see comment above idxNavFeatGroup) via #idxNav's
-       justify-content:space-between. #userTopbar keeps its id/display:none
-       default (toggled to 'block' by
+  <!-- 帳戶 widget is grid-column:3 of #idxNavRow2 with justify-self:end,
+       pinning it to the right edge independently of the centered 功能/API
+       group (see comment above #idxNavRow2). #userTopbar keeps its
+       id/display:none default (toggled to 'block' by
        initUserTopbar() below) so js/nav.js's shared account-widget
        auto-injector still correctly bails out via
        `if(document.getElementById("userTopbar"))return` -- see comment
        above this <nav>. Also dropped the old "👤 <name>" greeting span
        (#userTopbarName) since it's redundant next to this "👤 帳戶" button. -->
-  <div class="user-topbar" id="userTopbar" style="display:none">
+  <div class="user-topbar" id="userTopbar" style="grid-column:3;justify-self:end;display:none">
     <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
       <button type="button" class="user-topbar-btn" id="topbarSettingsBtn"><span id="topbarAvatarIcon"></span><span id="topbarAcctLabel" data-i18n="topbar_account">帳戶</span></button>
       <div class="user-topbar-flyout" id="topbarSettingsFlyout" style="min-width:220px">
@@ -697,6 +705,7 @@
       </div>
     </div>
   </div>
+  </div>
 </nav>
 <style>
   #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
@@ -707,10 +716,11 @@
   #idxNavFeat[open] #idxNavFeatBtn svg{transform:rotate(180deg)}
   /* At rest (not [open]) the panel just isn't rendered at all -- <details>
      handles that natively, no display:none/block toggling needed. */
-  /* 2026-08-10: #idxNav's own flex-wrap + flex:1 0 100% on the logo (see
-     inline style above) + justify-content:center already produces "logo
-     row, then centered 功能/API/帳戶 row" at every width -- no
-     order-juggling media query needed any more. The only thing that still
+  /* 2026-08-10: #idxNav's flex-wrap (logo flex:1 0 100% forces its own
+     row) + #idxNavRow2's 1fr/auto/1fr grid (see inline style/comment
+     above #idxNavRow2) already produce "logo row, then 功能/API centered
+     with 帳戶 pinned right" at every width -- no order-juggling media
+     query needed for the layout itself. The only thing that still
      genuinely changes under 480px is the flyout panel, which switches to
      a normal in-flow block (instead of position:absolute) so it just
      pushes the rest of the page down below the button -- deliberately
@@ -719,7 +729,10 @@
      positioned "somewhere off in the layout" the way a fixed one could. */
   @media (max-width:480px){
     #idxNavFeatGroup{justify-content:center}
-    #idxNavFeatPanel{position:static;margin:8px auto 0;width:min(280px,calc(100vw - 48px))}
+    /* transform:none cancels the base left:50%+translateX(-50%) centering
+       trick (transform still applies even once position becomes static) --
+       margin:auto does the centering instead once it's a normal block. */
+    #idxNavFeatPanel{position:static;left:auto;transform:none;margin:8px auto 0;width:min(280px,calc(100vw - 48px))}
   }
 </style>
 <script>
