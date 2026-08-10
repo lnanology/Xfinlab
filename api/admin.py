@@ -838,6 +838,26 @@ def get_login_methods():
     }
 
 
+@router.get("/admin/prediction-ledger")
+def get_prediction_ledger(token: str, request: Request, symbol: str = None):
+    """
+    P1 of the Quant Research Factory roadmap (2026-08-10): surfaces
+    services/prediction_ledger_service.py's accuracy scoreboard --
+    hit_rate_pct / avg_brier_score over every GRADED prediction, plus
+    the most recent 50 rows (graded and pending) for spot-checking.
+    Read-only, does not trigger a fresh grading pass (that runs on its
+    own daily schedule via backend/main.py's APScheduler job) -- same
+    fast/read-only pattern as get_security_scan() above.
+    """
+    verify_admin(token, "get_prediction_ledger", request)
+    from services.prediction_ledger_service import get_ledger_stats, get_recent_predictions
+    return {
+        "status": "ok",
+        "stats": get_ledger_stats(symbol=symbol),
+        "recent": get_recent_predictions(limit=50, symbol=symbol),
+    }
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """

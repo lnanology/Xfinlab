@@ -342,6 +342,29 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+# 2026-08-10 (P1 of the Quant Research Factory roadmap): grades every
+# Prediction Ledger row whose horizon has plausibly elapsed -- see
+# services/prediction_ledger_service.py's grade_pending_predictions()
+# docstring for the exact calendar-day-buffer methodology. Runs once
+# daily, well after markets close everywhere XFINLAB covers, so
+# "yesterday's" or older predictions have a settled close price to
+# grade against.
+def _run_prediction_ledger_grading_job():
+    try:
+        from services.prediction_ledger_service import grade_pending_predictions
+        grade_pending_predictions()
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_prediction_ledger_grading_job,
+    "cron",
+    hour=23,
+    minute=30,
+    id="prediction_ledger_grading",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

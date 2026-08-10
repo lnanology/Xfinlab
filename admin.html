@@ -197,6 +197,7 @@
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
     <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> Audit Log</div>
     <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> Security Scan</div>
+    <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> Prediction Ledger</div>
     <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> Feedback</div>
 
     <div class="sidebar-footer">
@@ -753,6 +754,24 @@
       </div>
     </div>
 
+    <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
+    <div class="page" id="page-predledger">
+      <div class="page-title">Prediction Ledger</div>
+      <div class="page-sub">Auto-graded accuracy scoreboard for every direction-probability prediction served via POST /ai-analysis -- hit rate + Brier score against what actually happened, not a self-reported backtest number. Graded automatically once daily.</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Accuracy Scoreboard</span>
+          <span id="predLedgerMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="predLedgerSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadPredictionLedger()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Recent Predictions</div>
+        <div id="predLedgerRecent"><div class="empty">Loading...</div></div>
+      </div>
+    </div>
+
     <!-- Feedback -->
     <div class="page" id="page-feedback">
       <div class="page-title">Feedback Center</div>
@@ -1169,6 +1188,7 @@ function showPage(name) {
   if (name === 'apiusage') loadApiUsage();
   if (name === 'referral') loadReferralStats();
   if (name === 'video') loadVideoStatus();
+  if (name === 'predledger') loadPredictionLedger();
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -1724,6 +1744,60 @@ function renderSecurityScan(data) {
       <div style="font-size:0.78rem">${new Date(h.created_at).toLocaleString()}</div>
       <span style="font-size:0.72rem;color:${h.any_flags ? 'var(--red)' : 'var(--green)'}">${h.any_flags ? '⚠️ Issues' : '✅ Clean'}</span>
     </div>`).join('') || '<div class="empty">No history yet</div>';
+}
+
+async function loadPredictionLedger() {
+  document.getElementById('predLedgerSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('predLedgerMeta').textContent = '';
+  document.getElementById('predLedgerRecent').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/prediction-ledger?token=${adminToken}`);
+    const data = await res.json();
+    renderPredictionLedger(data);
+  } catch (e) {
+    document.getElementById('predLedgerSummary').innerHTML = '<div class="empty">Failed to load prediction ledger data</div>';
+    document.getElementById('predLedgerRecent').innerHTML = '';
+  }
+}
+
+function renderPredictionLedger(data) {
+  if (!data || data.status !== 'ok' || !data.stats) {
+    document.getElementById('predLedgerSummary').innerHTML = '<div class="empty">Failed to load prediction ledger data</div>';
+    document.getElementById('predLedgerRecent').innerHTML = '';
+    return;
+  }
+  const s = data.stats;
+  document.getElementById('predLedgerMeta').textContent = `Graded: ${s.graded_count} · Pending: ${s.pending_count}`;
+
+  const hitRate = s.hit_rate_pct === null || s.hit_rate_pct === undefined ? '—' : `${s.hit_rate_pct}%`;
+  const brier = s.avg_brier_score === null || s.avg_brier_score === undefined ? '—' : s.avg_brier_score;
+  const avgRet = s.avg_actual_return_pct === null || s.avg_actual_return_pct === undefined ? '—' : `${s.avg_actual_return_pct}%`;
+
+  document.getElementById('predLedgerSummary').innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Hit Rate</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(String(hitRate))}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Avg Brier Score</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(String(brier))}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Avg Actual Return</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(String(avgRet))}</div>
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);padding:8px 0 0 0;line-height:1.6">${escapeHtml(s.note || '')}</div>`;
+
+  const rows = data.recent || [];
+  document.getElementById('predLedgerRecent').innerHTML = rows.map(r => {
+    const gradedLabel = r.graded ? (r.correct ? '✅ Correct' : '❌ Wrong') : '⏳ Pending';
+    const gradedColor = r.graded ? (r.correct ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
+    const retLabel = r.actual_return_pct === null || r.actual_return_pct === undefined ? '' : ` (${r.actual_return_pct}%)`;
+    return `<div class="content-item">
+      <div style="font-size:0.78rem">${escapeHtml(r.symbol)} · ${escapeHtml(r.predicted_at)} · ${r.horizon_days}d · ${escapeHtml(r.predicted_direction)} (${r.up_probability_pct}%)</div>
+      <span style="font-size:0.72rem;color:${gradedColor}">${gradedLabel}${escapeHtml(retLabel)}</span>
+    </div>`;
+  }).join('') || '<div class="empty">No predictions logged yet</div>';
 }
 
 async function runSecurityScanNow() {

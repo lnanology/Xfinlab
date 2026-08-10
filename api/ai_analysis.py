@@ -481,6 +481,26 @@ async def ai_analysis(body: dict):
     except Exception:
         direction_probability = None
 
+    # P1 of the Quant Research Factory roadmap (2026-08-10): auto-log
+    # this prediction into the Prediction Ledger so a scheduled job can
+    # later grade it against what actually happened -- see
+    # services/prediction_ledger_service.py's module docstring for the
+    # full design. Best-effort only: get_smart_beta() above already
+    # called regime_belief_service.update_belief(symbol, ...) earlier in
+    # this same request, so get_belief(symbol) here reads that fresh
+    # posterior rather than a stale one. Never allowed to affect the
+    # live response.
+    try:
+        from services.regime_belief_service import get_belief as _get_regime_belief
+        from services.prediction_ledger_service import record_prediction
+        record_prediction(
+            symbol, direction_probability,
+            price_at_prediction=market.get("price"),
+            regime=_get_regime_belief(symbol),
+        )
+    except Exception:
+        pass
+
     # Stage 3 roadmap (2026-07-20): real market-based shipping/supply-chain
     # proxy (BDRY/BOAT ETF prices) -- see services/shipping_proxy_service.py
     # for why this is a labeled proxy, not the official Baltic Dry Index.
