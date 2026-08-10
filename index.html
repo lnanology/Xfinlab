@@ -613,31 +613,26 @@
      toggle is now a floating round button (see js/theme-toggle.js), so
      nothing injects into this <nav> any more; the Account widget below
      (#userTopbar) has always been this page's own separate thing. -->
-<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:12px;border-bottom:none;position:relative">
-  <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
+<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;column-gap:12px;row-gap:12px;border-bottom:none;position:relative">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;flex:1 0 100%">
     <img src="/img/logo-mark.png" alt="XFINLAB" style="height:50px;width:auto">
     <span style="font-weight:700;font-size:1.4rem;letter-spacing:0.01em">
       <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#fff;-webkit-text-stroke:1.2px #000;paint-order:stroke fill;">LAB</span>
     </span>
   </a>
-  <!-- 2026-08-09 (AJ ref-image follow-up: "功能 API 置中"): centered on the
-       <nav> as a whole, matching the same "TOPBAR functions centered"
-       request applied to every other page's nav-links.
-       2026-08-10 (AJ: "功能 API 帳戶 要跟LOGO 底平排" then reported
-       "首頁功能滑不開" on desktop): the previous position:absolute +
-       left:50%/bottom:0 approach depended on #idxNav being a flex
-       container with this group taken OUT of flow to self-center --
-       fragile, and apparently broke the flyout toggle. Rebuilt #idxNav
-       as a 3-column CSS grid instead (logo | this group | account) so
-       each item gets its own non-overlapping grid cell -- this group is
-       just a normal grid item now (justify-self:center centers it
-       within its own 1fr track), no absolute positioning, no possible
-       occlusion of the button's click target. align-items:end on the
-       grid (see #idxNav style) still gives the "跟LOGO 底平排"
-       bottom-alignment. Falls back to a stacked flex layout under 480px
-       (see media query below) so 功能/API drop to their own row below
-       the logo on mobile per AJ's "首頁 功能及API 放低". -->
-  <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px;justify-self:center">
+  <!-- 2026-08-10 (AJ: "將功能 API 帳戶放低一行"): logo now always sits
+       alone on its own row (flex:1 0 100% forces it to wrap onto its own
+       line), and 功能/API/帳戶 always share the row below it as a group --
+       previously 帳戶 stayed level with the logo on desktop and only
+       dropped down under 480px; now it drops down together with 功能/API
+       at every width for one consistent layout. #idxNav is a flex-wrap
+       row with justify-content:space-between, which (with flex-wrap)
+       applies per visual line -- line 1 has only the logo so
+       space-between just pins it to the left; line 2 has this group and
+       #userTopbar so space-between spreads them to opposite ends. No more
+       CSS grid / no more order-juggling media query needed, since normal
+       flex-wrap already reflows everything correctly at any width. -->
+  <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px">
     <div id="idxNavFeat" style="position:relative">
       <button type="button" id="idxNavFeatBtn" style="background:none;border:none;cursor:pointer;font:inherit;font-family:inherit;font-size:1rem;color:var(--text2,#475569);display:inline-flex;align-items:center;gap:4px;padding:4px 2px">
         <span data-i18n="idx_nav_features">功能</span>
@@ -661,13 +656,10 @@
     <a href="intelligence-api.html" data-i18n="nav_api" style="font-size:1rem;color:var(--text2,#475569);text-decoration:none">API</a>
   </div>
 
-  <!-- 2026-08-10 (AJ: "把 LOGO 功能 API 放平 不要貼頂，跟帳戶平"): the
-       Account widget used to live in its own separate .user-topbar wrapper
-       block stacked below this nav element, making 2 visually separate bars.
-       Moved here as a 3rd flex child of #idxNav so justify-content:space-between
-       naturally right-aligns it level with the logo (idxNavFeatGroup stays
-       independently centered via its own position:absolute, unaffected).
-       #userTopbar keeps its id/display:none default (toggled to 'block' by
+  <!-- 帳戶 widget is a 3rd flex child of #idxNav, sharing 功能/API's row
+       (see comment above idxNavFeatGroup) via #idxNav's
+       justify-content:space-between. #userTopbar keeps its id/display:none
+       default (toggled to 'block' by
        initUserTopbar() below) so js/nav.js's shared account-widget
        auto-injector still correctly bails out via
        `if(document.getElementById("userTopbar"))return` -- see comment
@@ -701,18 +693,17 @@
   #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
   #idxNavFeat.idx-feat-open #idxNavFeatPanel{display:block}
   #idxNavFeat.idx-feat-open #idxNavFeatBtn svg{transform:rotate(180deg)}
-  /* 2026-08-10 (AJ mobile: "首頁 功能及API 放低"): logo+account share a
-     top row, 功能/API get bumped to their own full-width row below --
-     matches the phone mockup pattern used elsewhere on this page.
-     #idxNav switches from grid to flex+wrap here since a 3-column grid
-     has no "row 2 spans full width" concept without redefining the whole
-     template; flex + explicit `order` + a 100%-basis item achieves the
-     same 2-row result more simply. */
+  /* 2026-08-10 (AJ: "將功能 API 帳戶放低一行"): #idxNav's own flex-wrap +
+     flex:1 0 100% on the logo (see inline style above) already produces
+     "logo row, then 功能/API/帳戶 row" at every width -- no order-juggling
+     media query needed any more. Only 2 things still genuinely change
+     under 480px: centering the 2nd row's items (space-between looks odd
+     once 功能 group and 帳戶 each wrap to their own line at very narrow
+     widths) and switching the flyout panel to a centered fixed sheet so
+     it doesn't get clipped against the viewport edge. */
   @media (max-width:480px){
-    #idxNav{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center}
-    #idxNav>a{order:1}
-    #userTopbar{order:2}
-    #idxNavFeatGroup{order:3;flex-basis:100%;justify-content:center;justify-self:auto;margin-top:10px}
+    #idxNav{justify-content:center}
+    #idxNavFeatGroup{justify-content:center}
     #idxNavFeatPanel{position:fixed;left:50%;right:auto;top:auto;bottom:auto;transform:translateX(-50%);width:min(280px,calc(100vw - 32px))}
   }
 </style>
