@@ -45,3 +45,15 @@ class UserResponse(BaseModel):
     # so every other UserResponse call site (social login, WhatsApp OTP,
     # normal login) is unaffected.
     requires_verification: Optional[bool] = False
+    # 2026-08-10 (task #761, AJ: "登入後身份以男女公仔頭 ICON 取代，加自定
+    # 名字"): avatar_gender is 'm'/'f'/None (None = not chosen yet, frontend
+    # falls back to a neutral icon). oauth_provider ('line'/'google'/
+    # 'whatsapp'/None) lets the frontend know when to apply LINE's
+    # "truncate the long display name to 1 char by default" rule (AJ:
+    # "LINE號太長只顯示你位字") instead of showing the name in full.
+    avatar_gender: Optional[str] = None
+    oauth_provider: Optional[str] = None
+
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    avatar_gender: Optional[str] = None

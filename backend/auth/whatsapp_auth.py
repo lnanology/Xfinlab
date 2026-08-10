@@ -224,6 +224,11 @@ def verify_whatsapp_otp(body: dict, request: Request):
 
     token = create_access_token({"sub": row["email"], "id": row["id"]})
     log_action(row["id"], "login:whatsapp", get_client_ip(request))
+    # 2026-08-10 (task #761): see social_login.py's _issue_login_response()
+    # for why avatar_gender/oauth_provider are included here too -- keeps
+    # every login path (email, Google, LINE, WhatsApp) returning the same
+    # shape so login.html's finishSocialLogin() doesn't need per-provider
+    # branching.
     return {
         "status": "ok",
         "id": row["id"],
@@ -231,4 +236,7 @@ def verify_whatsapp_otp(body: dict, request: Request):
         "name": row["name"],
         "plan": row["plan"],
         "token": token,
+        "avatar_gender": row["avatar_gender"] if "avatar_gender" in row.keys() else None,
+        "oauth_provider": "whatsapp",
+        "name_is_custom": bool(row["name_is_custom"]) if "name_is_custom" in row.keys() else False,
     }

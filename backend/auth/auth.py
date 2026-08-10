@@ -2,7 +2,7 @@
 import sqlite3
 import os
 from fastapi import APIRouter, HTTPException, Request
-from auth.user_model import UserRegister, UserLogin, UserResponse
+from auth.user_model import UserRegister, UserLogin, UserResponse, ProfileUpdate
 from auth.password import hash_password, verify_password
 # 2026-07-11 fix: 呢度之前用緊短路徑 `from auth.jwt_handler import ...`，
 # 但codebase入面第9個地方（quota_middleware/referral/quota/analytics/
@@ -64,6 +64,19 @@ def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+# 2026-08-10 (task #761): avatar_gender (this file's ensure_avatar_gender_
+# column-triggered ALTER, run from backend/main.py) and oauth_provider
+# (backend/auth/social_login.py's _ensure_oauth_columns()) both live on
+# `users` but get added by migrations in OTHER modules whose import/call
+# order relative to this one isn't guaranteed. Reading a column that
+# doesn't exist yet on a sqlite3.Row raises IndexError, so every read of
+# either column in this file goes through this helper instead of `row[col]`.
+def _safe_col(row, col, default=None):
+    try:
+        return row[col] if col in row.keys() else default
+    except Exception:
+        return default
 
 def init_users_table():
     conn = get_db()
@@ -238,7 +251,10 @@ def login(user: UserLogin, request: Request):
         )
     token = create_access_token({"sub": row["email"], "id": row["id"]})
     log_action(row["id"], "login", get_client_ip(request))
-    return UserResponse(id=row["id"], email=row["email"], name=row["name"], plan=row["plan"], token=token)
+    return UserResponse(
+        id=row["id"], email=row["email"], name=row["name"], plan=row["plan"], token=token,
+        avatar_gender=_safe_col(row, "avatar_gender"), oauth_provider=_safe_col(row, "oauth_provider"),
+    )
 
 @router.get("/auth/me")
 def get_me(token: str):
@@ -251,4 +267,55 @@ def get_me(token: str):
     conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"id": row["id"], "email": row["email"], "name": row["name"], "plan": row["plan"]}
+    return {
+        "id": row["id"], "email": row["email"], "name": row["name"], "plan": row["plan"],
+        "avatar_gender": _safe_col(row, "avatar_gender"), "oauth_provider": _safe_col(row, "oauth_provider"),
+        "name_is_custom": bool(_safe_col(row, "name_is_custom", 0)),
+    }
+
+# 2026-08-10 (task #761, AJ: "也可改名" / "加可改名字" -- both the mail-
+# derived name and the LINE display name need to be user-editable, plus
+# the new male/female avatar icon choice). Same token-as-query-param auth
+# pattern as get_me() above (this file has no FastAPI dependency-injected
+# bearer scheme anywhere else, so this matches the existing convention
+# rather than introducing a new one). PUT (not PATCH) for consistency with
+# the rest of this codebase's simple REST endpoints; both fields are
+# optional so the caller can update just the name, just the avatar, or both.
+@router.put("/auth/profile")
+def update_profile(update: ProfileUpdate, token: str, request: Request):
+    from backend.auth.jwt_handler import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    name = update.name.strip() if update.name is not None else None
+    if name is not None and (not name or len(name) > 40):
+        raise HTTPException(status_code=400, detail="Name must be 1-40 characters")
+
+    avatar_gender = update.avatar_gender
+    if avatar_gender is not None and avatar_gender not in ("m", "f"):
+        raise HTTPException(status_code=400, detail="avatar_gender must be 'm' or 'f'")
+
+    conn = get_db()
+    row = conn.execute("SELECT * FROM users WHERE email = ?", (payload["sub"],)).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if name is not None:
+        # name_is_custom=1 marks this as a deliberate rename -- see
+        # services/db_migration.py's ensure_avatar_gender_column() for why
+        # this matters specifically for LINE accounts (their default name
+        # is truncated for display; a renamed one is shown in full).
+        conn.execute("UPDATE users SET name = ?, name_is_custom = 1 WHERE id = ?", (name, row["id"]))
+    if avatar_gender is not None:
+        conn.execute("UPDATE users SET avatar_gender = ? WHERE id = ?", (avatar_gender, row["id"]))
+    conn.commit()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (row["id"],)).fetchone()
+    conn.close()
+    log_action(row["id"], "profile_update", get_client_ip(request))
+    return {
+        "id": row["id"], "email": row["email"], "name": row["name"], "plan": row["plan"],
+        "avatar_gender": _safe_col(row, "avatar_gender"), "oauth_provider": _safe_col(row, "oauth_provider"),
+        "name_is_custom": bool(_safe_col(row, "name_is_custom", 0)),
+    }

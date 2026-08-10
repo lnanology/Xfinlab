@@ -74,6 +74,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=20260802">
 <script src="js/nav.js"></script>
+<script src="js/user-avatar.js"></script>
 <script src="js/theme-toggle.js"></script>
 <script src="js/share-widget.js"></script>
 <script src="js/points-badge.js"></script>
@@ -162,6 +163,11 @@
      with the logo per AJ's "跟帳戶平" request. */
   .user-topbar-btn { background: transparent; border: 1px solid var(--border); color: var(--label); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; text-decoration: none; font-family: inherit; transition: border-color 0.2s, color 0.2s; }
   .user-topbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+  /* 2026-08-10 (task #761): 男女公仔頭icon掣 + 改名輸入框，喺Account
+     flyout入面畀用戶自己揀icon同改名，同js/nav.js個Account flyout用嘅
+     .xfl-gender-btn係同一套設計，淨係換返index.html自己嘅CSS變數名。 */
+  .topbar-gender-btn { background: var(--bg-secondary,#f1f5f9); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: border-color 0.2s, color 0.2s; }
+  .topbar-gender-btn.topbar-gender-active { border-color: var(--amber); color: var(--amber); }
   /* Settings掣加個滑出式flyout，指住/撳落去會現出「帳戶」呢個選項，
      唔使直接撳個掣就即刻跳去dashboard.html。 */
   .user-topbar-settings-wrap { position: relative; }
@@ -669,12 +675,18 @@
        (#userTopbarName) since it's redundant next to this "👤 帳戶" button. -->
   <div class="user-topbar" id="userTopbar" style="display:none">
     <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
-      <button type="button" class="user-topbar-btn" id="topbarSettingsBtn">👤 <span data-i18n="topbar_account">帳戶</span></button>
+      <button type="button" class="user-topbar-btn" id="topbarSettingsBtn"><span id="topbarAvatarIcon"></span><span id="topbarAcctLabel" data-i18n="topbar_account">帳戶</span></button>
       <div class="user-topbar-flyout" id="topbarSettingsFlyout" style="min-width:220px">
         <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
           <div style="font-size:0.72rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
           <div id="topbarDropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
           <div id="topbarDropdownPlan" style="font-size:0.7rem;color:var(--amber);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:6px">
+            <button type="button" data-gender="m" class="topbar-gender-btn" id="topbarGenderM" title="男"></button>
+            <button type="button" data-gender="f" class="topbar-gender-btn" id="topbarGenderF" title="女"></button>
+            <input type="text" id="topbarNameInput" maxlength="40" style="flex:1;min-width:0;background:var(--bg-secondary,#f1f5f9);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:0.78rem">
+          </div>
+          <button type="button" id="topbarProfileSaveBtn" data-i18n="profile_save_btn" style="width:100%;margin-top:6px;background:var(--accent-blue,#2563EB);color:#fff;border:none;border-radius:6px;padding:6px 8px;font-size:0.76rem;cursor:pointer">Save name / icon</button>
         </div>
         <a href="pricing.html" style="color:var(--amber)">⭐ <span data-i18n="dash_view_plans">View Plans</span></a>
         <a href="#" onclick="topbarCopyReferral(); return false;">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
@@ -1142,6 +1154,11 @@ function initUserTopbar() {
     const planEl = document.getElementById('topbarDropdownPlan');
     if (emailEl) emailEl.textContent = user.email || '';
     if (planEl) planEl.textContent = (user.plan || 'free').toUpperCase() + ' ' + (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['dash_plan_suffix'] || 'PLAN');
+    // 2026-08-10 (task #761): 用男女公仔頭ICON同自定名字取代寫死嘅👤，
+    // js/user-avatar.js係共用嘅單一邏輯來源（js/nav.js個Account flyout
+    // 都係用返呢個），咁樣先至唔會兩處各自漂移。
+    renderTopbarAvatar(user);
+    wireTopbarProfileEdit(user);
   } catch(e) {}
   // CSS :hover已經可以喺桌面版指住「帳戶」就滑出返個dropdown，呢度加多
   // 一個click-toggle，等冇hover嘅觸控裝置（手機/平板）都撳得到。
@@ -1165,6 +1182,74 @@ function initUserTopbar() {
       flyout.classList.remove('open');
     });
   }
+}
+
+// 2026-08-10 (task #761): 畫個icon + 名字入#topbarSettingsBtn，同埋幫
+// gender picker set返個「而家揀緊邊個」嘅active狀態。
+function renderTopbarAvatar(user) {
+  try {
+    const iconEl = document.getElementById('topbarAvatarIcon');
+    const labelEl = document.getElementById('topbarAcctLabel');
+    if (iconEl && window.XflAvatar) iconEl.innerHTML = XflAvatar.icon(user.avatar_gender, 16);
+    if (labelEl) {
+      const nm = window.XflAvatar ? XflAvatar.displayName(user) : '';
+      labelEl.textContent = nm || labelEl.textContent;
+    }
+    const mBtn = document.getElementById('topbarGenderM');
+    const fBtn = document.getElementById('topbarGenderF');
+    if (mBtn && window.XflAvatar) mBtn.innerHTML = XflAvatar.icon('m', 16);
+    if (fBtn && window.XflAvatar) fBtn.innerHTML = XflAvatar.icon('f', 16);
+    [mBtn, fBtn].forEach(function(b) {
+      if (b) b.classList.toggle('topbar-gender-active', b.dataset.gender === user.avatar_gender);
+    });
+    const nameInput = document.getElementById('topbarNameInput');
+    if (nameInput && document.activeElement !== nameInput) nameInput.value = user.name || '';
+  } catch(e) {}
+}
+
+// 揀性別掣＋撳「Save name / icon」just call PUT /auth/profile，同js/nav.js
+// 個Account flyout果條邏輯一致（token放query string，同呢個project其他
+// endpoint一樣，例如GET /auth/me?token=...）。
+function wireTopbarProfileEdit(user) {
+  const mBtn = document.getElementById('topbarGenderM');
+  const fBtn = document.getElementById('topbarGenderF');
+  [mBtn, fBtn].forEach(function(b) {
+    if (!b || b.dataset.xflWired) return;
+    b.dataset.xflWired = '1';
+    b.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      user.avatar_gender = b.dataset.gender;
+      renderTopbarAvatar(user);
+    });
+  });
+  const saveBtn = document.getElementById('topbarProfileSaveBtn');
+  if (!saveBtn || saveBtn.dataset.xflWired) return;
+  saveBtn.dataset.xflWired = '1';
+  saveBtn.addEventListener('click', async function(ev) {
+    ev.stopPropagation();
+    const nameInput = document.getElementById('topbarNameInput');
+    const nm = (nameInput && nameInput.value || '').trim();
+    if (!nm) return;
+    saveBtn.disabled = true;
+    try {
+      const token = user.token || localStorage.getItem('xfinlab_token') || '';
+      const res = await fetch(`${API}/auth/profile?token=${encodeURIComponent(token)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nm, avatar_gender: user.avatar_gender || null })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        user.name = data.name;
+        user.avatar_gender = data.avatar_gender;
+        user.oauth_provider = data.oauth_provider;
+        user.name_is_custom = data.name_is_custom;
+        localStorage.setItem('xfinlab_user', JSON.stringify(user));
+        renderTopbarAvatar(user);
+      }
+    } catch(e) {}
+    saveBtn.disabled = false;
+  });
 }
 initUserTopbar();
 

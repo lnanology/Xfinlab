@@ -88,6 +88,7 @@ from services.db_migration import (
     ensure_wal_mode,
     migrate_legacy_backend_db,
     migrate_audit_logs_nullable_user_id,
+    ensure_avatar_gender_column,
     reset_admin_password_if_requested,
 )
 # Must run first — Litestream can only replicate writes once the DB is in
@@ -95,6 +96,7 @@ from services.db_migration import (
 ensure_wal_mode()
 migrate_legacy_backend_db()
 migrate_audit_logs_nullable_user_id()
+ensure_avatar_gender_column()
 reset_admin_password_if_requested()
 
 # --- Rate limiting (Security & Operations Layer, Phase 2) ---

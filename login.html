@@ -263,7 +263,7 @@ async function handleLogin() {
     if (!res.ok) { showError(data.detail || t('login_err_login_failed','Login failed')); return; }
 
     localStorage.setItem('xfinlab_token', data.token);
-    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
+    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan, avatar_gender: data.avatar_gender, oauth_provider: data.oauth_provider, name_is_custom: data.name_is_custom}));
     showSuccess(t('login_success_login','Login successful! Redirecting...'));
     setTimeout(() => window.location.href = 'dashboard.html', 1000);
   } catch(e) {
@@ -325,7 +325,7 @@ async function handleRegister() {
     }
 
     localStorage.setItem('xfinlab_token', data.token);
-    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
+    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan, avatar_gender: data.avatar_gender, oauth_provider: data.oauth_provider, name_is_custom: data.name_is_custom}));
     showSuccess(t('login_success_register','Account created! Redirecting...'));
     setTimeout(() => window.location.href = 'dashboard.html', 1000);
   } catch(e) {
@@ -450,7 +450,7 @@ async function loadLoginMethods() {
       const res = await fetch(`${API}/auth/me?token=${encodeURIComponent(socialToken)}`);
       const profile = await res.json();
       if (res.ok) {
-        finishSocialLogin({ token: socialToken, id: profile.id, email: profile.email, name: profile.name, plan: profile.plan });
+        finishSocialLogin({ token: socialToken, id: profile.id, email: profile.email, name: profile.name, plan: profile.plan, avatar_gender: profile.avatar_gender, oauth_provider: profile.oauth_provider, name_is_custom: profile.name_is_custom });
       }
     } catch (e) { /* fall through to normal login form */ }
     history.replaceState(null, '', window.location.pathname);

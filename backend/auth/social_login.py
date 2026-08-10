@@ -111,6 +111,14 @@ def find_or_create_oauth_user(email: str, name: str, provider: str, provider_id:
 def _issue_login_response(row, provider: str, request: Request):
     token = create_access_token({"sub": row["email"], "id": row["id"]})
     log_action(row["id"], f"login:{provider}", get_client_ip(request))
+    # 2026-08-10 (task #761): avatar_gender/oauth_provider let the frontend
+    # apply LINE's "name too long, show 1 char by default" rule (AJ: "LINE
+    # 號太長只顯示你位字") and render the male/female avatar icon. `row[col]`
+    # is safe here (unlike auth.py's _safe_col use elsewhere) because both
+    # columns are guaranteed to exist by the time a row reaches this
+    # function -- oauth_provider is set on THIS row by find_or_create_
+    # oauth_user() above, and avatar_gender's ALTER TABLE (services/
+    # db_migration.py) runs before any request can be served.
     return {
         "status": "ok",
         "id": row["id"],
@@ -118,6 +126,9 @@ def _issue_login_response(row, provider: str, request: Request):
         "name": row["name"],
         "plan": row["plan"],
         "token": token,
+        "avatar_gender": row["avatar_gender"] if "avatar_gender" in row.keys() else None,
+        "oauth_provider": row["oauth_provider"] if "oauth_provider" in row.keys() else provider,
+        "name_is_custom": bool(row["name_is_custom"]) if "name_is_custom" in row.keys() else False,
     }
 
 

@@ -193,6 +193,45 @@ def migrate_audit_logs_nullable_user_id() -> None:
         logger.warning("db_migration: audit_logs nullable-user_id migration failed (non-fatal): %s", e)
 
 
+def ensure_avatar_gender_column() -> None:
+    """
+    2026-08-10 (task #761, AJ: "登入後身份以男女公仔頭 ICON 取代，加自定
+    名字" -- replace the generic 👤 avatar with a male/female figure icon
+    the user can pick, alongside an editable display name). Adds
+    users.avatar_gender ('m' / 'f' / NULL -- NULL means "not chosen yet",
+    the frontend falls back to a neutral icon in that case).
+
+    SQLite has no "ALTER TABLE ... ADD COLUMN IF NOT EXISTS", so this
+    follows the same try/except-per-statement idiom already used by
+    backend/auth/social_login.py's _ensure_oauth_columns() -- safe to call
+    on every startup, no-ops once the column exists. Called from
+    backend/main.py AFTER `from auth.auth import router as auth_router`
+    (which runs init_users_table() at import time), so the `users` table
+    is guaranteed to already exist by the time this runs.
+    """
+    # name_is_custom tracks whether `name` came from the user explicitly
+    # renaming themselves via PUT /auth/profile, vs. still being whatever
+    # the login provider set it to at account creation (typed at email
+    # registration, or LINE's full profile display name, which can be
+    # long -- AJ: "LINE號太長只顯示你位字"). Without this flag the frontend
+    # can't tell "the LINE name is long because it's the untouched
+    # default" from "the user renamed themselves to something long on
+    # purpose" -- so a LINE account's name is only truncated for display
+    # while name_is_custom is still 0.
+    for ddl in (
+        "ALTER TABLE users ADD COLUMN avatar_gender TEXT",
+        "ALTER TABLE users ADD COLUMN name_is_custom INTEGER DEFAULT 0",
+    ):
+        try:
+            conn = sqlite3.connect(ROOT_DB)
+            conn.execute(ddl)
+            conn.commit()
+            conn.close()
+            logger.warning("db_migration: applied '%s'", ddl)
+        except Exception:
+            pass  # already exists -- normal on every startup after the first
+
+
 def reset_admin_password_if_requested() -> None:
     """
     Email-free admin password recovery (2026-07-11) -- the normal
