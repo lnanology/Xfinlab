@@ -88,6 +88,12 @@ def _compute_pulse() -> Dict:
         confluence = tech.get("confluence", {})
         score = confluence.get("score", 0.0)
         scores.append(score)
+        # 2026-08-10 (AJ: "今日重點D板塊加線性K圖"): same free reuse pattern
+        # as _compute_top_opportunities()'s sparkline below -- tech.get("ohlc")
+        # is already fetched for the confluence score above, so this is just
+        # slicing the last 20 closes, no new network call.
+        ohlc = tech.get("ohlc") or []
+        sparkline = [round(float(bar["close"]), 4) for bar in ohlc[-20:] if bar.get("close") is not None]
         breakdown.append({
             "ticker": ticker,
             "label": _PULSE_LABELS.get(ticker, ticker),
@@ -102,6 +108,7 @@ def _compute_pulse() -> Dict:
             # same real Confluence Engine call above, nothing new fetched.
             "confluence_confidence_pct": confluence.get("confidence_pct"),
             "volume_desc": tech.get("volume_desc"),
+            "sparkline": sparkline,
         })
 
     if scores:

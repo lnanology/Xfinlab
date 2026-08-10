@@ -364,12 +364,18 @@
   .pulse-overall strong { color: var(--text); }
   .pulse-top { font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; padding: 8px 12px; background: rgba(var(--accent-rgb),0.06); border: 1px solid rgba(var(--accent-rgb),0.18); border-radius: 8px; display: none; }
   .pulse-top strong { color: var(--accent); }
-  .pulse-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-  .pulse-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; transition: border-color 0.3s, transform 0.3s; }
+  /* 2026-08-10 (AJ: "今日重點D板塊...卡片改成長方顯示"): switched from a
+     4-col grid of tall centered square tiles to a 2-col grid of wide
+     rectangular rows (label+price left, sparkline+direction right) --
+     reads more like a sector-rotation leaderboard list than a tile grid. */
+  .pulse-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .pulse-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; text-align: left; transition: border-color 0.3s, transform 0.3s; }
   .pulse-card.top-pick { border-color: rgba(var(--accent-rgb),0.4); }
-  .pulse-card-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; }
-  .pulse-card-price { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
-  .pulse-card-dir { font-size: 0.75rem; }
+  .pulse-card-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .pulse-card-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+  .pulse-card-price { font-size: 0.95rem; font-weight: 700; margin-bottom: 0; }
+  .pulse-card-spark { width: 84px; flex-shrink: 0; }
+  .pulse-card-dir { font-size: 0.75rem; white-space: nowrap; }
   .pulse-card-dir.bull { color: var(--green); }
   .pulse-card-dir.bear { color: var(--red); }
   .pulse-card-dir.neutral { color: var(--amber); }
@@ -381,7 +387,7 @@
   .pulse-chip { font-size: 0.66rem; color: var(--accent); background: rgba(var(--accent-rgb),0.08); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 99px; padding: 2px 8px; text-decoration: none; }
   .pulse-chip:hover { background: rgba(var(--accent-rgb),0.18); }
   .pulse-disclaimer { font-size: 0.72rem; color: var(--muted2); margin-top: 14px; text-align: center; }
-  @media (max-width: 640px) { .pulse-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .pulse-grid { grid-template-columns: 1fr; } .pulse-card-spark { width: 64px; } }
 
   /* Top Opportunity -- 3 cards, one per asset class (stock/futures/crypto),
      each a real top-pick from /api/top-opportunities (see api/market_pulse.py).
@@ -1566,7 +1572,7 @@ async function loadMarketPulse() {
             </div>
           </div>` : '';
         if (!b.available) {
-          return `<div class="pulse-card"><div class="pulse-card-label">${trPulseLabel(b.label)}</div><div class="pulse-card-price">--</div>${relatedHtml}</div>`;
+          return `<div class="pulse-card"><div class="pulse-card-row"><div><div class="pulse-card-label">${trPulseLabel(b.label)}</div><div class="pulse-card-price">--</div></div></div>${relatedHtml}</div>`;
         }
         const dirClass = b.confluence_direction === '偏多' ? 'bull' : (b.confluence_direction === '偏空' ? 'bear' : 'neutral');
         const topClass = i === 0 ? ' top-pick' : '';
@@ -1577,11 +1583,22 @@ async function loadMarketPulse() {
               ${b.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${trVolumeDesc(b.volume_desc)}</span>` : ''}
               ${bDispConf != null ? `<span>${t('idx_prob_label','機率')}: ${bDispConf}%</span>` : ''}
             </div>` : '';
+        // 2026-08-10 (AJ: "今日重點D板塊加線性K圖"): same free-reuse sparkline
+        // pattern as Top Opportunity's cards -- b.sparkline comes straight
+        // from the backend's already-fetched OHLC closes (see
+        // api/market_pulse.py's _compute_pulse()), no extra fetch here.
+        const sparkHtml = (typeof XflSparkline !== 'undefined' && Array.isArray(b.sparkline) && b.sparkline.length >= 2)
+          ? XflSparkline.render(b.sparkline, dirClass, { width: 84, height: 28, className: 'xfl-spark-sm' }) : '';
         return `<div class="pulse-card${topClass}">
           <a class="pulse-card-main" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
-            <div class="pulse-card-label">${trPulseLabel(b.label)}</div>
-            <div class="pulse-card-price">$${b.price}</div>
-            <div class="pulse-card-dir ${dirClass}">${trDirection(b.confluence_direction)}</div>
+            <div class="pulse-card-row">
+              <div>
+                <div class="pulse-card-label">${trPulseLabel(b.label)}</div>
+                <div class="pulse-card-price">$${b.price}</div>
+                <div class="pulse-card-dir ${dirClass}">${trDirection(b.confluence_direction)}</div>
+              </div>
+              ${sparkHtml ? `<div class="pulse-card-spark">${sparkHtml}</div>` : ''}
+            </div>
             ${metaHtml}
           </a>
           ${relatedHtml}
