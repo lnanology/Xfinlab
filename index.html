@@ -613,25 +613,23 @@
      toggle is now a floating round button (see js/theme-toggle.js), so
      nothing injects into this <nav> any more; the Account widget below
      (#userTopbar) has always been this page's own separate thing. -->
-<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;column-gap:12px;row-gap:12px;border-bottom:none;position:relative">
+<nav id="idxNav" style="max-width:1160px;margin:0 auto;padding:14px 24px 0;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;column-gap:12px;row-gap:12px;border-bottom:none;position:relative">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;flex:1 0 100%">
     <img src="/img/logo-mark.png" alt="XFINLAB" style="height:50px;width:auto">
     <span style="font-weight:700;font-size:1.4rem;letter-spacing:0.01em">
       <span style="color:var(--accent)">X</span><span style="color:var(--amber)">FIN</span><span style="color:#fff;-webkit-text-stroke:1.2px #000;paint-order:stroke fill;">LAB</span>
     </span>
   </a>
-  <!-- 2026-08-10 (AJ: "將功能 API 帳戶放低一行"): logo now always sits
-       alone on its own row (flex:1 0 100% forces it to wrap onto its own
-       line), and 功能/API/帳戶 always share the row below it as a group --
-       previously 帳戶 stayed level with the logo on desktop and only
-       dropped down under 480px; now it drops down together with 功能/API
-       at every width for one consistent layout. #idxNav is a flex-wrap
-       row with justify-content:space-between, which (with flex-wrap)
-       applies per visual line -- line 1 has only the logo so
-       space-between just pins it to the left; line 2 has this group and
-       #userTopbar so space-between spreads them to opposite ends. No more
-       CSS grid / no more order-juggling media query needed, since normal
-       flex-wrap already reflows everything correctly at any width. -->
+  <!-- 2026-08-10 (AJ: "將功能 API 帳戶放低一行" then "功能同API置中"): logo
+       always sits alone on its own row (flex:1 0 100% forces it to wrap
+       onto its own line), and 功能/API/帳戶 always share the row below it
+       as one centered group. #idxNav is a flex-wrap row with
+       justify-content:center, which (with flex-wrap) applies per visual
+       line -- line 1 has only the logo, which is full-width via its own
+       flex:1 0 100% so centering has no visible effect on it; line 2 has
+       this group + #userTopbar packed together and centered as a unit.
+       No more CSS grid / no more order-juggling media query needed, since
+       normal flex-wrap already reflows everything correctly at any width. -->
   <div id="idxNavFeatGroup" style="display:flex;align-items:center;gap:22px">
     <div id="idxNavFeat" style="position:relative">
       <button type="button" id="idxNavFeatBtn" style="background:none;border:none;cursor:pointer;font:inherit;font-family:inherit;font-size:1rem;color:var(--text2,#475569);display:inline-flex;align-items:center;gap:4px;padding:4px 2px">
@@ -693,16 +691,14 @@
   #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
   #idxNavFeat.idx-feat-open #idxNavFeatPanel{display:block}
   #idxNavFeat.idx-feat-open #idxNavFeatBtn svg{transform:rotate(180deg)}
-  /* 2026-08-10 (AJ: "將功能 API 帳戶放低一行"): #idxNav's own flex-wrap +
-     flex:1 0 100% on the logo (see inline style above) already produces
-     "logo row, then 功能/API/帳戶 row" at every width -- no order-juggling
-     media query needed any more. Only 2 things still genuinely change
-     under 480px: centering the 2nd row's items (space-between looks odd
-     once 功能 group and 帳戶 each wrap to their own line at very narrow
-     widths) and switching the flyout panel to a centered fixed sheet so
-     it doesn't get clipped against the viewport edge. */
+  /* 2026-08-10: #idxNav's own flex-wrap + flex:1 0 100% on the logo (see
+     inline style above) + justify-content:center already produces "logo
+     row, then centered 功能/API/帳戶 row" at every width -- no
+     order-juggling media query needed any more. The only thing that still
+     genuinely changes under 480px is the flyout panel, which switches to
+     a centered fixed sheet so it doesn't get clipped against the
+     viewport edge. */
   @media (max-width:480px){
-    #idxNav{justify-content:center}
     #idxNavFeatGroup{justify-content:center}
     #idxNavFeatPanel{position:fixed;left:50%;right:auto;top:auto;bottom:auto;transform:translateX(-50%);width:min(280px,calc(100vw - 32px))}
   }
