@@ -182,6 +182,20 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
         <div class="ep-name">Monte Carlo Stress Test</div>
         <div class="ep-desc">A real historical-bootstrap simulation — resamples a symbol's own real daily returns thousands of times to report percentile ending values and drawdowns for a given horizon. Never an LLM-estimated number.</div>
       </div>
+      <!-- 2026-08-10 (P3 of the Quant Research Factory roadmap): packages
+           services/regime_router_service.py. Honestly reports
+           available:false with a reason when the persisted leaderboard
+           doesn't yet have enough graded trades for a ticker/regime pair --
+           never a fabricated pick. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12 7 14.5 12 12 17 9.5 12"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/regime-signal/{ticker}</span>
+        <div class="ep-name">Regime-Aware Signal</div>
+        <div class="ep-desc">Current causal market regime for a ticker, plus whichever composed signal combo has historically performed best in that same regime — backed by real walk-forward-validated backtests, not a fabricated pick. Honestly reports "not enough data yet" for tickers not yet covered by the scheduled scan.</div>
+      </div>
     </div>
   </div>
 

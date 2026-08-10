@@ -365,6 +365,48 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+# 2026-08-10 (P2+P3 of the Quant Research Factory roadmap, task #792):
+# keeps services/formula_composer_service.py's and services/regime_
+# router_service.py's persisted leaderboards fresh WITHOUT requiring a
+# user to visit a page first (both /formula-composer/{ticker}/scan and
+# /regime-router/{ticker}/scan are otherwise only ever triggered
+# manually via admin.html or an API call). Scans the exact same fixed
+# 8-ticker Market Pulse basket track_record_service.py already uses
+# (_BASKET = SPY/QQQ/DIA/IWM/XLK/XLF/XLE/BTC-USD) -- same "reuse the
+# existing basket, don't invent a new one" reasoning as that module.
+# Each run is 35 walk-forward validations (composer) + 35 full-history
+# simulations (regime router) PER symbol, so this is deliberately once-
+# daily, off-peak, and continues past any single symbol's failure
+# (network hiccup / provider outage) rather than aborting the whole
+# batch -- the leaderboards are additive/upsert (ON CONFLICT DO UPDATE),
+# so a partial run still leaves yesterday's data for symbols it didn't
+# reach.
+_QRF_SCAN_BASKET = ["SPY", "QQQ", "DIA", "IWM", "XLK", "XLF", "XLE", "BTC-USD"]
+
+
+def _run_quant_research_factory_scan_job():
+    from services.formula_composer_service import run_scan as _composer_run_scan
+    from services.regime_router_service import run_regime_scan as _regime_run_scan
+
+    for symbol in _QRF_SCAN_BASKET:
+        try:
+            _composer_run_scan(symbol)
+        except Exception:
+            pass
+        try:
+            _regime_run_scan(symbol)
+        except Exception:
+            pass
+
+_push_scheduler.add_job(
+    _run_quant_research_factory_scan_job,
+    "cron",
+    hour=2,
+    minute=0,
+    id="quant_research_factory_basket_scan",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

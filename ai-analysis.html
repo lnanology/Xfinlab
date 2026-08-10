@@ -303,6 +303,19 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       <div class="xfl-accordion-body" id="historicalAnalogBody">-</div>
     </details>
 
+    <!-- Regime Router (P3 of the Quant Research Factory roadmap, 2026-08-10):
+         surfaces services/regime_router_service.py -- current causal market
+         regime + whichever composed signal combo (services/formula_composer_
+         service.py) has historically performed best during that same regime.
+         Coverage grows as the scheduled scan job (backend/main.py) works
+         through the platform's core symbol universe, so this honestly shows
+         "not enough data yet" for most tickers not yet scanned rather than
+         faking a result. -->
+    <details class="xfl-accordion" id="regimeRouterAccordion" style="display:none">
+      <summary data-i18n="aa_regime_router_title">▶ 市況配對 Regime Router</summary>
+      <div class="xfl-accordion-body" id="regimeRouterBody">-</div>
+    </details>
+
     <details class="xfl-accordion" id="scenarioAccordion" style="display:none">
       <summary data-i18n="aa_scenario_title">▶ 情境分析 Scenario Lab</summary>
       <div class="xfl-accordion-body">
@@ -745,6 +758,48 @@ async function runAnalysis(){
         .catch(() => { analogBody.textContent = tr2('aa_analog_fetch_error', '暫時無法計算歷史類比。'); });
     } else {
       analogAccordion.style.display = 'none';
+    }
+
+    // ---- P3: Regime Router (2026-08-10) -- same async-fetch-after-main-
+    // response pattern as Historical Analog above. best-for-regime is a
+    // READ of a persisted leaderboard, not a fresh scan (a live scan is 35
+    // walk-forward simulations, far too slow for a single page load) -- so
+    // most tickers not yet covered by the scheduled scan job will honestly
+    // show "not enough data yet" rather than a fabricated pick. Still shows
+    // the current regime immediately (that half is a fast live call).
+    const regimeRouterAccordion = document.getElementById('regimeRouterAccordion');
+    const regimeRouterBody = document.getElementById('regimeRouterBody');
+    if (symbols.length) {
+      regimeRouterAccordion.style.display = 'block';
+      regimeRouterBody.textContent = tr2('aa_regime_router_loading', '分析緊現時市況...');
+      fetch(`${API_BASE}/api/regime-router/${encodeURIComponent(symbols[0])}/best-for-regime`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.status !== 'ok' || !res.data) { regimeRouterBody.textContent = tr2('aa_regime_router_error', '暫時無法判斷市況配對。'); return; }
+          const d = res.data;
+          const regimeLine = tr2('aa_regime_router_current', '現時市況：{regime}').replace('{regime}', d.regime);
+          if (!d.available) {
+            regimeRouterBody.innerHTML = `
+              <div>${regimeLine}</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.4rem">${d.reason || tr2('aa_regime_router_no_data', '呢隻股票喺呢個市況嘅歷史配對數據仲未夠，掃描會持續進行，遲啲再嚟睇睇。')}</div>
+            `;
+            return;
+          }
+          const bc = d.best_candidate;
+          const bestLine = tr2('aa_regime_router_best', '歷史上呢個市況表現最好嘅訊號組合：{label}')
+            .replace('{label}', bc.label);
+          const statsLine = tr2('aa_regime_router_stats', '（{n}單交易，勝率{wr}%，平均回報{ret}%）')
+            .replace('{n}', bc.trade_count).replace('{wr}', bc.win_rate_pct).replace('{ret}', bc.avg_return_pct);
+          regimeRouterBody.innerHTML = `
+            <div>${regimeLine}</div>
+            <div style="margin-top:0.4rem">${bestLine}</div>
+            <div style="font-size:0.85rem;color:var(--text-muted)">${statsLine}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.6rem">${tr2('aa_regime_router_caveat', '呢個係歷史配對統計，唔係即時交易訊號，唔係投資建議，過去表現不代表將來結果。')}</div>
+          `;
+        })
+        .catch(() => { regimeRouterBody.textContent = tr2('aa_regime_router_error', '暫時無法判斷市況配對。'); });
+    } else {
+      regimeRouterAccordion.style.display = 'none';
     }
 
     // ---- Tier 2: Scenario Lab ----

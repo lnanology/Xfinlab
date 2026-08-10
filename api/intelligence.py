@@ -504,6 +504,54 @@ def intelligence_stress_test(
 
 
 # ---------------------------------------------------------------------------
+# 2026-08-10 (P3 of the Quant Research Factory roadmap -- "Regime-Aware
+# Signal" productization): packages services/regime_router_service.py for
+# external API consumers. Pure packaging of an already-built engine, same
+# honesty posture as the rest of this router -- `available: false` with a
+# `reason` string (not a fabricated pick) when the persisted leaderboard
+# doesn't yet have enough graded trades for this ticker/regime pair, exactly
+# like the ai-analysis.html/chart-analysis.html frontend wiring for the same
+# service. This is a READ of a persisted leaderboard, never a synchronous
+# 35-candidate walk-forward scan -- see regime_router_service.get_best_for_
+# regime()'s own docstring for why.
+# ---------------------------------------------------------------------------
+
+@router.get("/intelligence/v1/regime-signal/{ticker}")
+def intelligence_regime_signal(
+    ticker: str,
+    regime: Optional[str] = None,
+    min_trades: int = 5,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Current causal market regime for `ticker` (services/regime_router_
+    service.py's own causal-only classifier, see that module's docstring
+    for why it doesn't reuse the live Confluence/Regime Belief engines)
+    plus whichever composed signal combo (services/formula_composer_
+    service.py) has historically performed best in that regime. If
+    `regime` is omitted, the current regime is computed first and used
+    for the lookup -- the actual "what should I use right now" answer."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "regime")
+
+    from services.regime_router_service import get_best_for_regime, get_current_regime
+
+    ticker = ticker.upper().strip()
+    min_trades = max(1, min(min_trades, 50))
+
+    current = get_current_regime(ticker)
+    if "error" in current:
+        return _envelope(data=None, error=current["error"])
+
+    lookup_regime = regime or current["regime"]
+    result = get_best_for_regime(ticker, lookup_regime, min_trades=min_trades)
+
+    return _envelope(
+        data={"current_regime": current, "regime_used": lookup_regime, **result},
+        meta={"ticker": ticker},
+    )
+
+
+# ---------------------------------------------------------------------------
 # 2026-08-09 (World Engine Phase 0, XFINLAB_Final_Strategy.md section 5/6/7):
 # repackages GDELT global events + macro (World Bank baseline, FRED/ECB
 # high-frequency overrides for US/Eurozone) + FinBERT sentiment into one

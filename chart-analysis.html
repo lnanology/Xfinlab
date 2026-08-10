@@ -193,6 +193,22 @@
         <div id="backtestResult" style="margin-top:0.6rem"></div>
       </div>
 
+      <!-- Regime Router (P3 of the Quant Research Factory roadmap, 2026-08-10):
+           same button-triggered lazy-fetch pattern as Multi-Timeframe/Backtest
+           above. Shows the current causal market regime (fast live call) plus
+           whichever composed signal combo (services/formula_composer_service.py)
+           has historically performed best in that same regime, per services/
+           regime_router_service.py. Coverage of the "best combo" half grows as
+           the scheduled scan job works through the platform's core symbol
+           universe, so this honestly shows "not enough data yet" for most
+           tickers not yet scanned rather than faking a result. -->
+      <div id="regimeRouterBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_regime_router_title">市況配對 Regime Router（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_regime_router_hint">睇下現時市況同歷史上邊個訊號組合表現最好（非必需，主動按先會查；歷史統計，唔係投資建議）</p>
+        <button class="btn-secondary" id="regimeRouterBtn" onclick="requestRegimeRouter()" data-i18n="ca_regime_router_btn" style="border-color:var(--blue,#D35400)">🧭 查看市況配對</button>
+        <div id="regimeRouterResult" style="margin-top:0.6rem"></div>
+      </div>
+
       <div id="aiCommentaryBlock" style="display:none">
         <h4 style="margin-top:0.8rem" data-i18n="ca_ai_commentary_title">AI 文字解讀（選填）</h4>
         <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_ai_commentary_hint">型態辨識需要截圖先做到；呢度可以叫AI將上面嘅真實數據寫成一段易讀總結（非必需，主動按先會叫AI）</p>
@@ -1053,6 +1069,12 @@ async function runTickerSearch(symbolOverride){
     document.getElementById('backtestBtn').disabled = false;
     safeSetText('backtestBtn', t('ca_backtest_btn','🧪 回測比較策略'));
 
+    // P3 Regime Router -- same lazy button reveal, reset per search.
+    document.getElementById('regimeRouterBlock').style.display = 'block';
+    document.getElementById('regimeRouterResult').innerHTML = '';
+    document.getElementById('regimeRouterBtn').disabled = false;
+    safeSetText('regimeRouterBtn', t('ca_regime_router_btn','🧭 查看市況配對'));
+
     if (typeof window.renderDecisionFooter === 'function') {
       if (res.confluence) {
         const c = res.confluence;
@@ -1307,6 +1329,51 @@ async function requestBacktestCompare(){
   } finally {
     btn.disabled = false;
     btn.textContent = t('ca_backtest_btn','🧪 回測比較策略');
+  }
+}
+
+// P3 Regime Router (2026-08-10) -- same lazy-button-fetch pattern as
+// requestMultiTimeframe()/requestBacktestCompare() above. best-for-regime
+// is a READ of a persisted leaderboard, not a fresh scan (a live scan is
+// 35 walk-forward simulations, far too slow for a button click) -- so
+// most tickers not yet covered by the scheduled scan job will honestly
+// show "not enough data yet" rather than a fabricated pick. Still shows
+// the current regime immediately (that half is a fast live call).
+async function requestRegimeRouter(){
+  if(!currentSearchSymbol) return;
+  const btn = document.getElementById('regimeRouterBtn');
+  const out = document.getElementById('regimeRouterResult');
+  btn.disabled = true;
+  btn.textContent = t('ca_regime_router_loading','分析緊現時市況...');
+  try {
+    const response = await fetch(`${API}/regime-router/${encodeURIComponent(currentSearchSymbol)}/best-for-regime`);
+    const json = await response.json();
+    if(json.status !== 'ok' || !json.data){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+    const d = json.data;
+    const regimeLine = t('ca_regime_router_current','現時市況：{regime}').replace('{regime}', d.regime);
+    if (!d.available) {
+      out.innerHTML = `
+        <div class="result-row"><div class="result-label">${regimeLine}</div><div class="result-value"></div></div>
+        <div class="upload-hint" style="margin-top:0.4rem">${d.reason || t('ca_regime_router_no_data','呢隻股票喺呢個市況嘅歷史配對數據仲未夠，掃描會持續進行，遲啲再嚟睇睇。')}</div>
+      `;
+    } else {
+      const bc = d.best_candidate;
+      const bestLine = t('ca_regime_router_best','歷史上呢個市況表現最好嘅訊號組合：{label}').replace('{label}', bc.label);
+      const statsLine = t('ca_regime_router_stats','（{n}單交易，勝率{wr}%，平均回報{ret}%）')
+        .replace('{n}', bc.trade_count).replace('{wr}', bc.win_rate_pct).replace('{ret}', bc.avg_return_pct);
+      out.innerHTML = `
+        <div class="result-row"><div class="result-label">${regimeLine}</div><div class="result-value"></div></div>
+        <div class="result-row"><div class="result-label">${bestLine}</div><div class="result-value">${statsLine}</div></div>
+        <div class="upload-hint" style="margin-top:0.4rem">${t('ca_regime_router_caveat','呢個係歷史配對統計，唔係即時交易訊號，唔係投資建議，過去表現不代表將來結果。')}</div>
+      `;
+    }
+  } catch (err) {
+    out.innerHTML = `<div class="upload-hint">${t('ca_regime_router_error','暫時無法判斷市況配對。')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('ca_regime_router_btn','🧭 查看市況配對');
   }
 }
 

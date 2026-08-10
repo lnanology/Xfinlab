@@ -72,6 +72,15 @@ ENDPOINT_WEIGHT = {
     # `intel` (LLM-backed) to reflect that shape. Same
     # pending-business-approval caveat as every other number here.
     "world_map": 6,
+    # 2026-08-10 (P3 of the Quant Research Factory roadmap, "Regime-Aware
+    # Signal" productization) -- wraps services/regime_router_service.py's
+    # get_current_regime() (one OHLC fetch + causal indicator computation +
+    # RegimeDetector.classify(), no LLM call) plus a read of the persisted
+    # regime_router_candidates leaderboard (cheap sqlite SELECT). Same cost
+    # shape as `technical` (single-asset fetch + compute, no fan-out, no AI
+    # call) so weighted the same. Same pending-business-approval caveat as
+    # every other number in this dict.
+    "regime": 3,
 }
 
 
