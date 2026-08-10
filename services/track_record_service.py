@@ -82,7 +82,8 @@ def _compute() -> Dict:
         "per_symbol": per_symbol,
         "caveats": [
             "呢個係對過去歷史數據嘅回測結果，唔係實際落單交易紀錄，亦唔係未來保證。",
-            "未計入手續費/滑點，實際表現會較差。",
+            "已扣除保守假設嘅手續費+滑點（詳見 services/backtest_service.py 嘅 cost_model），"
+            "avg_return_pct 係net-of-cost數字，並非未計成本嘅樂觀估算。",
             "樣本基於固定8個大盤/板塊指數（同首頁Market Pulse用緊嘅同一組），並非度身挑選表現最好嘅資產。",
             "細樣本嘅勝率統計學上參考價值有限，請留意 total_trades。",
         ],

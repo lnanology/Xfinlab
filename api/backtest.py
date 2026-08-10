@@ -50,3 +50,20 @@ def backtest_compare(ticker: str, period: str = "2y"):
     if "error" in result:
         return {"status": "error", "message": result["error"]}
     return {"status": "ok", "data": result}
+
+
+@router.get("/backtest/{ticker}/walk-forward")
+def backtest_walk_forward(ticker: str, strategy: str = "confluence_trend",
+                           period: str = "2y", n_folds: int = 4):
+    """2026-08-10 (P0 of the Quant Research Factory roadmap) -- out-of-
+    sample validation, see services/backtest_service.py's
+    run_walk_forward() docstring for the full methodology (N chronological
+    folds + a 70/30 in-sample/out-of-sample split + a heuristic
+    overfitting-risk flag)."""
+    if not _SYMBOL_RE.match(ticker):
+        return {"status": "error", "message": "無效嘅代號格式"}
+    n_folds = max(2, min(12, n_folds))  # sane bounds -- too many folds on 2y of daily bars leaves each fold with almost no trades
+    result = BacktestService.run_walk_forward(ticker, strategy=strategy, period=period, n_folds=n_folds)
+    if "error" in result:
+        return {"status": "error", "message": result["error"]}
+    return {"status": "ok", "data": result}

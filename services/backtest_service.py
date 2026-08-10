@@ -27,10 +27,38 @@ silently leak future information into a "historical" entry decision and
 produce a fake win rate. This is a known, stated scope limitation, not a
 silent omission.
 
-Every result also carries an explicit `caveats` list (no fees/slippage
-modeled, small sample sizes are not statistically reliable, past
-performance is not predictive) -- this codebase's established principle
-of never presenting a number as more authoritative than it actually is.
+Every result also carries an explicit `caveats` list (small sample sizes
+are not statistically reliable, past performance is not predictive) --
+this codebase's established principle of never presenting a number as
+more authoritative than it actually is.
+
+2026-08-10 (P0 of the Quant Research Factory roadmap): two upgrades.
+
+1. Transaction cost + slippage are now actually modeled, not just
+   disclosed as "not modeled" in a caveat. Every trade's return is
+   computed net of a configurable per-side commission + slippage
+   assumption (DEFAULT_COMMISSION_PCT / DEFAULT_SLIPPAGE_PCT below).
+   The gross (cost-free) return is still reported alongside as
+   `return_pct_gross` / `avg_return_pct_gross` for transparency, but
+   `return_pct` / `avg_return_pct` -- the numbers every existing
+   consumer (track_record_service.py, chart-analysis.html, the
+   /api/backtest endpoints) already reads -- are now net-of-cost by
+   default. This is a deliberate behavior change: the "strong-looking"
+   backtest numbers this codebase has shown since Step 3 were always
+   overstated by whatever the real friction would have been; this
+   closes that gap without anyone having to change how they read the
+   response.
+
+2. `run_walk_forward()` adds real out-of-sample validation: the same
+   strategy is re-run independently across N chronological folds (no
+   parameter fitting happens anywhere in this codebase's strategies --
+   they're fixed rules, not fitted models -- so this is walk-forward
+   VALIDATION for regime-stability, not walk-forward OPTIMIZATION) plus
+   a simple first-70%/last-30% in-sample/out-of-sample split with a
+   heuristic overfitting-risk flag when OOS performance diverges sharply
+   from in-sample. This exists because a combinatorial strategy/formula
+   composer (planned next) only produces something trustworthy if
+   there's a rigorous OOS filter behind it -- this had to come first.
 """
 
 import logging
@@ -49,6 +77,17 @@ WARMUP_BARS = 60      # bars to skip at the start so SMA50/Bollinger/Donchian/OB
 MAX_HOLD_BARS = 20    # force-exit at close if neither stop nor target hit within this many bars
 ATR_STOP_MULT = 1.5   # same stop-distance convention as _decision_levels()'s ATR fallback branch
 ATR_TARGET_MULT = 3.0  # ~1:2 risk-reward target, deliberately conservative vs the live 1:3 TP1
+
+# 2026-08-10 (P0): cost model defaults. These are deliberately
+# conservative, generic retail-account assumptions (a discount-broker-
+# style commission + a modest market-order slippage estimate), NOT a
+# claim about any specific broker/exchange XFINLAB's users actually use.
+# Applied per side (i.e. once on entry, once on exit) -- see _simulate()
+# for how they're combined into each trade's net return. Callers can
+# override both via run()'s commission_pct/slippage_pct kwargs if they
+# want to model a specific broker's real fee schedule instead.
+DEFAULT_COMMISSION_PCT = 0.05   # % of notional, per side (e.g. a typical discount broker/crypto-exchange taker fee)
+DEFAULT_SLIPPAGE_PCT = 0.05     # % of notional, per side (conservative market-order slippage estimate for liquid large/mid-cap names)
 
 # Step 4 (2026-07-18) Strategy Families expansion constants.
 DIVERGENCE_WINDOW = 14          # lookback bars for RSI Divergence's local price high/low
@@ -79,7 +118,9 @@ class BacktestService:
 
     @classmethod
     def run(cls, symbol: str, strategy: str = "confluence_trend",
-            period: str = "2y", interval: str = "1d") -> Dict:
+            period: str = "2y", interval: str = "1d",
+            commission_pct: float = DEFAULT_COMMISSION_PCT,
+            slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
         if strategy not in cls.STRATEGIES:
             return {"error": f"未知策略：{strategy}，可用：{', '.join(cls.STRATEGIES)}"}
 
@@ -105,8 +146,9 @@ class BacktestService:
             "ma_golden_cross": cls._signal_ma_golden_cross,
         }[strategy]
 
-        trades = cls._simulate(df, ind, signal_fn)
+        trades = cls._simulate(df, ind, signal_fn, commission_pct=commission_pct, slippage_pct=slippage_pct)
         stats = cls._compute_stats(trades)
+        round_trip_cost_pct = round(2 * (commission_pct + slippage_pct), 3)
 
         return {
             "symbol": symbol.upper(),
@@ -116,11 +158,22 @@ class BacktestService:
             "data_points": len(df),
             "trades": trades,
             "stats": stats,
+            "cost_model": {
+                "commission_pct_per_side": commission_pct,
+                "slippage_pct_per_side": slippage_pct,
+                "round_trip_cost_pct_approx": round_trip_cost_pct,
+                "note": (
+                    f"return_pct/avg_return_pct 已經扣除以上假設嘅手續費+滑點（每邊各計一次，"
+                    f"即一買一賣合共約 {round_trip_cost_pct}%）；return_pct_gross/"
+                    f"avg_return_pct_gross 係未扣成本嘅原始數字，供對照。呢個係通用保守假設，"
+                    f"並非某個特定券商/交易所嘅真實收費，實際成本因人而異。"
+                ),
+            },
             "caveats": [
-                "未計入手續費/滑點，實際表現會較差。",
                 "支撐/阻力型訊號（依賴未來K棒確認嘅fractal swing point）刻意冇加入呢個回測，避免未來數據滲入歷史判斷。",
                 "細樣本（交易次數少）嘅勝率統計學上唔可靠，請留意 stats.trade_count。",
-                "過去表現不代表未來結果，呢個唔係投資建議。",
+                "呢個回測用固定規則，冇任何參數擬合/優化——唔存在「過度擬合去遷就呢段歷史」嘅風險，但都唔代表未來會重複同樣表現。",
+                "過去表現不代表未來結果，呢個唔係投資建議。建議搭配 run_walk_forward() 睇唔同時間段嘅穩定性。",
             ],
         }
 
@@ -162,6 +215,143 @@ class BacktestService:
             "data_points": results[0].get("data_points"),
             "strategies": results,
             "disclaimer": "以上排名純粹基於歷史回測勝率排序，並非投資建議，亦不保證未來表現。",
+        }
+
+    @classmethod
+    def run_walk_forward(cls, symbol: str, strategy: str = "confluence_trend",
+                          period: str = "2y", interval: str = "1d",
+                          n_folds: int = 4,
+                          commission_pct: float = DEFAULT_COMMISSION_PCT,
+                          slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
+        """
+        Out-of-sample validation for `strategy` on `symbol` -- see the
+        module docstring's item 2 for why this exists. Two views of the
+        same underlying data:
+
+        1. `folds`: N contiguous chronological folds (default 4, roughly
+           quarters of a 2y period). Each fold's stats are computed
+           independently by restricting _simulate()'s entry-scanning to
+           that fold's bar range only (indicators still see the full
+           causal history leading into the fold, so early-fold trades
+           aren't starved of warmup -- only NEW-entry scanning is
+           bounded, per _simulate()'s entry_range param). A strategy
+           whose edge is real should hold up across most folds; one that
+           only worked in a single fold is a classic overfitting/regime-
+           luck red flag.
+
+        2. `in_sample` / `out_of_sample`: a simple first-70%/last-30%
+           split -- the OOS segment is data the strategy (a fixed rule,
+           not a fitted model) never had any way to special-case, so a
+           big gap between the two is the clearest single overfitting-
+           risk signal this function produces.
+
+        `overfitting_risk` is a heuristic flag (NOT a statistical test):
+        "high" if OOS win rate trails in-sample win rate by more than 15
+        percentage points, or if fewer than half the tested folds were
+        net profitable; "low" otherwise; "unknown" if too few trades
+        fired anywhere to judge. This is a smell test, meant to catch
+        obviously-fragile strategies before anyone trusts them -- it is
+        not proof that a "low"-risk result will actually hold up live.
+        """
+        if strategy not in cls.STRATEGIES:
+            return {"error": f"未知策略：{strategy}，可用：{', '.join(cls.STRATEGIES)}"}
+        n_folds = max(2, int(n_folds))
+
+        try:
+            df = _svc._fetch_history(symbol, period, interval)
+        except Exception as e:
+            return {"error": f"攞唔到 {symbol} 嘅歷史數據：{str(e)}"}
+
+        min_bars = WARMUP_BARS + 10 * n_folds
+        if df is None or df.empty or len(df) < min_bars:
+            return {"error": f"{symbol} 歷史數據不足，無法做 {n_folds} 段walk-forward驗證（需要至少 {min_bars} 條K線，可以縮短 n_folds 或加長 period）"}
+
+        df = df.dropna()
+        closes, highs, lows, volume = df["Close"], df["High"], df["Low"], df["Volume"]
+        ind = cls._compute_causal_indicators(closes, highs, lows, volume)
+        signal_fn = {
+            "confluence_trend": cls._signal_confluence_trend,
+            "breakout_donchian": cls._signal_breakout_donchian,
+            "mean_reversion_bollinger": cls._signal_mean_reversion_bollinger,
+            "atr_turtle_breakout": cls._signal_atr_turtle_breakout,
+            "rsi_divergence": cls._signal_rsi_divergence,
+            "volume_breakout_confirmation": cls._signal_volume_breakout_confirmation,
+            "ma_golden_cross": cls._signal_ma_golden_cross,
+        }[strategy]
+
+        n = len(df)
+        t_start, t_end = WARMUP_BARS, n - 1
+        span = t_end - t_start
+
+        # ---- N-fold chronological validation ----
+        fold_size = max(1, span // n_folds)
+        folds = []
+        for k in range(n_folds):
+            lo = t_start + k * fold_size
+            hi = t_end if k == n_folds - 1 else t_start + (k + 1) * fold_size
+            trades = cls._simulate(df, ind, signal_fn, commission_pct=commission_pct,
+                                    slippage_pct=slippage_pct, entry_range=(lo, hi))
+            stats = cls._compute_stats(trades)
+            folds.append({
+                "fold": k + 1,
+                "start_date": str(df.index[lo].date()),
+                "end_date": str(df.index[min(hi, n - 1)].date()),
+                "stats": stats,
+            })
+
+        # ---- simple 70/30 in-sample / out-of-sample split ----
+        split_idx = t_start + int(span * 0.7)
+        is_trades = cls._simulate(df, ind, signal_fn, commission_pct=commission_pct,
+                                   slippage_pct=slippage_pct, entry_range=(t_start, split_idx))
+        oos_trades = cls._simulate(df, ind, signal_fn, commission_pct=commission_pct,
+                                    slippage_pct=slippage_pct, entry_range=(split_idx, t_end))
+        is_stats = cls._compute_stats(is_trades)
+        oos_stats = cls._compute_stats(oos_trades)
+
+        # ---- heuristic overfitting-risk flag ----
+        tested_folds = sum(1 for f in folds if f["stats"].get("trade_count", 0) > 0)
+        profitable_folds = sum(
+            1 for f in folds
+            if f["stats"].get("trade_count", 0) > 0 and (f["stats"].get("avg_return_pct") or 0) > 0
+        )
+        is_wr, oos_wr = is_stats.get("win_rate_pct"), oos_stats.get("win_rate_pct")
+        wr_gap = (is_wr - oos_wr) if (is_wr is not None and oos_wr is not None) else None
+
+        if wr_gap is not None and wr_gap > 15:
+            risk = "high"
+            risk_reason = f"樣本內勝率（{is_wr}%）比樣本外（{oos_wr}%）高出 {round(wr_gap, 1)} 個百分點，落差偏大，有overfit跡象。"
+        elif tested_folds == 0:
+            risk = "unknown"
+            risk_reason = "各段觸發嘅交易訊號太少，無法評估穩定性。"
+        elif profitable_folds / tested_folds < 0.5:
+            risk = "high"
+            risk_reason = f"只有 {profitable_folds}/{tested_folds} 段時間錄得正平均回報，跨時段穩定性存疑。"
+        else:
+            risk = "low"
+            risk_reason = "樣本內外表現大致一致，各段亦多數錄得正回報，冇明顯過度擬合跡象——但呢個只係啟發式檢查，唔係統計證明，亦唔保證未來表現。"
+
+        return {
+            "symbol": symbol.upper(),
+            "strategy": strategy,
+            "period": period,
+            "interval": interval,
+            "n_folds": n_folds,
+            "folds": folds,
+            "in_sample": {
+                "date_range": [str(df.index[t_start].date()), str(df.index[split_idx].date())],
+                "stats": is_stats,
+            },
+            "out_of_sample": {
+                "date_range": [str(df.index[split_idx].date()), str(df.index[t_end].date())],
+                "stats": oos_stats,
+            },
+            "overfitting_risk": risk,
+            "overfitting_risk_reason": risk_reason,
+            "caveats": [
+                "呢個係fixed-rule策略嘅樣本內/樣本外穩定性檢查，唔係參數優化——呢類策略本身冇可擬合參數，所以「過擬合」喺呢度指嘅係「呢段特定歷史啱啱好啱條規則」，而唔係傳統意義嘅overfitting a fitted model。",
+                "分段令每段交易次數變少，統計參考價值進一步降低，請留意各段 stats.trade_count。",
+                "過去任何時段嘅表現都不代表未來結果，呢個唔係投資建議。",
+            ],
         }
 
     # ---- causal indicator computation (whole-series, still no look-ahead) ----
@@ -417,7 +607,21 @@ class BacktestService:
     # ---- simulation loop ----
 
     @staticmethod
-    def _simulate(df: pd.DataFrame, ind: Dict, signal_fn) -> List[Dict]:
+    def _simulate(df: pd.DataFrame, ind: Dict, signal_fn,
+                  commission_pct: float = DEFAULT_COMMISSION_PCT,
+                  slippage_pct: float = DEFAULT_SLIPPAGE_PCT,
+                  entry_range: Optional[tuple] = None) -> List[Dict]:
+        """
+        entry_range: optional (lo, hi) bar-index bounds restricting where
+        NEW entries may be scanned from -- used by run_walk_forward() to
+        run the identical simulation logic against isolated chronological
+        folds without duplicating this function. None (default) keeps
+        the original whole-series behavior: scan from WARMUP_BARS to n-1.
+        A trade whose signal fires inside the range is still allowed to
+        exit past `hi` using real subsequent bars (an artificial cutoff
+        of the exit itself would just be a different kind of bias), so
+        `hi` bounds signal-scanning only, not trade resolution.
+        """
         opens = df["Open"].values
         highs = df["High"].values
         lows = df["Low"].values
@@ -425,8 +629,11 @@ class BacktestService:
         n = len(df)
         trades: List[Dict] = []
 
-        i = WARMUP_BARS
-        while i < n - 1:
+        lo = max(WARMUP_BARS, entry_range[0]) if entry_range else WARMUP_BARS
+        hi = min(n - 1, entry_range[1]) if entry_range else n - 1
+
+        i = lo
+        while i < hi:
             sig = signal_fn(i, ind)
             if sig not in ("long", "short"):
                 i += 1
@@ -478,11 +685,28 @@ class BacktestService:
                 exit_price = float(closes[exit_idx])
                 exit_reason = "timeout"
 
-            ret_pct = (
+            ret_pct_gross = (
                 (exit_price - entry_price) / entry_price * 100
                 if sig == "long"
                 else (entry_price - exit_price) / entry_price * 100
             )
+
+            # 2026-08-10 (P0): apply slippage to the fill price itself
+            # (against the trader on both legs -- you always buy slightly
+            # above and sell slightly below the quoted price on a market
+            # order), then subtract round-trip commission as a flat
+            # percentage-point deduction. This is the actual cost model,
+            # not a caveat string -- see DEFAULT_COMMISSION_PCT/
+            # DEFAULT_SLIPPAGE_PCT module constants for the assumptions.
+            if sig == "long":
+                eff_entry = entry_price * (1 + slippage_pct / 100)
+                eff_exit = float(exit_price) * (1 - slippage_pct / 100)
+                ret_pct_after_slippage = (eff_exit - eff_entry) / eff_entry * 100
+            else:
+                eff_entry = entry_price * (1 - slippage_pct / 100)
+                eff_exit = float(exit_price) * (1 + slippage_pct / 100)
+                ret_pct_after_slippage = (eff_entry - eff_exit) / eff_entry * 100
+            ret_pct_net = ret_pct_after_slippage - 2 * commission_pct
 
             trades.append({
                 "direction": sig,
@@ -490,7 +714,8 @@ class BacktestService:
                 "exit_date": str(df.index[exit_idx].date()),
                 "entry_price": round(entry_price, 2),
                 "exit_price": round(float(exit_price), 2),
-                "return_pct": round(ret_pct, 2),
+                "return_pct": round(ret_pct_net, 2),
+                "return_pct_gross": round(ret_pct_gross, 2),
                 "exit_reason": exit_reason,
                 "bars_held": exit_idx - entry_idx,
             })
@@ -509,6 +734,7 @@ class BacktestService:
                 "trade_count": 0,
                 "win_rate_pct": None,
                 "avg_return_pct": None,
+                "avg_return_pct_gross": None,
                 "max_drawdown_pct": None,
                 "profit_factor": None,
                 "sharpe_like": None,
@@ -521,6 +747,13 @@ class BacktestService:
 
         win_rate = round(len(wins) / n * 100, 1)
         avg_return = round(sum(returns) / n, 2)
+
+        # 2026-08-10 (P0): cost-free comparison figure, computed only if
+        # every trade carries a return_pct_gross (added by _simulate()'s
+        # cost model) -- kept optional so this function still works if
+        # ever called with trades that predate the cost model.
+        gross_returns = [t["return_pct_gross"] for t in trades if "return_pct_gross" in t]
+        avg_return_gross = round(sum(gross_returns) / len(gross_returns), 2) if gross_returns else None
 
         gross_profit = sum(wins)
         gross_loss = abs(sum(losses))
@@ -554,6 +787,7 @@ class BacktestService:
             "trade_count": n,
             "win_rate_pct": float(win_rate),
             "avg_return_pct": float(avg_return),
+            "avg_return_pct_gross": float(avg_return_gross) if avg_return_gross is not None else None,
             "max_drawdown_pct": float(round(max_dd, 2)),
             "profit_factor": float(profit_factor) if profit_factor is not None else None,
             # Per-trade return / per-trade stdev -- NOT an annualized
