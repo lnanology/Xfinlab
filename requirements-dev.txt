@@ -5,8 +5,3 @@ httpx
 ruff
 mypy
 pytest-bdd
-# 2026-07-31: dev/test-only A-share data source for services/
-# dev_data_rotation_service.py's rotation harness (NOT wired into any
-# production route) -- see that file + services/license_registry.py's
-# "baostock" entry for the commercial-use-terms caveat.
-baostock

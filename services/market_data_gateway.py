@@ -27,7 +27,7 @@ before; nothing was moved or removed. This module exists so that:
      route through it, rather than hunting across the codebase for every
      place that might need to know about the new provider.
 
-Provider statuses as of 2026-07-31 (see services/license_registry.py for
+Provider statuses as of 2026-08-10 (see services/license_registry.py for
 the full legal detail behind each):
   - alpaca:      LIVE in production. Free tier, commercial-use-clean.
   - yfinance:    LIVE in production, as the fallback when Alpaca has no
@@ -36,37 +36,24 @@ the full legal detail behind each):
                  doesn't grant commercial use) -- kept only because
                  removing it with no replacement would break coverage
                  for every non-US-equity symbol XFINLAB supports today.
-  - polygon:     NOT live. Free tier is personal/non-commercial-use only
-                 per Polygon's own Market Data ToS. Real fetch function
-                 exists in services/dev_data_rotation_service.py, gated
-                 behind ALLOW_DEV_DATA_ROTATION=true, dev/test-only.
-  - twelvedata:  NOT live. Same reasoning as polygon (Twelve Data's free
-                 tier explicitly bars third-party display). Same
-                 dev-only gating.
+
+2026-08-10: removed the polygon/twelvedata dev-only rotation-harness
+entries (and the file they pointed at, services/dev_data_rotation_service.py)
+per an explicit decision with the user to drop every non-commercial-use
+free-tier data source from the codebase entirely, rather than keep them
+gated behind a dev-only flag. See services/license_registry.py's git
+history for the removed polygon_io/twelve_data/finnhub/marketstack/
+baostock/eodhd/stocktwits entries.
 """
 
 import logging
-from typing import Callable, Dict, Optional
+from typing import Dict
 
 import pandas as pd
 
 from services.technical_analysis_service import fetch_ohlc_history as _fetch_ohlc_history
 
 logger = logging.getLogger(__name__)
-
-
-def _polygon_fetch_fn() -> Optional[Callable]:
-    """Lazily imported -- services/dev_data_rotation_service.py itself
-    imports TechnicalAnalysisService, so importing it eagerly at module
-    load time here would be a needless import-time coupling for a
-    provider that (as of this entry) is never actually enabled."""
-    from services.dev_data_rotation_service import _fetch_polygon_dev
-    return _fetch_polygon_dev
-
-
-def _twelvedata_fetch_fn() -> Optional[Callable]:
-    from services.dev_data_rotation_service import _fetch_twelvedata_dev
-    return _fetch_twelvedata_dev
 
 
 PROVIDERS: Dict[str, Dict] = {
@@ -81,20 +68,6 @@ PROVIDERS: Dict[str, Dict] = {
         "commercial_clean": False,
         "license_id": "yahoo_finance",
         "notes": "Live production fallback -- documented high-risk, kept for coverage until a compliant replacement exists for non-US/unsupported-interval requests.",
-    },
-    "polygon": {
-        "enabled": False,
-        "commercial_clean": False,
-        "license_id": "polygon_io",
-        "notes": "Free tier is personal/non-commercial-use only. Dev/test-only via services/dev_data_rotation_service.py (ALLOW_DEV_DATA_ROTATION=true). Requires a paid Business-tier plan before enabling here.",
-        "fetch_fn_factory": _polygon_fetch_fn,
-    },
-    "twelvedata": {
-        "enabled": False,
-        "commercial_clean": False,
-        "license_id": "twelve_data",
-        "notes": "Free tier explicitly bars third-party display. Dev/test-only via services/dev_data_rotation_service.py (ALLOW_DEV_DATA_ROTATION=true). Requires a paid Business plan before enabling here.",
-        "fetch_fn_factory": _twelvedata_fetch_fn,
     },
 }
 

@@ -48,7 +48,7 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "technical_analysis_service.py."
         ),
         replacement_candidates=[
-            "polygon_io", "twelve_data", "finnhub", "eod_historical_data", "alpaca_markets",
+            "alpaca_markets",
         ],
     ),
     # 2026-07-18 data-compliance pass: this registry previously only had
@@ -178,26 +178,6 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "releases, headline/link/date only kept here."
         ),
     ),
-    "stocktwits": LicenseRecord(
-        source_id="stocktwits",
-        license_type="non_commercial",
-        commercial_use_allowed=False,
-        terms_url="https://stocktwits.com/about/legal/terms/",
-        risk_level="high",
-        notes=(
-            "NOT integrated anywhere in this codebase (checked 2026-07-18, "
-            "see task #212). Their developer API registration is "
-            "explicitly closed ('we unfortunately won't be accepting new "
-            "registrations'), and their current Terms of Service bar "
-            "automated data extraction 'except through an approved API'. "
-            "The only working endpoint found (unauthenticated symbol "
-            "stream) is therefore against their own terms to use -- "
-            "recorded here so nobody re-discovers this gap and quietly "
-            "scrapes it without knowing it's against ToS. Revisit if/when "
-            "their developer program reopens."
-        ),
-        replacement_candidates=["stocktwits_official_api_when_reopened"],
-    ),
     "sec_edgar": LicenseRecord(
         source_id="sec_edgar",
         license_type="public_domain",
@@ -300,114 +280,6 @@ _LICENSES: Dict[str, LicenseRecord] = {
         ),
         replacement_candidates=["oilpriceapi_baltic_dry_index"],
     ),
-    # 2026-07-31: added after the user asked to add Polygon.io and Twelve
-    # Data as free-tier rotation candidates alongside Alpaca. Both
-    # providers' free tiers turned out to be personal/non-commercial-use
-    # only on review (see notes below) -- same class of risk already
-    # flagged for yahoo_finance above. Per an explicit decision with the
-    # user, both are gated to dev/test-only usage in the new
-    # services/dev_data_rotation_service.py harness (never imported by
-    # api/*.py or backend/main.py) rather than wired into production.
-    "polygon_io": LicenseRecord(
-        source_id="polygon_io",
-        license_type="non_commercial",
-        commercial_use_allowed=False,
-        terms_url="https://massive.com/terms/market_data_terms.pdf",
-        risk_level="high",
-        notes=(
-            "Free 'Basic' tier: end-of-day/delayed data, 5 calls/minute, "
-            "no credit card. Polygon's (now rebranded Massive.com) Market "
-            "Data ToS states any business/professional/commercial use is "
-            "incompatible with 'Non-Professional' status -- even on "
-            "behalf of an organization outside the securities industry. "
-            "XFINLAB is a commercial product serving real end users, so "
-            "the free tier alone does not license production use; a paid "
-            "Business-tier plan would be required first. NOT wired into "
-            "any production route -- used only in services/"
-            "dev_data_rotation_service.py (gated behind "
-            "ALLOW_DEV_DATA_ROTATION=true) to validate the rotation/rate-"
-            "limit engineering pattern with real API responses."
-        ),
-        replacement_candidates=["polygon_io_business_tier"],
-    ),
-    "twelve_data": LicenseRecord(
-        source_id="twelve_data",
-        license_type="non_commercial",
-        commercial_use_allowed=False,
-        terms_url="https://twelvedata.com/terms",
-        risk_level="high",
-        notes=(
-            "Free 'Basic' plan: 8 calls/minute, 800 calls/day, covers US "
-            "equities/forex/crypto. Twelve Data's own terms state free-"
-            "subscription users 'may only use the Services for personal, "
-            "non-commercial purposes and may not display or distribute "
-            "Twelve Data Services to third parties in any manner' -- an "
-            "explicit third-party-display bar that XFINLAB's product "
-            "(displaying data to free and paying end users) would breach "
-            "on the free tier. Their Business plan (from $29/month) is "
-            "required for commercial display/internal use. NOT wired "
-            "into any production route -- used only in services/"
-            "dev_data_rotation_service.py (gated behind "
-            "ALLOW_DEV_DATA_ROTATION=true), same treatment as polygon_io "
-            "above."
-        ),
-        replacement_candidates=["twelve_data_business_tier"],
-    ),
-    # 2026-07-31 (later same day): user asked to add Finnhub and
-    # Marketstack too, same "dev/test-only rotation" treatment as
-    # Polygon/Twelve Data above -- see services/dev_data_rotation_service.py.
-    "finnhub": LicenseRecord(
-        source_id="finnhub",
-        license_type="unknown",
-        commercial_use_allowed=False,
-        terms_url="https://finnhub.io/terms-of-service",
-        risk_level="high",
-        notes=(
-            "Free tier: 60 calls/minute, real-time quotes + company "
-            "fundamentals. UNLIKE Polygon/Twelve Data/Marketstack below, "
-            "this codebase could NOT independently verify Finnhub's actual "
-            "Terms of Service text -- their site is a client-rendered SPA "
-            "that blocked both automated fetch and search-snippet access, "
-            "and no browser-rendering tool was available in that session "
-            "to load the real page. Treated conservatively (commercial_use_"
-            "allowed=False) based on circumstantial evidence only: their "
-            "own FAQ's noncommittal 'review the terms before commercial "
-            "use' wording, and multiple third-party sources noting Finnhub "
-            "routes commercial inquiries to sales@finnhub.io for a "
-            "'commercial license' (implying the free key alone doesn't "
-            "cover it). This entry should be corrected the moment someone "
-            "actually reads the primary-source ToS text -- flagged here so "
-            "that gap isn't silently forgotten. NOT wired into any "
-            "production route -- used only in services/"
-            "dev_data_rotation_service.py (gated behind "
-            "ALLOW_DEV_DATA_ROTATION=true), same treatment as polygon_io/"
-            "twelve_data above."
-        ),
-        replacement_candidates=["finnhub_commercial_license"],
-    ),
-    "marketstack": LicenseRecord(
-        source_id="marketstack",
-        license_type="non_commercial",
-        commercial_use_allowed=False,
-        terms_url="https://marketstack.com/pricing",
-        risk_level="high",
-        notes=(
-            "Free plan: 100 requests/MONTH (not per-minute), end-of-day "
-            "data only, 12 months history. Confirmed directly via "
-            "marketstack.com/pricing's own feature comparison table: "
-            "'Commercial Use' is listed as an explicit, named, checked "
-            "feature starting at the paid Basic plan ($9.99/mo) and above "
-            "-- it is visibly ABSENT from the Free plan's feature list. "
-            "This is the clearest, most direct confirmation found for any "
-            "provider checked this session (a literal named feature gated "
-            "to paid tiers on the provider's own site, not an inference "
-            "from a sales-contact link). NOT wired into any production "
-            "route -- used only in services/dev_data_rotation_service.py "
-            "(gated behind ALLOW_DEV_DATA_ROTATION=true), same treatment "
-            "as polygon_io/twelve_data/finnhub above."
-        ),
-        replacement_candidates=["marketstack_basic_tier"],
-    ),
     # 2026-07-31: added while building out the free-commercial-source
     # combo the user asked for (GDELT/FRED/ECB) after Polygon/Twelve Data
     # turned out to be free-tier-non-commercial above. All 3 verified by
@@ -486,85 +358,6 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "blanket non-commercial bar like Polygon/Twelve Data/Tiingo/"
             "EODHD. NOT YET integrated into any service as of this entry."
         ),
-    ),
-    # 2026-07-31 (later same day): user shared a research summary of
-    # open-source finance tooling and asked to add BaoStock specifically
-    # (the only one of that list judged to fill a real product gap --
-    # zero A-share coverage anywhere in this codebase's data layer).
-    "baostock": LicenseRecord(
-        source_id="baostock",
-        license_type="unknown",
-        commercial_use_allowed=False,
-        terms_url="http://www.baostock.com",
-        risk_level="high",
-        notes=(
-            "Free, no-registration Python client for China A-share daily "
-            "history/fundamentals (pip install baostock; actively "
-            "maintained, v0.9.1 as of Apr 2026 per PyPI). The wrapper "
-            "LIBRARY itself is confirmed BSD-licensed via PyPI/GitHub "
-            "PKG-INFO -- that covers the Python client code only, NOT "
-            "necessarily the underlying A-share DATA's redistribution "
-            "terms, which is the actual open question here. Same "
-            "situation as finnhub above: baostock.com is a client-"
-            "rendered SPA that blocked both WebFetch and WebSearch from "
-            "seeing the real 免责声明/使用条款 (disclaimer/terms-of-use) "
-            "page text, and no browser-rendering tool was available in "
-            "that session to load it. Treated conservatively "
-            "(commercial_use_allowed=False) purely because a permissive "
-            "code license is not evidence either way about the data's "
-            "own terms -- this is not circumstantial evidence pointing "
-            "toward non-commercial like finnhub's, just a genuine "
-            "unknown. This entry should be corrected the moment someone "
-            "actually reads baostock.com's primary-source terms text. "
-            "NOT wired into any production route -- used only in "
-            "services/dev_data_rotation_service.py (gated behind "
-            "ALLOW_DEV_DATA_ROTATION=true), same treatment as finnhub/"
-            "marketstack/polygon_io/twelve_data above. Also unlike those "
-            "four: BaoStock is a stateful login/query/logout session "
-            "client, not a metered HTTP API, so the calls_per_minute "
-            "figure registered for it in dev_data_rotation_service.py is "
-            "a precautionary self-imposed cap, not a provider-published "
-            "limit."
-        ),
-        replacement_candidates=["baostock_verified_commercial_terms", "sec_edgar"],
-    ),
-    # 2026-07-31 (later same day): user shared a data-provider comparison
-    # table claiming EODHD's free tier allows commercial use. Verified
-    # directly against EODHD's own primary-source page (not the comparison
-    # table, not a search snippet) -- the claim does not hold up.
-    "eodhd": LicenseRecord(
-        source_id="eodhd",
-        license_type="non_commercial",
-        commercial_use_allowed=False,
-        terms_url="https://eodhd.com/financial-apis/commercial-vs-personal-license-use",
-        risk_level="high",
-        notes=(
-            "Free tier: 20 API calls/day (no credit card), 1 year of EOD "
-            "history on demo tickers, one-time 500-call welcome bonus. "
-            "Global stock/forex/crypto coverage plus reasonably complete "
-            "fundamentals -- genuinely broader coverage than most other "
-            "sources in this registry. HOWEVER: verified by direct fetch "
-            "of eodhd.com/financial-apis/commercial-vs-personal-license-use "
-            "(2026-07-31) -- their own page states plainly: 'The packages "
-            "on the pricing page are intended for personal use only as "
-            "commercial use requires a more thorough approach to licensing "
-            "and data use.' Commercial use requires contacting their sales "
-            "team for a separate, custom-quoted Startups/Enterprise "
-            "commercial license (their FAQ: 3-business-day onboarding once "
-            "approved) -- there is no free-tier or personal-plan path that "
-            "covers XFINLAB's commercial, paying-end-user product. Same "
-            "category of restriction as polygon_io/twelve_data/marketstack "
-            "above, not the free-and-clear category of gdelt/fred/"
-            "ecb_data_portal/sec_edgar. A user-provided comparison table "
-            "claimed 'free + commercial use allowed' for EODHD -- that "
-            "claim is incorrect per the provider's own primary-source page "
-            "and should not be relied on. NOT wired into any production "
-            "route; would need the same dev/test-only rotation-harness "
-            "treatment as polygon_io/twelve_data/finnhub/marketstack above "
-            "if used for development, or a paid commercial-license quote "
-            "before any production use."
-        ),
-        replacement_candidates=["eodhd_commercial_license"],
     ),
     "oilpriceapi_baltic_dry_index": LicenseRecord(
         source_id="oilpriceapi_baltic_dry_index",

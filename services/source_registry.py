@@ -46,51 +46,10 @@ _SOURCES: Dict[str, SourceRecord] = {
             "still 100% yfinance — not yet migrated."
         ),
     ),
-    "polygon_io": SourceRecord(
-        source_id="polygon_io",
-        display_name="Polygon.io (rebranded 'Massive')",
-        category="market_data",
-        used_by=[],
-        status="candidate",
-        notes=(
-            "Researched 2026-07. Headline tiers ($29-199/mo) are for internal/"
-            "personal use only — real commercial redistribution/display license "
-            "requires their 'Business' plan, which is custom/contact-sales "
-            "pricing (undisclosed). Not yet integrated."
-        ),
-    ),
-    "twelve_data": SourceRecord(
-        source_id="twelve_data",
-        display_name="Twelve Data",
-        category="market_data",
-        used_by=[],
-        status="candidate",
-        notes=(
-            "Researched 2026-07. RECOMMENDED candidate. Explicit 'For Business' "
-            "tier (twelvedata.com/pricing-business) grants external/commercial "
-            "display rights. Venture plan from $149/mo (610 API+500 WS credits) "
-            "up to $499/mo (2584 credits); Enterprise from $1099/mo. Covers "
-            "70+ markets including HKEX (confirmed 0700.HK), forex, crypto — "
-            "matches XFINLAB's Taiwan/HK/US/Japan/Europe coverage needs. "
-            "Individual/non-commercial tier ($29-999/mo) is NOT valid for "
-            "XFINLAB's use case — must use the Business tier. Not yet integrated."
-        ),
-    ),
-    "finnhub": SourceRecord(
-        source_id="finnhub",
-        display_name="Finnhub",
-        category="market_data",
-        used_by=[],
-        status="candidate",
-        notes=(
-            "Researched 2026-07. Free tier (60 calls/min) covers US real-time "
-            "stocks only; Premium $11.99-99.99/mo adds international stocks. "
-            "Commercial/redistribution licensing terms at these published "
-            "tiers are unclear — likely needs a direct sales conversation for "
-            "a product that publicly displays data, like XFINLAB. Cheapest "
-            "option if scope narrows to US-only. Not yet integrated."
-        ),
-    ),
+    # 2026-08-10: removed polygon_io/twelve_data/finnhub candidate entries
+    # (never integrated, used_by=[] the whole time) as part of a full
+    # cleanup dropping every non-commercial-use free-tier data source from
+    # this codebase -- see services/license_registry.py's git history.
     "alpaca_markets": SourceRecord(
         source_id="alpaca_markets",
         display_name="Alpaca Markets (IEX feed)",
