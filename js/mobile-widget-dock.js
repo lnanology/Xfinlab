@@ -33,7 +33,14 @@
   // the whole label to invisible (`font-size:0`) and draws a fixed icon
   // glyph via `::before` instead -- so it stays correct regardless of
   // what text the source widget currently has rendered.
-  var DOCK_IDS = ["tgWidget", "fbWidget", "xflPointsBadge", "shareWidget", "freeSignalsBadge", "langSwitcher"];
+  // 2026-08-10 (AJ: "＋滑出的皇冠換成每日市場快訊，並跟其他ICON排好"): the
+  // "crown" AJ was asking about was actually points-badge.js's 🏅 medal
+  // glyph on #xflPointsBadge. #freeSignalsBadge already links to
+  // market-brief.html labelled "每日市場快訊" (nav_free_signals), so rather
+  // than build a second icon with the same destination, xflPointsBadge is
+  // dropped from the dock entirely -- leaving exactly 5 icons (TG/FB/
+  // Share/每日市場快訊/Language), matching AJ's "顯示5個ICON" count.
+  var DOCK_IDS = ["tgWidget", "fbWidget", "shareWidget", "freeSignalsBadge", "langSwitcher"];
   var STYLE_ID = "xflMobileDockStyle";
   var DOCK_ID = "xflMobileDock";
   var TRIGGER_ID = "xflDockTrigger";
@@ -41,12 +48,12 @@
   function ensureStyle() {
     if (document.getElementById(STYLE_ID)) return;
     var css =
-      // Column anchored to the right edge, above quick-ask-bubble's
-      // #xflQabBtn (bottom:96/104px, 52px) AND js/theme-toggle.js's round
-      // #themeToggleBtn (bottom:158/166px, 48px) -- this trigger sits
-      // right above that at bottom:216/224px, so the three read as one
-      // connected vertical column on the right edge.
-      "#" + DOCK_ID + "{position:fixed;right:20px;bottom:216px;z-index:1000;" +
+      // 2026-08-10: column re-anchored after js/theme-toggle.js and
+      // js/quick-ask-bubble.js moved down the right edge (AJ: "右邊ICON，
+      // 底色放CHAT ICON下面"). New order bottom-to-top: #themeToggleBtn
+      // (20/28px), #xflQabBtn (82/90px, +62), this trigger (144/152px,
+      // +62) -- same column, same rhythm, just shifted down as a unit.
+      "#" + DOCK_ID + "{position:fixed;right:20px;bottom:144px;z-index:1000;" +
         "display:flex;flex-direction:column;align-items:center;}" +
       "#" + TRIGGER_ID + "{order:99;width:48px;height:48px;border-radius:50%;flex-shrink:0;" +
         "background:var(--accent);color:#fff;border:none;cursor:pointer;" +
@@ -63,8 +70,8 @@
         "#" + DOCK_ID + " #langSwitcher{position:relative!important;top:auto!important;left:auto!important;" +
         "right:auto!important;bottom:auto!important;display:inline-flex!important;align-items:center;" +
         "flex-shrink:0;order:1}" +
-      "#" + DOCK_ID + " #xflPointsBadge,#" + DOCK_ID + " #freeSignalsBadge{order:1;flex-shrink:0}" +
-      // Shared round-icon look for all 6 collapsible triggers. Text is
+      "#" + DOCK_ID + " #freeSignalsBadge{order:1;flex-shrink:0}" +
+      // Shared round-icon look for all 5 collapsible triggers. Text is
       // zeroed out and replaced with a fixed emoji glyph per widget so
       // this never depends on whatever dynamic label the source script
       // last wrote into the element. Height (not width) is what animates
@@ -72,7 +79,7 @@
       // stays fixed at 44px throughout.
       "#" + DOCK_ID + " #tgWidget>button,#" + DOCK_ID + " #fbWidget>button," +
         "#" + DOCK_ID + " #shareWidget>#shareWidgetBtn,#" + DOCK_ID + " #langSwitcher>button," +
-        "#" + DOCK_ID + " #xflPointsBadge,#" + DOCK_ID + " #freeSignalsBadge{" +
+        "#" + DOCK_ID + " #freeSignalsBadge{" +
         "width:44px;height:44px;max-height:44px;border-radius:50%!important;" +
         "display:flex!important;align-items:center;justify-content:center;padding:0!important;" +
         "font-size:0!important;line-height:1!important;box-shadow:0 4px 14px rgba(0,0,0,0.25)!important;" +
@@ -91,14 +98,15 @@
       // metric quirks.
       "#" + DOCK_ID + " #tgWidget>button::before,#" + DOCK_ID + " #fbWidget>button::before," +
         "#" + DOCK_ID + " #shareWidget>#shareWidgetBtn::before,#" + DOCK_ID + " #langSwitcher>button::before," +
-        "#" + DOCK_ID + " #xflPointsBadge::before,#" + DOCK_ID + " #freeSignalsBadge::before{" +
+        "#" + DOCK_ID + " #freeSignalsBadge::before{" +
         "position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;" +
         "justify-content:center;line-height:1}" +
-      "#" + DOCK_ID + " #tgWidget>button::before{content:'\\2708';font-size:19px}" +
+      // 2026-08-10 (AJ: "TG 個飛機大D" -- make the TG plane icon bigger):
+      // 19px -> 24px, the largest glyph in the dock now.
+      "#" + DOCK_ID + " #tgWidget>button::before{content:'\\2708';font-size:24px}" +
       "#" + DOCK_ID + " #fbWidget>button::before{content:'\\1F4AC';font-size:18px}" +
       "#" + DOCK_ID + " #shareWidget>#shareWidgetBtn::before{content:'\\1F4E4';font-size:17px}" +
       "#" + DOCK_ID + " #langSwitcher>button::before{content:'\\1F310';font-size:18px}" +
-      "#" + DOCK_ID + " #xflPointsBadge::before{content:'\\1F3C5';font-size:18px}" +
       "#" + DOCK_ID + " #freeSignalsBadge::before{content:'\\1F3AF';font-size:18px}" +
       // Collapsed (default) state: zero height, invisible, unclickable --
       // this is what makes the trigger the only thing visible until
@@ -106,21 +114,27 @@
       "#" + DOCK_ID + ":not(.xfl-dock-open) #tgWidget>button,#" + DOCK_ID + ":not(.xfl-dock-open) #fbWidget>button," +
         "#" + DOCK_ID + ":not(.xfl-dock-open) #shareWidget>#shareWidgetBtn," +
         "#" + DOCK_ID + ":not(.xfl-dock-open) #langSwitcher>button," +
-        "#" + DOCK_ID + ":not(.xfl-dock-open) #xflPointsBadge," +
         "#" + DOCK_ID + ":not(.xfl-dock-open) #freeSignalsBadge{" +
         "max-height:0;margin-bottom:0;opacity:0;pointer-events:none;transform:scale(.4)}" +
       "#" + DOCK_ID + ".xfl-dock-open #tgWidget>button,#" + DOCK_ID + ".xfl-dock-open #fbWidget>button," +
         "#" + DOCK_ID + ".xfl-dock-open #shareWidget>#shareWidgetBtn," +
         "#" + DOCK_ID + ".xfl-dock-open #langSwitcher>button," +
-        "#" + DOCK_ID + ".xfl-dock-open #xflPointsBadge," +
         "#" + DOCK_ID + ".xfl-dock-open #freeSignalsBadge{" +
         "opacity:1;pointer-events:auto;transform:scale(1)}" +
-      // Popup panels (TG/Feedback/Share) float above the whole revealed
-      // column so they never overlap the 6 open icons -- 216px trigger
-      // offset + up to 6*(44+8)px of revealed icons + a clearance gap.
-      "#tgPanel,#fbPanel,#sharePanel{position:fixed!important;left:auto!important;right:20px!important;" +
-        "bottom:560px!important;top:auto!important;width:min(280px,88vw)!important;z-index:1001!important}" +
-      "@media (max-width:768px){#" + DOCK_ID + "{bottom:224px}#tgPanel,#fbPanel,#sharePanel{bottom:570px}}";
+      // 2026-08-10 (AJ: "這5個ICON向左滑出" -- each icon's own popup panel
+      // opens to the LEFT of that icon, not floating above the whole
+      // stack). Replaces the old shared `position:fixed;bottom:560px`
+      // hack (which only worked for one fixed stack height) with
+      // `position:absolute` anchored to each panel's own trigger wrapper
+      // -- #tgWidget/#fbWidget/#shareWidget are the `position:relative`
+      // wrappers set above (already position:relative!important via the
+      // rule a few lines up), so `right:calc(100% + 10px)` places the
+      // panel just to their left, vertically centered on the wrapper.
+      "#tgPanel,#fbPanel,#sharePanel{position:absolute!important;left:auto!important;right:calc(100% + 10px)!important;" +
+        "top:50%!important;bottom:auto!important;transform:translateY(-50%);width:min(280px,88vw)!important;" +
+        "z-index:1001!important}" +
+      "@media (max-width:768px){#" + DOCK_ID + "{bottom:152px}" +
+        "#tgPanel,#fbPanel,#sharePanel{right:calc(100% + 6px)!important;width:min(260px,82vw)!important}}";
     var style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = css;
@@ -152,6 +166,47 @@
     return btn;
   }
 
+  // 2026-08-10 (AJ clarifying answer: "電腦指住就滑出，也可按，手機要按" --
+  // on desktop, hovering a widget opens its side panel [can also click];
+  // on mobile, tap is required). Rather than duplicate each widget's own
+  // open/close logic (shareWidget's in particular rebuilds referral-link
+  // hrefs on open), this calls the widget's REAL trigger button's
+  // .click() on mouseenter/mouseleave -- reuses the exact existing
+  // toggle behavior with zero risk of divergence. Gated by
+  // matchMedia("(hover:hover)") so touch devices are unaffected and
+  // still rely on tap.
+  var HOVER_PANEL_WIDGETS = [
+    { wrapId: "tgWidget", panelId: "tgPanel", btnSelector: "button" },
+    { wrapId: "fbWidget", panelId: "fbPanel", btnSelector: "button" },
+    { wrapId: "shareWidget", panelId: "sharePanel", btnSelector: "#shareWidgetBtn" }
+  ];
+
+  function isPanelOpen(panel) {
+    return !(!panel || "none" === getComputedStyle(panel).display);
+  }
+
+  function wireHoverPanels() {
+    if (!window.matchMedia || !window.matchMedia("(hover:hover)").matches) return;
+    HOVER_PANEL_WIDGETS.forEach(function (w) {
+      var wrap = document.getElementById(w.wrapId);
+      if (!wrap || wrap.dataset.xflHoverWired) return;
+      var panel = document.getElementById(w.panelId);
+      var btn = wrap.querySelector(w.btnSelector);
+      if (!panel || !btn) return;
+      wrap.dataset.xflHoverWired = "1";
+      var closeTimer = null;
+      wrap.addEventListener("mouseenter", function () {
+        clearTimeout(closeTimer);
+        if (!isPanelOpen(panel)) btn.click();
+      });
+      wrap.addEventListener("mouseleave", function () {
+        closeTimer = setTimeout(function () {
+          if (isPanelOpen(panel)) btn.click();
+        }, 150);
+      });
+    });
+  }
+
   function dockWidgets() {
     var dock = document.getElementById(DOCK_ID);
     if (!dock) {
@@ -165,9 +220,10 @@
     });
     // Re-append the trigger last on every run (appendChild on an
     // existing child just moves it) so it always stays the rightmost
-    // element even after a widget that loads asynchronously (points-
-    // badge.js, i18n.js's language switcher) gets docked later.
+    // element even after a widget that loads asynchronously (i18n.js's
+    // language switcher) gets docked later.
     dock.appendChild(ensureTrigger());
+    wireHoverPanels();
   }
 
   function debounce(fn, ms) {

@@ -14,13 +14,19 @@
   function ensureStyle() {
     if (document.getElementById(STYLE_ID)) return;
     var css =
-      "#themeToggleBtn{position:fixed;right:20px;bottom:158px;z-index:1000;width:48px;height:48px;" +
+      // 2026-08-10 (AJ: "右邊ICON，底色放CHAT ICON下面" -- move this button
+      // below js/quick-ask-bubble.js's chat bubble in the right-edge
+      // column). Used to sit at bottom:158px (above the chat bubble's
+      // 96px); now the bottom-most item in the stack at 20px, with chat
+      // bubble/panel and the mobile-widget-dock trigger shifted up by the
+      // same 62px rhythm to match (see those files' own 2026-08-10 comments).
+      "#themeToggleBtn{position:fixed;right:20px;bottom:20px;z-index:1000;width:48px;height:48px;" +
         "border-radius:50%;background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);" +
         "color:var(--text-primary,#e2e8f0);cursor:pointer;display:flex;align-items:center;justify-content:center;" +
         "padding:0;box-shadow:0 4px 14px rgba(0,0,0,0.25);transition:transform .15s,border-color .2s,color .2s}" +
       "#themeToggleBtn:hover{border-color:var(--accent-orange,#f59e0b);color:var(--accent-orange,#f59e0b);transform:scale(1.08)}" +
       "#themeToggleBtn svg{margin:0!important}" +
-      "@media (max-width:768px){#themeToggleBtn{bottom:166px}}";
+      "@media (max-width:768px){#themeToggleBtn{bottom:28px}}";
     var style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = css;

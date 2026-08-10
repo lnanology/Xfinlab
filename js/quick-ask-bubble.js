@@ -35,12 +35,16 @@
   function ensureStyle() {
     if (document.getElementById(STYLE_ID)) return;
     var css =
-      '#xflQabBtn{position:fixed;right:20px;bottom:96px;z-index:1002;width:52px;height:52px;' +
+      // 2026-08-10 (AJ: "右邊ICON，底色放CHAT ICON下面" -- theme-toggle moon
+      // now sits below this bubble in the right-edge stack, at bottom:20px).
+      // Shifted this bubble+panel up by the same ~62px rhythm to make room
+      // (was bottom:96px/158px, mobile 104px/166px).
+      '#xflQabBtn{position:fixed;right:20px;bottom:82px;z-index:1002;width:52px;height:52px;' +
         'border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;' +
         'box-shadow:0 6px 20px rgba(var(--accent-rgb),0.4);display:flex;align-items:center;' +
         'justify-content:center;transition:transform 0.15s}' +
       '#xflQabBtn:hover{transform:scale(1.08)}' +
-      '#xflQabPanel{position:fixed;right:20px;bottom:158px;z-index:1002;width:min(340px,88vw);' +
+      '#xflQabPanel{position:fixed;right:20px;bottom:144px;z-index:1002;width:min(340px,88vw);' +
         'max-height:min(480px,70vh);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);' +
         'border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.2);display:none;flex-direction:column;overflow:hidden}' +
       '#xflQabPanel.open{display:flex}' +
@@ -59,7 +63,7 @@
         'color:var(--text,#0f172a);border-radius:8px;padding:8px 10px;font-size:0.82rem}' +
       '#xflQabSend{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;' +
         'font-weight:600;font-size:0.82rem;cursor:pointer;white-space:nowrap}' +
-      '@media (max-width:768px){#xflQabBtn{bottom:104px}#xflQabPanel{bottom:166px}}';
+      '@media (max-width:768px){#xflQabBtn{bottom:90px}#xflQabPanel{bottom:152px}}';
     var style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = css;
