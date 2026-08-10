@@ -14,6 +14,7 @@ from fastapi import APIRouter
 
 from services.backtest_service import BacktestService
 from services.formula_composer_service import get_leaderboard, run_scan
+from services.regime_router_service import get_best_for_regime, get_current_regime, run_regime_scan
 from services.track_record_service import get_track_record
 
 router = APIRouter()
@@ -102,3 +103,52 @@ def formula_composer_leaderboard(symbol: str = None, limit: int = 20):
         return {"status": "error", "message": "無效嘅代號格式"}
     rows = get_leaderboard(symbol=symbol, limit=limit)
     return {"status": "ok", "data": rows}
+
+
+@router.get("/regime-router/{ticker}/current-regime")
+def regime_router_current(ticker: str):
+    """2026-08-10 (P3 of the Quant Research Factory roadmap) -- current
+    causal regime classification for `ticker`. See services/regime_
+    router_service.py's module docstring for why this uses its own
+    causal-only classifier rather than the live Confluence/Regime Belief
+    engines (which depend on look-ahead-tainted swing-point inputs)."""
+    if not _SYMBOL_RE.match(ticker):
+        return {"status": "error", "message": "無效嘅代號格式"}
+    result = get_current_regime(ticker)
+    if "error" in result:
+        return {"status": "error", "message": result["error"]}
+    return {"status": "ok", "data": result}
+
+
+@router.get("/regime-router/{ticker}/scan")
+def regime_router_scan(ticker: str, period: str = "2y"):
+    """Runs services/regime_router_service.py's regime-conditional scan:
+    simulates all 35 formula_composer_service candidates over `ticker`'s
+    full history, buckets each trade by the causal regime active at its
+    entry bar, and persists per-(candidate, regime) stats. Call this once
+    per symbol before using /best-for-regime below."""
+    if not _SYMBOL_RE.match(ticker):
+        return {"status": "error", "message": "無效嘅代號格式"}
+    result = run_regime_scan(ticker, period=period)
+    if "error" in result:
+        return {"status": "error", "message": result["error"]}
+    return {"status": "ok", "data": result}
+
+
+@router.get("/regime-router/{ticker}/best-for-regime")
+def regime_router_best(ticker: str, regime: str = None, min_trades: int = 5):
+    """Reads the persisted regime-conditional leaderboard. If `regime` is
+    omitted, first computes the ticker's CURRENT regime (same as
+    /current-regime above) and looks that up -- the actual "what should I
+    use right now" answer this roadmap phase promised. Requires
+    /scan to have been run for this symbol first."""
+    if not _SYMBOL_RE.match(ticker):
+        return {"status": "error", "message": "無效嘅代號格式"}
+    min_trades = max(1, min(50, min_trades))
+    if not regime:
+        current = get_current_regime(ticker)
+        if "error" in current:
+            return {"status": "error", "message": current["error"]}
+        regime = current["regime"]
+    result = get_best_for_regime(ticker, regime, min_trades=min_trades)
+    return {"status": "ok", "data": result}

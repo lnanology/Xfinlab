@@ -462,11 +462,18 @@ class BacktestService:
     # data available AT bar i) ----
 
     @staticmethod
-    def _signal_confluence_trend(i: int, ind: Dict) -> Optional[str]:
+    def _confluence_score(i: int, ind: Dict) -> Optional[float]:
         """
-        Simplified version of TechnicalAnalysisService._confluence() --
-        same weights, minus the support/resistance/Fibonacci signals
-        (which need look-ahead-tainted swing points, see module docstring).
+        2026-08-10 (P3 of the Quant Research Factory roadmap): the raw
+        weighted score behind _signal_confluence_trend() below, extracted
+        so services/regime_router_service.py can reuse the exact same
+        causal trend-direction/strength math to derive a bar-by-bar
+        trend_direction + trend_confidence_pct pair for backend.alpha.
+        regime_detector.RegimeDetector.classify() -- same weights,
+        same signals, just returning the signed [-100, 100] score instead
+        of collapsing it to long/short/None at a fixed threshold. See
+        _signal_confluence_trend()'s own docstring for what this is a
+        causal clone of and why.
         """
         w = _svc._CONFLUENCE_WEIGHTS
         signals: List[tuple] = []
@@ -509,8 +516,18 @@ class BacktestService:
             return None
         weight_total = sum(wt for _, wt in signals)
         net = sum(bias * wt for bias, wt in signals)
-        score = (net / weight_total) * 100 if weight_total else 0.0
+        return (net / weight_total) * 100 if weight_total else 0.0
 
+    @classmethod
+    def _signal_confluence_trend(cls, i: int, ind: Dict) -> Optional[str]:
+        """
+        Simplified version of TechnicalAnalysisService._confluence() --
+        same weights, minus the support/resistance/Fibonacci signals
+        (which need look-ahead-tainted swing points, see module docstring).
+        """
+        score = cls._confluence_score(i, ind)
+        if score is None:
+            return None
         if score >= 20:
             return "long"
         if score <= -20:
@@ -752,6 +769,13 @@ class BacktestService:
 
             trades.append({
                 "direction": sig,
+                # 2026-08-10 (P3): bar index of entry, additive field --
+                # every existing consumer of this dict only reads the keys
+                # it already knows about, so this is safe to add. Lets
+                # services/regime_router_service.py bucket each trade by
+                # whichever regime was active at its entry bar without
+                # having to reverse-map entry_date back to a bar index.
+                "entry_idx": entry_idx,
                 "entry_date": str(df.index[entry_idx].date()),
                 "exit_date": str(df.index[exit_idx].date()),
                 "entry_price": round(entry_price, 2),
