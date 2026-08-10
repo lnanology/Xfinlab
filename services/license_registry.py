@@ -588,6 +588,54 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "actually reviewed before any code goes live behind that key."
         ),
     ),
+    # 2026-08-10: added while building the Formula Engine's fixed-income
+    # and symbolic reverse-solver modules, per AJ's "建議的全加入" -- both
+    # verified directly against their own primary-source license pages
+    # before either package was installed or imported by any code.
+    "quantlib": LicenseRecord(
+        source_id="quantlib",
+        license_type="commercial",
+        commercial_use_allowed=True,
+        terms_url="https://www.quantlib.org/license.shtml",
+        risk_level="low",
+        notes=(
+            "The `QuantLib` Python package (pip install QuantLib, ships as "
+            "a precompiled wheel -- no system build tools needed, confirmed "
+            "via a clean install in this project's sandbox). Released under "
+            "a Modified BSD ('QuantLib License'), explicitly written per "
+            "the project's own license page to allow free use of the "
+            "library and its source 'to make QuantLib flourish as a free-"
+            "software/open-source project' while permitting 'proprietary "
+            "extensions to be commercialized' -- no obligation to open-"
+            "source the calling application. Used in services/"
+            "formula_engine_quantlib.py for real bond pricing (Actual/"
+            "Actual day-count + coupon schedule, not the textbook "
+            "simplification), Macaulay/Modified duration, convexity, YTM "
+            "solving, and dividend-aware American option pricing. This is "
+            "a computational math library, not a market-data feed -- no "
+            "ongoing data-licensing exposure the way the sources above "
+            "have, just a one-time code-license check."
+        ),
+    ),
+    "sympy": LicenseRecord(
+        source_id="sympy",
+        license_type="commercial",
+        commercial_use_allowed=True,
+        terms_url="https://github.com/sympy/sympy/blob/master/LICENSE",
+        risk_level="low",
+        notes=(
+            "The `sympy` Python package, standard 3-clause BSD license -- "
+            "one of the most permissive open-source licenses that exists, "
+            "explicitly compatible with proprietary/commercial use with no "
+            "source-disclosure obligation. Used in services/"
+            "formula_engine_symbolic.py for reverse-solve formulas: implied-"
+            "growth-rate-from-price (reverse DCF), Gordon Growth solved for "
+            "rate/growth, exact polynomial IRR root-finding (finds every "
+            "real IRR a project's cash flows admit, not just whichever one "
+            "Newton-Raphson's starting guess happens to converge to). Pure "
+            "symbolic-math library, no data-licensing exposure."
+        ),
+    ),
 }
 
 
