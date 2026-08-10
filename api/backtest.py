@@ -13,6 +13,7 @@ import re
 from fastapi import APIRouter
 
 from services.backtest_service import BacktestService
+from services.formula_composer_service import get_leaderboard, run_scan
 from services.track_record_service import get_track_record
 
 router = APIRouter()
@@ -67,3 +68,37 @@ def backtest_walk_forward(ticker: str, strategy: str = "confluence_trend",
     if "error" in result:
         return {"status": "error", "message": result["error"]}
     return {"status": "ok", "data": result}
+
+
+@router.get("/formula-composer/{ticker}/scan")
+def formula_composer_scan(ticker: str, period: str = "2y", n_folds: int = 4,
+                           min_oos_trades: int = 5, top_n: int = 5):
+    """2026-08-10 (P2 of the Quant Research Factory roadmap) -- runs
+    services/formula_composer_service.py's small-scale combinatorial
+    strategy scan (35 candidate combinations of 6 existing causal
+    indicator primitives, each walk-forward-validated) against `ticker`
+    and returns the top out-of-sample survivors. See that module's
+    docstring for the full methodology and why this stays deliberately
+    small rather than an exhaustive/genetic search."""
+    if not _SYMBOL_RE.match(ticker):
+        return {"status": "error", "message": "無效嘅代號格式"}
+    n_folds = max(2, min(12, n_folds))
+    top_n = max(1, min(20, top_n))
+    min_oos_trades = max(1, min(50, min_oos_trades))
+    result = run_scan(ticker, period=period, n_folds=n_folds, min_oos_trades=min_oos_trades, top_n=top_n)
+    if "error" in result:
+        return {"status": "error", "message": result["error"]}
+    return {"status": "ok", "data": result}
+
+
+@router.get("/formula-composer/leaderboard")
+def formula_composer_leaderboard(symbol: str = None, limit: int = 20):
+    """Reads the persisted formula_composer_candidates leaderboard --
+    either one symbol's full last-scan table (best first) or, without a
+    symbol, the most recently scanned rows across all symbols. Read-only,
+    never triggers a fresh scan (use the /scan endpoint above for that)."""
+    limit = max(1, min(100, limit))
+    if symbol is not None and not _SYMBOL_RE.match(symbol):
+        return {"status": "error", "message": "無效嘅代號格式"}
+    rows = get_leaderboard(symbol=symbol, limit=limit)
+    return {"status": "ok", "data": rows}

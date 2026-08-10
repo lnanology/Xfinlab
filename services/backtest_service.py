@@ -256,7 +256,38 @@ class BacktestService:
         if strategy not in cls.STRATEGIES:
             return {"error": f"未知策略：{strategy}，可用：{', '.join(cls.STRATEGIES)}"}
         n_folds = max(2, int(n_folds))
+        signal_fn = {
+            "confluence_trend": cls._signal_confluence_trend,
+            "breakout_donchian": cls._signal_breakout_donchian,
+            "mean_reversion_bollinger": cls._signal_mean_reversion_bollinger,
+            "atr_turtle_breakout": cls._signal_atr_turtle_breakout,
+            "rsi_divergence": cls._signal_rsi_divergence,
+            "volume_breakout_confirmation": cls._signal_volume_breakout_confirmation,
+            "ma_golden_cross": cls._signal_ma_golden_cross,
+        }[strategy]
+        return cls._walk_forward_with_signal_fn(
+            symbol, strategy, signal_fn, period=period, interval=interval, n_folds=n_folds,
+            commission_pct=commission_pct, slippage_pct=slippage_pct,
+        )
 
+    @classmethod
+    def _walk_forward_with_signal_fn(cls, symbol: str, strategy_label: str, signal_fn,
+                                      period: str = "2y", interval: str = "1d",
+                                      n_folds: int = 4,
+                                      commission_pct: float = DEFAULT_COMMISSION_PCT,
+                                      slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
+        """
+        2026-08-10 (P2 of the Quant Research Factory roadmap): the actual
+        walk-forward mechanics extracted out of run_walk_forward() above so
+        services/formula_composer_service.py can reuse the exact same
+        fold/OOS/overfitting-heuristic logic against a CUSTOM signal_fn
+        (a composed candidate strategy) instead of only one of the 7 named
+        STRATEGIES. run_walk_forward() itself is now a thin wrapper: it
+        just resolves the strategy name to its signal_fn and calls this.
+        `strategy_label` is purely cosmetic -- it's echoed back in the
+        response's "strategy" field so callers can tell composed
+        candidates apart (e.g. "rsi_extreme+macd_cross AND").
+        """
         try:
             df = _svc._fetch_history(symbol, period, interval)
         except Exception as e:
@@ -269,16 +300,27 @@ class BacktestService:
         df = df.dropna()
         closes, highs, lows, volume = df["Close"], df["High"], df["Low"], df["Volume"]
         ind = cls._compute_causal_indicators(closes, highs, lows, volume)
-        signal_fn = {
-            "confluence_trend": cls._signal_confluence_trend,
-            "breakout_donchian": cls._signal_breakout_donchian,
-            "mean_reversion_bollinger": cls._signal_mean_reversion_bollinger,
-            "atr_turtle_breakout": cls._signal_atr_turtle_breakout,
-            "rsi_divergence": cls._signal_rsi_divergence,
-            "volume_breakout_confirmation": cls._signal_volume_breakout_confirmation,
-            "ma_golden_cross": cls._signal_ma_golden_cross,
-        }[strategy]
 
+        return cls._walk_forward_core(
+            df, ind, signal_fn, strategy_label, symbol, period=period, interval=interval,
+            n_folds=n_folds, commission_pct=commission_pct, slippage_pct=slippage_pct,
+        )
+
+    @classmethod
+    def _walk_forward_core(cls, df: pd.DataFrame, ind: Dict, signal_fn, strategy_label: str,
+                            symbol: str, period: str = "2y", interval: str = "1d",
+                            n_folds: int = 4,
+                            commission_pct: float = DEFAULT_COMMISSION_PCT,
+                            slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
+        """
+        2026-08-10 (P2): the fold/OOS/overfitting-heuristic math itself,
+        taking an ALREADY-fetched df + ALREADY-computed ind dict. Split out
+        from _walk_forward_with_signal_fn() so services/formula_composer_
+        service.py can fetch history and compute indicators ONCE per
+        symbol, then cheaply re-run this against dozens of candidate
+        signal_fn closures without re-hitting the data provider or
+        recomputing the same SMA/RSI/MACD/etc series every time.
+        """
         n = len(df)
         t_start, t_end = WARMUP_BARS, n - 1
         span = t_end - t_start
@@ -332,7 +374,7 @@ class BacktestService:
 
         return {
             "symbol": symbol.upper(),
-            "strategy": strategy,
+            "strategy": strategy_label,
             "period": period,
             "interval": interval,
             "n_folds": n_folds,

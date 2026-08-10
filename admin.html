@@ -198,6 +198,7 @@
     <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> Audit Log</div>
     <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> Security Scan</div>
     <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> Prediction Ledger</div>
+    <div class="nav-item" onclick="showPage('composer')"><span class="icon">🧩</span> Formula Composer</div>
     <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> Feedback</div>
 
     <div class="sidebar-footer">
@@ -772,6 +773,28 @@
       </div>
     </div>
 
+    <!-- Formula Composer (P2 of the Quant Research Factory roadmap, 2026-08-10) -->
+    <div class="page" id="page-composer">
+      <div class="page-title">Formula Composer</div>
+      <div class="page-sub">Small-scale combinatorial strategy scan -- 35 candidate combinations (AND-pairs + 2-of-3 vote triples) of 6 existing causal indicator primitives (trend/RSI/MACD/Bollinger/OBV/Donchian), each walk-forward-validated via services/backtest_service.py before being kept. Enter a ticker and scan on demand; results are cached per symbol below.</div>
+      <div class="panel">
+        <div class="panel-title">Run a Scan</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input id="composerSymbolInput" type="text" placeholder="e.g. SPY" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);width:140px" />
+          <button class="btn btn-sm btn-purple" onclick="scanFormulaComposer()">🔍 Scan</button>
+        </div>
+        <div id="composerScanStatus" style="font-size:0.72rem;color:var(--muted);margin-top:8px"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Leaderboard</span>
+          <span id="composerMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="composerLeaderboard"><div class="empty">Scan a symbol above to see results, or refresh to see the most recently scanned candidates across all symbols.</div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadFormulaComposerLeaderboard()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
     <!-- Feedback -->
     <div class="page" id="page-feedback">
       <div class="page-title">Feedback Center</div>
@@ -1189,6 +1212,7 @@ function showPage(name) {
   if (name === 'referral') loadReferralStats();
   if (name === 'video') loadVideoStatus();
   if (name === 'predledger') loadPredictionLedger();
+  if (name === 'composer') loadFormulaComposerLeaderboard();
 }
 
 // task #494: Content Center "ready-to-post" panel -- reads services/
@@ -1798,6 +1822,62 @@ function renderPredictionLedger(data) {
       <span style="font-size:0.72rem;color:${gradedColor}">${gradedLabel}${escapeHtml(retLabel)}</span>
     </div>`;
   }).join('') || '<div class="empty">No predictions logged yet</div>';
+}
+
+async function scanFormulaComposer() {
+  const symbol = (document.getElementById('composerSymbolInput').value || '').trim().toUpperCase();
+  const status = document.getElementById('composerScanStatus');
+  if (!symbol) {
+    status.textContent = '請輸入代號';
+    return;
+  }
+  status.textContent = `⏳ Scanning ${symbol} (35 candidates, this can take a few seconds)...`;
+  try {
+    const res = await fetch(`${API}/backtest/formula-composer/${encodeURIComponent(symbol)}/scan`);
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      status.textContent = `❌ ${data.message || 'Scan failed'}`;
+      return;
+    }
+    status.textContent = `✅ ${symbol}: tested ${data.data.candidates_tested}, ${data.data.candidates_passed_filter} passed filter`;
+    await loadFormulaComposerLeaderboard(symbol);
+  } catch (e) {
+    status.textContent = '❌ Scan failed to run.';
+  }
+}
+
+async function loadFormulaComposerLeaderboard(symbol) {
+  document.getElementById('composerLeaderboard').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('composerMeta').textContent = '';
+  try {
+    const qs = symbol ? `?symbol=${encodeURIComponent(symbol)}&limit=35` : '?limit=20';
+    const res = await fetch(`${API}/backtest/formula-composer/leaderboard${qs}`);
+    const data = await res.json();
+    renderComposerLeaderboard(data, symbol);
+  } catch (e) {
+    document.getElementById('composerLeaderboard').innerHTML = '<div class="empty">Failed to load leaderboard</div>';
+  }
+}
+
+function renderComposerLeaderboard(data, symbol) {
+  if (!data || data.status !== 'ok' || !Array.isArray(data.data)) {
+    document.getElementById('composerLeaderboard').innerHTML = '<div class="empty">Failed to load leaderboard</div>';
+    return;
+  }
+  const rows = data.data;
+  document.getElementById('composerMeta').textContent = symbol ? `${symbol} -- ${rows.length} candidates` : `${rows.length} rows`;
+  if (!rows.length) {
+    document.getElementById('composerLeaderboard').innerHTML = '<div class="empty">No scans yet</div>';
+    return;
+  }
+  document.getElementById('composerLeaderboard').innerHTML = rows.map(r => {
+    const riskColor = r.overfitting_risk === 'high' ? 'var(--red)' : (r.overfitting_risk === 'low' ? 'var(--green)' : 'var(--muted)');
+    const oosRet = r.oos_avg_return_pct === null || r.oos_avg_return_pct === undefined ? '—' : `${r.oos_avg_return_pct}%`;
+    return `<div class="content-item">
+      <div style="font-size:0.78rem">${escapeHtml(r.symbol)} · ${escapeHtml(r.label)}</div>
+      <span style="font-size:0.72rem">OOS: ${oosRet} (${r.oos_trade_count ?? 0} trades) · <span style="color:${riskColor}">${escapeHtml(r.overfitting_risk || '—')}</span></span>
+    </div>`;
+  }).join('');
 }
 
 async function runSecurityScanNow() {
