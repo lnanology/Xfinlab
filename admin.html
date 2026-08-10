@@ -1833,7 +1833,7 @@ async function scanFormulaComposer() {
   }
   status.textContent = `⏳ Scanning ${symbol} (35 candidates, this can take a few seconds)...`;
   try {
-    const res = await fetch(`${API}/backtest/formula-composer/${encodeURIComponent(symbol)}/scan`);
+    const res = await fetch(`${API}/formula-composer/${encodeURIComponent(symbol)}/scan`);
     const data = await res.json();
     if (data.status !== 'ok') {
       status.textContent = `❌ ${data.message || 'Scan failed'}`;
@@ -1851,7 +1851,7 @@ async function loadFormulaComposerLeaderboard(symbol) {
   document.getElementById('composerMeta').textContent = '';
   try {
     const qs = symbol ? `?symbol=${encodeURIComponent(symbol)}&limit=35` : '?limit=20';
-    const res = await fetch(`${API}/backtest/formula-composer/leaderboard${qs}`);
+    const res = await fetch(`${API}/formula-composer/leaderboard${qs}`);
     const data = await res.json();
     renderComposerLeaderboard(data, symbol);
   } catch (e) {
