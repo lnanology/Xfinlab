@@ -163,6 +163,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
         <span class="hero-stars" id="heroStars">-</span>
         <span class="hero-rating hold" id="heroRating">-</span>
       </div>
+      <div id="heroSparkWrap" style="display:none;flex-shrink:0"></div>
       <div class="hero-right">
         <div>AI Confidence <span class="hero-confidence" id="heroConfidence">-</span></div>
         <div id="heroUpdated">-</div>
@@ -393,6 +394,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 <script src="js/broker-cta.js"></script>
 <script src="js/share-tools.js"></script>
 <script src="js/mvp-api.js"></script>
+<script src="js/sparkline.js"></script>
 
 <script>
 // Tier 2: Related Research -- a small, hand-curated map (NOT a dynamic
@@ -643,6 +645,23 @@ async function runAnalysis(){
       document.getElementById('heroUpdated').textContent = updatedLabel + updated.toLocaleTimeString();
       const whyLabel = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_reasons_summary'])||'▶ AI點解比{rating}？ / AI推理';
       document.getElementById('reasonsSummary').textContent = whyLabel.replace('{rating}', hero.rating);
+
+      // 2026-08-10 (AJ: "AI result 加線性K圖"): small line (not candlestick)
+      // chart next to the rating pill, using the same OHLC closes the full
+      // candlestick chart below already fetched -- no extra network call.
+      const sparkWrap = document.getElementById('heroSparkWrap');
+      if (sparkWrap && typeof XflSparkline !== 'undefined' && Array.isArray(data.ohlc) && data.ohlc.length >= 2) {
+        const closes = data.ohlc.slice(-30).map(b => b.close).filter(v => typeof v === 'number');
+        if (closes.length >= 2) {
+          const dir = hero.rating ? XflSparkline.dirClass(hero.rating) : 'neutral';
+          sparkWrap.innerHTML = XflSparkline.render(closes, dir, { width: 110, height: 40 });
+          sparkWrap.style.display = 'block';
+        } else {
+          sparkWrap.style.display = 'none';
+        }
+      } else if (sparkWrap) {
+        sparkWrap.style.display = 'none';
+      }
     }
 
     // ---- Layer 2: Dashboard grid ----
