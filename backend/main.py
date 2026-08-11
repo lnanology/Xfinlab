@@ -1,5 +1,25 @@
 import sys
 import os
+import logging
+
+# 2026-08-11: root cause found while verifying the Alpaca-first OHLC
+# routing in services/technical_analysis_service.py actually fires in
+# production -- this app never called logging.basicConfig() anywhere,
+# so every logger.info()/.debug() call across the entire codebase
+# (services/*, api/*) was silently swallowed by Python's default
+# "handler of last resort" (WARNING+ only, stderr). Uvicorn's own
+# "INFO:     ...GET... 200 OK" access-log lines were never affected by
+# this -- uvicorn configures its own separate loggers regardless -- so
+# the app *looked* like it was logging normally while every app-level
+# .info() call (including diagnostics like "Alpaca served OHLC for
+# %s") was invisible in Railway's log viewer the whole time. Pure
+# logging-visibility fix -- does not change any request/response
+# behavior, only what gets written to stdout/stderr.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
