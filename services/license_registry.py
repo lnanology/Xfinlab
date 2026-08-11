@@ -139,18 +139,35 @@ _LICENSES: Dict[str, LicenseRecord] = {
     # automated extraction, so there is no compliant path today).
     "investing_com_rss": LicenseRecord(
         source_id="investing_com_rss",
-        license_type="unknown",
+        license_type="non_commercial",
         commercial_use_allowed=False,
-        terms_url="https://www.investing.com/rss/news.rss",
-        risk_level="medium",
+        terms_url="https://www.investing.com/about-us/terms-and-conditions",
+        risk_level="high",
         notes=(
-            "Used by services/rss_news_service.py. Publicly published RSS "
-            "feed intended for syndication; exact commercial-redistribution "
-            "terms weren't independently verified this pass -- flagged "
-            "conservatively. Exposure minimized: only title/link/"
+            "2026-08-11 re-verification (direct fetch of "
+            "investing.com/webmaster-tools/rss, whose own footer carries "
+            "Fusion Media's site-wide legal notice): 'It is prohibited to "
+            "use, store, reproduce, display, modify, transmit or "
+            "distribute the data contained in this website without the "
+            "explicit prior written permission of Fusion Media and/or the "
+            "data provider. All intellectual property rights are reserved "
+            "by the providers and/or the exchange providing the data "
+            "contained in this website.' This is an explicit, unambiguous "
+            "restriction covering the RSS feed content -- upgraded from "
+            "the prior conservative 'unknown/medium' to confirmed "
+            "'non_commercial/high'. Used by services/rss_news_service.py, "
+            "feeding the paid /v1/events, /v1/sentiment, and /v1/intel/* "
+            "endpoints. Exposure is still minimized (only title/link/"
             "published_at/source kept, never full article text, same "
-            "convention as NewsService.get_company_news()."
+            "convention as NewsService.get_company_news()), but a "
+            "commercial API selling access to data derived from this feed "
+            "is exactly the kind of use this notice prohibits without "
+            "written permission -- either get that permission, or "
+            "de-weight/replace investing.com in rss_news_service.py's feed "
+            "pool in favor of the already-clean sources in that same pool "
+            "(globenewswire_rss, prnewswire_rss) plus gdelt."
         ),
+        replacement_candidates=["gdelt", "globenewswire_rss", "prnewswire_rss"],
     ),
     "globenewswire_rss": LicenseRecord(
         source_id="globenewswire_rss",
@@ -177,6 +194,37 @@ _LICENSES: Dict[str, LicenseRecord] = {
             "globenewswire_rss -- publicly syndicated company press "
             "releases, headline/link/date only kept here."
         ),
+    ),
+    # 2026-08-11: closes a documentation gap found while building
+    # DATA-LICENSE-MATRIX.md -- global_news_region_service.py has used
+    # BBC's business RSS feed since 2026-07-24 (see that file's own
+    # docstring) but it was never added here.
+    "bbc_rss": LicenseRecord(
+        source_id="bbc_rss",
+        license_type="unknown",
+        commercial_use_allowed=False,
+        terms_url="https://www.bbc.co.uk/usingthebbc/terms/using-rss-feeds-from-the-bbc/",
+        risk_level="medium",
+        notes=(
+            "Used by services/global_news_region_service.py (feeds "
+            "feeds.bbci.co.uk/news/business/rss.xml as a second, broader "
+            "per-region source alongside the existing RSS pool), which "
+            "feeds the paid /v1/world/market-map endpoint. Could NOT be "
+            "directly verified this pass -- bbc.co.uk is on this "
+            "environment's fetch blocklist, and web search only surfaced "
+            "an old (~2007) Wikinews report that the BBC planned to "
+            "loosen its RSS terms from 'personal use only' to allow "
+            "outside reuse; that is not a reliable source for the actual "
+            "current terms. Flagged conservatively as unknown/medium, "
+            "same posture as investing_com_rss before its own "
+            "verification. Exposure is already minimized the same way as "
+            "the rest of this feed pool (headline/link/published_at/"
+            "source only, never full article text). Needs a human to "
+            "check bbc.co.uk/usingthebbc/terms/using-rss-feeds-from-the-bbc/ "
+            "directly (or contact BBC) before this can be upgraded to a "
+            "confirmed verdict either way."
+        ),
+        replacement_candidates=["gdelt"],
     ),
     "sec_edgar": LicenseRecord(
         source_id="sec_edgar",
