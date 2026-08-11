@@ -44,6 +44,7 @@ from typing import Dict, List, Optional
 from services.chart_pattern_service import detect_patterns as _detect_chart_patterns
 from services.market_structure_engine import compute_market_structure as _compute_market_structure_v2
 from services.i18n import get_translations
+from services.outbound_http import get_with_backoff
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,34 @@ ALPACA_INTERVAL_TIMEFRAME = {"1d": "1Day", "1h": "1Hour"}
 # 2330.TW, 7203.T ...) is never a US ticker, so don't even try Alpaca for
 # those — go straight to yfinance.
 _US_SYMBOL_RE = re.compile(r"^[A-Z]{1,5}$")
+
+# 2026-08-11: TWSE-first for Taiwan-listed symbols (.TW suffix), same
+# "clean source first, yfinance only as fallback" pattern as Alpaca above.
+# TWSE's official STOCK_DAY OpenAPI (openapi.twse.com.tw / the classic
+# www.twse.com.tw/exchangeReport/STOCK_DAY endpoint, both backed by the
+# same data) is published under Taiwan's government-wide "政府資料開放
+# 授權條款" (Open Government Data License v1.0) -- verified by direct
+# fetch of data.gov.tw/license: perpetual, worldwide, non-exclusive,
+# irrevocable,
+# royalty-free license to reproduce/distribute/adapt for any purpose
+# including commercial derivative products, the only real obligation is
+# an attribution notice. See DATA-LICENSE-MATRIX.md and
+# services/license_registry.py's twse_official entry. No API key needed.
+TWSE_STOCK_DAY_URL = "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
+# STOCK_DAY only has daily granularity, one calendar month per request --
+# there is no hourly/intraday version of this free endpoint, unlike
+# Alpaca. Period -> how many calendar months of requests to make.
+TWSE_PERIOD_MONTHS = {"1mo": 1, "3mo": 3, "6mo": 6, "1y": 12, "2y": 24}
+_TW_SYMBOL_RE = re.compile(r"^\d{4,6}\.TW$")
+
+# Per (stockNo, year, month) cache. Closed months never change once
+# passed -- only the current in-progress month's data can still update
+# intra-day, so it gets a short TTL while every prior month is cached
+# indefinitely (same "don't hammer a good citizen" reasoning as
+# services/outbound_http.py, just applied via caching here instead of
+# backoff since TWSE has no documented rate limit to react to).
+_TWSE_MONTH_CACHE: Dict[str, Dict] = {}
+_TWSE_CURRENT_MONTH_TTL_SECONDS = 900  # 15 minutes
 
 
 class TechnicalAnalysisService:
@@ -359,7 +388,132 @@ class TechnicalAnalysisService:
                     symbol_upper, e,
                 )
 
+        # 2026-08-11: TWSE-first for Taiwan-listed symbols -- same
+        # "clean source first, yfinance only as fallback" shape as Alpaca
+        # above. STOCK_DAY is daily-only, so only attempt it for interval
+        # "1d" -- anything intraday (1h etc.) has no free TWSE equivalent
+        # and goes straight to yfinance, same reasoning as the Alpaca
+        # interval guard above.
+        if _TW_SYMBOL_RE.match(symbol_upper) and interval == "1d":
+            try:
+                df = TechnicalAnalysisService._fetch_twse(symbol_upper, period)
+                if df is not None and not df.empty:
+                    logger.info("TWSE served OHLC for %s (%s)", symbol_upper, period)
+                    return df
+            except Exception as e:
+                # Never hard-fail here either -- fall through to yfinance,
+                # same defensive pattern as the Alpaca path above.
+                logger.info(
+                    "TWSE fetch failed for %s, falling back to yfinance: %s",
+                    symbol_upper, e,
+                )
+
         return yf.Ticker(symbol).history(period=period, interval=interval)
+
+    @staticmethod
+    def _fetch_twse(symbol: str, period: str) -> Optional[pd.DataFrame]:
+        """
+        TWSE official STOCK_DAY OpenAPI (see the licensing comment above
+        TWSE_STOCK_DAY_URL for the license basis). One calendar month of
+        daily OHLC per request -- loops back that many months and
+        concatenates. No API key needed.
+        """
+        stock_no = symbol.split(".")[0]
+        months = TWSE_PERIOD_MONTHS.get(period, 6)
+        today = datetime.utcnow()
+        frames = []
+        year, month = today.year, today.month
+        for _ in range(months):
+            month_df = TechnicalAnalysisService._fetch_twse_month(stock_no, year, month)
+            if month_df is not None and not month_df.empty:
+                frames.append(month_df)
+            month -= 1
+            if month <= 0:
+                month += 12
+                year -= 1
+
+        if not frames:
+            return None
+
+        df = pd.concat(frames).sort_index()
+        return df[~df.index.duplicated(keep="last")]
+
+    @staticmethod
+    def _fetch_twse_month(stock_no: str, year: int, month: int) -> Optional[pd.DataFrame]:
+        """
+        Fetches (or serves from cache) one calendar month of daily OHLC
+        for a single TWSE-listed security. Response shape verified live
+        2026-08-11 (fields: 日期/成交股數/成交金額/開盤價/最高價/最低價/
+        收盤價/漲跌價差/成交筆數/註記). Closed months are cached
+        indefinitely; the current in-progress month gets a short TTL
+        since it can still update intra-day.
+        """
+        now = datetime.utcnow()
+        is_current_month = (year == now.year and month == now.month)
+        cache_key = f"{stock_no}|{year}{month:02d}"
+        cached = _TWSE_MONTH_CACHE.get(cache_key)
+        now_ts = now.timestamp()
+        if cached and (
+            not is_current_month
+            or (now_ts - cached["fetched_at"]) < _TWSE_CURRENT_MONTH_TTL_SECONDS
+        ):
+            return cached["df"]
+
+        date_param = f"{year}{month:02d}01"
+        try:
+            res = get_with_backoff(
+                TWSE_STOCK_DAY_URL,
+                params={"response": "json", "date": date_param, "stockNo": stock_no},
+                timeout=10,
+            )
+            if res.status_code != 200:
+                logger.info(
+                    "TWSE STOCK_DAY returned HTTP %s for %s %s",
+                    res.status_code, stock_no, date_param,
+                )
+                return cached["df"] if cached else None
+            payload = res.json()
+        except Exception as e:
+            logger.info(
+                "TWSE STOCK_DAY fetch/parse failed for %s %s: %s",
+                stock_no, date_param, e,
+            )
+            return cached["df"] if cached else None
+
+        rows = payload.get("data") or []
+        if not rows:
+            # Empty is a normal outcome (future month, holiday-only month,
+            # newly-listed stock, delisted stock) -- not worth logging
+            # loudly, unlike an actual fetch/parse failure above.
+            return cached["df"] if cached else None
+
+        records = []
+        for row in rows:
+            try:
+                # Field order confirmed live 2026-08-11:
+                # [日期, 成交股數, 成交金額, 開盤價, 最高價, 最低價,
+                #  收盤價, 漲跌價差, 成交筆數, 註記]
+                roc_year, m, d = row[0].split("/")
+                ts = pd.Timestamp(year=int(roc_year) + 1911, month=int(m), day=int(d))
+                records.append({
+                    "t": ts,
+                    "Open": float(row[3].replace(",", "")),
+                    "High": float(row[4].replace(",", "")),
+                    "Low": float(row[5].replace(",", "")),
+                    "Close": float(row[6].replace(",", "")),
+                    "Volume": float(row[1].replace(",", "")),
+                })
+            except (ValueError, IndexError, AttributeError):
+                # A single malformed row (e.g. a halted-trading placeholder
+                # row) shouldn't sink the whole month -- skip just that row.
+                continue
+
+        if not records:
+            return cached["df"] if cached else None
+
+        df = pd.DataFrame(records).set_index("t")[["Open", "High", "Low", "Close", "Volume"]]
+        _TWSE_MONTH_CACHE[cache_key] = {"fetched_at": now_ts, "df": df}
+        return df
 
     @staticmethod
     def _fetch_alpaca(

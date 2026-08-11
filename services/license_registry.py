@@ -255,11 +255,25 @@ _LICENSES: Dict[str, LicenseRecord] = {
         risk_level="low",
         notes=(
             "Taiwan Stock Exchange's own free, anonymous, official JSON "
-            "endpoint (MI_INDEX20 -- today's top 20 securities by volume/"
-            "value), used by services/trending_stocks_service.py. A "
-            "government exchange publishing its own market data for "
-            "public consumption -- the lowest-risk source in this "
-            "registry alongside alpaca_markets."
+            "endpoints. Two different endpoints now use this source: (1) "
+            "MI_INDEX20 (today's top 20 securities by volume/value), used "
+            "by services/trending_stocks_service.py; (2) STOCK_DAY "
+            "(per-security daily OHLC, one calendar month per request), "
+            "wired into services/technical_analysis_service.py's "
+            "_fetch_history() as of 2026-08-11, tried first for any "
+            "'NNNN.TW'-suffixed symbol on daily interval, falling back to "
+            "yfinance on any error/empty result -- same defensive routing "
+            "already used for Alpaca (US symbols). Both endpoints are "
+            "published under Taiwan's government-wide Open Government "
+            "Data License v1.0 (data.gov.tw/license, verified by direct "
+            "fetch): perpetual, worldwide, irrevocable, royalty-free, any "
+            "purpose including commercial derivatives, attribution only "
+            "obligation. A government exchange publishing its own market "
+            "data for public consumption -- the lowest-risk source in "
+            "this registry alongside alpaca_markets. Closes the Taiwan "
+            "leg of the non-US-symbol gap (see DATA-LICENSE-MATRIX.md); "
+            "Hong Kong remains yfinance-backed, no free official "
+            "alternative found."
         ),
     ),
     "huggingface_inference_api": LicenseRecord(
