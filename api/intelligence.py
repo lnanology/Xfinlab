@@ -463,6 +463,24 @@ def intelligence_technical(
     if not tech or "error" in tech:
         return _envelope(data=None, error=(tech or {}).get("error", f"No technical data available for {ticker}"))
 
+    # 2026-08-11 (AJ, "做法1"): strip the raw OHLC bar array before this
+    # dict leaves the process. get_technical_analysis()'s "ohlc" field
+    # (up to 300 real Open/High/Low/Close/Volume bars, see
+    # technical_analysis_service.py::_ohlc_series()) is legitimate for
+    # this codebase's own UI (chart-analysis.html/ai-analysis.html render
+    # a candlestick chart with it), but this router sells access to
+    # third-party developers -- for any symbol served via the yfinance
+    # fallback (i.e. not US-Alpaca or Taiwan-TWSE), re-exporting those raw
+    # bars through a commercial endpoint would be redistributing
+    # yahoo_finance data, already confirmed non_commercial/high risk in
+    # services/license_registry.py. This module's own docstring already
+    # promises "never raw ... data" -- this endpoint was the one place
+    # that promise wasn't kept. Every other field (confluence/trend/RSI/
+    # MACD/support-resistance/patterns/market-structure/decision_levels)
+    # is untouched; only the raw price array is removed. See
+    # DATA-LICENSE-MATRIX.md's action-item list for the full writeup.
+    tech = {k: v for k, v in tech.items() if k != "ohlc"}
+
     return _envelope(data=tech, meta={"ticker": ticker, "period": period, "interval": interval})
 
 
