@@ -11,7 +11,6 @@ Sources used -- each verified LIVE by direct fetch on 2026-07-18 (not
 assumed from a blog post or old training knowledge; RSS feeds get killed
 all the time, e.g. Reuters shut down its public RSS feeds back in 2020):
 
-  - Investing.com's general market news feed.
   - GlobeNewswire's "News about Public Companies" feed -- the practical
     stand-in for "listed-company IR/announcement pages": a 3-company
     spot check (AAPL/MSFT/JPM) found NONE of them has a working direct
@@ -20,9 +19,30 @@ all the time, e.g. Reuters shut down its public RSS feeds back in 2020):
     GlobeNewswire/PR Newswire's public wires -- this is the honest,
     verified-live path to that data, not a workaround.
   - PR Newswire's "Financial Services" news feed, same reasoning.
+  - GDELT's global news monitoring (via services/gdelt_news_service.py),
+    replacing Investing.com as of 2026-08-11 -- see that date's note
+    below.
 
-Explicitly ruled OUT this pass (checked, not silently skipped -- see
-services/license_registry.py for the same "documented, not assumed"
+2026-08-11: Investing.com's RSS feed REMOVED from this pool. A direct
+fetch of investing.com/webmaster-tools/rss found Fusion Media's
+site-wide footer notice explicitly prohibiting "use, store, reproduce,
+display, modify, transmit or distribute" site data without prior
+written permission -- unambiguous, not an ambiguous ToS to interpret
+(see services/license_registry.py's investing_com_rss entry, upgraded
+to confirmed non_commercial/high that same day). Replaced with GDELT
+(services/gdelt_news_service.py), already integrated elsewhere in this
+codebase and already confirmed public-domain/unrestricted-commercial-use
+(GDELT's own terms: "available for unlimited and unrestricted use for
+any academic, commercial, or governmental use of any kind without fee").
+GDELT indexes global news monitoring across 100+ languages via real
+server-side search, which is broader coverage than a single wire's RSS
+feed, not just a same-size substitute. get_all_headlines() now merges
+GDELT's general macro/market feed; search_headlines() now also calls
+GDELT's server-side search in addition to the existing client-side
+substring filter over the RSS pool.
+
+Other sources explicitly ruled OUT (checked, not silently skipped --
+see services/license_registry.py for the same "documented, not assumed"
 convention):
   - StockTwits: developer API registration is currently closed and their
     ToS bars automated extraction without an approved API -- no
@@ -30,8 +50,10 @@ convention):
     "stocktwits" entry, tracked as a real gap for task #212, not built).
   - Business Wire: public site showed stale content and no free RSS link
     in navigation; their own docs point to a paid feed product.
-  - Seeking Alpha: feed terms explicitly restrict to personal,
-    non-commercial use.
+  - Seeking Alpha, CNN/Fox Business: feed terms explicitly restrict to
+    personal, non-commercial use (re-verified 2026-08-11 alongside the
+    investing_com_rss check -- same industry-standard restriction, not
+    unique to investing.com).
   - Nasdaq / MarketWatch (Dow Jones) feeds: endpoint headers looked live
     but actual item content couldn't be verified this pass, and Dow
     Jones content is explicitly copyrighted -- flagged as a gray zone
@@ -57,15 +79,11 @@ from typing import Dict, List, Optional
 from xml.etree import ElementTree as ET
 
 from services.outbound_http import get_with_backoff
+from services import gdelt_news_service
 
 logger = logging.getLogger(__name__)
 
 FEEDS: Dict[str, Dict] = {
-    "investing_com": {
-        "url": "https://www.investing.com/rss/news.rss",
-        "source_label": "Investing.com",
-        "kind": "market_news",
-    },
     "globenewswire_public_companies": {
         "url": (
             "https://www.globenewswire.com/RssFeed/orgclass/1/feedTitle/"
@@ -176,8 +194,25 @@ def _get_feed_cached(feed_id: str) -> List[Dict]:
     return []
 
 
+def _gdelt_items_as_rss_shape(limit: int) -> List[Dict]:
+    """Adapts gdelt_news_service's item shape to this module's shape
+    (adds `kind` -- "market_news", same label investing_com_rss used to
+    carry, so downstream consumers keying off `kind` -- e.g.
+    ai_news_object_service.py's company_announcement boost -- see
+    unchanged behavior). GDELT items already have title/link/
+    published_at/source; this only adds the one missing field."""
+    try:
+        result = gdelt_news_service.get_global_macro_headlines(limit=limit)
+    except Exception as e:
+        logger.info("rss_news_service: GDELT macro headlines fetch failed: %s", e)
+        return []
+    return [{**item, "kind": "market_news"} for item in result.get("items", [])]
+
+
 def get_all_headlines(limit: int = 40) -> Dict:
-    """Merged, newest-first headlines across every configured feed."""
+    """Merged, newest-first headlines across every configured RSS feed
+    plus GDELT's global news monitoring (replacing investing_com_rss as
+    of 2026-08-11 -- see this module's docstring)."""
     all_items: List[Dict] = []
     sources_ok = []
     for feed_id in FEEDS:
@@ -185,6 +220,11 @@ def get_all_headlines(limit: int = 40) -> Dict:
         if items:
             sources_ok.append(feed_id)
         all_items.extend(items)
+
+    gdelt_items = _gdelt_items_as_rss_shape(limit)
+    if gdelt_items:
+        sources_ok.append("gdelt")
+    all_items.extend(gdelt_items)
 
     all_items.sort(key=lambda x: x["published_at"] or "", reverse=True)
     return {
@@ -200,12 +240,19 @@ _TICKER_STRIP_RE = re.compile(r"[^a-z0-9\s]")
 
 def search_headlines(query: str, limit: int = 20) -> Dict:
     """
-    Client-side keyword filter over the merged feed (title-substring
-    match against the company name/ticker) -- the practical way to get
-    "per-company" coverage out of feeds that only offer broad category
-    subscriptions (see this module's docstring: no per-ticker GlobeNewswire/
-    PR Newswire feed exists, so filtering happens here instead of pretending
-    a per-company feed exists).
+    Two complementary search paths merged together:
+    (1) client-side keyword filter over the RSS pool (title-substring
+        match against the company name/ticker) -- the practical way to
+        get "per-company" coverage out of feeds that only offer broad
+        category subscriptions (see this module's docstring: no
+        per-ticker GlobeNewswire/PR Newswire feed exists, so filtering
+        happens here instead of pretending a per-company feed exists).
+    (2) GDELT's own server-side search (services/gdelt_news_service.py),
+        added 2026-08-11 replacing investing_com_rss -- genuine
+        full-text search across GDELT's global monitoring, not a
+        substring filter over a fixed small pool, so it can surface
+        per-company coverage the RSS pool alone would miss.
+    Deduplicated by link before returning.
     """
     query = (query or "").strip()
     if not query:
@@ -220,11 +267,31 @@ def search_headlines(query: str, limit: int = 20) -> Dict:
         item for item in merged["items"]
         if needle in _TICKER_STRIP_RE.sub("", item["title"].lower())
     ]
+
+    try:
+        gdelt_result = gdelt_news_service.search_global_events(query, limit=limit)
+        gdelt_matches = [
+            {**item, "kind": "market_news"} for item in gdelt_result.get("items", [])
+        ]
+    except Exception as e:
+        logger.info("rss_news_service: GDELT search failed for %r: %s", query, e)
+        gdelt_matches = []
+
+    seen_links = set()
+    combined: List[Dict] = []
+    for item in matches + gdelt_matches:
+        link = item.get("link")
+        if link in seen_links:
+            continue
+        seen_links.add(link)
+        combined.append(item)
+    combined.sort(key=lambda x: x["published_at"] or "", reverse=True)
+
     return {
-        "status": "ok" if matches else "error",
-        "message": None if matches else f"暫時搵唔到同「{query}」相關嘅新聞/公告。",
+        "status": "ok" if combined else "error",
+        "message": None if combined else f"暫時搵唔到同「{query}」相關嘅新聞/公告。",
         "query": query,
-        "items": matches[:limit],
+        "items": combined[:limit],
     }
 
 
