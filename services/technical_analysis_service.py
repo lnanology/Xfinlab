@@ -342,6 +342,12 @@ class TechnicalAnalysisService:
                     symbol_upper, period, interval, alpaca_key, alpaca_secret
                 )
                 if df is not None and not df.empty:
+                    # 2026-08-11: previously silent on success -- only the
+                    # failure/fallback path below ever logged anything,
+                    # which made it impossible to confirm from Railway logs
+                    # alone whether Alpaca was actually being used or just
+                    # configured. One-line addition, no behavior change.
+                    logger.info("Alpaca served OHLC for %s (%s, %s)", symbol_upper, period, interval)
                     return df
             except Exception as e:
                 # Never hard-fail here — just fall through to yfinance below.
