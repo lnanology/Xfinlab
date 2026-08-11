@@ -45,6 +45,13 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 
 .endpoints{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 @media (max-width:820px){.endpoints{grid-template-columns:1fr}}
+/* 2026-08-11 (AJ: "更新intelligence-api.html行銷文案" -- reflect the now-
+   resolved data-licensing audit as a real differentiator, not a
+   liability shield). 3-col responsive grid, reusing .ep-card's visual
+   language so this section feels native to the page rather than bolted
+   on. */
+.source-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:820px){.source-grid{grid-template-columns:1fr}}
 .ep-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
 .ep-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
 .ep-icon{width:34px;height:34px;flex-shrink:0;border-radius:9px;background:rgba(211,84,0,0.1);color:var(--accent-blue);display:flex;align-items:center;justify-content:center}
@@ -120,6 +127,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
     <div class="hero-ctas">
       <a href="#access" class="btn-primary">Request Early Access</a>
       <a href="#endpoints" class="btn-ghost">See the endpoints</a>
+      <a href="#data-sourcing" class="btn-ghost">Data sourcing</a>
       <a href="#sdks" class="btn-ghost">SDKs</a>
     </div>
   </div>
@@ -195,6 +203,47 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
         <span class="ep-tag">GET /v1/regime-signal/{ticker}</span>
         <div class="ep-name">Regime-Aware Signal</div>
         <div class="ep-desc">Current causal market regime for a ticker, plus whichever composed signal combo has historically performed best in that same regime — backed by real walk-forward-validated backtests, not a fabricated pick. Honestly reports "not enough data yet" for tickers not yet covered by the scheduled scan.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2026-08-11: new trust/differentiator section, added after a full
+       data-licensing audit (see DATA-LICENSE-MATRIX.md in the repo)
+       resolved the two real open risks this API used to carry: an RSS
+       source with non-commercial redistribution terms (replaced with
+       GDELT + the press-release wires below), and a raw-OHLC leak on
+       the technical endpoint (removed -- every price-derived field
+       here is a computed result, never the underlying feed, matching
+       the "AI-structured JSON, never raw ... data" promise already
+       made for news above). Every claim below is traceable to a
+       specific source's own published terms, not a blanket assurance
+       -- most competitors in this space don't disclose sourcing at
+       all, so this is a real point of difference, not just legal
+       cover. -->
+  <div class="section" id="data-sourcing">
+    <div class="section-title">Where the data comes from</div>
+    <div class="section-sub">Every source below is licensed for commercial redistribution — verified directly against each provider's own published terms, not assumed.</div>
+    <div class="source-grid">
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+        </div>
+        <div class="ep-name">News &amp; events</div>
+        <div class="ep-desc">GDELT's global news monitoring (public-domain, 100+ languages, unlimited commercial use) plus official company press-release wires (GlobeNewswire, PR Newswire). No feed in this pipeline carries a personal/non-commercial-use restriction.</div>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 9-9"/><path d="M15 7h6v6"/></svg></div>
+        </div>
+        <div class="ep-name">US &amp; Taiwan price data</div>
+        <div class="ep-desc">US-listed symbols: Alpaca Markets' licensed feed. Taiwan-listed symbols: the Taiwan Stock Exchange's own official open-data API. Both explicitly permit commercial redistribution — no unofficial scrapers in this path.</div>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.3 2.7 3.6 6 3.6 9s-1.3 6.3-3.6 9c-2.3-2.7-3.6-6-3.6-9s1.3-6.3 3.6-9z"/></svg></div>
+        </div>
+        <div class="ep-name">Other markets</div>
+        <div class="ep-desc">Hong Kong and other non-US, non-Taiwan symbols currently use a best-effort fallback source while we evaluate a licensed provider — disclosed here, not hidden. And regardless of source, no endpoint re-exports raw price bars: every price-derived field (trend, RSI, support/resistance, market structure) is a computed result, not the underlying feed.</div>
       </div>
     </div>
   </div>
