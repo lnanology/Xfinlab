@@ -1050,7 +1050,7 @@ def parse_video_chat_request(message: str) -> dict:
     return {"topic": text, "lang": lang, "aspect_ratio": aspect_ratio, "theme": theme}
 
 
-def generate_custom_video(prompt_text: str, num_slides: int = 4) -> dict:
+def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: str = None) -> dict:
     """2026-08-09 (admin chat-to-video feature, requested as "Video Engine
     可以加個CHAT更彈性做任何影片嗎"): admin-only, free-text-driven video
     generation, separate from generate_daily_video()'s fixed
@@ -1058,7 +1058,15 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4) -> dict:
     generate_daily_video() -- reuses is_available() implicitly via
     _render_video_pipeline's TTS calls failing gracefully if unconfigured.
     num_slides is capped to a small range so one chat message can't
-    request an unreasonably long (expensive) render."""
+    request an unreasonably long (expensive) render.
+
+    2026-08-13 (explicit language dropdown for the chat panel, matching
+    the fixed Generate Now panel's videoLangSelect): lang_override, if
+    given and a recognized code, takes priority over
+    parse_video_chat_request()'s keyword-guessed language -- lets the
+    admin just pick a dropdown instead of having to phrase the prompt so
+    the guesser catches it (e.g. non-English topic text that doesn't
+    literally name its own language)."""
     if not is_available():
         msg = "Video Engine unavailable: " + (
             "GOOGLE_TTS_API_KEY not set" if not tts_service.is_available() else "ffmpeg/ffprobe not found on PATH"
@@ -1072,7 +1080,10 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4) -> dict:
     num_slides = max(3, min(8, num_slides))  # intro + at least 1 body + outro, capped at 8 total
 
     parsed = parse_video_chat_request(prompt_text)
-    lang = parsed["lang"] if parsed["lang"] in _SCRIPT else "en"
+    if lang_override and lang_override in _SCRIPT:
+        lang = lang_override
+    else:
+        lang = parsed["lang"] if parsed["lang"] in _SCRIPT else "en"
     aspect_ratio = parsed["aspect_ratio"] if parsed["aspect_ratio"] in _ASPECT_RATIOS else _DEFAULT_ASPECT
     theme = parsed["theme"] if parsed["theme"] in _THEMES else _DEFAULT_THEME
     width, height = _ASPECT_RATIOS[aspect_ratio]

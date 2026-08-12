@@ -686,6 +686,28 @@
               <option value="6">6</option>
             </select>
           </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Language</label>
+            <select id="videoChatLangSelect" class="btn btn-sm" style="cursor:pointer" title="Auto-detect reads the language from your prompt text; pick one here to override that guess">
+              <option value="" selected>Auto-detect (from prompt)</option>
+              <option value="zh-HK">粵語 zh-HK</option>
+              <option value="zh-CN">普通话 zh-CN</option>
+              <option value="zh-TW">國語 zh-TW</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+              <option value="pt">Português</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="hi">हिन्दी</option>
+              <option value="id">Bahasa Indonesia</option>
+              <option value="ar">العربية</option>
+              <option value="ru">Русский</option>
+              <option value="bn">বাংলা</option>
+              <option value="ur">اردو</option>
+            </select>
+          </div>
           <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
             <input type="checkbox" id="videoChatPostTelegram">
             Also post to the matching-language Telegram channel on success
@@ -1623,6 +1645,7 @@ async function generateCustomVideo() {
   const result = document.getElementById('videoChatGenerateResult');
   const prompt = document.getElementById('videoChatPrompt').value.trim();
   const numSlides = parseInt(document.getElementById('videoChatSlides').value, 10);
+  const langOverride = document.getElementById('videoChatLangSelect').value;
   const postTelegram = document.getElementById('videoChatPostTelegram').checked;
   const uploadYoutube = document.getElementById('videoChatUploadYoutube').checked;
   if (!prompt) {
@@ -1635,7 +1658,7 @@ async function generateCustomVideo() {
     const res = await fetch(`${API}/admin/video/generate-custom?token=${adminToken}`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({prompt, num_slides: numSlides, post_to_telegram: postTelegram, upload_to_youtube: uploadYoutube}),
+      body: JSON.stringify({prompt, num_slides: numSlides, lang: langOverride, post_to_telegram: postTelegram, upload_to_youtube: uploadYoutube}),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.status);

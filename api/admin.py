@@ -701,8 +701,13 @@ async def video_engine_generate_custom(token: str, request: Request, body: dict 
     num_slides = int((body or {}).get("num_slides", 4) or 4)
     post_to_telegram = bool((body or {}).get("post_to_telegram", False))
     upload_to_youtube = bool((body or {}).get("upload_to_youtube", False))
+    # 2026-08-13: optional explicit language override from the admin's
+    # new dropdown -- empty string / "auto" / omitted all mean "let
+    # parse_video_chat_request() keep guessing from the prompt text", so
+    # only pass through a real value.
+    lang_override = (body or {}).get("lang") or None
     from services.video_engine_service import generate_custom_video
-    result = generate_custom_video(prompt, num_slides=num_slides)
+    result = generate_custom_video(prompt, num_slides=num_slides, lang_override=lang_override)
     if post_to_telegram and result.get("available"):
         try:
             from services.telegram_push_service import push_video_to_telegram
