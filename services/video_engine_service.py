@@ -60,7 +60,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import textwrap
 from datetime import date, datetime, timezone
 from typing import List, Optional
 
@@ -619,6 +618,59 @@ def _text_width(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFo
         return len(text) * fallback_per_char
 
 
+def _wrap_text_pixel(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_w: float) -> List[str]:
+    """2026-08-13 (AJ: "圖中字幕顯示穿出屏幕右邊，要分2行顯示" -- caption text
+    was poking off the right edge of the frame): the intro/outro/custom
+    slides used to wrap with textwrap.wrap(text, width=N), which counts
+    N as a CHARACTER count, not a pixel width. That's a reasonable proxy
+    for Latin text but badly wrong for CJK -- a Chinese glyph at this
+    module's fontsizes renders roughly 2x as wide as the average Latin
+    character the N divisor was tuned for, so a "safe" 26-char line of
+    Chinese text ends up rendering far wider than the frame and gets cut
+    off past the right edge (exactly what the screenshot showed). This
+    measures each candidate line's REAL rendered width with the actual
+    font in use (same approach the marquee helpers above already use)
+    and only breaks once it would actually overflow max_w, so it wraps
+    correctly regardless of script. Falls back to a hard character-count
+    split for scripts with no spaces (CJK/Thai/etc.), same as
+    _split_lines() above."""
+    text = (text or "").strip()
+    if not text:
+        return []
+
+    fallback = font.size * 0.6 if hasattr(font, "size") else 20
+
+    if " " in text:
+        words = text.split(" ")
+        lines: List[str] = []
+        current = ""
+        for w in words:
+            candidate = f"{current} {w}".strip() if current else w
+            if not current or _text_width(draw, candidate, font, fallback) <= max_w:
+                current = candidate
+            else:
+                lines.append(current)
+                current = w
+        if current:
+            lines.append(current)
+        return lines
+
+    # no spaces (CJK/etc.) -- grow the line character by character until
+    # it would overflow, same real-width measurement either way.
+    lines = []
+    current = ""
+    for ch in text:
+        candidate = current + ch
+        if not current or _text_width(draw, candidate, font, fallback) <= max_w:
+            current = candidate
+        else:
+            lines.append(current)
+            current = ch
+    if current:
+        lines.append(current)
+    return lines
+
+
 def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: str,
                    width: int, height: int, colors: dict) -> Image.Image:
     img = Image.new("RGB", (width, height), colors["bg"])
@@ -650,13 +702,15 @@ def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: st
     draw.text((width - pad_x - url_w, header_y + 2), "xfinlab.com", font=url_font, fill=colors["muted"])
 
     if kind == "intro":
-        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 26))):
+        intro_font = _get_font(int(height * 0.032), lang)
+        for i, line in enumerate(_wrap_text_pixel(draw, caption_text, intro_font, width - 2 * pad_x)):
             draw.text((pad_x, int(height * 0.42) + i * int(height * 0.037)), line,
-                      font=_get_font(int(height * 0.032), lang), fill=colors["fg"])
+                      font=intro_font, fill=colors["fg"])
     elif kind == "outro":
-        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 26))):
+        outro_font = _get_font(int(height * 0.027), lang)
+        for i, line in enumerate(_wrap_text_pixel(draw, caption_text, outro_font, width - 2 * pad_x)):
             draw.text((pad_x, int(height * 0.34) + i * int(height * 0.033)), line,
-                      font=_get_font(int(height * 0.027), lang), fill=colors["fg"])
+                      font=outro_font, fill=colors["fg"])
 
         # Prominent end-screen callout (2026-08-04: user asked for the
         # closing slide to show a big logo + xfinlab.com, not just the
@@ -681,12 +735,13 @@ def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: st
         # render -- same simple vertically-centered wrapped-text layout as
         # "intro" above, reused rather than duplicated since there's no
         # per-slide structured data to lay out beyond the caption itself.
-        lines = textwrap.wrap(caption_text, width=max(10, width // 24))
+        custom_font = _get_font(int(height * 0.032), lang)
+        lines = _wrap_text_pixel(draw, caption_text, custom_font, width - 2 * pad_x)
         line_h = int(height * 0.037)
         start_y = int(height * 0.5) - (len(lines) * line_h) // 2
         for i, line in enumerate(lines):
             draw.text((pad_x, start_y + i * line_h), line,
-                      font=_get_font(int(height * 0.032), lang), fill=colors["fg"])
+                      font=custom_font, fill=colors["fg"])
     elif kind == "chart":
         # 2026-08-09 (admin chat-to-video feature): custom-topic slide that
         # DOES have a real ticker -- e.g. admin typed "make a video about
