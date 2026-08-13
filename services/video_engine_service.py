@@ -974,42 +974,116 @@ def _fit_marquee_fontsize(text: str, lang: str, height: int, width: int) -> int:
     script-aware font (_get_font already picks the right glyph set per
     lang) and scales the fontsize down -- never up, to avoid an
     already-short line ballooning to an oversized single word -- if it
-    would render wider than a reasonable multiple of the screen width."""
+    would render wider than the screen.
+
+    2026-08-13 (later same day, AJ: "先滾出前段再滾出後，全顯示後，然後停下"
+    -- each line now scrolls in from the right and then HOLDS at a fully
+    on-screen resting position instead of looping forever): max_w was
+    previously width*2.6 (fine for an infinite loop where the line only
+    ever needed to *pass through* the frame). Now that a line must come
+    to rest fully visible, it has to actually fit within the frame, so
+    max_w is capped near the real screen width instead."""
     base = int(height * 0.026)
     floor = int(height * 0.016)
     font = _get_font(base, lang)
     scratch_draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
     line_w = _text_width(scratch_draw, text, font, base * 0.6)
-    max_w = width * 2.6
+    max_w = width * 0.94
     if line_w > max_w > 0:
         return max(floor, int(base * (max_w / line_w)))
     return base
 
 
+def _line_fits_at_floor(text: str, lang: str, width: int, height: int) -> bool:
+    """Helper for the 2-line-vs-3-line decision below: even at the
+    smallest allowed fontsize (the same floor _fit_marquee_fontsize()
+    respects), does this line's real rendered width still fit on
+    screen? If not, the line is simply too long for 2-line layout and
+    the caller should re-split into 3 lines instead."""
+    floor = int(height * 0.016)
+    font = _get_font(floor, lang)
+    scratch_draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    line_w = _text_width(scratch_draw, text, font, floor * 0.6)
+    return line_w <= width * 0.94
+
+
+def _split_lines(text: str, n: int) -> List[str]:
+    """2026-08-13 (AJ: "分2行順滾...太長，再長自動分3行" -- split into 2
+    lines, auto-escalating to 3 if a line is still too long): generalized
+    version of the original 2-line-only splitter. Distributes `text` into
+    `n` roughly equal-length segments, snapping to the nearest word-space
+    boundary so words aren't torn in half. Falls back to a hard
+    character-count split for CJK/Thai/etc. text that has no spaces at
+    all (word-boundary splitting is meaningless there)."""
+    text = (text or "").strip()
+    if n <= 1 or not text:
+        return [text] if text else []
+
+    if " " in text:
+        words = text.split(" ")
+        target = len(text) / n
+        lines: List[str] = []
+        current: List[str] = []
+        current_len = 0
+        for w in words:
+            if current and current_len + len(w) + 1 > target and len(lines) < n - 1:
+                lines.append(" ".join(current))
+                current = [w]
+                current_len = len(w)
+            else:
+                current.append(w)
+                current_len += len(w) + 1
+        if current:
+            lines.append(" ".join(current))
+        # very few words relative to n can under-produce lines -- pad by
+        # repeatedly halving the longest remaining line at a space.
+        while len(lines) < n:
+            idx = max(range(len(lines)), key=lambda i: len(lines[i]))
+            seg = lines[idx]
+            if " " not in seg:
+                break
+            mid = len(seg) // 2
+            sp = seg.rfind(" ", 0, mid)
+            if sp == -1:
+                sp = seg.find(" ", mid)
+            if sp == -1:
+                break
+            lines[idx:idx + 1] = [seg[:sp].strip(), seg[sp:].strip()]
+        return [l for l in lines if l]
+
+    # no spaces (CJK/etc.) -- hard split by character count.
+    length = len(text)
+    step = -(-length // n)  # ceil division
+    return [text[i:i + step] for i in range(0, length, step) if text[i:i + step]]
+
+
 def _marquee_filters(text: str, lang: str, width: int, height: int, colors: dict,
                       start: float, dur: float, workdir: str, idx: int) -> List[str]:
-    """2026-08-13 (AJ: "字穿過屏幕右邊...不同語言自動調整" for the scroll,
-    then "一行去行夠了" -- one line is enough, downgraded from an initial
-    2-line layout): replaces the old static burned-in caption on
-    "signal"/"chart" slides with a real scrolling marquee -- builds a
-    single ffmpeg drawtext filter that scrolls the full narration `text`
-    right-to-left across the caption band, active only during this
-    slide's own [start, start+dur] window on the FINAL assembled video's
-    timeline (see the cumulative-start-time loop in
-    _render_video_pipeline() below).
+    """2026-08-13 (AJ: "滾快D出來，分2行順滾，即先滾出前段再滾出後，全顯示
+    後，然後停下，要分2行 太長，再長自動分3行" -- scroll faster; split into
+    2 lines that reveal in reading order, one after another; once fully
+    shown, stop; auto-escalate to 3 lines if 2 is still too cramped):
+    replaces the earlier single continuously-looping line. Builds one
+    ffmpeg drawtext filter per line. Each line's `x` expression slides in
+    from off-screen right and is clamped with max(...) to a centered
+    resting position once it arrives -- it does NOT loop back off-screen,
+    it just stops there and holds for the rest of the slide. Lines are
+    staggered in time (line 2 doesn't start moving until line 1 has
+    finished arriving) so they read top-to-bottom in the same order the
+    narration says them, matching AJ's "先...再..." (first...then...)
+    request.
 
-    The text is written to a UTF-8 textfile= on disk rather than embedded
-    directly in the filter string via text=. This isn't stylistic --
-    ffmpeg's filtergraph syntax treats `:`, `,`, `'`, `\\`, `[`, `]` as
-    structural, and this module supports 16 languages including CJK/
-    Arabic/Devanagari/Bengali script text that can't be reliably escaped
-    inline; textfile= sidesteps that whole class of bug by handing ffmpeg
-    a plain file to read instead.
+    Text is written to a UTF-8 textfile= on disk per line rather than
+    embedded inline via text= -- ffmpeg's filtergraph syntax treats
+    `:`, `,`, `'`, `\\`, `[`, `]` as structural, and this module supports
+    16 languages including CJK/Arabic/Devanagari/Bengali script text that
+    can't be reliably escaped inline; textfile= sidesteps that whole
+    class of bug.
 
-    Returns an empty list (never raises) if the text is blank, so a slide
-    with an empty line just gets no overlay instead of a broken filter --
-    same "never hard-fail the whole render over an optional visual"
-    posture as the rest of this module."""
+    Returns an empty list (never raises) on blank text or a missing font,
+    so a slide just gets no overlay instead of a broken filter -- same
+    "never hard-fail the whole render over an optional visual" posture as
+    the rest of this module."""
     text = (text or "").strip()
     if not text:
         return []
@@ -1018,27 +1092,57 @@ def _marquee_filters(text: str, lang: str, width: int, height: int, colors: dict
     if not font_path:
         return []  # no usable font on this host -- skip the overlay rather than crash ffmpeg
 
+    lines_2 = _split_lines(text, 2)
+    if lines_2 and all(_line_fits_at_floor(l, lang, width, height) for l in lines_2):
+        lines = lines_2
+    else:
+        lines = _split_lines(text, 3)
+    if not lines:
+        return []
+
+    fontsize = max(int(height * 0.016), min(_fit_marquee_fontsize(l, lang, height, width) for l in lines))
+    font = _get_font(fontsize, lang)
+    scratch_draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+
     fg_hex = "0x%02x%02x%02x" % colors["fg"]
-    y = height - int(height * 0.11)
-    speed = max(60, int(width * 0.16))  # px/sec -- a comfortable news-ticker reading pace
+    speed = max(220, int(width * 0.34))  # AJ: "滾快D" -- roughly 2x the old pace
     end = start + dur
-    fontsize = _fit_marquee_fontsize(text, lang, height, width)
+    n = len(lines)
+    line_spacing = int(height * 0.05)
+    bottom_y = height - int(height * 0.10)
 
     def esc_path(p: str) -> str:
         return p.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
 
-    text_path = os.path.join(workdir, f"marquee_{idx}.txt")
-    with open(text_path, "w", encoding="utf-8") as f:
-        f.write(text)
+    filters: List[str] = []
+    local_offset = 0.0
+    for i, line in enumerate(lines):
+        line_w = _text_width(scratch_draw, line, font, fontsize * 0.6)
+        # distance this line has to travel: from fully off-screen right
+        # (x=w) to its centered resting spot (x=(w-text_w)/2).
+        travel = (width + line_w) / 2.0
+        arrival = travel / speed
+        line_start = start + local_offset
+        y = bottom_y - (n - 1 - i) * line_spacing
 
-    return [
-        "drawtext="
-        f"fontfile='{esc_path(font_path)}':"
-        f"textfile='{esc_path(text_path)}':"
-        f"fontcolor={fg_hex}:fontsize={fontsize}:"
-        f"x='w-mod((t-{start:.3f})*{speed},w+text_w)':y={y}:"
-        f"enable='between(t,{start:.3f},{end:.3f})'"
-    ]
+        text_path = os.path.join(workdir, f"marquee_{idx}_{i}.txt")
+        with open(text_path, "w", encoding="utf-8") as f:
+            f.write(line)
+
+        filters.append(
+            "drawtext="
+            f"fontfile='{esc_path(font_path)}':"
+            f"textfile='{esc_path(text_path)}':"
+            f"fontcolor={fg_hex}:fontsize={fontsize}:"
+            f"x='max((w-text_w)/2,w-(t-{line_start:.3f})*{speed})':y={y}:"
+            f"enable='between(t,{line_start:.3f},{end:.3f})'"
+        )
+        # next line starts moving only once this one has arrived and
+        # settled -- a short 0.12s gap keeps the cascade from feeling
+        # instantaneous/robotic.
+        local_offset += arrival + 0.12
+
+    return filters
 
 
 def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, aspect_ratio: str,
@@ -1083,11 +1187,12 @@ def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, 
             capture_output=True, timeout=120, check=True,
         )
 
-        # 2026-08-13 (AJ: scrolling 1-line marquee caption instead of the
-        # old static burned-in text -- see _marquee_filters() above):
-        # only the "signal"/"chart" slide kinds (the real K-line/technical
-        # slides) get this overlay, timed to each slide's own window on
-        # the FINAL assembled video's cumulative timeline.
+        # 2026-08-13 (AJ: faster sequential 2/3-line marquee caption that
+        # reveals line-by-line then holds -- see _marquee_filters()
+        # above): only the "signal"/"chart" slide kinds (the real
+        # K-line/technical slides) get this overlay, timed to each
+        # slide's own window on the FINAL assembled video's cumulative
+        # timeline.
         marquee_filters = []
         cum_start = 0.0
         for i, ((kind, _s), dur) in enumerate(zip(slides, durations)):
