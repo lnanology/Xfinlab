@@ -964,31 +964,6 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
     return result
 
 
-def _split_two_lines(text: str) -> "tuple[str, str]":
-    """2026-08-13 (AJ: "分2行輸出" -- the new scrolling marquee caption is
-    laid out as 2 lines, not the old static caption's up-to-3-line wrap):
-    splits one narration sentence into two roughly-equal-length halves at
-    the word-space boundary nearest the midpoint. Falls back to a hard
-    character split at the midpoint if the text has no spaces at all
-    (true of some CJK sentences, which don't use inter-word whitespace) --
-    still produces two non-empty halves rather than crashing or leaving
-    line 2 empty."""
-    text = (text or "").strip()
-    if not text:
-        return "", ""
-    mid = len(text) // 2
-    if " " in text:
-        best_i, best_dist = None, None
-        for i, ch in enumerate(text):
-            if ch == " ":
-                d = abs(i - mid)
-                if best_dist is None or d < best_dist:
-                    best_dist, best_i = d, i
-        if best_i is not None:
-            return text[:best_i].strip(), text[best_i:].strip()
-    return text[:mid].strip(), text[mid:].strip()
-
-
 def _fit_marquee_fontsize(text: str, lang: str, height: int, width: int) -> int:
     """2026-08-13 ("不同語言自動調整" -- auto-adjust the marquee caption per
     language): a fixed pixel fontsize renders very differently wide
@@ -1013,29 +988,30 @@ def _fit_marquee_fontsize(text: str, lang: str, height: int, width: int) -> int:
 
 def _marquee_filters(text: str, lang: str, width: int, height: int, colors: dict,
                       start: float, dur: float, workdir: str, idx: int) -> List[str]:
-    """2026-08-13 (AJ: "字穿過屏幕右邊，分2行輸出，不同語言自動調整" --
-    replaces the old static burned-in caption on "signal"/"chart" slides
-    with a real scrolling marquee): builds up to 2 ffmpeg drawtext filter
-    strings that scroll `text` (split into 2 lines via _split_two_lines())
+    """2026-08-13 (AJ: "字穿過屏幕右邊...不同語言自動調整" for the scroll,
+    then "一行去行夠了" -- one line is enough, downgraded from an initial
+    2-line layout): replaces the old static burned-in caption on
+    "signal"/"chart" slides with a real scrolling marquee -- builds a
+    single ffmpeg drawtext filter that scrolls the full narration `text`
     right-to-left across the caption band, active only during this
     slide's own [start, start+dur] window on the FINAL assembled video's
     timeline (see the cumulative-start-time loop in
     _render_video_pipeline() below).
 
-    Each line's text is written to its own UTF-8 textfile= on disk rather
-    than embedded directly in the filter string via text=. This isn't
-    stylistic -- ffmpeg's filtergraph syntax treats `:`, `,`, `'`, `\\`,
-    `[`, `]` as structural, and this module supports 16 languages
-    including CJK/Arabic/Devanagari/Bengali script text that can't be
-    reliably escaped inline; textfile= sidesteps that whole class of bug
-    by handing ffmpeg a plain file to read instead.
+    The text is written to a UTF-8 textfile= on disk rather than embedded
+    directly in the filter string via text=. This isn't stylistic --
+    ffmpeg's filtergraph syntax treats `:`, `,`, `'`, `\\`, `[`, `]` as
+    structural, and this module supports 16 languages including CJK/
+    Arabic/Devanagari/Bengali script text that can't be reliably escaped
+    inline; textfile= sidesteps that whole class of bug by handing ffmpeg
+    a plain file to read instead.
 
-    Returns an empty list (never raises) if the text is empty after
-    splitting, so a slide with a blank/whitespace-only line just gets no
-    overlay instead of a broken filter -- same "never hard-fail the whole
-    render over an optional visual" posture as the rest of this module."""
-    line1, line2 = _split_two_lines(text)
-    if not line1 and not line2:
+    Returns an empty list (never raises) if the text is blank, so a slide
+    with an empty line just gets no overlay instead of a broken filter --
+    same "never hard-fail the whole render over an optional visual"
+    posture as the rest of this module."""
+    text = (text or "").strip()
+    if not text:
         return []
 
     font_path = _resolve_font_path(lang) or next((p for p in _FONT_CANDIDATES if os.path.exists(p)), None)
@@ -1043,32 +1019,26 @@ def _marquee_filters(text: str, lang: str, width: int, height: int, colors: dict
         return []  # no usable font on this host -- skip the overlay rather than crash ffmpeg
 
     fg_hex = "0x%02x%02x%02x" % colors["fg"]
-    cap_y = height - int(height * 0.145)
-    line_gap = int(height * 0.036)
+    y = height - int(height * 0.11)
     speed = max(60, int(width * 0.16))  # px/sec -- a comfortable news-ticker reading pace
     end = start + dur
+    fontsize = _fit_marquee_fontsize(text, lang, height, width)
 
     def esc_path(p: str) -> str:
         return p.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
 
-    filters = []
-    for i, line in enumerate((line1, line2)):
-        if not line:
-            continue
-        fontsize = _fit_marquee_fontsize(line, lang, height, width)
-        text_path = os.path.join(workdir, f"marquee_{idx}_{i}.txt")
-        with open(text_path, "w", encoding="utf-8") as f:
-            f.write(line)
-        y = cap_y + i * line_gap
-        filters.append(
-            "drawtext="
-            f"fontfile='{esc_path(font_path)}':"
-            f"textfile='{esc_path(text_path)}':"
-            f"fontcolor={fg_hex}:fontsize={fontsize}:"
-            f"x='w-mod((t-{start:.3f})*{speed},w+text_w)':y={y}:"
-            f"enable='between(t,{start:.3f},{end:.3f})'"
-        )
-    return filters
+    text_path = os.path.join(workdir, f"marquee_{idx}.txt")
+    with open(text_path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+    return [
+        "drawtext="
+        f"fontfile='{esc_path(font_path)}':"
+        f"textfile='{esc_path(text_path)}':"
+        f"fontcolor={fg_hex}:fontsize={fontsize}:"
+        f"x='w-mod((t-{start:.3f})*{speed},w+text_w)':y={y}:"
+        f"enable='between(t,{start:.3f},{end:.3f})'"
+    ]
 
 
 def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, aspect_ratio: str,
@@ -1113,7 +1083,7 @@ def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, 
             capture_output=True, timeout=120, check=True,
         )
 
-        # 2026-08-13 (AJ: scrolling 2-line marquee caption instead of the
+        # 2026-08-13 (AJ: scrolling 1-line marquee caption instead of the
         # old static burned-in text -- see _marquee_filters() above):
         # only the "signal"/"chart" slide kinds (the real K-line/technical
         # slides) get this overlay, timed to each slide's own window on
