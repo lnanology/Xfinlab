@@ -449,18 +449,31 @@ def _find_script_font(lang: str) -> Optional[str]:
     return sorted(bold or matches)[0]
 
 
-def _get_font(size: int, lang: Optional[str] = None) -> ImageFont.FreeTypeFont:
-    size = max(int(size), 8)
+def _resolve_font_path(lang: Optional[str] = None) -> Optional[str]:
+    """2026-08-13: font-path resolution factored out of _get_font() below
+    so the new ffmpeg drawtext-based marquee captions (_marquee_filters(),
+    which need a real fontfile= path on disk, not a PIL ImageFont object)
+    can reuse the exact same script-aware selection logic instead of
+    duplicating it -- same candidates list, same CJK/Arabic/Devanagari/
+    Bengali script-font lookup via _find_script_font()."""
     candidates = list(_FONT_CANDIDATES)
     script_font = _find_script_font(lang) if lang else None
     if script_font:
         candidates = [script_font] + candidates
     for path in candidates:
         if os.path.exists(path):
-            try:
-                return ImageFont.truetype(path, size, index=0)
-            except Exception:
-                pass
+            return path
+    return None
+
+
+def _get_font(size: int, lang: Optional[str] = None) -> ImageFont.FreeTypeFont:
+    size = max(int(size), 8)
+    path = _resolve_font_path(lang)
+    if path:
+        try:
+            return ImageFont.truetype(path, size, index=0)
+        except Exception:
+            pass
     return ImageFont.load_default()
 
 
@@ -692,12 +705,18 @@ def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: st
         candles = (signal or {}).get("_candles") or []
         candle_bottom = height - int(height * 0.2)
         if candles and candle_bottom > y:
-            _draw_candles(draw, candles, x0=pad_x, y0=y, w=width - 2 * pad_x, h=candle_bottom - y, colors=colors)
+            _draw_candles(draw, candles, x0=pad_x, y0=y, w=width - 2 * pad_x, h=candle_bottom - y,
+                          colors=colors, lang=lang, sr=(signal or {}).get("_sr"))
 
-        cap_y = height - int(height * 0.145)
-        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 24))[:3]):
-            draw.text((pad_x, cap_y + i * int(height * 0.025)), line,
-                      font=_get_font(int(height * 0.021), lang), fill=colors["fg"])
+        # 2026-08-13: the spoken-line caption used to be burned into this
+        # PNG as static wrapped text right here. It's now a real scrolling
+        # marquee instead (2 lines, right-to-left, per-language font
+        # sizing) composited on top of the assembled video by ffmpeg's
+        # drawtext filter -- see _marquee_filters() and
+        # _render_video_pipeline() below. The blank space below the
+        # candlestick chart (candle_bottom's 0.2*height reserve) is left
+        # here on purpose so the overlay has room to sit in the same spot
+        # the static caption used to occupy.
     else:  # "signal"
         direction = _normalize_direction(signal.get("confluence_direction"))
         color = colors["green"] if direction == "bullish" else (colors["red"] if direction == "bearish" else colors["muted"])
@@ -723,16 +742,16 @@ def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: st
         candles = signal.get("_candles") or []
         candle_bottom = height - int(height * 0.2)
         if candles and candle_bottom > y:
-            _draw_candles(draw, candles, x0=pad_x, y0=y, w=width - 2 * pad_x, h=candle_bottom - y, colors=colors)
+            _draw_candles(draw, candles, x0=pad_x, y0=y, w=width - 2 * pad_x, h=candle_bottom - y,
+                          colors=colors, lang=lang, sr=signal.get("_sr"))
 
-        # Burned-in caption of the actual spoken sentence -- lets silent/
-        # muted autoplay viewers (the default on most social feeds)
-        # follow along without sound. Skipped on intro/outro slides
-        # since their main on-screen text already IS the caption.
-        cap_y = height - int(height * 0.145)
-        for i, line in enumerate(textwrap.wrap(caption_text, width=max(10, width // 24))[:3]):
-            draw.text((pad_x, cap_y + i * int(height * 0.025)), line,
-                      font=_get_font(int(height * 0.021), lang), fill=colors["fg"])
+        # 2026-08-13: same change as the "chart" branch above -- the
+        # spoken-line caption is now a scrolling ffmpeg-drawtext marquee
+        # composited afterward, not burned into this PNG. See
+        # _marquee_filters() / _render_video_pipeline() below. Lets
+        # silent/muted autoplay viewers (the default on most social
+        # feeds) still follow along without sound, same reason the old
+        # static caption existed -- just animated now instead of static.
 
     # Disclaimer footer on every slide -- same standing site-wide rule
     # (see risk-warning.html / every AI-analysis page) that any signal-
@@ -747,7 +766,8 @@ def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: st
     return img
 
 
-def _draw_candles(draw: ImageDraw.ImageDraw, candles: List[dict], x0: int, y0: int, w: int, h: int, colors: dict):
+def _draw_candles(draw: ImageDraw.ImageDraw, candles: List[dict], x0: int, y0: int, w: int, h: int,
+                   colors: dict, lang: Optional[str] = None, sr: Optional[dict] = None):
     if not candles or h <= 0:
         return
     highs = [c["high"] for c in candles]
@@ -772,6 +792,40 @@ def _draw_candles(draw: ImageDraw.ImageDraw, candles: List[dict], x0: int, y0: i
         bot_y = y_for(min(c["open"], c["close"]))
         draw.rectangle([cx - body_w / 2, top_y, cx + body_w / 2, max(bot_y, top_y + 2)], fill=color)
 
+    # 2026-08-13 (AJ: "K線圖可劃出說出的支持壓力位嗎？把技術分析圖示化"):
+    # real support/resistance overlay, sourced from
+    # _fetch_support_resistance() below -- which reuses
+    # TechnicalAnalysisService._support_resistance()'s existing real
+    # swing-point clustering, the SAME method chart-analysis.html's own
+    # support/resistance display uses, not an AI guess narrated into
+    # existence. `sr` is None whenever that fetch failed/had nothing
+    # (see that function's docstring) or the caller never had a ticker to
+    # look one up for -- in either case this silently draws nothing extra
+    # and the chart is just the plain candlesticks, same anti-fabrication
+    # discipline as the rest of this module: no line unless the number
+    # is real. A level is also skipped if it falls outside this specific
+    # chart's visible price range (drawing a line off-canvas or implying
+    # a level "just above/below" the visible window would be misleading).
+    if sr:
+        dash_w, gap_w = 10, 6
+        for key, color_key in (("support", "green"), ("resistance", "red")):
+            level_data = sr.get(key)
+            if not level_data:
+                continue
+            level = level_data.get("level")
+            if level is None or not (bottom <= level <= top):
+                continue
+            ly = y_for(level)
+            color = colors[color_key]
+            x = x0
+            while x < x0 + w:
+                draw.line([(x, ly), (min(x + dash_w, x0 + w), ly)], fill=color, width=2)
+                x += dash_w + gap_w
+            label = f"{level:g}"
+            label_font = _get_font(max(10, int(h * 0.045)), lang)
+            label_w = _text_width(draw, label, label_font, h * 0.03)
+            draw.text((x0 + w - label_w, ly - int(h * 0.05)), label, font=label_font, fill=color)
+
 
 def _fetch_candles(ticker: str, limit: int = 20) -> List[dict]:
     try:
@@ -788,6 +842,36 @@ def _fetch_candles(ticker: str, limit: int = 20) -> List[dict]:
         ]
     except Exception:
         return []
+
+
+def _fetch_support_resistance(ticker: str) -> Optional[dict]:
+    """2026-08-13: real support/resistance levels for the video's K-line
+    overlay -- calls technical_analysis_service.get_technical_analysis(),
+    which internally runs TechnicalAnalysisService._support_resistance()'s
+    real swing-point clustering over actual OHLC history (the same
+    real-data method chart-analysis.html's own support/resistance display
+    already uses, see task #524's descriptive-support/resistance rewrite).
+    Deliberately a SEPARATE call from _fetch_candles() above rather than
+    threading extra return values through it -- keeps each helper doing
+    one clearly-named thing, and the extra fetch is a rounding error
+    against this pipeline's already-1-2-minute TTS+ffmpeg render budget.
+    Returns None on ANY failure (insufficient history, fetch error,
+    neither level found) -- caller (_draw_candles) must then render the
+    plain candlestick chart with no lines, never a guessed/AI-narrated
+    level standing in for a real one."""
+    try:
+        from services.technical_analysis_service import get_technical_analysis
+
+        tech = get_technical_analysis(ticker, period="6mo", interval="1d")
+        if not tech or "error" in tech:
+            return None
+        support = tech.get("support")
+        resistance = tech.get("resistance")
+        if not support and not resistance:
+            return None
+        return {"support": support, "resistance": resistance}
+    except Exception:
+        return None
 
 
 def _ffprobe_duration(path: str) -> float:
@@ -837,6 +921,7 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
 
     for s in signals:
         s["_candles"] = _fetch_candles(s["ticker"])
+        s["_sr"] = _fetch_support_resistance(s["ticker"])
 
     slides = [("intro", None)] + [("signal", s) for s in signals] + [("outro", None)]
 
@@ -877,6 +962,113 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
         result["theme"] = theme
         result["used_ai_script"] = used_ai_script
     return result
+
+
+def _split_two_lines(text: str) -> "tuple[str, str]":
+    """2026-08-13 (AJ: "分2行輸出" -- the new scrolling marquee caption is
+    laid out as 2 lines, not the old static caption's up-to-3-line wrap):
+    splits one narration sentence into two roughly-equal-length halves at
+    the word-space boundary nearest the midpoint. Falls back to a hard
+    character split at the midpoint if the text has no spaces at all
+    (true of some CJK sentences, which don't use inter-word whitespace) --
+    still produces two non-empty halves rather than crashing or leaving
+    line 2 empty."""
+    text = (text or "").strip()
+    if not text:
+        return "", ""
+    mid = len(text) // 2
+    if " " in text:
+        best_i, best_dist = None, None
+        for i, ch in enumerate(text):
+            if ch == " ":
+                d = abs(i - mid)
+                if best_dist is None or d < best_dist:
+                    best_dist, best_i = d, i
+        if best_i is not None:
+            return text[:best_i].strip(), text[best_i:].strip()
+    return text[:mid].strip(), text[mid:].strip()
+
+
+def _fit_marquee_fontsize(text: str, lang: str, height: int, width: int) -> int:
+    """2026-08-13 ("不同語言自動調整" -- auto-adjust the marquee caption per
+    language): a fixed pixel fontsize renders very differently wide
+    depending on script (CJK/Arabic glyphs are typically wider per
+    character than Latin at the same point size), which would make some
+    languages' scroll pass take far longer than others at a shared speed.
+    Measures this specific line's actual rendered width with the real
+    script-aware font (_get_font already picks the right glyph set per
+    lang) and scales the fontsize down -- never up, to avoid an
+    already-short line ballooning to an oversized single word -- if it
+    would render wider than a reasonable multiple of the screen width."""
+    base = int(height * 0.026)
+    floor = int(height * 0.016)
+    font = _get_font(base, lang)
+    scratch_draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    line_w = _text_width(scratch_draw, text, font, base * 0.6)
+    max_w = width * 2.6
+    if line_w > max_w > 0:
+        return max(floor, int(base * (max_w / line_w)))
+    return base
+
+
+def _marquee_filters(text: str, lang: str, width: int, height: int, colors: dict,
+                      start: float, dur: float, workdir: str, idx: int) -> List[str]:
+    """2026-08-13 (AJ: "字穿過屏幕右邊，分2行輸出，不同語言自動調整" --
+    replaces the old static burned-in caption on "signal"/"chart" slides
+    with a real scrolling marquee): builds up to 2 ffmpeg drawtext filter
+    strings that scroll `text` (split into 2 lines via _split_two_lines())
+    right-to-left across the caption band, active only during this
+    slide's own [start, start+dur] window on the FINAL assembled video's
+    timeline (see the cumulative-start-time loop in
+    _render_video_pipeline() below).
+
+    Each line's text is written to its own UTF-8 textfile= on disk rather
+    than embedded directly in the filter string via text=. This isn't
+    stylistic -- ffmpeg's filtergraph syntax treats `:`, `,`, `'`, `\\`,
+    `[`, `]` as structural, and this module supports 16 languages
+    including CJK/Arabic/Devanagari/Bengali script text that can't be
+    reliably escaped inline; textfile= sidesteps that whole class of bug
+    by handing ffmpeg a plain file to read instead.
+
+    Returns an empty list (never raises) if the text is empty after
+    splitting, so a slide with a blank/whitespace-only line just gets no
+    overlay instead of a broken filter -- same "never hard-fail the whole
+    render over an optional visual" posture as the rest of this module."""
+    line1, line2 = _split_two_lines(text)
+    if not line1 and not line2:
+        return []
+
+    font_path = _resolve_font_path(lang) or next((p for p in _FONT_CANDIDATES if os.path.exists(p)), None)
+    if not font_path:
+        return []  # no usable font on this host -- skip the overlay rather than crash ffmpeg
+
+    fg_hex = "0x%02x%02x%02x" % colors["fg"]
+    cap_y = height - int(height * 0.145)
+    line_gap = int(height * 0.036)
+    speed = max(60, int(width * 0.16))  # px/sec -- a comfortable news-ticker reading pace
+    end = start + dur
+
+    def esc_path(p: str) -> str:
+        return p.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+
+    filters = []
+    for i, line in enumerate((line1, line2)):
+        if not line:
+            continue
+        fontsize = _fit_marquee_fontsize(line, lang, height, width)
+        text_path = os.path.join(workdir, f"marquee_{idx}_{i}.txt")
+        with open(text_path, "w", encoding="utf-8") as f:
+            f.write(line)
+        y = cap_y + i * line_gap
+        filters.append(
+            "drawtext="
+            f"fontfile='{esc_path(font_path)}':"
+            f"textfile='{esc_path(text_path)}':"
+            f"fontcolor={fg_hex}:fontsize={fontsize}:"
+            f"x='w-mod((t-{start:.3f})*{speed},w+text_w)':y={y}:"
+            f"enable='between(t,{start:.3f},{end:.3f})'"
+        )
+    return filters
 
 
 def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, aspect_ratio: str,
@@ -921,6 +1113,20 @@ def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, 
             capture_output=True, timeout=120, check=True,
         )
 
+        # 2026-08-13 (AJ: scrolling 2-line marquee caption instead of the
+        # old static burned-in text -- see _marquee_filters() above):
+        # only the "signal"/"chart" slide kinds (the real K-line/technical
+        # slides) get this overlay, timed to each slide's own window on
+        # the FINAL assembled video's cumulative timeline.
+        marquee_filters = []
+        cum_start = 0.0
+        for i, ((kind, _s), dur) in enumerate(zip(slides, durations)):
+            if kind in ("signal", "chart"):
+                marquee_filters += _marquee_filters(
+                    narration_texts[i], lang, width, height, colors, cum_start, dur, workdir, i
+                )
+            cum_start += dur
+
         narration_path = os.path.join(workdir, "narration.mp3")
         concat_inputs = []
         for p in audio_paths:
@@ -934,11 +1140,43 @@ def _render_video_pipeline(slides: list, narration_texts: List[str], lang: str, 
 
         os.makedirs(_OUTPUT_DIR, exist_ok=True)
         final_path = os.path.join(_OUTPUT_DIR, _OUTPUT_FILENAME)
-        subprocess.run(
-            ["ffmpeg", "-y", "-i", silent_video_path, "-i", narration_path,
-             "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest", final_path],
-            capture_output=True, timeout=60, check=True,
-        )
+        if marquee_filters:
+            # Compositing text requires re-encoding the video stream --
+            # can't use the "-c:v copy" fast path below once drawtext is
+            # in play, hence the longer timeout than the no-marquee branch.
+            #
+            # "fps=25," prefix is load-bearing, not decorative: the concat
+            # demuxer above was built with -vsync vfr, which for a still
+            # image held across its whole slide duration collapses that
+            # slide down to a SINGLE encoded frame (verified directly --
+            # a 3-second still slide produces exactly 1 frame in the
+            # container, not ~75). That's fine for a static PNG, but a
+            # time-varying drawtext x-position filter needs the decoder to
+            # actually emit frames spread across the timeline to have
+            # anything to animate between -- without this, ffmpeg's
+            # filtergraph sees one input frame and produces one output
+            # frame total, and the whole marquee silently never appears
+            # (confirmed by an empty test render before this fix: 0 bright
+            # pixels across 6 sampled frames). fps=25 forces the still
+            # frame to be resampled at 25fps through the filter chain so
+            # `t` in _marquee_filters()'s x= expression actually advances.
+            video_filter = "[0:v]fps=25," + ",".join(marquee_filters) + "[vout]"
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", silent_video_path, "-i", narration_path,
+                 "-filter_complex", video_filter, "-map", "[vout]", "-map", "1:a",
+                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k",
+                 "-shortest", final_path],
+                capture_output=True, timeout=180, check=True,
+            )
+        else:
+            # No signal/chart slides in this video (e.g. a custom-topic
+            # video with no detected ticker) -- nothing to overlay, keep
+            # the original fast stream-copy path unchanged.
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", silent_video_path, "-i", narration_path,
+                 "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest", final_path],
+                capture_output=True, timeout=60, check=True,
+            )
 
         total_duration = sum(durations)
         _log_generation("ok", log_note, total_duration, len(slides))
@@ -1106,6 +1344,7 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: 
     # never blocks the video -- a chart is a bonus, not a requirement.
     chart_ticker = None
     chart_candles = []
+    chart_sr = None
     try:
         from services.intent_router_service import classify_ai
         classification = classify_ai(parsed["topic"])
@@ -1115,13 +1354,17 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: 
             candles = _fetch_candles(candidate, limit=20)
             if candles:
                 chart_ticker, chart_candles = candidate, candles
+                chart_sr = _fetch_support_resistance(candidate)
     except Exception:
-        chart_ticker, chart_candles = None, []
+        chart_ticker, chart_candles, chart_sr = None, [], None
 
     body_kinds = ["custom"] * (num_slides - 2)
     if chart_ticker and body_kinds:
         body_kinds[0] = "chart"
-    body_payloads = [{"ticker": chart_ticker, "_candles": chart_candles} if k == "chart" else None for k in body_kinds]
+    body_payloads = [
+        {"ticker": chart_ticker, "_candles": chart_candles, "_sr": chart_sr} if k == "chart" else None
+        for k in body_kinds
+    ]
     slides = [("intro", None)] + list(zip(body_kinds, body_payloads)) + [("outro", None)]
 
     result = _render_video_pipeline(
