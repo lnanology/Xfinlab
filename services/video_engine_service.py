@@ -618,57 +618,93 @@ def _text_width(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFo
         return len(text) * fallback_per_char
 
 
+_CJK_CHAR_RE = re.compile(
+    r"[一-鿿㐀-䶿豈-﫿぀-ヿ゠-ヿ가-힯]"
+)
+
+
+def _tokenize_breakable(text: str) -> List[str]:
+    """2026-08-13 (AJ, follow-up after screenshot showed "方法進行股票技術
+    性分析，找出五大共" STILL cut off past the frame edge even after the
+    first _wrap_text_pixel fix): the first fix's word-splitting branch
+    (triggered whenever the text contained ANY space -- which admin-
+    generated narration always does, since AI-written intros mix a bare
+    Latin ticker/acronym like "AAL" with Chinese prose around it) treated
+    an entire run of CJK characters between two spaces as ONE atomic
+    "word". If that whole run was wider than the frame -- routine for a
+    full Chinese sentence -- it still got force-placed on a line
+    (unconditionally, to avoid looping forever on an empty line), so it
+    overflowed exactly like before.
+
+    Fixes this at the tokenizing level instead of patching around it:
+    splits `text` into small pieces such that ''.join(pieces) == text
+    exactly, and it is ALWAYS safe to break a line between any two
+    adjacent pieces -- CJK/Japanese/Korean characters are split one per
+    piece (safe to wrap after any of them), while runs of Latin/digit/
+    punctuation characters and runs of whitespace are each kept as a
+    single piece (so "XFINLAB" or "AAL" never gets torn mid-word, and a
+    run of spaces collapses into one breakable gap). Both
+    _wrap_text_pixel() and _split_lines() below build on this so neither
+    can reproduce this bug."""
+    if not text:
+        return []
+    pieces: List[str] = []
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        if ch.isspace():
+            j = i
+            while j < n and text[j].isspace():
+                j += 1
+            pieces.append(text[i:j])
+            i = j
+        elif _CJK_CHAR_RE.match(ch):
+            pieces.append(ch)
+            i += 1
+        else:
+            j = i
+            while j < n and not text[j].isspace() and not _CJK_CHAR_RE.match(text[j]):
+                j += 1
+            pieces.append(text[i:j])
+            i = j
+    return pieces
+
+
 def _wrap_text_pixel(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, max_w: float) -> List[str]:
     """2026-08-13 (AJ: "圖中字幕顯示穿出屏幕右邊，要分2行顯示" -- caption text
     was poking off the right edge of the frame): the intro/outro/custom
     slides used to wrap with textwrap.wrap(text, width=N), which counts
-    N as a CHARACTER count, not a pixel width. That's a reasonable proxy
-    for Latin text but badly wrong for CJK -- a Chinese glyph at this
-    module's fontsizes renders roughly 2x as wide as the average Latin
-    character the N divisor was tuned for, so a "safe" 26-char line of
-    Chinese text ends up rendering far wider than the frame and gets cut
-    off past the right edge (exactly what the screenshot showed). This
-    measures each candidate line's REAL rendered width with the actual
-    font in use (same approach the marquee helpers above already use)
-    and only breaks once it would actually overflow max_w, so it wraps
-    correctly regardless of script. Falls back to a hard character-count
-    split for scripts with no spaces (CJK/Thai/etc.), same as
-    _split_lines() above."""
+    N as a CHARACTER count, not a pixel width -- badly wrong for CJK,
+    whose glyphs render roughly 2x as wide per character as the divisor
+    assumed, so a "safe" N-char line overflowed the frame. This measures
+    each candidate line's REAL rendered width with the actual font in
+    use and only breaks once it would actually overflow max_w. Walks
+    _tokenize_breakable() pieces rather than raw text.split(" ") words
+    so a long unbroken CJK run next to a bare Latin token (e.g. "AAL
+    分析...") is still breakable character-by-character instead of being
+    force-placed as one oversized unbreakable chunk (see that function's
+    docstring for the exact bug this replaced)."""
     text = (text or "").strip()
     if not text:
         return []
 
     fallback = font.size * 0.6 if hasattr(font, "size") else 20
+    pieces = _tokenize_breakable(text)
 
-    if " " in text:
-        words = text.split(" ")
-        lines: List[str] = []
-        current = ""
-        for w in words:
-            candidate = f"{current} {w}".strip() if current else w
-            if not current or _text_width(draw, candidate, font, fallback) <= max_w:
-                current = candidate
-            else:
-                lines.append(current)
-                current = w
-        if current:
-            lines.append(current)
-        return lines
-
-    # no spaces (CJK/etc.) -- grow the line character by character until
-    # it would overflow, same real-width measurement either way.
-    lines = []
+    lines: List[str] = []
     current = ""
-    for ch in text:
-        candidate = current + ch
-        if not current or _text_width(draw, candidate, font, fallback) <= max_w:
+    for piece in pieces:
+        if not current and piece.strip() == "":
+            continue  # never start a wrapped line with a leading space
+        candidate = current + piece
+        if not current.strip() or _text_width(draw, candidate, font, fallback) <= max_w:
             current = candidate
         else:
-            lines.append(current)
-            current = ch
-    if current:
-        lines.append(current)
-    return lines
+            lines.append(current.strip())
+            current = piece
+    if current.strip():
+        lines.append(current.strip())
+    return [l for l in lines if l]
 
 
 def _render_slide(kind: str, signal: Optional[dict], lang: str, caption_text: str,
@@ -1064,52 +1100,53 @@ def _line_fits_at_floor(text: str, lang: str, width: int, height: int) -> bool:
 
 def _split_lines(text: str, n: int) -> List[str]:
     """2026-08-13 (AJ: "分2行順滾...太長，再長自動分3行" -- split into 2
-    lines, auto-escalating to 3 if a line is still too long): generalized
-    version of the original 2-line-only splitter. Distributes `text` into
-    `n` roughly equal-length segments, snapping to the nearest word-space
-    boundary so words aren't torn in half. Falls back to a hard
-    character-count split for CJK/Thai/etc. text that has no spaces at
-    all (word-boundary splitting is meaningless there)."""
+    lines, auto-escalating to 3 if a line is still too long): distributes
+    `text` into `n` roughly equal-length segments.
+
+    2026-08-13 (later same day, same root cause as _wrap_text_pixel()'s
+    fix above): originally split on raw text.split(" ") "words" whenever
+    the text contained any space -- but admin narration mixing a bare
+    Latin ticker with Chinese prose (no internal spaces) meant a whole
+    CJK sentence could be treated as one atomic, unsplittable "word",
+    landing entirely on a single line regardless of `n`. Now walks
+    _tokenize_breakable() pieces instead, so a CJK run is always
+    breakable character-by-character even next to Latin tokens, while
+    Latin words themselves still stay intact."""
     text = (text or "").strip()
     if n <= 1 or not text:
         return [text] if text else []
 
-    if " " in text:
-        words = text.split(" ")
-        target = len(text) / n
-        lines: List[str] = []
-        current: List[str] = []
-        current_len = 0
-        for w in words:
-            if current and current_len + len(w) + 1 > target and len(lines) < n - 1:
-                lines.append(" ".join(current))
-                current = [w]
-                current_len = len(w)
-            else:
-                current.append(w)
-                current_len += len(w) + 1
-        if current:
-            lines.append(" ".join(current))
-        # very few words relative to n can under-produce lines -- pad by
-        # repeatedly halving the longest remaining line at a space.
-        while len(lines) < n:
-            idx = max(range(len(lines)), key=lambda i: len(lines[i]))
-            seg = lines[idx]
-            if " " not in seg:
-                break
-            mid = len(seg) // 2
-            sp = seg.rfind(" ", 0, mid)
-            if sp == -1:
-                sp = seg.find(" ", mid)
-            if sp == -1:
-                break
-            lines[idx:idx + 1] = [seg[:sp].strip(), seg[sp:].strip()]
-        return [l for l in lines if l]
+    pieces = _tokenize_breakable(text)
+    target = len(text) / n
+    lines: List[str] = []
+    current = ""
+    current_len = 0
+    for piece in pieces:
+        if current and current_len + len(piece) > target and len(lines) < n - 1:
+            lines.append(current.strip())
+            current = piece
+            current_len = len(piece)
+        else:
+            current += piece
+            current_len += len(piece)
+    if current.strip():
+        lines.append(current.strip())
 
-    # no spaces (CJK/etc.) -- hard split by character count.
-    length = len(text)
-    step = -(-length // n)  # ceil division
-    return [text[i:i + step] for i in range(0, length, step) if text[i:i + step]]
+    # very short input relative to n can under-produce lines -- pad by
+    # repeatedly halving the longest remaining line at a piece boundary.
+    while len(lines) < n:
+        idx = max(range(len(lines)), key=lambda i: len(lines[i]))
+        seg_pieces = _tokenize_breakable(lines[idx])
+        if len(seg_pieces) < 2:
+            break
+        mid = len(seg_pieces) // 2
+        left = "".join(seg_pieces[:mid]).strip()
+        right = "".join(seg_pieces[mid:]).strip()
+        if not left or not right:
+            break
+        lines[idx:idx + 1] = [left, right]
+
+    return [l for l in lines if l]
 
 
 def _marquee_filters(text: str, lang: str, width: int, height: int, colors: dict,
