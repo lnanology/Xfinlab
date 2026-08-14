@@ -77,6 +77,15 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 .copy-btn:hover{color:var(--accent-blue);border-color:var(--accent-blue)}
 .copy-btn.copied{color:var(--accent-green);border-color:var(--accent-green)}
 
+/* 2026-08-14 quickstart step layout (task #828) */
+.qs-steps{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.qs-step{display:flex;gap:16px}
+.qs-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--accent-blue);color:#fff;font-weight:700;font-size:0.85rem;display:flex;align-items:center;justify-content:center}
+.qs-body{flex:1;min-width:0}
+.qs-step-title{font-weight:700;font-size:0.95rem;margin-bottom:4px}
+.qs-step-desc{font-size:0.83rem;color:var(--text-secondary);line-height:1.5;margin-bottom:10px}
+.qs-step .code-block{margin-top:2px}
+
 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media (max-width:820px){.plans{grid-template-columns:1fr}}
 .plan{background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:24px;display:flex;flex-direction:column}
@@ -125,12 +134,59 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
     <h1>Real market intelligence, structured for developers</h1>
     <p>Six JSON endpoints — market events, FinBERT sentiment, multi-agent AI debate, structured intelligence feed, technical/market-structure analysis, and Monte Carlo stress testing — built on the same real data and anti-fabrication principles behind XFINLAB's own product. Free tier keys are issued instantly and automatically; Pro/Enterprise are still set up personally.</p>
     <div class="hero-ctas">
-      <a href="#access" class="btn-primary">Request Early Access</a>
+      <a href="#quickstart" class="btn-primary">Quickstart →</a>
+      <a href="#access" class="btn-ghost">Request Early Access</a>
       <a href="#endpoints" class="btn-ghost">See the endpoints</a>
       <a href="#data-sourcing" class="btn-ghost">Data sourcing</a>
       <a href="#sdks" class="btn-ghost">SDKs</a>
       <a href="#mcp" class="btn-ghost">MCP Server</a>
     </div>
+  </div>
+
+  <!-- 2026-08-14 (AJ: "重寫Developer Docs做quickstart風格" -- task #828).
+       Stripe/Twilio-pattern quickstart: key -> code -> result, in that
+       order, sitting above the full endpoint catalog rather than
+       replacing it. Deliberately reuses .sdk-card/.code-block/.copy-btn
+       styling and copyCode() already defined for the #sdks section below
+       -- no new JS logic, no page rebuild. -->
+  <div class="section" id="quickstart">
+    <div class="section-title">Quickstart</div>
+    <div class="section-sub">Three steps, no signup wait for the free tier.</div>
+    <div class="qs-steps">
+      <div class="qs-step">
+        <div class="qs-num">1</div>
+        <div class="qs-body">
+          <div class="qs-step-title">Get a free API key</div>
+          <div class="qs-step-desc">Issued instantly and automatically — <a href="#access">request one below</a>, no waiting on a human.</div>
+        </div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">2</div>
+        <div class="qs-body">
+          <div class="qs-step-title">Make your first call</div>
+          <div class="qs-step-desc">One endpoint, one header. Swap in your own key and ticker.</div>
+          <div class="code-block"><button class="copy-btn" onclick="copyCode('qsCurl',this)">Copy</button><span id="qsCurl">curl -H "X-API-Key: xfl_..." \
+  "https://api.xfinlab.com/api/intelligence/v1/sentiment?ticker=AAPL"</span></div>
+        </div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">3</div>
+        <div class="qs-body">
+          <div class="qs-step-title">See a real result</div>
+          <div class="qs-step-desc">Trimmed example — your actual response includes per-headline sentiment too.</div>
+          <div class="code-block"><span>{
+  "success": true,
+  "data": {
+    "ticker": "AAPL",
+    "aggregate_sentiment": "neutral",
+    "aggregate_score": 0.04,
+    "headline_count": 8
+  }
+}</span></div>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:18px;font-size:0.83rem;color:var(--text-muted)">Prefer Python or Node? Skip to the <a href="#sdks">official SDKs</a> — same endpoint, one method call.</p>
   </div>
 
   <div class="section" id="endpoints">
