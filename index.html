@@ -241,6 +241,19 @@
 
   /* Hero Live AI Result card -- real data via /api/hero-showcase, not mockup */
   .ai-result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 26px 28px; }
+
+  /* 2026-08-14 (AJ: "首頁加Learn/Research/Build三分流" -- task #827).
+     Deliberately lightweight: 3 link cards, no new nav structure, no
+     rebuild of the existing minimal topbar. Reuses this page's existing
+     --surface/--border/--accent variables so it feels native. */
+  .entry-fork { max-width:900px; margin:0 auto; padding:0 20px 8px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:700px) { .entry-fork { grid-template-columns:1fr; } }
+  .entry-fork-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; text-decoration:none; color:var(--text); transition:border-color .2s, transform .2s; display:block; }
+  .entry-fork-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .entry-fork-icon { width:32px; height:32px; border-radius:9px; background:rgba(var(--accent-rgb),0.1); color:var(--accent); display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+  .entry-fork-icon svg { width:17px; height:17px; }
+  .entry-fork-title { font-weight:700; font-size:0.95rem; margin-bottom:4px; }
+  .entry-fork-desc { font-size:0.78rem; color:var(--muted); line-height:1.4; }
   .ai-result-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .ai-result-label { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   .ai-result-ticker { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: #fff; }
@@ -801,6 +814,30 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- 2026-08-14 (AJ: "首頁加Learn/Research/Build三分流" -- task #827, part of
+     the 4-item low-cost/high-leverage batch AJ approved). 3 link cards
+     only, routing to real existing pages -- no new IA, no nav rebuild:
+     Learn -> formula-engine.html (public, no-login formula catalog),
+     Research -> dashboard.html (the actual product), Build ->
+     intelligence-api.html (API/MCP/SDKs, now fully documented). -->
+<div class="entry-fork" data-reveal>
+  <a href="formula-engine.html" class="entry-fork-card">
+    <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+    <div class="entry-fork-title" data-i18n="entryfork_learn_title">Learn</div>
+    <div class="entry-fork-desc" data-i18n="entryfork_learn_desc">70+ free finance formulas, explained</div>
+  </a>
+  <a href="dashboard.html" class="entry-fork-card">
+    <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+    <div class="entry-fork-title" data-i18n="entryfork_research_title">Research</div>
+    <div class="entry-fork-desc" data-i18n="entryfork_research_desc">11 AI engines, real data, free to start</div>
+  </a>
+  <a href="intelligence-api.html" class="entry-fork-card">
+    <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4 3 12l5 8M16 4l5 8-5 8M13 3l-2 18"/></svg></div>
+    <div class="entry-fork-title" data-i18n="entryfork_build_title">Build</div>
+    <div class="entry-fork-desc" data-i18n="entryfork_build_desc">API, MCP server &amp; SDKs for developers</div>
+  </a>
 </div>
 
 <!-- 2026-08-09 (AJ ref-image follow-up: "走馬燈放平台實力上面"): ticker
