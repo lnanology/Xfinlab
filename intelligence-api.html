@@ -129,6 +129,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
       <a href="#endpoints" class="btn-ghost">See the endpoints</a>
       <a href="#data-sourcing" class="btn-ghost">Data sourcing</a>
       <a href="#sdks" class="btn-ghost">SDKs</a>
+      <a href="#mcp" class="btn-ghost">MCP Server</a>
     </div>
   </div>
 
@@ -283,6 +284,57 @@ await client.sentiment('AAPL');</span></div>
     <div style="text-align:center;margin-top:18px">
       <a href="https://github.com/lnanology/Xfinlab/tree/main/sdk" target="_blank" class="btn-ghost">View SDK source on GitHub</a>
     </div>
+  </div>
+
+  <!-- 2026-08-14 (Growth OS follow-up, AJ: "提交MCP Server去marketplace" --
+       task #824): the MCP server itself (api/mcp_server.py) has been live
+       since an earlier session, but was never documented on this public
+       page -- a developer or an MCP directory crawler had no way to
+       discover it existed. This section is that missing documentation,
+       written so it can also serve as the copy-source for mcp.so /
+       Smithery / PulseMCP submissions (see MCP_MARKETPLACE_SUBMISSION.md
+       in the repo root for the ready-to-paste versions of this same
+       content). -->
+  <div class="section" id="mcp">
+    <div class="section-title">MCP Server — for AI agents &amp; Claude</div>
+    <div class="section-sub">The same 6 endpoints above, exposed as Model Context Protocol tools -- so an AI agent (Claude, or any MCP-compatible client) can call them directly instead of you writing the HTTP glue yourself.</div>
+    <div class="sdk-card">
+      <div class="sdk-panel active" style="display:block">
+        <div class="sdk-install"><span>Streamable HTTP endpoint: https://api.xfinlab.com/api/mcp</span></div>
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('mcpConfig',this)">Copy</button><span id="mcpConfig">{
+  "mcpServers": {
+    "xfinlab": {
+      "url": "https://api.xfinlab.com/api/mcp",
+      "headers": { "X-API-Key": "xfl_..." }
+    }
+  }
+}</span></div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:14px 0 6px">Prefer raw JSON-RPC? A GET to the same URL returns a human-readable info page; every tool call is a single stateless POST -- no session handshake beyond the standard MCP <code>initialize</code>.</p>
+      </div>
+    </div>
+    <div class="endpoints" style="margin-top:20px">
+      <div class="ep-card">
+        <span class="ep-tag">get_market_events</span>
+        <div class="ep-desc">Recent market/company headlines, optionally filtered by ticker.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_sentiment</span>
+        <div class="ep-desc">FinBERT sentiment score for a ticker's recent headlines.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_technical_analysis</span>
+        <div class="ep-desc">Confluence direction, trend, MACD, volume, patterns and market-structure signals from real OHLC data.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_intelligence_feed</span>
+        <div class="ep-desc">AI-structured, clustered event intelligence with a narrative summary -- never a directional trading signal or probability estimate.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_global_market_map</span>
+        <div class="ep-desc">Cross-region macro + news + sentiment snapshot across 10 regions (US, Europe, Japan, Korea, China, HK, Taiwan, SE Asia, Middle East, LatAm).</div>
+      </div>
+    </div>
+    <p style="max-width:640px;margin:16px auto 0;font-size:0.83rem;color:var(--text-muted);text-align:center">Auth and quota are identical to the REST API above -- same <code>X-API-Key</code>, same free tier, same weighted daily limit. No separate free ride through MCP.</p>
   </div>
 
   <div class="section">
