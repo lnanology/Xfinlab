@@ -39,6 +39,9 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "ia_roadmap_title": "Roadmap",
+        "ia_roadmap_sub": "What's next — nothing here is a promise of a ship date, just what's actually being considered.",
+        "ia_roadmap_empty": "Nothing queued right now — check back later.",
         "ia_changelog_title": "Changelog",
         "ia_changelog_sub": "What's shipped, chronologically.",
         "ia_changelog_json_link": "View as JSON →",
@@ -1684,6 +1687,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verify Email",
     },
     "es": {
+        "ia_roadmap_title": "Hoja de ruta",
+        "ia_roadmap_sub": "Qué viene a continuación — nada aquí es una promesa de fecha de lanzamiento, solo lo que realmente se está considerando.",
+        "ia_roadmap_empty": "No hay nada en cola ahora mismo — vuelve más tarde.",
         "ia_changelog_title": "Registro de cambios",
         "ia_changelog_sub": "Lo que se ha lanzado, en orden cronológico.",
         "ia_changelog_json_link": "Ver como JSON →",
@@ -3328,6 +3334,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar correo",
     },
     "fr": {
+        "ia_roadmap_title": "Feuille de route",
+        "ia_roadmap_sub": "Ce qui arrive ensuite — rien ici n'est une promesse de date de sortie, juste ce qui est réellement envisagé.",
+        "ia_roadmap_empty": "Rien de prévu pour le moment — revenez plus tard.",
         "ia_changelog_title": "Journal des modifications",
         "ia_changelog_sub": "Ce qui a été publié, par ordre chronologique.",
         "ia_changelog_json_link": "Voir en JSON →",
@@ -4972,6 +4981,9 @@ TRANSLATIONS = {
         "ve_page_name": "Vérifier l'e-mail",
     },
     "de": {
+        "ia_roadmap_title": "Roadmap",
+        "ia_roadmap_sub": "Was als Nächstes kommt — nichts hier ist ein Versprechen für ein Erscheinungsdatum, nur was tatsächlich in Betracht gezogen wird.",
+        "ia_roadmap_empty": "Gerade nichts in der Warteschlange — schau später wieder vorbei.",
         "ia_changelog_title": "Änderungsprotokoll",
         "ia_changelog_sub": "Was veröffentlicht wurde, chronologisch.",
         "ia_changelog_json_link": "Als JSON ansehen →",
@@ -6616,6 +6628,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-Mail bestätigen",
     },
     "it": {
+        "ia_roadmap_title": "Roadmap",
+        "ia_roadmap_sub": "Cosa viene dopo — niente qui è una promessa di data di rilascio, solo ciò che è effettivamente in considerazione.",
+        "ia_roadmap_empty": "Al momento non c'è nulla in coda — ricontrolla più tardi.",
         "ia_changelog_title": "Changelog",
         "ia_changelog_sub": "Cosa è stato rilasciato, in ordine cronologico.",
         "ia_changelog_json_link": "Visualizza come JSON →",
@@ -8260,6 +8275,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifica email",
     },
     "pt": {
+        "ia_roadmap_title": "Roteiro",
+        "ia_roadmap_sub": "O que vem a seguir — nada aqui é uma promessa de data de lançamento, apenas o que está realmente a ser considerado.",
+        "ia_roadmap_empty": "Nada em fila neste momento — volte mais tarde.",
         "ia_changelog_title": "Registo de alterações",
         "ia_changelog_sub": "O que foi lançado, cronologicamente.",
         "ia_changelog_json_link": "Ver como JSON →",
@@ -9904,6 +9922,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar email",
     },
     "ru": {
+        "ia_roadmap_title": "Дорожная карта",
+        "ia_roadmap_sub": "Что дальше — ничто здесь не является обещанием даты выпуска, только то, что реально рассматривается.",
+        "ia_roadmap_empty": "Сейчас ничего не в очереди — загляните позже.",
         "ia_changelog_title": "Журнал изменений",
         "ia_changelog_sub": "Что было выпущено, в хронологическом порядке.",
         "ia_changelog_json_link": "Посмотреть как JSON →",
@@ -11548,6 +11569,9 @@ TRANSLATIONS = {
         "ve_page_name": "Подтверждение почты",
     },
     "nl": {
+        "ia_roadmap_title": "Routekaart",
+        "ia_roadmap_sub": "Wat komt hierna — niets hier is een belofte van een releasedatum, alleen wat daadwerkelijk wordt overwogen.",
+        "ia_roadmap_empty": "Op dit moment niets in de wachtrij — kom later terug.",
         "ia_changelog_title": "Wijzigingslogboek",
         "ia_changelog_sub": "Wat er is uitgebracht, chronologisch.",
         "ia_changelog_json_link": "Bekijk als JSON →",
@@ -13192,6 +13216,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-mail verifiëren",
     },
     "pl": {
+        "ia_roadmap_title": "Plan rozwoju",
+        "ia_roadmap_sub": "Co dalej — nic tutaj nie jest obietnicą daty wydania, tylko to, co faktycznie jest rozważane.",
+        "ia_roadmap_empty": "Nic obecnie w kolejce — sprawdź później.",
         "ia_changelog_title": "Dziennik zmian",
         "ia_changelog_sub": "Co zostało wydane, chronologicznie.",
         "ia_changelog_json_link": "Zobacz jako JSON →",
@@ -14836,6 +14863,9 @@ TRANSLATIONS = {
         "ve_page_name": "Weryfikacja e-mail",
     },
     "ro": {
+        "ia_roadmap_title": "Foaie de parcurs",
+        "ia_roadmap_sub": "Ce urmează — nimic aici nu este o promisiune a unei date de lansare, doar ceea ce este luat efectiv în considerare.",
+        "ia_roadmap_empty": "Nimic în așteptare acum — revino mai târziu.",
         "ia_changelog_title": "Jurnal de modificări",
         "ia_changelog_sub": "Ce a fost lansat, cronologic.",
         "ia_changelog_json_link": "Vezi ca JSON →",
@@ -16480,6 +16510,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificare email",
     },
     "uk": {
+        "ia_roadmap_title": "Дорожня карта",
+        "ia_roadmap_sub": "Що далі — ніщо тут не є обіцянкою дати випуску, лише те, що дійсно розглядається.",
+        "ia_roadmap_empty": "Зараз нічого в черзі — заходьте пізніше.",
         "ia_changelog_title": "Журнал змін",
         "ia_changelog_sub": "Що було випущено, у хронологічному порядку.",
         "ia_changelog_json_link": "Переглянути як JSON →",
@@ -18124,6 +18157,9 @@ TRANSLATIONS = {
         "ve_page_name": "Підтвердження пошти",
     },
     "sr": {
+        "ia_roadmap_title": "Мапа пута",
+        "ia_roadmap_sub": "Шта следи — ништа овде није обећање датума објављивања, само оно што се заиста разматра.",
+        "ia_roadmap_empty": "Тренутно ништа у реду — свратите касније.",
         "ia_changelog_title": "Дневник измена",
         "ia_changelog_sub": "Шта је објављено, хронолошки.",
         "ia_changelog_json_link": "Погледај као JSON →",
@@ -19768,6 +19804,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikacija email-a",
     },
     "zh-TW": {
+        "ia_roadmap_title": "路線圖",
+        "ia_roadmap_sub": "下一步會做咩——呢度冇任何上線日期承諾，只係我哋真係喺度考慮緊嘅嘢。",
+        "ia_roadmap_empty": "而家冇嘢排緊隊——遲啲返嚟睇睇。",
         "ia_changelog_title": "更新日誌",
         "ia_changelog_sub": "按時間順序記錄咗嘅每次更新。",
         "ia_changelog_json_link": "以JSON查看 →",
@@ -21413,6 +21452,9 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-HK": {
+        "ia_roadmap_title": "路線圖",
+        "ia_roadmap_sub": "下一步會做咩——呢度冇任何上線日期承諾，只係我哋真係喺度考慮緊嘅嘢。",
+        "ia_roadmap_empty": "而家冇嘢排緊隊——遲啲返嚟睇睇。",
         "ia_changelog_title": "更新日誌",
         "ia_changelog_sub": "按時間順序記錄咗嘅每次更新。",
         "ia_changelog_json_link": "以JSON查看 →",
@@ -23058,6 +23100,9 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-CN": {
+        "ia_roadmap_title": "路线图",
+        "ia_roadmap_sub": "下一步会做什么——这里没有任何上线日期承诺，只是我们真正在考虑的事情。",
+        "ia_roadmap_empty": "现在没有排队的事项——稍后再来看看。",
         "ia_changelog_title": "更新日志",
         "ia_changelog_sub": "按时间顺序记录的每次更新。",
         "ia_changelog_json_link": "以JSON查看 →",
@@ -24703,6 +24748,9 @@ TRANSLATIONS = {
         "ve_page_name": "验证邮箱",
     },
     "ja": {
+        "ia_roadmap_title": "ロードマップ",
+        "ia_roadmap_sub": "次に来るもの — ここに記載されているのは出荷日の約束ではなく、実際に検討中の内容だけです。",
+        "ia_roadmap_empty": "現在は予定されている項目はありません — また後で確認してください。",
         "ia_changelog_title": "変更履歴",
         "ia_changelog_sub": "これまでの更新を時系列で。",
         "ia_changelog_json_link": "JSONで見る →",
@@ -26347,6 +26395,9 @@ TRANSLATIONS = {
         "ve_page_name": "メール確認",
     },
     "ko": {
+        "ia_roadmap_title": "로드맵",
+        "ia_roadmap_sub": "다음에 나올 것들 — 여기 있는 내용은 출시일을 약속하는 것이 아니라, 실제로 검토 중인 것들일 뿐입니다.",
+        "ia_roadmap_empty": "현재 대기 중인 항목이 없습니다 — 나중에 다시 확인해 주세요.",
         "ia_changelog_title": "변경 로그",
         "ia_changelog_sub": "지금까지 배포된 내용을 시간순으로.",
         "ia_changelog_json_link": "JSON으로 보기 →",
@@ -27991,6 +28042,9 @@ TRANSLATIONS = {
         "ve_page_name": "이메일 확인",
     },
     "hi": {
+        "ia_roadmap_title": "रोडमैप",
+        "ia_roadmap_sub": "आगे क्या आ रहा है — यहाँ कुछ भी शिप डेट का वादा नहीं है, बस वही जिस पर वाकई विचार किया जा रहा है।",
+        "ia_roadmap_empty": "अभी कुछ भी कतार में नहीं है — बाद में फिर देखें।",
         "ia_changelog_title": "चेंजलॉग",
         "ia_changelog_sub": "क्या-क्या रिलीज़ हुआ, कालानुक्रमिक रूप से।",
         "ia_changelog_json_link": "JSON के रूप में देखें →",
@@ -29635,6 +29689,9 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल सत्यापित करें",
     },
     "ar": {
+        "ia_roadmap_title": "خارطة الطريق",
+        "ia_roadmap_sub": "ما هو قادم — لا شيء هنا هو وعد بتاريخ إصدار، فقط ما يتم النظر فيه فعليًا.",
+        "ia_roadmap_empty": "لا يوجد شيء قيد الانتظار الآن — تحقق لاحقًا.",
         "ia_changelog_title": "سجل التغييرات",
         "ia_changelog_sub": "ما تم إصداره، بالترتيب الزمني.",
         "ia_changelog_json_link": "عرض كـ JSON ←",
@@ -31279,6 +31336,9 @@ TRANSLATIONS = {
         "ve_page_name": "التحقق من البريد الإلكتروني",
     },
     "id": {
+        "ia_roadmap_title": "Peta jalan",
+        "ia_roadmap_sub": "Apa yang akan datang — tidak ada yang di sini merupakan janji tanggal rilis, hanya apa yang benar-benar sedang dipertimbangkan.",
+        "ia_roadmap_empty": "Tidak ada yang antre saat ini — periksa lagi nanti.",
         "ia_changelog_title": "Changelog",
         "ia_changelog_sub": "Apa yang sudah dirilis, secara kronologis.",
         "ia_changelog_json_link": "Lihat sebagai JSON →",
@@ -32923,6 +32983,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "th": {
+        "ia_roadmap_title": "แผนงาน",
+        "ia_roadmap_sub": "สิ่งที่จะเกิดขึ้นต่อไป — ไม่มีอะไรที่นี่เป็นคำสัญญาวันที่เปิดตัว เป็นเพียงสิ่งที่กำลังพิจารณาจริงๆ",
+        "ia_roadmap_empty": "ขณะนี้ยังไม่มีรายการในคิว — กลับมาตรวจสอบภายหลัง",
         "ia_changelog_title": "บันทึกการเปลี่ยนแปลง",
         "ia_changelog_sub": "สิ่งที่เปิดตัวแล้ว เรียงตามลำดับเวลา",
         "ia_changelog_json_link": "ดูเป็น JSON →",
@@ -34567,6 +34630,9 @@ TRANSLATIONS = {
         "ve_page_name": "ยืนยันอีเมล",
     },
     "vi": {
+        "ia_roadmap_title": "Lộ trình",
+        "ia_roadmap_sub": "Điều gì tiếp theo — không có gì ở đây là lời hứa về ngày phát hành, chỉ là những gì đang thực sự được xem xét.",
+        "ia_roadmap_empty": "Hiện tại không có gì trong hàng đợi — hãy quay lại sau.",
         "ia_changelog_title": "Nhật ký thay đổi",
         "ia_changelog_sub": "Những gì đã ra mắt, theo trình tự thời gian.",
         "ia_changelog_json_link": "Xem dạng JSON →",
@@ -36211,6 +36277,9 @@ TRANSLATIONS = {
         "ve_page_name": "Xác minh email",
     },
     "tr": {
+        "ia_roadmap_title": "Yol haritası",
+        "ia_roadmap_sub": "Sırada ne var — burada hiçbir şey bir çıkış tarihi vaadi değildir, sadece gerçekten değerlendirilen şeylerdir.",
+        "ia_roadmap_empty": "Şu anda sırada bir şey yok — daha sonra tekrar kontrol edin.",
         "ia_changelog_title": "Değişiklik günlüğü",
         "ia_changelog_sub": "Yayınlananlar, kronolojik sırayla.",
         "ia_changelog_json_link": "JSON olarak görüntüle →",
@@ -37855,6 +37924,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-postayı Doğrula",
     },
     "fa": {
+        "ia_roadmap_title": "نقشه راه",
+        "ia_roadmap_sub": "بعدی چیست — هیچ‌چیز در اینجا وعده تاریخ عرضه نیست، فقط چیزی است که واقعاً در حال بررسی است.",
+        "ia_roadmap_empty": "در حال حاضر چیزی در صف نیست — بعداً دوباره سر بزنید.",
         "ia_changelog_title": "گزارش تغییرات",
         "ia_changelog_sub": "آنچه منتشر شده، به ترتیب زمانی.",
         "ia_changelog_json_link": "مشاهده به صورت JSON ←",
@@ -39499,6 +39571,9 @@ TRANSLATIONS = {
         "ve_page_name": "تأیید ایمیل",
     },
     "ur": {
+        "ia_roadmap_title": "روڈ میپ",
+        "ia_roadmap_sub": "آگے کیا آ رہا ہے — یہاں کچھ بھی شپ ڈیٹ کا وعدہ نہیں، صرف وہی جس پر واقعی غور کیا جا رہا ہے۔",
+        "ia_roadmap_empty": "ابھی کچھ بھی قطار میں نہیں — بعد میں دوبارہ چیک کریں۔",
         "ia_changelog_title": "چینج لاگ",
         "ia_changelog_sub": "جو کچھ ریلیز ہوا، تاریخ وار ترتیب میں۔",
         "ia_changelog_json_link": "JSON کے طور پر دیکھیں ←",
@@ -41143,6 +41218,9 @@ TRANSLATIONS = {
         "ve_page_name": "ای میل کی تصدیق کریں",
     },
     "bn": {
+        "ia_roadmap_title": "রোডম্যাপ",
+        "ia_roadmap_sub": "পরবর্তীতে কী আসছে — এখানে কোনোটাই রিলিজ তারিখের প্রতিশ্রুতি নয়, শুধু যা সত্যিই বিবেচনা করা হচ্ছে।",
+        "ia_roadmap_empty": "এই মুহূর্তে সারিতে কিছু নেই — পরে আবার দেখুন।",
         "ia_changelog_title": "চেঞ্জলগ",
         "ia_changelog_sub": "কালানুক্রমিকভাবে যা প্রকাশিত হয়েছে।",
         "ia_changelog_json_link": "JSON হিসেবে দেখুন →",
@@ -42787,6 +42865,9 @@ TRANSLATIONS = {
         "ve_page_name": "ইমেইল যাচাই করুন",
     },
     "tl": {
+        "ia_roadmap_title": "Roadmap",
+        "ia_roadmap_sub": "Ano ang susunod — walang pangako ng petsa ng paglabas dito, ito lang ang talagang isinasaalang-alang.",
+        "ia_roadmap_empty": "Walang naka-queue ngayon — bumalik mamaya.",
         "ia_changelog_title": "Changelog",
         "ia_changelog_sub": "Ano ang na-release, ayon sa pagkakasunod-sunod ng oras.",
         "ia_changelog_json_link": "Tingnan bilang JSON →",
@@ -44431,6 +44512,9 @@ TRANSLATIONS = {
         "ve_page_name": "I-verify ang Email",
     },
     "ms": {
+        "ia_roadmap_title": "Peta jalan",
+        "ia_roadmap_sub": "Apa yang akan datang — tiada di sini merupakan janji tarikh pelancaran, hanya apa yang benar-benar sedang dipertimbangkan.",
+        "ia_roadmap_empty": "Tiada apa dalam giliran sekarang — semak semula kemudian.",
         "ia_changelog_title": "Log perubahan",
         "ia_changelog_sub": "Apa yang telah dilancarkan, secara kronologi.",
         "ia_changelog_json_link": "Lihat sebagai JSON →",
@@ -46075,6 +46159,9 @@ TRANSLATIONS = {
         "ve_page_name": "Sahkan E-mel",
     },
     "sw": {
+        "ia_roadmap_title": "Ramani ya njia",
+        "ia_roadmap_sub": "Kinachofuata — hakuna kilicho hapa ni ahadi ya tarehe ya kutolewa, ni tu kile kinachozingatiwa kwa kweli.",
+        "ia_roadmap_empty": "Hakuna kitu kwenye foleni sasa hivi — angalia tena baadaye.",
         "ia_changelog_title": "Kumbukumbu ya mabadiliko",
         "ia_changelog_sub": "Kilichotolewa, kwa mpangilio wa wakati.",
         "ia_changelog_json_link": "Ona kama JSON →",
@@ -47719,6 +47806,9 @@ TRANSLATIONS = {
         "ve_page_name": "Thibitisha Barua Pepe",
     },
     "ne": {
+        "ia_roadmap_title": "रोडम्याप",
+        "ia_roadmap_sub": "अब के आउँछ — यहाँ केही पनि शिप मितिको वाचा होइन, केवल वास्तवमा विचार गरिँदैछ।",
+        "ia_roadmap_empty": "अहिले लाइनमा केही छैन — पछि फेरि हेर्नुहोस्।",
         "ia_changelog_title": "परिवर्तन लग",
         "ia_changelog_sub": "के-के जारी भयो, कालक्रमिक रूपमा।",
         "ia_changelog_json_link": "JSON को रूपमा हेर्नुहोस् →",
@@ -49363,6 +49453,9 @@ TRANSLATIONS = {
         "ve_page_name": "इमेल प्रमाणित गर्नुहोस्",
     },
     "mr": {
+        "ia_roadmap_title": "रोडमॅप",
+        "ia_roadmap_sub": "पुढे काय येत आहे — इथे कशाचीही रिलीज तारखेची हमी नाही, फक्त खरोखर विचारात घेतले जात असलेले.",
+        "ia_roadmap_empty": "सध्या रांगेत काहीही नाही — नंतर पुन्हा तपासा.",
         "ia_changelog_title": "चेंजलॉग",
         "ia_changelog_sub": "काय रिलीज झाले, कालक्रमानुसार.",
         "ia_changelog_json_link": "JSON म्हणून पहा →",
@@ -51007,6 +51100,9 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल पडताळा",
     },
     "te": {
+        "ia_roadmap_title": "రోడ్‌మ్యాప్",
+        "ia_roadmap_sub": "తర్వాత ఏమి వస్తుంది — ఇక్కడ ఏదీ షిప్ డేట్ వాగ్దానం కాదు, నిజంగా పరిగణించబడుతున్నది మాత్రమే.",
+        "ia_roadmap_empty": "ప్రస్తుతం క్యూలో ఏమీ లేదు — తర్వాత మళ్లీ తనిఖీ చేయండి.",
         "ia_changelog_title": "చేంజ్‌లాగ్",
         "ia_changelog_sub": "ఏమి విడుదలైందో, కాలక్రమానుసారం.",
         "ia_changelog_json_link": "JSONగా చూడండి →",
@@ -52651,6 +52747,9 @@ TRANSLATIONS = {
         "ve_page_name": "ఇమెయిల్‌ను ధృవీకరించండి",
     },
     "ta": {
+        "ia_roadmap_title": "வரைபடம்",
+        "ia_roadmap_sub": "அடுத்து என்ன வருகிறது — இங்கு எதுவும் வெளியீட்டு தேதி வாக்குறுதி அல்ல, உண்மையில் பரிசீலிக்கப்படுவது மட்டுமே.",
+        "ia_roadmap_empty": "இப்போது வரிசையில் எதுவும் இல்லை — பின்னர் மீண்டும் பாருங்கள்.",
         "ia_changelog_title": "மாற்றப்பதிவு",
         "ia_changelog_sub": "என்ன வெளியிடப்பட்டது, காலவரிசைப்படி.",
         "ia_changelog_json_link": "JSON ஆக காண்க →",
@@ -54295,6 +54394,9 @@ TRANSLATIONS = {
         "ve_page_name": "மின்னஞ்சலைச் சரிபார்க்கவும்",
     },
     "gu": {
+        "ia_roadmap_title": "રોડમેપ",
+        "ia_roadmap_sub": "આગળ શું છે — અહીં કંઈ પણ રિલીઝ તારીખનું વચન નથી, ફક્ત ખરેખર ધ્યાનમાં લેવાય રહેલું.",
+        "ia_roadmap_empty": "અત્યારે કતારમાં કંઈ નથી — પછી ફરી તપાસો.",
         "ia_changelog_title": "ચેન્જલોગ",
         "ia_changelog_sub": "શું રિલીઝ થયું, કાલક્રમિક રીતે.",
         "ia_changelog_json_link": "JSON તરીકે જુઓ →",
@@ -55939,6 +56041,9 @@ TRANSLATIONS = {
         "ve_page_name": "ઈમેલ ચકાસો",
     },
     "pa": {
+        "ia_roadmap_title": "ਰੋਡਮੈਪ",
+        "ia_roadmap_sub": "ਅੱਗੇ ਕੀ ਆ ਰਿਹਾ ਹੈ — ਇੱਥੇ ਕੁਝ ਵੀ ਰਿਲੀਜ਼ ਮਿਤੀ ਦਾ ਵਾਅਦਾ ਨਹੀਂ, ਸਿਰਫ਼ ਉਹ ਜੋ ਅਸਲ ਵਿੱਚ ਵਿਚਾਰਿਆ ਜਾ ਰਿਹਾ ਹੈ।",
+        "ia_roadmap_empty": "ਹੁਣੇ ਕਤਾਰ ਵਿੱਚ ਕੁਝ ਨਹੀਂ — ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਜਾਂਚੋ।",
         "ia_changelog_title": "ਚੇਂਜਲੌਗ",
         "ia_changelog_sub": "ਕੀ ਰਿਲੀਜ਼ ਹੋਇਆ, ਸਮੇਂ ਅਨੁਸਾਰ।",
         "ia_changelog_json_link": "JSON ਵਜੋਂ ਵੇਖੋ →",
@@ -57583,6 +57688,9 @@ TRANSLATIONS = {
         "ve_page_name": "ਈਮੇਲ ਦੀ ਤਸਦੀਕ ਕਰੋ",
     },
     "ml": {
+        "ia_roadmap_title": "റോഡ്മാപ്പ്",
+        "ia_roadmap_sub": "അടുത്തതായി എന്ത് വരുന്നു — ഇവിടെ ഒന്നും ഒരു ഷിപ്പ് തീയതി വാഗ്ദാനമല്ല, യഥാർത്ഥത്തിൽ പരിഗണിക്കപ്പെടുന്നത് മാത്രം.",
+        "ia_roadmap_empty": "ഇപ്പോൾ ക്യൂവിൽ ഒന്നുമില്ല — പിന്നീട് വീണ്ടും പരിശോധിക്കുക.",
         "ia_changelog_title": "ചേഞ്ച്‌ലോഗ്",
         "ia_changelog_sub": "എന്താണ് പുറത്തിറങ്ങിയത്, കാലക്രമത്തിൽ.",
         "ia_changelog_json_link": "JSON ആയി കാണുക →",
@@ -59227,6 +59335,9 @@ TRANSLATIONS = {
         "ve_page_name": "ഇമെയിൽ പരിശോധിക്കുക",
     },
     "kn": {
+        "ia_roadmap_title": "ರೋಡ್‌ಮ್ಯಾಪ್",
+        "ia_roadmap_sub": "ಮುಂದೆ ಏನಿದೆ — ಇಲ್ಲಿ ಯಾವುದೂ ಶಿಪ್ ದಿನಾಂಕದ ಭರವಸೆ ಅಲ್ಲ, ನಿಜವಾಗಿಯೂ ಪರಿಗಣಿಸಲಾಗುತ್ತಿರುವುದು ಮಾತ್ರ.",
+        "ia_roadmap_empty": "ಈಗ ಸರದಿಯಲ್ಲಿ ಏನೂ ಇಲ್ಲ — ನಂತರ ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ.",
         "ia_changelog_title": "ಚೇಂಜ್‌ಲಾಗ್",
         "ia_changelog_sub": "ಏನು ಬಿಡುಗಡೆಯಾಗಿದೆ, ಕಾಲಾನುಕ್ರಮವಾಗಿ.",
         "ia_changelog_json_link": "JSON ಆಗಿ ವೀಕ್ಷಿಸಿ →",
@@ -60871,6 +60982,9 @@ TRANSLATIONS = {
         "ve_page_name": "ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ",
     },
     "or": {
+        "ia_roadmap_title": "ରୋଡମ୍ୟାପ୍",
+        "ia_roadmap_sub": "ପରବର୍ତ୍ତୀ କ'ଣ ଆସୁଛି — ଏଠାରେ କିଛି ବି ଶିପ୍ ତାରିଖର ପ୍ରତିଶ୍ରୁତି ନୁହେଁ, କେବଳ ପ୍ରକୃତରେ ବିଚାର କରାଯାଉଥିବା ବିଷୟ।",
+        "ia_roadmap_empty": "ବର୍ତ୍ତମାନ ଧାଡ଼ିରେ କିଛି ନାହିଁ — ପରେ ପୁଣି ଯାଞ୍ଚ କରନ୍ତୁ।",
         "ia_changelog_title": "ଚେଞ୍ଜଲଗ୍",
         "ia_changelog_sub": "କ'ଣ ରିଲିଜ୍ ହେଲା, କାଳକ୍ରମିକ ଭାବରେ।",
         "ia_changelog_json_link": "JSON ଭାବରେ ଦେଖନ୍ତୁ →",
@@ -62515,6 +62629,9 @@ TRANSLATIONS = {
         "ve_page_name": "ଇମେଲ ଯାଞ୍ଚ କରନ୍ତୁ",
     },
     "ps": {
+        "ia_roadmap_title": "د لارې نقشه",
+        "ia_roadmap_sub": "بل څه راځي — دلته هیڅ شی د لېږد نېټې ژمنه نه ده، یوازې هغه څه چې واقعیا پکې غور کیږي.",
+        "ia_roadmap_empty": "اوس مهال په قطار کې هیڅ شی نشته — وروسته بیا وګورئ.",
         "ia_changelog_title": "د بدلونونو لړلیک",
         "ia_changelog_sub": "هغه څه چې خپاره شوي، د وخت په ترتیب سره.",
         "ia_changelog_json_link": "د JSON په توګه وګورئ ←",
@@ -64159,6 +64276,9 @@ TRANSLATIONS = {
         "ve_page_name": "بریښنالیک تایید کړئ",
     },
     "ha": {
+        "ia_roadmap_title": "Taswirar hanya",
+        "ia_roadmap_sub": "Abin da zai zo gaba — babu wani abu a nan alkawarin ranar aikawa ba ne, kawai abin da ake la'akari da shi a zahiri.",
+        "ia_roadmap_empty": "Babu wani abu a jere a yanzu — duba daga baya.",
         "ia_changelog_title": "Tarihin canje-canje",
         "ia_changelog_sub": "Abin da aka fitar, bisa tsarin lokaci.",
         "ia_changelog_json_link": "Duba a matsayin JSON →",
@@ -65803,6 +65923,9 @@ TRANSLATIONS = {
         "ve_page_name": "Tabbatar da Imel",
     },
     "ku": {
+        "ia_roadmap_title": "Nexşeya rê",
+        "ia_roadmap_sub": "Tiştê ku tê — tiştek li vir soza dîroka barkirinê nîne, tenê tiştê ku bi rastî tê ramîn e.",
+        "ia_roadmap_empty": "Niha tiştek di rêzê de nîne — paşê dîsa binêre.",
         "ia_changelog_title": "Guherînname",
         "ia_changelog_sub": "Tiştê hatiye weşandin, li gorî dema wê.",
         "ia_changelog_json_link": "Wek JSON bibîne →",
@@ -67447,6 +67570,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-nameyê Pejirand",
     },
     "si": {
+        "ia_roadmap_title": "මාර්ග සිතියම",
+        "ia_roadmap_sub": "ඊළඟට එන දේ — මෙහි කිසිවක් නිකුතු දිනයක් පොරොන්දුවක් නොවේ, සැබවින්ම සලකා බලමින් ඇති දේ පමණි.",
+        "ia_roadmap_empty": "දැනට පෝලිමේ කිසිවක් නැත — පසුව නැවත පරීක්ෂා කරන්න.",
         "ia_changelog_title": "වෙනස්කම් ලොගය",
         "ia_changelog_sub": "නිකුත් කළ දේ, කාලානුක්‍රමිකව.",
         "ia_changelog_json_link": "JSON ලෙස බලන්න →",
@@ -69091,6 +69217,9 @@ TRANSLATIONS = {
         "ve_page_name": "විද්‍යුත් තැපෑල තහවුරු කරන්න",
     },
     "uz": {
+        "ia_roadmap_title": "Yo'l xaritasi",
+        "ia_roadmap_sub": "Keyingi qadam — bu yerdagi hech narsa chiqarilish sanasi va'dasi emas, faqat haqiqatan ko'rib chiqilayotgan narsa.",
+        "ia_roadmap_empty": "Hozircha navbatda hech narsa yo'q — keyinroq qayta tekshiring.",
         "ia_changelog_title": "O'zgarishlar jurnali",
         "ia_changelog_sub": "Nima chiqarilgani, xronologik tartibda.",
         "ia_changelog_json_link": "JSON sifatida ko'rish →",
@@ -70735,6 +70864,9 @@ TRANSLATIONS = {
         "ve_page_name": "Elektron pochtani tasdiqlash",
     },
     "az": {
+        "ia_roadmap_title": "Yol xəritəsi",
+        "ia_roadmap_sub": "Növbəti nə var — burada heç nə buraxılış tarixi vədi deyil, yalnız həqiqətən nəzərdən keçirilən şeylərdir.",
+        "ia_roadmap_empty": "Hazırda növbədə heç nə yoxdur — sonra yenidən yoxlayın.",
         "ia_changelog_title": "Dəyişiklik jurnalı",
         "ia_changelog_sub": "Nə buraxılıb, xronoloji qaydada.",
         "ia_changelog_json_link": "JSON kimi bax →",
@@ -72379,6 +72511,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-poçtu Təsdiqlə",
     },
     "jv": {
+        "ia_roadmap_title": "Peta dalan",
+        "ia_roadmap_sub": "Apa sing bakal teka — ora ana ing kene sing dadi janji tanggal rilis, mung apa sing bener-bener dipikirake.",
+        "ia_roadmap_empty": "Ora ana antrian saiki — priksa maneh mengko.",
         "ia_changelog_title": "Changelog",
         "ia_changelog_sub": "Apa sing wis dirilis, kanthi kronologis.",
         "ia_changelog_json_link": "Deleng minangka JSON →",
@@ -74023,6 +74158,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "su": {
+        "ia_roadmap_title": "Peta jalan",
+        "ia_roadmap_sub": "Naon anu bakal datang — teu aya di dieu anu mangrupikeun jangji tanggal rilis, ngan naon anu leres-leres dipertimbangkeun.",
+        "ia_roadmap_empty": "Teu aya nanaon dina antrian ayeuna — priksa deui engké.",
         "ia_changelog_title": "Log parobihan",
         "ia_changelog_sub": "Naon anu geus dirilis, sacara kronologis.",
         "ia_changelog_json_link": "Tingali salaku JSON →",
@@ -75667,6 +75805,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "pcm": {
+        "ia_roadmap_title": "Roadmap",
+        "ia_roadmap_sub": "Wetin dey come next — nothing here na promise of ship date, na just wetin dem dey really consider.",
+        "ia_roadmap_empty": "Nothing dey queue right now — check back later.",
         "ia_changelog_title": "Changelog",
         "ia_changelog_sub": "Wetin don release, according to time.",
         "ia_changelog_json_link": "Check am as JSON →",

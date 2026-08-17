@@ -171,6 +171,58 @@ def intelligence_changelog():
 
 
 # ---------------------------------------------------------------------------
+# 2026-08-17 (follow-up to task #4's changelog, "重有咩可以做" round 2 --
+# roadmap): the Pro plan card on intelligence-api.html has promised "Early
+# say in the public roadmap" since it was written, but no public roadmap
+# ever existed -- an unbacked promise, same category of issue as the
+# "Six endpoints" heading that was stale until this session found it.
+# This is that roadmap, for real. Every item below is something actually
+# discussed/identified as a next step in this project (not invented to
+# sound impressive) -- rate-limit headers, a Postman collection, batch
+# ticker support, third-party directory listings, and SDK publishing are
+# all real candidates raised in the same conversation that produced the
+# changelog above. `status` is "planned" (not started) or "in_progress";
+# shipped items move to INTELLIGENCE_CHANGELOG instead of staying here,
+# so this list only ever shows what's still ahead.
+# ---------------------------------------------------------------------------
+INTELLIGENCE_ROADMAP = [
+    {
+        "status": "planned",
+        "title": "Rate-limit response headers",
+        "text": "X-RateLimit-Remaining / X-RateLimit-Limit on every response, so clients can pace requests without guessing from 429s.",
+    },
+    {
+        "status": "planned",
+        "title": "Postman collection",
+        "text": "A \"Run in Postman\" button generated from the OpenAPI spec, for developers who'd rather click than curl.",
+    },
+    {
+        "status": "planned",
+        "title": "Batch / multi-ticker support",
+        "text": "Events and Sentiment accepting a comma-separated list of tickers in one call, for anyone tracking a watchlist instead of a single symbol.",
+    },
+    {
+        "status": "planned",
+        "title": "Listings on third-party API directories",
+        "text": "RapidAPI, APIs.guru and similar -- pure discoverability, no functional change.",
+    },
+    {
+        "status": "planned",
+        "title": "Published SDKs on PyPI / npm",
+        "text": "The Python/Node SDKs already exist (see sdk/ in the repo) and install fine straight from GitHub -- publishing them as real packages is gated on enough paying developers using this API to justify the ongoing maintenance overhead, not on the code itself.",
+    },
+]
+
+
+@router.get("/intelligence/roadmap")
+def intelligence_roadmap():
+    """Public, unauthenticated. See INTELLIGENCE_ROADMAP's docstring
+    comment above -- this is what backs the Pro plan's "public roadmap"
+    promise on intelligence-api.html."""
+    return _envelope(data=INTELLIGENCE_ROADMAP)
+
+
+# ---------------------------------------------------------------------------
 # "Request Early Access" landing page support (intelligence-api.html).
 # V1 has no self-serve signup -- this is the conversation-first funnel:
 # a prospective developer submits interest, the admin follows up manually

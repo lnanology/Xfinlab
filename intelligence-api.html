@@ -98,6 +98,13 @@ details.schema-details[open] summary::after{content:" ▴"}
 #statusWidget a{color:var(--accent-blue);text-decoration:none}
 .status-dot-ok{color:var(--accent-green)}
 .status-dot-down{color:#DC2626}
+.roadmap-item{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.roadmap-item-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.roadmap-item-title{font-size:0.86rem;font-weight:700}
+.roadmap-status{font-size:0.62rem;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:99px;white-space:nowrap}
+.roadmap-status.planned{background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-muted)}
+.roadmap-status.in_progress{background:rgba(211,84,0,0.12);color:var(--accent-blue)}
+.roadmap-item-text{font-size:0.8rem;color:var(--text-secondary);line-height:1.6}
 
 /* 2026-08-14 quickstart step layout (task #828) */
 .qs-steps{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
@@ -585,6 +592,18 @@ await client.sentiment('AAPL');</span></div>
     <div id="changelogList" style="max-width:640px;margin:0 auto"></div>
   </div>
 
+  <!-- 2026-08-17 (follow-up to task #4, "重有咩可以做" round 2): the Pro
+       plan card below has promised "Early say in the public roadmap"
+       since it was written -- this is that roadmap, backing the promise
+       for real instead of leaving it as unlinked text. See
+       INTELLIGENCE_ROADMAP in api/intelligence.py for why every item
+       here is a real candidate, not invented to look impressive. -->
+  <div class="section" id="roadmap">
+    <div class="section-title" data-i18n="ia_roadmap_title">Roadmap</div>
+    <div class="section-sub"><span data-i18n="ia_roadmap_sub">What's next — nothing here is a promise of a ship date, just what's actually being considered.</span> <a href="https://api.xfinlab.com/api/intelligence/roadmap" target="_blank" rel="noopener" data-i18n="ia_changelog_json_link">View as JSON →</a></div>
+    <div id="roadmapList" style="max-width:640px;margin:0 auto"></div>
+  </div>
+
   <div class="section">
     <div class="section-title" data-i18n="ia_plans_title">Plans</div>
     <div class="section-sub" data-i18n="ia_plans_sub">Free is instant and automated. Pro/Enterprise are still set up personally — pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
@@ -613,7 +632,7 @@ await client.sentiment('AAPL');</span></div>
           <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f2">All 4 endpoints, incl. AI Debate + AI Intelligence Feed</span></li>
           <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f3">Branded embed widgets — your colors + logo, co-branded badge</span></li>
           <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f4">Priority email support</span></li>
-          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f5">Early say in the public roadmap</span></li>
+          <li><span class="check">✓</span> <a href="#roadmap" data-i18n="ia_plan_pro_f5">Early say in the public roadmap</a></li>
         </ul>
         <button class="plan-btn" onclick="selectPlan('pro')" data-i18n="ia_cta_access">Request Early Access</button>
       </div>
@@ -884,6 +903,46 @@ async function loadChangelog() {
   }
 }
 loadChangelog();
+
+// 2026-08-17 (follow-up to task #4, roadmap): same fetch/render pattern as
+// loadChangelog() above -- GET /intelligence/roadmap is the single source
+// of truth, this just renders it.
+async function loadRoadmap() {
+  const el = document.getElementById('roadmapList');
+  try {
+    const res = await fetch(`${API}/intelligence/roadmap`);
+    const json = await res.json();
+    const items = (json && json.data) || [];
+    el.innerHTML = '';
+    if (items.length === 0) {
+      el.textContent = t('ia_roadmap_empty', 'Nothing queued right now — check back later.');
+      return;
+    }
+    items.forEach(function(item) {
+      const wrap = document.createElement('div');
+      wrap.className = 'roadmap-item';
+      const head = document.createElement('div');
+      head.className = 'roadmap-item-head';
+      const status = document.createElement('span');
+      status.className = 'roadmap-status ' + item.status;
+      status.textContent = item.status === 'in_progress' ? 'In progress' : 'Planned';
+      const title = document.createElement('span');
+      title.className = 'roadmap-item-title';
+      title.textContent = item.title;
+      head.appendChild(status);
+      head.appendChild(title);
+      const text = document.createElement('div');
+      text.className = 'roadmap-item-text';
+      text.textContent = item.text;
+      wrap.appendChild(head);
+      wrap.appendChild(text);
+      el.appendChild(wrap);
+    });
+  } catch (e) {
+    el.textContent = 'Could not load the roadmap right now.';
+  }
+}
+loadRoadmap();
 
 function selectPlan(tier) {
   document.getElementById('accessTier').value = tier;
