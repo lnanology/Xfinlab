@@ -136,6 +136,7 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-17",
         "changes": [
+            {"type": "added", "text": "Postman collection at GET /api/intelligence/postman.json -- import via Postman's Import > Link, every request pre-filled with a working example."},
             {"type": "added", "text": "Public roadmap at GET /api/intelligence/roadmap (this page, #roadmap) -- backs the Pro plan's previously-unbacked \"public roadmap\" promise."},
             {"type": "added", "text": "X-RateLimit-Limit / X-RateLimit-Remaining headers on every authenticated response, so clients can pace requests instead of discovering the ceiling from a 429."},
             {"type": "added", "text": "Changelog and live status widget (this page, #changelog)."},
@@ -207,11 +208,6 @@ def intelligence_changelog():
 # so this list only ever shows what's still ahead.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_ROADMAP = [
-    {
-        "status": "planned",
-        "title": "Postman collection",
-        "text": "A \"Run in Postman\" button generated from the OpenAPI spec, for developers who'd rather click than curl.",
-    },
     {
         "status": "planned",
         "title": "Batch / multi-ticker support",
@@ -763,8 +759,11 @@ PUBLIC_INTEL_PATHS = {
 _PATHS_WITH_503 = {"/intelligence/v1/sentiment", "/intelligence/v1/debate"}
 
 
-@router.get("/intelligence/openapi.json", include_in_schema=False)
-def intelligence_openapi_spec():
+def _build_scoped_openapi_dict() -> dict:
+    """Shared by GET /intelligence/openapi.json and GET /intelligence/
+    postman.json (roadmap item #2, 2026-08-17) -- both need the same
+    scoped-and-filtered document, so the Postman converter below builds
+    off this instead of re-deriving its own view of the 7 public routes."""
     raw = get_openapi(
         title="XFINLAB Intelligence API",
         version="1.0.0",
@@ -833,6 +832,156 @@ def intelligence_openapi_spec():
             },
         },
     }
+
+
+@router.get("/intelligence/openapi.json", include_in_schema=False)
+def intelligence_openapi_spec():
+    return _build_scoped_openapi_dict()
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-17 (roadmap item #2, "重有咩可以做" round 2 -- Postman collection):
+# hand-rolled OpenAPI-3.x -> Postman Collection v2.1 converter, scoped to
+# just the 7 public paths already filtered by _build_scoped_openapi_dict().
+# Deliberately NOT using the "Run in Postman" hosted button (that requires
+# publishing to a Postman team workspace via their API -- an external
+# account dependency and ongoing sync burden this project doesn't have a
+# reason to take on yet). Instead this is a plain downloadable/importable
+# JSON file -- Postman's own "Import > Link" or "Import > File" flow reads
+# a v2.1 collection directly, no hosted-button account needed. Query
+# parameters get their real OpenAPI default (or a realistic placeholder
+# for required ones, e.g. ticker=AAPL matching the "Try it" console's own
+# default), so a newly imported collection runs correctly on first click
+# rather than needing every field filled in by hand.
+# ---------------------------------------------------------------------------
+_PLACEHOLDER_BY_PARAM = {
+    "ticker": "AAPL",
+    "limit": None,  # falls back to the schema's own default below
+    "lang": "en",
+    "regime": "trending_up",
+    "min_trades": None,
+    "period": "6mo",
+    "interval": "1d",
+    "news_limit": None,
+    "regions": "us,hk,china",
+    "include_sentiment": True,
+}
+
+# Only the one POST endpoint in the public set has a request body -- hand-
+# written rather than a generic schema-to-example walker, since adding a
+# second POST endpoint (batch/multi-ticker support, also on this roadmap)
+# is the natural trigger to revisit this as a real generic converter.
+_POSTMAN_BODY_EXAMPLES = {
+    "/api/intelligence/v1/stress-test": {
+        "symbol": "AAPL",
+        "amount": 10000,
+        "horizon_days": 252,
+    },
+}
+
+
+def _postman_param_value(name: str, schema: dict):
+    if name in _PLACEHOLDER_BY_PARAM and _PLACEHOLDER_BY_PARAM[name] is not None:
+        return _PLACEHOLDER_BY_PARAM[name]
+    if isinstance(schema, dict) and "default" in schema:
+        return schema["default"]
+    return ""
+
+
+def _openapi_to_postman_collection(spec: dict) -> dict:
+    items = []
+    for path, methods in spec.get("paths", {}).items():
+        for method, op in methods.items():
+            if not isinstance(op, dict):
+                continue
+            method_upper = method.upper()
+            query_params = []
+            postman_path_parts = []
+            resolved_path = path
+            # Path params are resolved to a real example value (e.g. AAPL)
+            # in both `raw` and `path`, rather than left as Postman
+            # `:variable` placeholders -- so an imported request works on
+            # the first click without the importer also having to define a
+            # separate collection variable just to fill in the ticker.
+            for segment in path.split("/"):
+                if segment.startswith("{") and segment.endswith("}"):
+                    param_name = segment[1:-1]
+                    example = str(_PLACEHOLDER_BY_PARAM.get(param_name) or "AAPL")
+                    postman_path_parts.append(example)
+                    resolved_path = resolved_path.replace(segment, example)
+                else:
+                    postman_path_parts.append(segment)
+            for p in op.get("parameters", []):
+                if p.get("in") == "query":
+                    value = _postman_param_value(p["name"], p.get("schema", {}))
+                    query_params.append({
+                        "key": p["name"],
+                        "value": "" if value is None else str(value),
+                        "description": ("required" if p.get("required") else "optional"),
+                        "disabled": not p.get("required", False) and value in ("", None),
+                    })
+
+            request_item = {
+                "name": op.get("summary") or f"{method_upper} {path}",
+                "request": {
+                    "method": method_upper,
+                    "header": [
+                        {"key": "X-API-Key", "value": "{{apiKey}}", "type": "text"}
+                    ],
+                    "url": {
+                        "raw": "{{baseUrl}}" + resolved_path + (
+                            "?" + "&".join(f"{q['key']}={q['value']}" for q in query_params if not q["disabled"])
+                            if any(not q["disabled"] for q in query_params) else ""
+                        ),
+                        "host": ["{{baseUrl}}"],
+                        "path": [seg for seg in postman_path_parts if seg],
+                        "query": query_params,
+                    },
+                },
+                "response": [],
+            }
+            if op.get("description"):
+                request_item["request"]["description"] = op["description"]
+            if path in _POSTMAN_BODY_EXAMPLES:
+                request_item["request"]["header"].append({"key": "Content-Type", "value": "application/json", "type": "text"})
+                import json as _json
+                request_item["request"]["body"] = {
+                    "mode": "raw",
+                    "raw": _json.dumps(_POSTMAN_BODY_EXAMPLES[path], indent=2),
+                    "options": {"raw": {"language": "json"}},
+                }
+            items.append(request_item)
+
+    return {
+        "info": {
+            "name": spec.get("info", {}).get("title", "XFINLAB Intelligence API"),
+            "description": spec.get("info", {}).get("description", ""),
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        },
+        "auth": {
+            "type": "apikey",
+            "apikey": [
+                {"key": "key", "value": "X-API-Key", "type": "string"},
+                {"key": "value", "value": "{{apiKey}}", "type": "string"},
+                {"key": "in", "value": "header", "type": "string"},
+            ],
+        },
+        "variable": [
+            {"key": "baseUrl", "value": "https://api.xfinlab.com"},
+            {"key": "apiKey", "value": "xfl_your_key_here"},
+        ],
+        "item": items,
+    }
+
+
+@router.get("/intelligence/postman.json", include_in_schema=False)
+def intelligence_postman_collection():
+    """Public, unauthenticated. Postman Collection v2.1 covering the same 7
+    public endpoints as GET /intelligence/openapi.json -- import via
+    Postman's Import > Link (pointed straight at this URL) or Import >
+    File after downloading it."""
+    spec = _build_scoped_openapi_dict()
+    return _openapi_to_postman_collection(spec)
 
 
 # ---------------------------------------------------------------------------

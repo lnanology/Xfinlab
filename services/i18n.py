@@ -39,6 +39,7 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "ia_postman_link": "Download Postman collection →",
         "ia_ratelimit_note": "Every authenticated response includes X-RateLimit-Limit and X-RateLimit-Remaining headers, so you can pace requests instead of guessing from a 429.",
         "ia_roadmap_title": "Roadmap",
         "ia_roadmap_sub": "What's next — nothing here is a promise of a ship date, just what's actually being considered.",
@@ -1688,6 +1689,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verify Email",
     },
     "es": {
+        "ia_postman_link": "Descargar colección de Postman →",
         "ia_ratelimit_note": "Cada respuesta autenticada incluye los encabezados X-RateLimit-Limit y X-RateLimit-Remaining, para que puedas regular tus solicitudes en lugar de adivinar a partir de un error 429.",
         "ia_roadmap_title": "Hoja de ruta",
         "ia_roadmap_sub": "Qué viene a continuación — nada aquí es una promesa de fecha de lanzamiento, solo lo que realmente se está considerando.",
@@ -3336,6 +3338,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar correo",
     },
     "fr": {
+        "ia_postman_link": "Télécharger la collection Postman →",
         "ia_ratelimit_note": "Chaque réponse authentifiée inclut les en-têtes X-RateLimit-Limit et X-RateLimit-Remaining, afin que vous puissiez cadencer vos requêtes au lieu de deviner à partir d'une erreur 429.",
         "ia_roadmap_title": "Feuille de route",
         "ia_roadmap_sub": "Ce qui arrive ensuite — rien ici n'est une promesse de date de sortie, juste ce qui est réellement envisagé.",
@@ -4984,6 +4987,7 @@ TRANSLATIONS = {
         "ve_page_name": "Vérifier l'e-mail",
     },
     "de": {
+        "ia_postman_link": "Postman-Sammlung herunterladen →",
         "ia_ratelimit_note": "Jede authentifizierte Antwort enthält die Header X-RateLimit-Limit und X-RateLimit-Remaining, damit Sie Ihre Anfragen takten können, statt anhand eines 429-Fehlers zu raten.",
         "ia_roadmap_title": "Roadmap",
         "ia_roadmap_sub": "Was als Nächstes kommt — nichts hier ist ein Versprechen für ein Erscheinungsdatum, nur was tatsächlich in Betracht gezogen wird.",
@@ -6632,6 +6636,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-Mail bestätigen",
     },
     "it": {
+        "ia_postman_link": "Scarica la collezione Postman →",
         "ia_ratelimit_note": "Ogni risposta autenticata include gli header X-RateLimit-Limit e X-RateLimit-Remaining, così puoi calibrare le richieste invece di indovinare da un errore 429.",
         "ia_roadmap_title": "Roadmap",
         "ia_roadmap_sub": "Cosa viene dopo — niente qui è una promessa di data di rilascio, solo ciò che è effettivamente in considerazione.",
@@ -8280,6 +8285,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifica email",
     },
     "pt": {
+        "ia_postman_link": "Transferir coleção do Postman →",
         "ia_ratelimit_note": "Cada resposta autenticada inclui os cabeçalhos X-RateLimit-Limit e X-RateLimit-Remaining, para que possa ritmar os pedidos em vez de adivinhar a partir de um erro 429.",
         "ia_roadmap_title": "Roteiro",
         "ia_roadmap_sub": "O que vem a seguir — nada aqui é uma promessa de data de lançamento, apenas o que está realmente a ser considerado.",
@@ -9928,6 +9934,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar email",
     },
     "ru": {
+        "ia_postman_link": "Скачать коллекцию Postman →",
         "ia_ratelimit_note": "Каждый аутентифицированный ответ включает заголовки X-RateLimit-Limit и X-RateLimit-Remaining, чтобы вы могли распределять запросы, а не угадывать по ошибке 429.",
         "ia_roadmap_title": "Дорожная карта",
         "ia_roadmap_sub": "Что дальше — ничто здесь не является обещанием даты выпуска, только то, что реально рассматривается.",
@@ -11576,6 +11583,7 @@ TRANSLATIONS = {
         "ve_page_name": "Подтверждение почты",
     },
     "nl": {
+        "ia_postman_link": "Postman-collectie downloaden →",
         "ia_ratelimit_note": "Elk geauthenticeerd antwoord bevat de headers X-RateLimit-Limit en X-RateLimit-Remaining, zodat je verzoeken kunt afstemmen in plaats van te gokken op basis van een 429.",
         "ia_roadmap_title": "Routekaart",
         "ia_roadmap_sub": "Wat komt hierna — niets hier is een belofte van een releasedatum, alleen wat daadwerkelijk wordt overwogen.",
@@ -13224,6 +13232,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-mail verifiëren",
     },
     "pl": {
+        "ia_postman_link": "Pobierz kolekcję Postman →",
         "ia_ratelimit_note": "Każda uwierzytelniona odpowiedź zawiera nagłówki X-RateLimit-Limit i X-RateLimit-Remaining, dzięki czemu możesz kontrolować tempo żądań, zamiast zgadywać na podstawie błędu 429.",
         "ia_roadmap_title": "Plan rozwoju",
         "ia_roadmap_sub": "Co dalej — nic tutaj nie jest obietnicą daty wydania, tylko to, co faktycznie jest rozważane.",
@@ -14872,6 +14881,7 @@ TRANSLATIONS = {
         "ve_page_name": "Weryfikacja e-mail",
     },
     "ro": {
+        "ia_postman_link": "Descarcă colecția Postman →",
         "ia_ratelimit_note": "Fiecare răspuns autentificat include anteturile X-RateLimit-Limit și X-RateLimit-Remaining, astfel încât să poți regla ritmul cererilor în loc să ghicești pe baza unui 429.",
         "ia_roadmap_title": "Foaie de parcurs",
         "ia_roadmap_sub": "Ce urmează — nimic aici nu este o promisiune a unei date de lansare, doar ceea ce este luat efectiv în considerare.",
@@ -16520,6 +16530,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verificare email",
     },
     "uk": {
+        "ia_postman_link": "Завантажити колекцію Postman →",
         "ia_ratelimit_note": "Кожна автентифікована відповідь містить заголовки X-RateLimit-Limit і X-RateLimit-Remaining, щоб ви могли розподіляти запити, а не вгадувати за помилкою 429.",
         "ia_roadmap_title": "Дорожня карта",
         "ia_roadmap_sub": "Що далі — ніщо тут не є обіцянкою дати випуску, лише те, що дійсно розглядається.",
@@ -18168,6 +18179,7 @@ TRANSLATIONS = {
         "ve_page_name": "Підтвердження пошти",
     },
     "sr": {
+        "ia_postman_link": "Преузми Postman колекцију →",
         "ia_ratelimit_note": "Сваки аутентификовани одговор укључује заглавља X-RateLimit-Limit и X-RateLimit-Remaining, тако да можете да усклађујете захтеве уместо да нагађате на основу грешке 429.",
         "ia_roadmap_title": "Мапа пута",
         "ia_roadmap_sub": "Шта следи — ништа овде није обећање датума објављивања, само оно што се заиста разматра.",
@@ -19816,6 +19828,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikacija email-a",
     },
     "zh-TW": {
+        "ia_postman_link": "下載 Postman collection →",
         "ia_ratelimit_note": "每個已驗證嘅回應都會包含 X-RateLimit-Limit 同 X-RateLimit-Remaining 標頭，等你可以自己調節請求節奏，而唔使靠 429 錯誤先估。",
         "ia_roadmap_title": "路線圖",
         "ia_roadmap_sub": "下一步會做咩——呢度冇任何上線日期承諾，只係我哋真係喺度考慮緊嘅嘢。",
@@ -21465,6 +21478,7 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-HK": {
+        "ia_postman_link": "下載 Postman collection →",
         "ia_ratelimit_note": "每個已驗證嘅回應都會包含 X-RateLimit-Limit 同 X-RateLimit-Remaining 標頭，等你可以自己調節請求節奏，而唔使靠 429 錯誤先估。",
         "ia_roadmap_title": "路線圖",
         "ia_roadmap_sub": "下一步會做咩——呢度冇任何上線日期承諾，只係我哋真係喺度考慮緊嘅嘢。",
@@ -23114,6 +23128,7 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-CN": {
+        "ia_postman_link": "下载 Postman collection →",
         "ia_ratelimit_note": "每个已认证的响应都会包含 X-RateLimit-Limit 和 X-RateLimit-Remaining 标头，让你可以自己调节请求节奏，而不必靠 429 错误来猜测。",
         "ia_roadmap_title": "路线图",
         "ia_roadmap_sub": "下一步会做什么——这里没有任何上线日期承诺，只是我们真正在考虑的事情。",
@@ -24763,6 +24778,7 @@ TRANSLATIONS = {
         "ve_page_name": "验证邮箱",
     },
     "ja": {
+        "ia_postman_link": "Postman コレクションをダウンロード →",
         "ia_ratelimit_note": "認証済みのすべてのレスポンスには X-RateLimit-Limit と X-RateLimit-Remaining ヘッダーが含まれるため、429 エラーで推測する代わりにリクエストのペースを調整できます。",
         "ia_roadmap_title": "ロードマップ",
         "ia_roadmap_sub": "次に来るもの — ここに記載されているのは出荷日の約束ではなく、実際に検討中の内容だけです。",
@@ -26411,6 +26427,7 @@ TRANSLATIONS = {
         "ve_page_name": "メール確認",
     },
     "ko": {
+        "ia_postman_link": "Postman 컬렉션 다운로드 →",
         "ia_ratelimit_note": "인증된 모든 응답에는 X-RateLimit-Limit 및 X-RateLimit-Remaining 헤더가 포함되어 있어, 429 오류로 추측하는 대신 요청 속도를 조절할 수 있습니다.",
         "ia_roadmap_title": "로드맵",
         "ia_roadmap_sub": "다음에 나올 것들 — 여기 있는 내용은 출시일을 약속하는 것이 아니라, 실제로 검토 중인 것들일 뿐입니다.",
@@ -28059,6 +28076,7 @@ TRANSLATIONS = {
         "ve_page_name": "이메일 확인",
     },
     "hi": {
+        "ia_postman_link": "Postman कलेक्शन डाउनलोड करें →",
         "ia_ratelimit_note": "हर प्रमाणित प्रतिक्रिया में X-RateLimit-Limit और X-RateLimit-Remaining हेडर शामिल होते हैं, ताकि आप 429 त्रुटि से अंदाज़ा लगाने के बजाय अनुरोधों की गति नियंत्रित कर सकें।",
         "ia_roadmap_title": "रोडमैप",
         "ia_roadmap_sub": "आगे क्या आ रहा है — यहाँ कुछ भी शिप डेट का वादा नहीं है, बस वही जिस पर वाकई विचार किया जा रहा है।",
@@ -29707,6 +29725,7 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल सत्यापित करें",
     },
     "ar": {
+        "ia_postman_link": "تنزيل مجموعة Postman →",
         "ia_ratelimit_note": "تتضمن كل استجابة موثقة رؤوس X-RateLimit-Limit و X-RateLimit-Remaining، حتى تتمكن من ضبط وتيرة الطلبات بدلاً من التخمين من خطأ 429.",
         "ia_roadmap_title": "خارطة الطريق",
         "ia_roadmap_sub": "ما هو قادم — لا شيء هنا هو وعد بتاريخ إصدار، فقط ما يتم النظر فيه فعليًا.",
@@ -31355,6 +31374,7 @@ TRANSLATIONS = {
         "ve_page_name": "التحقق من البريد الإلكتروني",
     },
     "id": {
+        "ia_postman_link": "Unduh koleksi Postman →",
         "ia_ratelimit_note": "Setiap respons terautentikasi menyertakan header X-RateLimit-Limit dan X-RateLimit-Remaining, sehingga Anda dapat mengatur laju permintaan alih-alih menebak dari error 429.",
         "ia_roadmap_title": "Peta jalan",
         "ia_roadmap_sub": "Apa yang akan datang — tidak ada yang di sini merupakan janji tanggal rilis, hanya apa yang benar-benar sedang dipertimbangkan.",
@@ -33003,6 +33023,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "th": {
+        "ia_postman_link": "ดาวน์โหลดคอลเลกชัน Postman →",
         "ia_ratelimit_note": "ทุกการตอบกลับที่ผ่านการยืนยันตัวตนจะมีส่วนหัว X-RateLimit-Limit และ X-RateLimit-Remaining เพื่อให้คุณกำหนดจังหวะคำขอได้แทนที่จะเดาจากข้อผิดพลาด 429",
         "ia_roadmap_title": "แผนงาน",
         "ia_roadmap_sub": "สิ่งที่จะเกิดขึ้นต่อไป — ไม่มีอะไรที่นี่เป็นคำสัญญาวันที่เปิดตัว เป็นเพียงสิ่งที่กำลังพิจารณาจริงๆ",
@@ -34651,6 +34672,7 @@ TRANSLATIONS = {
         "ve_page_name": "ยืนยันอีเมล",
     },
     "vi": {
+        "ia_postman_link": "Tải bộ sưu tập Postman →",
         "ia_ratelimit_note": "Mọi phản hồi đã xác thực đều bao gồm tiêu đề X-RateLimit-Limit và X-RateLimit-Remaining, để bạn có thể điều chỉnh tốc độ yêu cầu thay vì đoán từ lỗi 429.",
         "ia_roadmap_title": "Lộ trình",
         "ia_roadmap_sub": "Điều gì tiếp theo — không có gì ở đây là lời hứa về ngày phát hành, chỉ là những gì đang thực sự được xem xét.",
@@ -36299,6 +36321,7 @@ TRANSLATIONS = {
         "ve_page_name": "Xác minh email",
     },
     "tr": {
+        "ia_postman_link": "Postman koleksiyonunu indir →",
         "ia_ratelimit_note": "Kimliği doğrulanmış her yanıt, X-RateLimit-Limit ve X-RateLimit-Remaining başlıklarını içerir, böylece isteklerinizi bir 429 hatasından tahmin etmek yerine hızını ayarlayabilirsiniz.",
         "ia_roadmap_title": "Yol haritası",
         "ia_roadmap_sub": "Sırada ne var — burada hiçbir şey bir çıkış tarihi vaadi değildir, sadece gerçekten değerlendirilen şeylerdir.",
@@ -37947,6 +37970,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-postayı Doğrula",
     },
     "fa": {
+        "ia_postman_link": "دانلود مجموعه Postman →",
         "ia_ratelimit_note": "هر پاسخ احراز هویت‌شده شامل هدرهای X-RateLimit-Limit و X-RateLimit-Remaining است، تا بتوانید سرعت درخواست‌ها را تنظیم کنید نه اینکه از خطای 429 حدس بزنید.",
         "ia_roadmap_title": "نقشه راه",
         "ia_roadmap_sub": "بعدی چیست — هیچ‌چیز در اینجا وعده تاریخ عرضه نیست، فقط چیزی است که واقعاً در حال بررسی است.",
@@ -39595,6 +39619,7 @@ TRANSLATIONS = {
         "ve_page_name": "تأیید ایمیل",
     },
     "ur": {
+        "ia_postman_link": "Postman کلیکشن ڈاؤن لوڈ کریں →",
         "ia_ratelimit_note": "ہر تصدیق شدہ ردعمل میں X-RateLimit-Limit اور X-RateLimit-Remaining ہیڈرز شامل ہوتے ہیں، تاکہ آپ 429 خرابی سے اندازہ لگانے کے بجائے درخواستوں کی رفتار کو کنٹرول کر سکیں۔",
         "ia_roadmap_title": "روڈ میپ",
         "ia_roadmap_sub": "آگے کیا آ رہا ہے — یہاں کچھ بھی شپ ڈیٹ کا وعدہ نہیں، صرف وہی جس پر واقعی غور کیا جا رہا ہے۔",
@@ -41243,6 +41268,7 @@ TRANSLATIONS = {
         "ve_page_name": "ای میل کی تصدیق کریں",
     },
     "bn": {
+        "ia_postman_link": "Postman কালেকশন ডাউনলোড করুন →",
         "ia_ratelimit_note": "প্রতিটি প্রমাণীকৃত প্রতিক্রিয়ায় X-RateLimit-Limit এবং X-RateLimit-Remaining হেডার অন্তর্ভুক্ত থাকে, যাতে আপনি 429 ত্রুটি থেকে অনুমান করার পরিবর্তে অনুরোধের গতি নিয়ন্ত্রণ করতে পারেন।",
         "ia_roadmap_title": "রোডম্যাপ",
         "ia_roadmap_sub": "পরবর্তীতে কী আসছে — এখানে কোনোটাই রিলিজ তারিখের প্রতিশ্রুতি নয়, শুধু যা সত্যিই বিবেচনা করা হচ্ছে।",
@@ -42891,6 +42917,7 @@ TRANSLATIONS = {
         "ve_page_name": "ইমেইল যাচাই করুন",
     },
     "tl": {
+        "ia_postman_link": "I-download ang Postman collection →",
         "ia_ratelimit_note": "Ang bawat na-authenticate na tugon ay may kasamang X-RateLimit-Limit at X-RateLimit-Remaining headers, para maayos mo ang bilis ng mga request sa halip na manghula mula sa isang 429 error.",
         "ia_roadmap_title": "Roadmap",
         "ia_roadmap_sub": "Ano ang susunod — walang pangako ng petsa ng paglabas dito, ito lang ang talagang isinasaalang-alang.",
@@ -44539,6 +44566,7 @@ TRANSLATIONS = {
         "ve_page_name": "I-verify ang Email",
     },
     "ms": {
+        "ia_postman_link": "Muat turun koleksi Postman →",
         "ia_ratelimit_note": "Setiap respons yang disahkan merangkumi pengepala X-RateLimit-Limit dan X-RateLimit-Remaining, jadi anda boleh mengawal kadar permintaan dan bukannya meneka daripada ralat 429.",
         "ia_roadmap_title": "Peta jalan",
         "ia_roadmap_sub": "Apa yang akan datang — tiada di sini merupakan janji tarikh pelancaran, hanya apa yang benar-benar sedang dipertimbangkan.",
@@ -46187,6 +46215,7 @@ TRANSLATIONS = {
         "ve_page_name": "Sahkan E-mel",
     },
     "sw": {
+        "ia_postman_link": "Pakua mkusanyiko wa Postman →",
         "ia_ratelimit_note": "Kila jibu lililothibitishwa linajumuisha vichwa vya X-RateLimit-Limit na X-RateLimit-Remaining, ili uweze kudhibiti kasi ya maombi badala ya kubashiri kutokana na hitilafu ya 429.",
         "ia_roadmap_title": "Ramani ya njia",
         "ia_roadmap_sub": "Kinachofuata — hakuna kilicho hapa ni ahadi ya tarehe ya kutolewa, ni tu kile kinachozingatiwa kwa kweli.",
@@ -47835,6 +47864,7 @@ TRANSLATIONS = {
         "ve_page_name": "Thibitisha Barua Pepe",
     },
     "ne": {
+        "ia_postman_link": "Postman संग्रह डाउनलोड गर्नुहोस् →",
         "ia_ratelimit_note": "हरेक प्रमाणीकृत प्रतिक्रियामा X-RateLimit-Limit र X-RateLimit-Remaining हेडरहरू समावेश हुन्छन्, ताकि तपाईं 429 त्रुटिबाट अनुमान गर्नुको सट्टा अनुरोधहरूको गति नियन्त्रण गर्न सक्नुहुन्छ।",
         "ia_roadmap_title": "रोडम्याप",
         "ia_roadmap_sub": "अब के आउँछ — यहाँ केही पनि शिप मितिको वाचा होइन, केवल वास्तवमा विचार गरिँदैछ।",
@@ -49483,6 +49513,7 @@ TRANSLATIONS = {
         "ve_page_name": "इमेल प्रमाणित गर्नुहोस्",
     },
     "mr": {
+        "ia_postman_link": "Postman संग्रह डाउनलोड करा →",
         "ia_ratelimit_note": "प्रत्येक प्रमाणीकृत प्रतिसादामध्ये X-RateLimit-Limit आणि X-RateLimit-Remaining हेडर्स समाविष्ट असतात, जेणेकरून तुम्ही 429 त्रुटीवरून अंदाज लावण्याऐवजी विनंत्यांचा वेग नियंत्रित करू शकता.",
         "ia_roadmap_title": "रोडमॅप",
         "ia_roadmap_sub": "पुढे काय येत आहे — इथे कशाचीही रिलीज तारखेची हमी नाही, फक्त खरोखर विचारात घेतले जात असलेले.",
@@ -51131,6 +51162,7 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल पडताळा",
     },
     "te": {
+        "ia_postman_link": "Postman కలెక్షన్‌ను డౌన్‌లోడ్ చేయండి →",
         "ia_ratelimit_note": "ప్రతి ప్రామాణీకరించిన స్పందనలో X-RateLimit-Limit మరియు X-RateLimit-Remaining హెడర్‌లు ఉంటాయి, తద్వారా మీరు 429 లోపం నుండి ఊహించే బదులు అభ్యర్థనల వేగాన్ని నియంత్రించవచ్చు.",
         "ia_roadmap_title": "రోడ్‌మ్యాప్",
         "ia_roadmap_sub": "తర్వాత ఏమి వస్తుంది — ఇక్కడ ఏదీ షిప్ డేట్ వాగ్దానం కాదు, నిజంగా పరిగణించబడుతున్నది మాత్రమే.",
@@ -52779,6 +52811,7 @@ TRANSLATIONS = {
         "ve_page_name": "ఇమెయిల్‌ను ధృవీకరించండి",
     },
     "ta": {
+        "ia_postman_link": "Postman சேகரிப்பைப் பதிவிறக்கவும் →",
         "ia_ratelimit_note": "ஒவ்வொரு அங்கீகரிக்கப்பட்ட பதிலிலும் X-RateLimit-Limit மற்றும் X-RateLimit-Remaining தலைப்புகள் அடங்கியுள்ளன, இதனால் 429 பிழையிலிருந்து யூகிப்பதற்குப் பதிலாக கோரிக்கைகளின் வேகத்தை நீங்கள் கட்டுப்படுத்தலாம்.",
         "ia_roadmap_title": "வரைபடம்",
         "ia_roadmap_sub": "அடுத்து என்ன வருகிறது — இங்கு எதுவும் வெளியீட்டு தேதி வாக்குறுதி அல்ல, உண்மையில் பரிசீலிக்கப்படுவது மட்டுமே.",
@@ -54427,6 +54460,7 @@ TRANSLATIONS = {
         "ve_page_name": "மின்னஞ்சலைச் சரிபார்க்கவும்",
     },
     "gu": {
+        "ia_postman_link": "Postman કલેક્શન ડાઉનલોડ કરો →",
         "ia_ratelimit_note": "દરેક પ્રમાણિત પ્રતિભાવમાં X-RateLimit-Limit અને X-RateLimit-Remaining હેડર્સનો સમાવેશ થાય છે, જેથી તમે 429 ભૂલમાંથી અંદાજ લગાવવાને બદલે વિનંતીઓની ગતિ નિયંત્રિત કરી શકો.",
         "ia_roadmap_title": "રોડમેપ",
         "ia_roadmap_sub": "આગળ શું છે — અહીં કંઈ પણ રિલીઝ તારીખનું વચન નથી, ફક્ત ખરેખર ધ્યાનમાં લેવાય રહેલું.",
@@ -56075,6 +56109,7 @@ TRANSLATIONS = {
         "ve_page_name": "ઈમેલ ચકાસો",
     },
     "pa": {
+        "ia_postman_link": "Postman ਸੰਗ੍ਰਹਿ ਡਾਊਨਲੋਡ ਕਰੋ →",
         "ia_ratelimit_note": "ਹਰ ਪ੍ਰਮਾਣਿਤ ਜਵਾਬ ਵਿੱਚ X-RateLimit-Limit ਅਤੇ X-RateLimit-Remaining ਹੈਡਰ ਸ਼ਾਮਲ ਹੁੰਦੇ ਹਨ, ਤਾਂ ਜੋ ਤੁਸੀਂ 429 ਗਲਤੀ ਤੋਂ ਅੰਦਾਜ਼ਾ ਲਗਾਉਣ ਦੀ ਬਜਾਏ ਬੇਨਤੀਆਂ ਦੀ ਗਤੀ ਨੂੰ ਕੰਟਰੋਲ ਕਰ ਸਕੋ।",
         "ia_roadmap_title": "ਰੋਡਮੈਪ",
         "ia_roadmap_sub": "ਅੱਗੇ ਕੀ ਆ ਰਿਹਾ ਹੈ — ਇੱਥੇ ਕੁਝ ਵੀ ਰਿਲੀਜ਼ ਮਿਤੀ ਦਾ ਵਾਅਦਾ ਨਹੀਂ, ਸਿਰਫ਼ ਉਹ ਜੋ ਅਸਲ ਵਿੱਚ ਵਿਚਾਰਿਆ ਜਾ ਰਿਹਾ ਹੈ।",
@@ -57723,6 +57758,7 @@ TRANSLATIONS = {
         "ve_page_name": "ਈਮੇਲ ਦੀ ਤਸਦੀਕ ਕਰੋ",
     },
     "ml": {
+        "ia_postman_link": "Postman ശേഖരം ഡൗൺലോഡ് ചെയ്യുക →",
         "ia_ratelimit_note": "ഓരോ പ്രാമാണീകരിച്ച പ്രതികരണത്തിലും X-RateLimit-Limit, X-RateLimit-Remaining ഹെഡറുകൾ ഉൾപ്പെടുന്നു, അതിനാൽ 429 പിശകിൽ നിന്ന് ഊഹിക്കുന്നതിനുപകരം അഭ്യർത്ഥനകളുടെ വേഗത നിയന്ത്രിക്കാം.",
         "ia_roadmap_title": "റോഡ്മാപ്പ്",
         "ia_roadmap_sub": "അടുത്തതായി എന്ത് വരുന്നു — ഇവിടെ ഒന്നും ഒരു ഷിപ്പ് തീയതി വാഗ്ദാനമല്ല, യഥാർത്ഥത്തിൽ പരിഗണിക്കപ്പെടുന്നത് മാത്രം.",
@@ -59371,6 +59407,7 @@ TRANSLATIONS = {
         "ve_page_name": "ഇമെയിൽ പരിശോധിക്കുക",
     },
     "kn": {
+        "ia_postman_link": "Postman ಸಂಗ್ರಹವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ →",
         "ia_ratelimit_note": "ಪ್ರತಿ ದೃಢೀಕರಿಸಿದ ಪ್ರತಿಕ್ರಿಯೆಯು X-RateLimit-Limit ಮತ್ತು X-RateLimit-Remaining ಹೆಡರ್‌ಗಳನ್ನು ಒಳಗೊಂಡಿದೆ, ಇದರಿಂದ ನೀವು 429 ದೋಷದಿಂದ ಊಹಿಸುವ ಬದಲು ವಿನಂತಿಗಳ ವೇಗವನ್ನು ನಿಯಂತ್ರಿಸಬಹುದು.",
         "ia_roadmap_title": "ರೋಡ್‌ಮ್ಯಾಪ್",
         "ia_roadmap_sub": "ಮುಂದೆ ಏನಿದೆ — ಇಲ್ಲಿ ಯಾವುದೂ ಶಿಪ್ ದಿನಾಂಕದ ಭರವಸೆ ಅಲ್ಲ, ನಿಜವಾಗಿಯೂ ಪರಿಗಣಿಸಲಾಗುತ್ತಿರುವುದು ಮಾತ್ರ.",
@@ -61019,6 +61056,7 @@ TRANSLATIONS = {
         "ve_page_name": "ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ",
     },
     "or": {
+        "ia_postman_link": "Postman ସଂଗ୍ରହ ଡାଉନଲୋଡ୍ କରନ୍ତୁ →",
         "ia_ratelimit_note": "ପ୍ରତ୍ୟେକ ପ୍ରାମାଣିକ ପ୍ରତିକ୍ରିୟାରେ X-RateLimit-Limit ଏବଂ X-RateLimit-Remaining ହେଡର ଅନ୍ତର୍ଭୁକ୍ତ, ଯାହା ଦ୍ୱାରା ଆପଣ 429 ତ୍ରୁଟିରୁ ଅନୁମାନ କରିବା ପରିବର୍ତ୍ତେ ଅନୁରୋଧର ଗତି ନିୟନ୍ତ୍ରଣ କରିପାରିବେ।",
         "ia_roadmap_title": "ରୋଡମ୍ୟାପ୍",
         "ia_roadmap_sub": "ପରବର୍ତ୍ତୀ କ'ଣ ଆସୁଛି — ଏଠାରେ କିଛି ବି ଶିପ୍ ତାରିଖର ପ୍ରତିଶ୍ରୁତି ନୁହେଁ, କେବଳ ପ୍ରକୃତରେ ବିଚାର କରାଯାଉଥିବା ବିଷୟ।",
@@ -62667,6 +62705,7 @@ TRANSLATIONS = {
         "ve_page_name": "ଇମେଲ ଯାଞ୍ଚ କରନ୍ତୁ",
     },
     "ps": {
+        "ia_postman_link": "د Postman ټولګه ډاونلوډ کړئ →",
         "ia_ratelimit_note": "هر تایید شوی ځواب کې د X-RateLimit-Limit او X-RateLimit-Remaining هیډرونه شامل دي، ترڅو تاسو د 429 تېروتنې څخه اټکل کولو پرځای د غوښتنو سرعت تنظیم کړئ.",
         "ia_roadmap_title": "د لارې نقشه",
         "ia_roadmap_sub": "بل څه راځي — دلته هیڅ شی د لېږد نېټې ژمنه نه ده، یوازې هغه څه چې واقعیا پکې غور کیږي.",
@@ -64315,6 +64354,7 @@ TRANSLATIONS = {
         "ve_page_name": "بریښنالیک تایید کړئ",
     },
     "ha": {
+        "ia_postman_link": "Sauke tarin Postman →",
         "ia_ratelimit_note": "Kowane amsa da aka tantance ya haɗa da kanun X-RateLimit-Limit da X-RateLimit-Remaining, don ka iya daidaita saurin buƙatun maimakon yin hasashe daga kuskuren 429.",
         "ia_roadmap_title": "Taswirar hanya",
         "ia_roadmap_sub": "Abin da zai zo gaba — babu wani abu a nan alkawarin ranar aikawa ba ne, kawai abin da ake la'akari da shi a zahiri.",
@@ -65963,6 +66003,7 @@ TRANSLATIONS = {
         "ve_page_name": "Tabbatar da Imel",
     },
     "ku": {
+        "ia_postman_link": "Berhevoka Postman dakêşe →",
         "ia_ratelimit_note": "Her bersiveke pejirandî sernavên X-RateLimit-Limit û X-RateLimit-Remaining vedihewîne, ji ber vê yekê tu dikarî lezê daxwazan bi rêk bixî li şûna texmîn kirinê ji çewtiya 429.",
         "ia_roadmap_title": "Nexşeya rê",
         "ia_roadmap_sub": "Tiştê ku tê — tiştek li vir soza dîroka barkirinê nîne, tenê tiştê ku bi rastî tê ramîn e.",
@@ -67611,6 +67652,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-nameyê Pejirand",
     },
     "si": {
+        "ia_postman_link": "Postman එකතුව බාගන්න →",
         "ia_ratelimit_note": "සෑම සත්‍යාපිත ප්‍රතිචාරයකම X-RateLimit-Limit සහ X-RateLimit-Remaining ශීර්ෂ ඇතුළත් වේ, එබැවින් ඔබට 429 දෝෂයකින් අනුමාන කරනවා වෙනුවට ඉල්ලීම් වේගය පාලනය කළ හැක.",
         "ia_roadmap_title": "මාර්ග සිතියම",
         "ia_roadmap_sub": "ඊළඟට එන දේ — මෙහි කිසිවක් නිකුතු දිනයක් පොරොන්දුවක් නොවේ, සැබවින්ම සලකා බලමින් ඇති දේ පමණි.",
@@ -69259,6 +69301,7 @@ TRANSLATIONS = {
         "ve_page_name": "විද්‍යුත් තැපෑල තහවුරු කරන්න",
     },
     "uz": {
+        "ia_postman_link": "Postman to'plamini yuklab oling →",
         "ia_ratelimit_note": "Har bir autentifikatsiya qilingan javobda X-RateLimit-Limit va X-RateLimit-Remaining sarlavhalari mavjud, shuning uchun siz 429 xatosidan taxmin qilish o'rniga so'rovlar tezligini boshqarishingiz mumkin.",
         "ia_roadmap_title": "Yo'l xaritasi",
         "ia_roadmap_sub": "Keyingi qadam — bu yerdagi hech narsa chiqarilish sanasi va'dasi emas, faqat haqiqatan ko'rib chiqilayotgan narsa.",
@@ -70907,6 +70950,7 @@ TRANSLATIONS = {
         "ve_page_name": "Elektron pochtani tasdiqlash",
     },
     "az": {
+        "ia_postman_link": "Postman kolleksiyasını yükləyin →",
         "ia_ratelimit_note": "Hər autentifikasiya edilmiş cavaba X-RateLimit-Limit və X-RateLimit-Remaining başlıqları daxildir, beləliklə siz sorğuların sürətini 429 xətasından təxmin etmək əvəzinə tənzimləyə bilərsiniz.",
         "ia_roadmap_title": "Yol xəritəsi",
         "ia_roadmap_sub": "Növbəti nə var — burada heç nə buraxılış tarixi vədi deyil, yalnız həqiqətən nəzərdən keçirilən şeylərdir.",
@@ -72555,6 +72599,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-poçtu Təsdiqlə",
     },
     "jv": {
+        "ia_postman_link": "Undhuh koleksi Postman →",
         "ia_ratelimit_note": "Saben respon sing wis diverifikasi kalebu header X-RateLimit-Limit lan X-RateLimit-Remaining, supaya sampeyan bisa ngatur kacepetan panjaluk tinimbang ngira-ira saka kesalahan 429.",
         "ia_roadmap_title": "Peta dalan",
         "ia_roadmap_sub": "Apa sing bakal teka — ora ana ing kene sing dadi janji tanggal rilis, mung apa sing bener-bener dipikirake.",
@@ -74203,6 +74248,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "su": {
+        "ia_postman_link": "Undhuh koléksi Postman →",
         "ia_ratelimit_note": "Unggal réspon anu geus diotentikasi ngawengku header X-RateLimit-Limit jeung X-RateLimit-Remaining, supaya anjeun bisa ngatur laju paménta tinimbang nebak tina kasalahan 429.",
         "ia_roadmap_title": "Peta jalan",
         "ia_roadmap_sub": "Naon anu bakal datang — teu aya di dieu anu mangrupikeun jangji tanggal rilis, ngan naon anu leres-leres dipertimbangkeun.",
@@ -75851,6 +75897,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "pcm": {
+        "ia_postman_link": "Download Postman collection →",
         "ia_ratelimit_note": "Every response wey don authenticate get X-RateLimit-Limit and X-RateLimit-Remaining headers, so you fit pace your requests instead of dey guess from 429 error.",
         "ia_roadmap_title": "Roadmap",
         "ia_roadmap_sub": "Wetin dey come next — nothing here na promise of ship date, na just wetin dem dey really consider.",
