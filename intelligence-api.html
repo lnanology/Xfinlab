@@ -123,23 +123,23 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 <nav>
   <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
   <div class="nav-right">
-    <a href="index.html">← Back to XFINLAB</a>
+    <a href="index.html" data-i18n="ia_nav_back">← Back to XFINLAB</a>
   </div>
 </nav>
 
 <div class="container">
 
   <div class="hero">
-    <span class="badge-pill">EARLY ACCESS</span>
-    <h1>Real market intelligence, structured for developers</h1>
-    <p>Six JSON endpoints — market events, FinBERT sentiment, multi-agent AI debate, structured intelligence feed, technical/market-structure analysis, and Monte Carlo stress testing — built on the same real data and anti-fabrication principles behind XFINLAB's own product. Free tier keys are issued instantly and automatically; Pro/Enterprise are still set up personally.</p>
+    <span class="badge-pill" data-i18n="ia_badge">EARLY ACCESS</span>
+    <h1 data-i18n="ia_hero_title">Real market intelligence, structured for developers</h1>
+    <p data-i18n="ia_hero_p">Seven JSON endpoints — market events, FinBERT sentiment, multi-agent AI debate, structured intelligence feed, technical/market-structure analysis, Monte Carlo stress testing, and regime-aware signals — built on the same real data and anti-fabrication principles behind XFINLAB's own product. Free tier keys are issued instantly and automatically; Pro/Enterprise are still set up personally.</p>
     <div class="hero-ctas">
-      <a href="#quickstart" class="btn-primary">Quickstart →</a>
-      <a href="#access" class="btn-ghost">Request Early Access</a>
-      <a href="#endpoints" class="btn-ghost">See the endpoints</a>
-      <a href="#data-sourcing" class="btn-ghost">Data sourcing</a>
-      <a href="#sdks" class="btn-ghost">SDKs</a>
-      <a href="#mcp" class="btn-ghost">MCP Server</a>
+      <a href="#quickstart" class="btn-primary" data-i18n="ia_cta_quickstart">Quickstart →</a>
+      <a href="#access" class="btn-ghost" data-i18n="ia_cta_access">Request Early Access</a>
+      <a href="#endpoints" class="btn-ghost" data-i18n="ia_cta_endpoints">See the endpoints</a>
+      <a href="#data-sourcing" class="btn-ghost" data-i18n="ia_cta_datasourcing">Data sourcing</a>
+      <a href="#sdks" class="btn-ghost" data-i18n="ia_cta_sdks">SDKs</a>
+      <a href="#mcp" class="btn-ghost" data-i18n="ia_cta_mcp">MCP Server</a>
     </div>
   </div>
 
@@ -150,30 +150,30 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
        styling and copyCode() already defined for the #sdks section below
        -- no new JS logic, no page rebuild. -->
   <div class="section" id="quickstart">
-    <div class="section-title">Quickstart</div>
-    <div class="section-sub">Three steps, no signup wait for the free tier.</div>
+    <div class="section-title" data-i18n="ia_qs_title">Quickstart</div>
+    <div class="section-sub" data-i18n="ia_qs_sub">Three steps, no signup wait for the free tier.</div>
     <div class="qs-steps">
       <div class="qs-step">
         <div class="qs-num">1</div>
         <div class="qs-body">
-          <div class="qs-step-title">Get a free API key</div>
-          <div class="qs-step-desc">Issued instantly and automatically — <a href="#access">request one below</a>, no waiting on a human.</div>
+          <div class="qs-step-title" data-i18n="ia_qs1_title">Get a free API key</div>
+          <div class="qs-step-desc"><span data-i18n="ia_qs1_desc">Issued instantly and automatically, no waiting on a human.</span> <a href="#access" data-i18n="ia_qs1_link">Request one below →</a></div>
         </div>
       </div>
       <div class="qs-step">
         <div class="qs-num">2</div>
         <div class="qs-body">
-          <div class="qs-step-title">Make your first call</div>
-          <div class="qs-step-desc">One endpoint, one header. Swap in your own key and ticker.</div>
-          <div class="code-block"><button class="copy-btn" onclick="copyCode('qsCurl',this)">Copy</button><span id="qsCurl">curl -H "X-API-Key: xfl_..." \
+          <div class="qs-step-title" data-i18n="ia_qs2_title">Make your first call</div>
+          <div class="qs-step-desc" data-i18n="ia_qs2_desc">One endpoint, one header. Swap in your own key and ticker.</div>
+          <div class="code-block"><button class="copy-btn" onclick="copyCode('qsCurl',this)" data-i18n="ia_copy_btn">Copy</button><span id="qsCurl">curl -H "X-API-Key: xfl_..." \
   "https://api.xfinlab.com/api/intelligence/v1/sentiment?ticker=AAPL"</span></div>
         </div>
       </div>
       <div class="qs-step">
         <div class="qs-num">3</div>
         <div class="qs-body">
-          <div class="qs-step-title">See a real result</div>
-          <div class="qs-step-desc">Trimmed example — your actual response includes per-headline sentiment too.</div>
+          <div class="qs-step-title" data-i18n="ia_qs3_title">See a real result</div>
+          <div class="qs-step-desc" data-i18n="ia_qs3_desc">Trimmed example — your actual response includes per-headline sentiment too.</div>
           <div class="code-block"><span>{
   "success": true,
   "data": {
@@ -186,12 +186,12 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
         </div>
       </div>
     </div>
-    <p style="text-align:center;margin-top:18px;font-size:0.83rem;color:var(--text-muted)">Prefer Python or Node? Skip to the <a href="#sdks">official SDKs</a> — same endpoint, one method call.</p>
+    <p style="text-align:center;margin-top:18px;font-size:0.83rem;color:var(--text-muted)"><span data-i18n="ia_qs_footer">Prefer Python or Node? Same endpoint, one method call.</span> <a href="#sdks" data-i18n="ia_qs_footer_link">See the official SDKs →</a></p>
   </div>
 
   <div class="section" id="endpoints">
-    <div class="section-title">Six endpoints, one API key</div>
-    <div class="section-sub">Every response is AI-structured JSON — never raw scraped article text.</div>
+    <div class="section-title" data-i18n="ia_ep_title">Seven endpoints, one API key</div>
+    <div class="section-sub" data-i18n="ia_ep_sub">Every response is AI-structured JSON — never raw scraped article text.</div>
     <div class="endpoints">
       <div class="ep-card">
         <div class="ep-head">
@@ -199,8 +199,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
           <span class="ep-weight">1x</span>
         </div>
         <span class="ep-tag">GET /v1/events</span>
-        <div class="ep-name">Events</div>
-        <div class="ep-desc">Recent market/company headlines by ticker or globally — title, source, publish time, and link. No fabricated summaries of articles we can't retain in full.</div>
+        <div class="ep-name" data-i18n="ia_ep1_name">Events</div>
+        <div class="ep-desc" data-i18n="ia_ep1_desc">Recent market/company headlines by ticker or globally — title, source, publish time, and link. No fabricated summaries of articles we can't retain in full.</div>
       </div>
       <div class="ep-card">
         <div class="ep-head">
@@ -208,8 +208,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
           <span class="ep-weight">1x</span>
         </div>
         <span class="ep-tag">GET /v1/sentiment</span>
-        <div class="ep-name">Sentiment</div>
-        <div class="ep-desc">FinBERT-scored sentiment across a ticker's recent headlines — per-headline label/confidence plus an aggregate score. Honestly reports "unavailable" rather than guessing when the model is unreachable.</div>
+        <div class="ep-name" data-i18n="ia_ep2_name">Sentiment</div>
+        <div class="ep-desc" data-i18n="ia_ep2_desc">FinBERT-scored sentiment across a ticker's recent headlines — per-headline label/confidence plus an aggregate score. Honestly reports "unavailable" rather than guessing when the model is unreachable.</div>
       </div>
       <div class="ep-card">
         <div class="ep-head">
@@ -217,8 +217,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
           <span class="ep-weight">5x</span>
         </div>
         <span class="ep-tag">GET /v1/debate</span>
-        <div class="ep-name">AI Debate</div>
-        <div class="ep-desc">A 4-call Bull / Bear / Risk-Manager / Arbiter debate grounded in real technical data for a ticker — synthesized into one verdict.</div>
+        <div class="ep-name" data-i18n="ia_ep3_name">AI Debate</div>
+        <div class="ep-desc" data-i18n="ia_ep3_desc">A 4-call Bull / Bear / Risk-Manager / Arbiter debate grounded in real technical data for a ticker — synthesized into one verdict.</div>
       </div>
       <div class="ep-card">
         <div class="ep-head">
@@ -226,8 +226,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
           <span class="ep-weight">8x</span>
         </div>
         <span class="ep-tag">GET /v1/intel/latest · /v1/intel/{ticker}</span>
-        <div class="ep-name">AI Intelligence Feed</div>
-        <div class="ep-desc">Original structured intelligence, not raw news: same-event headlines clustered, then enriched with entities, sentiment, real technical/historical-analog signals, a non-causal cross-asset co-movement read, and an AI-written narrative — every number traceable to a real computation, never a fabricated confidence score. The most compute-intensive endpoint.</div>
+        <div class="ep-name" data-i18n="ia_ep4_name">AI Intelligence Feed</div>
+        <div class="ep-desc" data-i18n="ia_ep4_desc">Original structured intelligence, not raw news: same-event headlines clustered, then enriched with entities, sentiment, real technical/historical-analog signals, a non-causal cross-asset co-movement read, and an AI-written narrative — every number traceable to a real computation, never a fabricated confidence score. The most compute-intensive endpoint.</div>
       </div>
       <div class="ep-card">
         <div class="ep-head">
@@ -235,8 +235,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
           <span class="ep-weight">3x</span>
         </div>
         <span class="ep-tag">GET /v1/technical/{ticker}</span>
-        <div class="ep-name">Technical &amp; Market Structure</div>
-        <div class="ep-desc">Confluence direction/confidence, trend, MACD, volume, chart-pattern detection, and market structure (break-of-structure, change-of-character, liquidity sweeps, order flow, volume profile, institutional footprint) for any ticker — the same engine behind XFINLAB's own chart analysis.</div>
+        <div class="ep-name" data-i18n="ia_ep5_name">Technical &amp; Market Structure</div>
+        <div class="ep-desc" data-i18n="ia_ep5_desc">Confluence direction/confidence, trend, MACD, volume, chart-pattern detection, and market structure (break-of-structure, change-of-character, liquidity sweeps, order flow, volume profile, institutional footprint) for any ticker — the same engine behind XFINLAB's own chart analysis.</div>
       </div>
       <div class="ep-card">
         <div class="ep-head">
@@ -244,8 +244,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
           <span class="ep-weight">3x</span>
         </div>
         <span class="ep-tag">POST /v1/stress-test</span>
-        <div class="ep-name">Monte Carlo Stress Test</div>
-        <div class="ep-desc">A real historical-bootstrap simulation — resamples a symbol's own real daily returns thousands of times to report percentile ending values and drawdowns for a given horizon. Never an LLM-estimated number.</div>
+        <div class="ep-name" data-i18n="ia_ep6_name">Monte Carlo Stress Test</div>
+        <div class="ep-desc" data-i18n="ia_ep6_desc">A real historical-bootstrap simulation — resamples a symbol's own real daily returns thousands of times to report percentile ending values and drawdowns for a given horizon. Never an LLM-estimated number.</div>
       </div>
       <!-- 2026-08-10 (P3 of the Quant Research Factory roadmap): packages
            services/regime_router_service.py. Honestly reports
@@ -258,8 +258,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
           <span class="ep-weight">3x</span>
         </div>
         <span class="ep-tag">GET /v1/regime-signal/{ticker}</span>
-        <div class="ep-name">Regime-Aware Signal</div>
-        <div class="ep-desc">Current causal market regime for a ticker, plus whichever composed signal combo has historically performed best in that same regime — backed by real walk-forward-validated backtests, not a fabricated pick. Honestly reports "not enough data yet" for tickers not yet covered by the scheduled scan.</div>
+        <div class="ep-name" data-i18n="ia_ep7_name">Regime-Aware Signal</div>
+        <div class="ep-desc" data-i18n="ia_ep7_desc">Current causal market regime for a ticker, plus whichever composed signal combo has historically performed best in that same regime — backed by real walk-forward-validated backtests, not a fabricated pick. Honestly reports "not enough data yet" for tickers not yet covered by the scheduled scan.</div>
       </div>
     </div>
   </div>
@@ -278,36 +278,36 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
        all, so this is a real point of difference, not just legal
        cover. -->
   <div class="section" id="data-sourcing">
-    <div class="section-title">Where the data comes from</div>
-    <div class="section-sub">Every source below is licensed for commercial redistribution — verified directly against each provider's own published terms, not assumed.</div>
+    <div class="section-title" data-i18n="ia_ds_title">Where the data comes from</div>
+    <div class="section-sub" data-i18n="ia_ds_sub">Every source below is licensed for commercial redistribution — verified directly against each provider's own published terms, not assumed.</div>
     <div class="source-grid">
       <div class="ep-card">
         <div class="ep-head">
           <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
         </div>
-        <div class="ep-name">News &amp; events</div>
-        <div class="ep-desc">GDELT's global news monitoring (public-domain, 100+ languages, unlimited commercial use) plus official company press-release wires (GlobeNewswire, PR Newswire). No feed in this pipeline carries a personal/non-commercial-use restriction.</div>
+        <div class="ep-name" data-i18n="ia_ds1_name">News &amp; events</div>
+        <div class="ep-desc" data-i18n="ia_ds1_desc">GDELT's global news monitoring (public-domain, 100+ languages, unlimited commercial use) plus official company press-release wires (GlobeNewswire, PR Newswire). No feed in this pipeline carries a personal/non-commercial-use restriction.</div>
       </div>
       <div class="ep-card">
         <div class="ep-head">
           <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 9-9"/><path d="M15 7h6v6"/></svg></div>
         </div>
-        <div class="ep-name">US &amp; Taiwan price data</div>
-        <div class="ep-desc">US-listed symbols: Alpaca Markets' licensed feed. Taiwan-listed symbols: the Taiwan Stock Exchange's own official open-data API. Both explicitly permit commercial redistribution — no unofficial scrapers in this path.</div>
+        <div class="ep-name" data-i18n="ia_ds2_name">US price data</div>
+        <div class="ep-desc" data-i18n="ia_ds2_desc">US-listed symbols: Alpaca Markets' licensed feed. Explicitly permits commercial redistribution — no unofficial scrapers in this path.</div>
       </div>
       <div class="ep-card">
         <div class="ep-head">
           <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.3 2.7 3.6 6 3.6 9s-1.3 6.3-3.6 9c-2.3-2.7-3.6-6-3.6-9s1.3-6.3 3.6-9z"/></svg></div>
         </div>
-        <div class="ep-name">Other markets</div>
-        <div class="ep-desc">Hong Kong and other non-US, non-Taiwan symbols currently use a best-effort fallback source while we evaluate a licensed provider — disclosed here, not hidden. And regardless of source, no endpoint re-exports raw price bars: every price-derived field (trend, RSI, support/resistance, market structure) is a computed result, not the underlying feed.</div>
+        <div class="ep-name" data-i18n="ia_ds3_name">Taiwan &amp; other markets</div>
+        <div class="ep-desc" data-i18n="ia_ds3_desc">Taiwan-listed symbols: the Taiwan Stock Exchange's own official open-data API — fully licensed for commercial redistribution, same standard as the US feed. Hong Kong and other non-US, non-Taiwan symbols currently use a best-effort fallback source while we evaluate a licensed provider — disclosed here, not hidden. And regardless of source, no endpoint re-exports raw price bars: every price-derived field (trend, RSI, support/resistance, market structure) is a computed result, not the underlying feed.</div>
       </div>
     </div>
   </div>
 
   <div class="section" id="sdks">
-    <div class="section-title">Official SDKs</div>
-    <div class="section-sub">Thin, zero-magic wrappers -- one method per endpoint, the same JSON you'd get from a raw HTTP call. Not yet on PyPI/npm (no paying developers yet to justify that maintenance overhead) -- install straight from the repo for now.</div>
+    <div class="section-title" data-i18n="ia_sdk_title">Official SDKs</div>
+    <div class="section-sub" data-i18n="ia_sdk_sub">Thin, zero-magic wrappers — one method per endpoint, the same JSON you'd get from a raw HTTP call. Not yet on PyPI/npm (no paying developers yet to justify that maintenance overhead) — install straight from the repo for now.</div>
     <div class="sdk-card">
       <div class="sdk-tabs" role="tablist">
         <button class="sdk-tab-btn active" data-sdk-tab="python" onclick="sdkTab('python')">Python</button>
@@ -317,7 +317,7 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 
       <div class="sdk-panel active" id="sdkPanel-python">
         <div class="sdk-install"><span id="sdkInstall-python">pip install "git+https://github.com/lnanology/Xfinlab.git#subdirectory=sdk/python"</span></div>
-        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-python',this)">Copy</button><span id="sdkCode-python">from xfinlab_intelligence import XfinlabClient
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-python',this)" data-i18n="ia_copy_btn">Copy</button><span id="sdkCode-python">from xfinlab_intelligence import XfinlabClient
 
 client = XfinlabClient(api_key="xfl_...")
 client.sentiment("AAPL")</span></div>
@@ -325,20 +325,20 @@ client.sentiment("AAPL")</span></div>
 
       <div class="sdk-panel" id="sdkPanel-node">
         <div class="sdk-install"><span id="sdkInstall-node">npm install "github:lnanology/Xfinlab#path:sdk/js"</span></div>
-        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-node',this)">Copy</button><span id="sdkCode-node">const { XfinlabClient } = require('xfinlab-intelligence');
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-node',this)" data-i18n="ia_copy_btn">Copy</button><span id="sdkCode-node">const { XfinlabClient } = require('xfinlab-intelligence');
 
 const client = new XfinlabClient('xfl_...');
 await client.sentiment('AAPL');</span></div>
       </div>
 
       <div class="sdk-panel" id="sdkPanel-curl">
-        <div class="sdk-install">No SDK needed -- every endpoint is plain JSON over HTTPS.</div>
-        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-curl',this)">Copy</button><span id="sdkCode-curl">curl -H "X-API-Key: xfl_..." \
+        <div class="sdk-install" data-i18n="ia_sdk_curl_note">No SDK needed — every endpoint is plain JSON over HTTPS.</div>
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-curl',this)" data-i18n="ia_copy_btn">Copy</button><span id="sdkCode-curl">curl -H "X-API-Key: xfl_..." \
   "https://api.xfinlab.com/api/intelligence/v1/sentiment?ticker=AAPL"</span></div>
       </div>
     </div>
     <div style="text-align:center;margin-top:18px">
-      <a href="https://github.com/lnanology/Xfinlab/tree/main/sdk" target="_blank" class="btn-ghost">View SDK source on GitHub</a>
+      <a href="https://github.com/lnanology/Xfinlab/tree/main/sdk" target="_blank" class="btn-ghost" data-i18n="ia_sdk_github_btn">View SDK source on GitHub</a>
     </div>
   </div>
 
@@ -352,12 +352,12 @@ await client.sentiment('AAPL');</span></div>
        in the repo root for the ready-to-paste versions of this same
        content). -->
   <div class="section" id="mcp">
-    <div class="section-title">MCP Server — for AI agents &amp; Claude</div>
-    <div class="section-sub">The same 6 endpoints above, exposed as Model Context Protocol tools -- so an AI agent (Claude, or any MCP-compatible client) can call them directly instead of you writing the HTTP glue yourself.</div>
+    <div class="section-title" data-i18n="ia_mcp_title">MCP Server — for AI agents &amp; Claude</div>
+    <div class="section-sub" data-i18n="ia_mcp_sub">The same 7 endpoints above, exposed as Model Context Protocol tools — so an AI agent (Claude, or any MCP-compatible client) can call them directly instead of you writing the HTTP glue yourself.</div>
     <div class="sdk-card">
       <div class="sdk-panel active" style="display:block">
         <div class="sdk-install"><span>Streamable HTTP endpoint: https://api.xfinlab.com/api/mcp</span></div>
-        <div class="code-block"><button class="copy-btn" onclick="copyCode('mcpConfig',this)">Copy</button><span id="mcpConfig">{
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('mcpConfig',this)" data-i18n="ia_copy_btn">Copy</button><span id="mcpConfig">{
   "mcpServers": {
     "xfinlab": {
       "url": "https://api.xfinlab.com/api/mcp",
@@ -365,79 +365,79 @@ await client.sentiment('AAPL');</span></div>
     }
   }
 }</span></div>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin:14px 0 6px">Prefer raw JSON-RPC? A GET to the same URL returns a human-readable info page; every tool call is a single stateless POST -- no session handshake beyond the standard MCP <code>initialize</code>.</p>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:14px 0 6px" data-i18n="ia_mcp_note1">Prefer raw JSON-RPC? A GET to the same URL returns a human-readable info page; every tool call is a single stateless POST — no session handshake beyond the standard MCP "initialize" method.</p>
       </div>
     </div>
     <div class="endpoints" style="margin-top:20px">
       <div class="ep-card">
         <span class="ep-tag">get_market_events</span>
-        <div class="ep-desc">Recent market/company headlines, optionally filtered by ticker.</div>
+        <div class="ep-desc" data-i18n="ia_mcp1_desc">Recent market/company headlines, optionally filtered by ticker.</div>
       </div>
       <div class="ep-card">
         <span class="ep-tag">get_sentiment</span>
-        <div class="ep-desc">FinBERT sentiment score for a ticker's recent headlines.</div>
+        <div class="ep-desc" data-i18n="ia_mcp2_desc">FinBERT sentiment score for a ticker's recent headlines.</div>
       </div>
       <div class="ep-card">
         <span class="ep-tag">get_technical_analysis</span>
-        <div class="ep-desc">Confluence direction, trend, MACD, volume, patterns and market-structure signals from real OHLC data.</div>
+        <div class="ep-desc" data-i18n="ia_mcp3_desc">Confluence direction, trend, MACD, volume, patterns and market-structure signals from real OHLC data.</div>
       </div>
       <div class="ep-card">
         <span class="ep-tag">get_intelligence_feed</span>
-        <div class="ep-desc">AI-structured, clustered event intelligence with a narrative summary -- never a directional trading signal or probability estimate.</div>
+        <div class="ep-desc" data-i18n="ia_mcp4_desc">AI-structured, clustered event intelligence with a narrative summary — never a directional trading signal or probability estimate.</div>
       </div>
       <div class="ep-card">
         <span class="ep-tag">get_global_market_map</span>
-        <div class="ep-desc">Cross-region macro + news + sentiment snapshot across 10 regions (US, Europe, Japan, Korea, China, HK, Taiwan, SE Asia, Middle East, LatAm).</div>
+        <div class="ep-desc" data-i18n="ia_mcp5_desc">Cross-region macro + news + sentiment snapshot across 10 regions (US, Europe, Japan, Korea, China, HK, Taiwan, SE Asia, Middle East, LatAm).</div>
       </div>
     </div>
-    <p style="max-width:640px;margin:16px auto 0;font-size:0.83rem;color:var(--text-muted);text-align:center">Auth and quota are identical to the REST API above -- same <code>X-API-Key</code>, same free tier, same weighted daily limit. No separate free ride through MCP.</p>
+    <p style="max-width:640px;margin:16px auto 0;font-size:0.83rem;color:var(--text-muted);text-align:center" data-i18n="ia_mcp_note2">Auth and quota are identical to the REST API above — same X-API-Key, same free tier, same weighted daily limit. No separate free ride through MCP.</p>
   </div>
 
   <div class="section">
-    <div class="section-title">Plans</div>
-    <div class="section-sub">Free is instant and automated. Pro/Enterprise are still set up personally — pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
+    <div class="section-title" data-i18n="ia_plans_title">Plans</div>
+    <div class="section-sub" data-i18n="ia_plans_sub">Free is instant and automated. Pro/Enterprise are still set up personally — pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
     <div class="plans" id="plansGrid">
 
       <div class="plan" id="plan-free" data-plan="free">
-        <div class="plan-name">Free</div>
+        <div class="plan-name" data-i18n="ia_plan_free_name">Free</div>
         <div class="plan-price">$0</div>
-        <div class="plan-desc">For evaluating the API and prototyping.</div>
+        <div class="plan-desc" data-i18n="ia_plan_free_desc">For evaluating the API and prototyping.</div>
         <ul class="plan-features">
-          <li><span class="check">✓</span> 100 weighted calls / day</li>
-          <li><span class="check">✓</span> Events + Sentiment endpoints</li>
-          <li><span class="cross">✕</span> AI Debate endpoint</li>
-          <li><span class="cross">✕</span> AI Intelligence Feed endpoint</li>
-          <li><span class="cross">✕</span> Priority support</li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_free_f1">100 weighted calls / day</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_free_f2">Events + Sentiment endpoints</span></li>
+          <li><span class="cross">✕</span> <span data-i18n="ia_plan_free_f3">AI Debate endpoint</span></li>
+          <li><span class="cross">✕</span> <span data-i18n="ia_plan_free_f4">AI Intelligence Feed endpoint</span></li>
+          <li><span class="cross">✕</span> <span data-i18n="ia_plan_free_f5">Priority support</span></li>
         </ul>
-        <button class="plan-btn" onclick="selectPlan('free')">Get a Free Key</button>
+        <button class="plan-btn" onclick="selectPlan('free')" data-i18n="ia_plan_free_btn">Get a Free Key</button>
       </div>
 
       <div class="plan popular" id="plan-pro" data-plan="pro">
-        <div class="plan-name">Pro</div>
-        <div class="plan-price">$49<small>/month</small><br><small>recommended — see below</small></div>
-        <div class="plan-desc">For shipping a real integration.</div>
+        <div class="plan-name" data-i18n="ia_plan_pro_name">Pro</div>
+        <div class="plan-price">$49<small data-i18n="ia_plan_pro_permonth">/month</small><br><small data-i18n="ia_plan_pro_recommended">recommended — see below</small></div>
+        <div class="plan-desc" data-i18n="ia_plan_pro_desc">For shipping a real integration.</div>
         <ul class="plan-features">
-          <li><span class="check">✓</span> 5,000 weighted calls / day</li>
-          <li><span class="check">✓</span> All 4 endpoints, incl. AI Debate + AI Intelligence Feed</li>
-          <li><span class="check">✓</span> Branded embed widgets — your colors + logo, co-branded badge</li>
-          <li><span class="check">✓</span> Priority email support</li>
-          <li><span class="check">✓</span> Early say in the public roadmap</li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f1">5,000 weighted calls / day</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f2">All 4 endpoints, incl. AI Debate + AI Intelligence Feed</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f3">Branded embed widgets — your colors + logo, co-branded badge</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f4">Priority email support</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f5">Early say in the public roadmap</span></li>
         </ul>
-        <button class="plan-btn" onclick="selectPlan('pro')">Request Early Access</button>
+        <button class="plan-btn" onclick="selectPlan('pro')" data-i18n="ia_cta_access">Request Early Access</button>
       </div>
 
       <div class="plan" id="plan-enterprise" data-plan="enterprise">
-        <div class="plan-name">Enterprise</div>
-        <div class="plan-price">Custom</div>
-        <div class="plan-desc">For higher volume or dedicated needs.</div>
+        <div class="plan-name" data-i18n="ia_plan_ent_name">Enterprise</div>
+        <div class="plan-price" data-i18n="ia_plan_ent_price">Custom</div>
+        <div class="plan-desc" data-i18n="ia_plan_ent_desc">For higher volume or dedicated needs.</div>
         <ul class="plan-features">
-          <li><span class="check">✓</span> Unlimited calls</li>
-          <li><span class="check">✓</span> All 4 endpoints, incl. AI Debate + AI Intelligence Feed</li>
-          <li><span class="check">✓</span> White-label: clean JSON with no XFINLAB branding, plus fully unbranded embed widgets (badge removed)</li>
-          <li><span class="check">✓</span> Dedicated support</li>
-          <li><span class="check">✓</span> SLA on request</li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f1">Unlimited calls</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f2">All 4 endpoints, incl. AI Debate + AI Intelligence Feed</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f3">White-label: clean JSON with no XFINLAB branding, plus fully unbranded embed widgets (badge removed)</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f4">Dedicated support</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f5">SLA on request</span></li>
         </ul>
-        <button class="plan-btn" onclick="selectPlan('enterprise')">Contact Sales</button>
+        <button class="plan-btn" onclick="selectPlan('enterprise')" data-i18n="ia_plan_ent_btn">Contact Sales</button>
       </div>
 
     </div>
@@ -448,50 +448,58 @@ await client.sentiment('AAPL');</span></div>
          (see api/widgets.py) with a data-xfl-key attribute on the embed
          script tag; contact us after signing up to have your branding
          configured. -->
-    <p style="max-width:640px;margin:16px auto 0;font-size:0.85rem;color:var(--muted,#6b7280);text-align:center">
+    <p style="max-width:640px;margin:16px auto 0;font-size:0.85rem;color:var(--muted,#6b7280);text-align:center" data-i18n="ia_plans_footer">
       Every endpoint above returns plain JSON with no XFINLAB branding — safe to resell under your own product name. Pro/Enterprise keys can also re-skin the free embed widgets (colors, logo, co-brand or fully removed badge) — ask us to configure it once you have a key.
     </p>
   </div>
 
   <div class="section" id="access">
-    <div class="section-title">Get an API Key</div>
-    <div class="section-sub">Choose Free below and your key is emailed instantly — no waiting. Choose Pro or Enterprise and we'll follow up personally with pricing that fits.</div>
+    <div class="section-title" data-i18n="ia_access_title">Get an API Key</div>
+    <div class="section-sub" data-i18n="ia_access_sub">Choose Free below and your key is emailed instantly — no waiting. Choose Pro or Enterprise and we'll follow up personally with pricing that fits.</div>
 
     <form class="access-form" id="accessForm">
       <div class="form-row">
-        <label for="accessEmail">Email *</label>
+        <label for="accessEmail" data-i18n="ia_access_label_email">Email *</label>
         <input type="email" id="accessEmail" required placeholder="you@company.com">
       </div>
       <div class="form-row">
-        <label for="accessCompany">Company / project (optional)</label>
+        <label for="accessCompany" data-i18n="ia_access_label_company">Company / project (optional)</label>
         <input type="text" id="accessCompany" placeholder="e.g. Acme Trading Bot">
       </div>
       <div class="form-row">
-        <label for="accessTier">Which plan interests you?</label>
+        <label for="accessTier" data-i18n="ia_access_label_tier">Which plan interests you?</label>
         <select id="accessTier">
-          <option value="free">Free</option>
-          <option value="pro" selected>Pro</option>
-          <option value="enterprise">Enterprise</option>
+          <option value="free" data-i18n="ia_plan_free_name">Free</option>
+          <option value="pro" selected data-i18n="ia_plan_pro_name">Pro</option>
+          <option value="enterprise" data-i18n="ia_plan_ent_name">Enterprise</option>
         </select>
       </div>
       <div class="form-row">
-        <label for="accessMessage">What are you building? (optional)</label>
-        <textarea id="accessMessage" placeholder="A quick sentence helps us set you up faster"></textarea>
+        <label for="accessMessage" data-i18n="ia_access_label_message">What are you building? (optional)</label>
+        <textarea id="accessMessage" data-i18n-placeholder="ia_access_placeholder_message" placeholder="A quick sentence helps us set you up faster"></textarea>
       </div>
-      <button type="submit" class="form-submit" id="accessSubmitBtn">Request Access</button>
+      <button type="submit" class="form-submit" id="accessSubmitBtn" data-i18n="ia_access_submit_btn">Request Access</button>
       <div id="accessMsg"></div>
-      <div class="form-note">Free tier: key is generated and emailed automatically, no admin step. Pro/Enterprise: no credit card yet, we'll email you directly to follow up. By requesting access you agree to our <a href="api-terms.html">API Terms of Service</a>.</div>
+      <div class="form-note"><span data-i18n="ia_access_form_note">Free tier: key is generated and emailed automatically, no admin step. Pro/Enterprise: no credit card yet, we'll email you directly to follow up. By requesting access you agree to our</span> <a href="api-terms.html" data-i18n="ia_access_terms_link">API Terms of Service</a>.</div>
     </form>
   </div>
 
 </div>
 
 <div class="footer">
-  © 2026 XFINLAB. <a href="index.html">Back to xfinlab.com</a> · <a href="api-terms.html">API Terms of Service</a> · <a href="mailto:support@xfinlab.com">support@xfinlab.com</a>
+  © 2026 XFINLAB. <a href="index.html" data-i18n="ia_footer_back">Back to xfinlab.com</a> · <a href="api-terms.html" data-i18n="ia_access_terms_link">API Terms of Service</a> · <a href="mailto:support@xfinlab.com">support@xfinlab.com</a>
 </div>
 
 <script>
 const API = 'https://api.xfinlab.com/api';
+
+// 2026-08-17 (task #3, "要加返多語言" -- full i18n pass): local t() helper,
+// same pattern used on chart-analysis.html etc. -- reads from the shared
+// I18N object (js/i18n.js) once its async init() has populated
+// translations, falls back to the English default before/if it hasn't.
+function t(key, fallback) {
+  return (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+}
 
 // 2026-08-09 SDK code tabs (AJ: Longbridge-dev-docs-inspired) -- plain
 // class toggling, no framework. copyCode() reads textContent (not
@@ -508,7 +516,7 @@ function copyCode(id, btn) {
   const text = document.getElementById(id).textContent;
   navigator.clipboard.writeText(text).then(function() {
     const original = btn.textContent;
-    btn.textContent = 'Copied';
+    btn.textContent = t('ia_copied_btn', 'Copied');
     btn.classList.add('copied');
     setTimeout(function() { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
   }).catch(function() {});
@@ -555,7 +563,7 @@ document.getElementById('accessForm').addEventListener('submit', async function(
       // 2026-07-31: Free tier is now fully automated (POST /v1/signup) --
       // no admin step, key is emailed within seconds. Pro/Enterprise below
       // still go through the manual early-access flow.
-      btn.textContent = 'Issuing key...';
+      btn.textContent = t('ia_msg_issuing', 'Issuing key...');
       res = await fetch(`${API}/intelligence/v1/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -563,16 +571,16 @@ document.getElementById('accessForm').addEventListener('submit', async function(
       });
       data = await res.json();
       if (res.ok && data.success !== false) {
-        msgEl.textContent = "Done — check your inbox, your free API key is on its way.";
+        msgEl.textContent = t('ia_msg_free_ok', "Done — check your inbox, your free API key is on its way.");
         msgEl.className = 'ok';
         document.getElementById('accessForm').reset();
         document.getElementById('accessTier').value = 'pro';
       } else {
-        msgEl.textContent = (data && data.detail) || 'Something went wrong — please try again.';
+        msgEl.textContent = (data && data.detail) || t('ia_msg_err', 'Something went wrong — please try again.');
         msgEl.className = 'err';
       }
     } else {
-      btn.textContent = 'Sending...';
+      btn.textContent = t('ia_msg_sending', 'Sending...');
       const payload = {
         email,
         company: document.getElementById('accessCompany').value.trim() || null,
@@ -586,29 +594,30 @@ document.getElementById('accessForm').addEventListener('submit', async function(
       });
       data = await res.json();
       if (res.ok && data.success !== false) {
-        msgEl.textContent = "Thanks — we'll follow up by email shortly.";
+        msgEl.textContent = t('ia_msg_pro_ok', "Thanks — we'll follow up by email shortly.");
         msgEl.className = 'ok';
         document.getElementById('accessForm').reset();
         document.getElementById('accessTier').value = 'pro';
       } else {
-        msgEl.textContent = (data && data.detail) || 'Something went wrong — please try again.';
+        msgEl.textContent = (data && data.detail) || t('ia_msg_err', 'Something went wrong — please try again.');
         msgEl.className = 'err';
       }
     }
   } catch (err) {
-    msgEl.textContent = 'Network error — please try again.';
+    msgEl.textContent = t('ia_msg_network_err', 'Network error — please try again.');
     msgEl.className = 'err';
   }
   msgEl.style.display = 'block';
   btn.disabled = false;
-  btn.textContent = 'Request Access';
+  btn.textContent = t('ia_access_submit_btn', 'Request Access');
 });
 </script>
 
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · Intelligence API · <a href="api-terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none">API Terms</a> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Terms</a></div>
+  <div class="footer-note"><span data-i18n="ia_footer2_prefix">XFINLAB © 2026 · Intelligence API</span> · <a href="api-terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms">API Terms</a> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_risk">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms2">Terms</a></div>
 </footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/quick-ask-bubble.js"></script>
 </body>
 </html>
