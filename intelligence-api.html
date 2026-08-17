@@ -298,9 +298,12 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field">&nbsp;&nbsp;<code>kind</code> <span class="schema-type">string</span> — "company_announcement" or "market_news"</div>
             <div class="schema-field">&nbsp;&nbsp;<code>published_at</code> <span class="schema-type">string|null</span> — ISO 8601, null if the source feed had no parseable date</div>
             <div class="schema-field">&nbsp;&nbsp;<code>url</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>tickers</code> <span class="schema-type">string[]</span> — batch mode only, which requested symbols this event matched</div>
             <div class="schema-field"><code>meta.count</code> <span class="schema-type">int</span></div>
-            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string|null</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string|null</span> — single-ticker or no-ticker mode</div>
+            <div class="schema-field"><code>meta.tickers</code> <span class="schema-type">string[]</span> — batch mode, replaces meta.ticker</div>
           </div>
+          <p class="schema-note" data-i18n="ia_batch_note_events">`ticker` also accepts a comma-separated list, up to 10 symbols (e.g. "AAPL,MSFT,TSLA"), for watchlist-style queries — results are merged and deduplicated across all requested tickers. Quota weight scales with the number of tickers requested.</p>
         </details>
       </div>
       <div class="ep-card">
@@ -324,6 +327,7 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field"><code>meta.articles_analyzed</code> <span class="schema-type">int</span>, <code>meta.source</code> <span class="schema-type">"finbert"</span></div>
           </div>
           <p class="schema-note" data-i18n="ia_schema_note_sentiment">When zero headlines are found, the shape shifts slightly: articles_analyzed moves into data (data.articles_analyzed) instead of meta, and average_score is omitted entirely — worth handling as its own case in your client code.</p>
+          <p class="schema-note" data-i18n="ia_batch_note_sentiment">`ticker` also accepts a comma-separated list, up to 10 symbols. Batch requests return `data.results_by_ticker` (keyed by symbol) instead of the flat ticker/average_score/results shape above, since averaging sentiment across unrelated tickers would be a misleading number. Quota weight scales with the number of tickers requested.</p>
         </details>
       </div>
       <div class="ep-card">

@@ -61,7 +61,29 @@ def _require_api_key(x_api_key: str = Header(None, alias="X-API-Key")) -> dict:
     return result
 
 
-def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Response) -> dict:
+_MAX_BATCH_TICKERS = 10
+
+
+def _split_tickers(raw: Optional[str]) -> list:
+    """2026-08-17 (roadmap item #3, "重有咩可以做" round 2 -- batch/multi-
+    ticker support): shared by Events and Sentiment. Splits a comma-
+    separated ticker list, uppercases, dedupes while preserving order, and
+    caps at _MAX_BATCH_TICKERS so a single request can't fan out into an
+    unbounded number of downstream fetches. Returns [] for None/empty
+    input (the existing "no ticker" case on Events stays untouched)."""
+    if not raw:
+        return []
+    seen = set()
+    out = []
+    for part in raw.split(","):
+        t = part.strip().upper()
+        if t and t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out[:_MAX_BATCH_TICKERS]
+
+
+def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Response, multiplier: int = 1) -> dict:
     """2026-08-17 (roadmap item #1, "重有咩可以做" round 2): also stamps
     X-RateLimit-Limit / X-RateLimit-Remaining on `response` so a client can
     pace its own requests instead of discovering the ceiling by hitting a
@@ -70,8 +92,14 @@ def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Res
     here is honored on the final response even though the route still
     returns a plain dict body (see FastAPI's Response-as-dependency
     pattern). Unlimited tiers (enterprise, limit==-1) report "unlimited"
-    rather than a fabricated number."""
-    weight = intelligence_quota_service.weight_for(endpoint)
+    rather than a fabricated number.
+
+    2026-08-17 (roadmap item #3 follow-up): `multiplier` scales the base
+    endpoint weight for batch/multi-ticker requests (Events/Sentiment) --
+    a 3-ticker Sentiment call does roughly 3x the downstream work of a
+    single-ticker one, so it should cost roughly 3x the quota, not the
+    same flat weight regardless of how many tickers were requested."""
+    weight = intelligence_quota_service.weight_for(endpoint) * max(1, multiplier)
     quota = intelligence_quota_service.check(api_key, tier)
     if not quota["allowed"]:
         raise HTTPException(
@@ -136,6 +164,7 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-17",
         "changes": [
+            {"type": "added", "text": "GET /v1/events and GET /v1/sentiment now accept a comma-separated list of up to 10 tickers (e.g. \"AAPL,MSFT,TSLA\") for watchlist-style queries -- single-ticker requests are unaffected, batch requests cost proportionally more quota."},
             {"type": "added", "text": "Third-party API directory submission copy prepared for APIs.guru and the Postman API Network (see API_DIRECTORY_SUBMISSION.md in the repo) -- pending AJ's own account action to actually submit."},
             {"type": "added", "text": "Postman collection at GET /api/intelligence/postman.json -- import via Postman's Import > Link, every request pre-filled with a working example."},
             {"type": "added", "text": "Public roadmap at GET /api/intelligence/roadmap (this page, #roadmap) -- backs the Pro plan's previously-unbacked \"public roadmap\" promise."},
@@ -209,11 +238,6 @@ def intelligence_changelog():
 # so this list only ever shows what's still ahead.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_ROADMAP = [
-    {
-        "status": "planned",
-        "title": "Batch / multi-ticker support",
-        "text": "Events and Sentiment accepting a comma-separated list of tickers in one call, for anyone tracking a watchlist instead of a single symbol.",
-    },
     {
         "status": "in_progress",
         "title": "Listings on third-party API directories",
@@ -419,29 +443,71 @@ def intelligence_events(
     limit: int = 20,
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
+    """`ticker` accepts a single symbol, no ticker (all headlines), or a
+    comma-separated list up to _MAX_BATCH_TICKERS (e.g. "AAPL,MSFT,TSLA")
+    for watchlist-style queries -- roadmap item #3, 2026-08-17. No-ticker
+    and single-ticker requests return the exact same shape as before this
+    change; a multi-ticker request merges/dedupes results across all
+    requested symbols and adds a `tickers` field to each event."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "events", response)
+    tickers = _split_tickers(ticker)
+    _check_and_spend_quota(x_api_key, auth["tier"], "events", response, multiplier=max(1, len(tickers)))
 
     limit = max(1, min(limit, 100))
-    if ticker:
-        result = rss_news_service.search_headlines(query=ticker, limit=limit)
-    else:
-        result = rss_news_service.get_all_headlines(limit=limit)
 
-    if result["status"] != "ok":
-        return _envelope(data=[], error=result.get("message") or "No matching events found")
+    if len(tickers) <= 1:
+        single = tickers[0] if tickers else None
+        if single:
+            result = rss_news_service.search_headlines(query=single, limit=limit)
+        else:
+            result = rss_news_service.get_all_headlines(limit=limit)
 
-    events = [
-        {
-            "title": item["title"],
-            "source": item["source"],
-            "kind": item["kind"],
-            "published_at": item["published_at"],
-            "url": item["link"],
-        }
-        for item in result["items"]
-    ]
-    return _envelope(data=events, meta={"count": len(events), "ticker": ticker})
+        if result["status"] != "ok":
+            return _envelope(data=[], error=result.get("message") or "No matching events found")
+
+        events = [
+            {
+                "title": item["title"],
+                "source": item["source"],
+                "kind": item["kind"],
+                "published_at": item["published_at"],
+                "url": item["link"],
+            }
+            for item in result["items"]
+        ]
+        return _envelope(data=events, meta={"count": len(events), "ticker": ticker})
+
+    # Batch mode (2+ tickers): merge/dedupe by link across all requested
+    # symbols, tagging each event with which of the requested tickers it
+    # matched (a single headline can legitimately match more than one).
+    by_link: dict = {}
+    any_ok = False
+    for t in tickers:
+        result = rss_news_service.search_headlines(query=t, limit=limit)
+        if result["status"] != "ok":
+            continue
+        any_ok = True
+        for item in result["items"]:
+            link = item["link"]
+            entry = by_link.get(link)
+            if entry is None:
+                entry = {
+                    "title": item["title"],
+                    "source": item["source"],
+                    "kind": item["kind"],
+                    "published_at": item["published_at"],
+                    "url": link,
+                    "tickers": [],
+                }
+                by_link[link] = entry
+            if t not in entry["tickers"]:
+                entry["tickers"].append(t)
+
+    if not any_ok:
+        return _envelope(data=[], error="No matching events found for the requested tickers")
+
+    events = sorted(by_link.values(), key=lambda e: e["published_at"] or "", reverse=True)[:limit]
+    return _envelope(data=events, meta={"count": len(events), "tickers": tickers})
 
 
 @router.get("/intelligence/v1/sentiment")
@@ -451,38 +517,97 @@ def intelligence_sentiment(
     limit: int = 10,
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
+    """`ticker` accepts a single symbol or a comma-separated list up to
+    _MAX_BATCH_TICKERS (e.g. "AAPL,MSFT,TSLA") -- roadmap item #3,
+    2026-08-17. A single ticker returns the exact same shape as before
+    this change. A comma-separated list returns `results_by_ticker` keyed
+    by symbol instead of one flat `results` array -- averaging sentiment
+    scores across unrelated tickers into a single number would be a
+    misleading aggregate, not a real one."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "sentiment", response)
+    tickers = _split_tickers(ticker)
+    if not tickers:
+        raise HTTPException(status_code=422, detail="ticker is required")
+    _check_and_spend_quota(x_api_key, auth["tier"], "sentiment", response, multiplier=len(tickers))
 
     if not finbert_available():
         raise HTTPException(status_code=503, detail="Sentiment engine temporarily unavailable")
 
     limit = max(1, min(limit, 25))
-    headlines = rss_news_service.search_headlines(query=ticker, limit=limit)
-    if headlines["status"] != "ok" or not headlines["items"]:
-        return _envelope(data={"ticker": ticker, "articles_analyzed": 0, "results": []},
-                          meta={"message": "No recent headlines found for this ticker"})
 
-    titles = [item["title"] for item in headlines["items"]]
-    sentiment = analyze_batch(titles)
-    if not sentiment.get("available"):
-        raise HTTPException(status_code=503, detail=sentiment.get("message", "Sentiment engine unavailable"))
+    if len(tickers) == 1:
+        ticker = tickers[0]
+        headlines = rss_news_service.search_headlines(query=ticker, limit=limit)
+        if headlines["status"] != "ok" or not headlines["items"]:
+            return _envelope(data={"ticker": ticker, "articles_analyzed": 0, "results": []},
+                              meta={"message": "No recent headlines found for this ticker"})
 
-    scores = [r["score"] for r in sentiment["results"]]
-    avg_score = round(sum(scores) / len(scores), 1) if scores else None
+        titles = [item["title"] for item in headlines["items"]]
+        sentiment = analyze_batch(titles)
+        if not sentiment.get("available"):
+            raise HTTPException(status_code=503, detail=sentiment.get("message", "Sentiment engine unavailable"))
 
-    results = [
-        {
-            "headline": title,
-            "label": r["label"],
-            "confidence_pct": r["confidence_pct"],
-            "score": r["score"],
+        scores = [r["score"] for r in sentiment["results"]]
+        avg_score = round(sum(scores) / len(scores), 1) if scores else None
+
+        results = [
+            {
+                "headline": title,
+                "label": r["label"],
+                "confidence_pct": r["confidence_pct"],
+                "score": r["score"],
+            }
+            for title, r in zip(titles, sentiment["results"])
+        ]
+        return _envelope(
+            data={"ticker": ticker, "average_score": avg_score, "results": results},
+            meta={"articles_analyzed": len(results), "source": "finbert"},
+        )
+
+    # Batch mode (2+ tickers): one sub-object per ticker, never one
+    # flattened/averaged result set.
+    results_by_ticker: dict = {}
+    for t in tickers:
+        headlines = rss_news_service.search_headlines(query=t, limit=limit)
+        if headlines["status"] != "ok" or not headlines["items"]:
+            results_by_ticker[t] = {
+                "average_score": None,
+                "articles_analyzed": 0,
+                "results": [],
+                "message": "No recent headlines found for this ticker",
+            }
+            continue
+
+        titles = [item["title"] for item in headlines["items"]]
+        sentiment = analyze_batch(titles)
+        if not sentiment.get("available"):
+            results_by_ticker[t] = {
+                "average_score": None,
+                "articles_analyzed": 0,
+                "results": [],
+                "error": sentiment.get("message", "Sentiment engine unavailable"),
+            }
+            continue
+
+        scores = [r["score"] for r in sentiment["results"]]
+        avg_score = round(sum(scores) / len(scores), 1) if scores else None
+        results_by_ticker[t] = {
+            "average_score": avg_score,
+            "articles_analyzed": len(sentiment["results"]),
+            "results": [
+                {
+                    "headline": title,
+                    "label": r["label"],
+                    "confidence_pct": r["confidence_pct"],
+                    "score": r["score"],
+                }
+                for title, r in zip(titles, sentiment["results"])
+            ],
         }
-        for title, r in zip(titles, sentiment["results"])
-    ]
+
     return _envelope(
-        data={"ticker": ticker, "average_score": avg_score, "results": results},
-        meta={"articles_analyzed": len(results), "source": "finbert"},
+        data={"tickers": tickers, "results_by_ticker": results_by_ticker},
+        meta={"source": "finbert"},
     )
 
 

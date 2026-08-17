@@ -39,6 +39,8 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "ia_batch_note_events": "`ticker` also accepts a comma-separated list, up to 10 symbols (e.g. \"AAPL,MSFT,TSLA\"), for watchlist-style queries — results are merged and deduplicated across all requested tickers. Quota weight scales with the number of tickers requested.",
+        "ia_batch_note_sentiment": "`ticker` also accepts a comma-separated list, up to 10 symbols. Batch requests return `data.results_by_ticker` (keyed by symbol) instead of the flat ticker/average_score/results shape above, since averaging sentiment across unrelated tickers would be a misleading number. Quota weight scales with the number of tickers requested.",
         "ia_postman_link": "Download Postman collection →",
         "ia_ratelimit_note": "Every authenticated response includes X-RateLimit-Limit and X-RateLimit-Remaining headers, so you can pace requests instead of guessing from a 429.",
         "ia_roadmap_title": "Roadmap",
@@ -1689,6 +1691,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verify Email",
     },
     "es": {
+        "ia_batch_note_events": "`ticker` también acepta una lista separada por comas, hasta 10 símbolos (p. ej. \"AAPL,MSFT,TSLA\"), para consultas tipo lista de seguimiento — los resultados se combinan y deduplican entre todos los tickers solicitados. El peso de la cuota escala con el número de tickers solicitados.",
+        "ia_batch_note_sentiment": "`ticker` también acepta una lista separada por comas, hasta 10 símbolos. Las solicitudes por lotes devuelven `data.results_by_ticker` (agrupado por símbolo) en lugar de la forma plana ticker/average_score/results anterior, ya que promediar el sentimiento entre tickers no relacionados sería un número engañoso. El peso de la cuota escala con el número de tickers solicitados.",
         "ia_postman_link": "Descargar colección de Postman →",
         "ia_ratelimit_note": "Cada respuesta autenticada incluye los encabezados X-RateLimit-Limit y X-RateLimit-Remaining, para que puedas regular tus solicitudes en lugar de adivinar a partir de un error 429.",
         "ia_roadmap_title": "Hoja de ruta",
@@ -3338,6 +3342,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar correo",
     },
     "fr": {
+        "ia_batch_note_events": "`ticker` accepte aussi une liste séparée par des virgules, jusqu'à 10 symboles (ex. \"AAPL,MSFT,TSLA\"), pour des requêtes de type liste de suivi — les résultats sont fusionnés et dédupliqués sur tous les tickers demandés. Le poids du quota augmente avec le nombre de tickers demandés.",
+        "ia_batch_note_sentiment": "`ticker` accepte aussi une liste séparée par des virgules, jusqu'à 10 symboles. Les requêtes par lot renvoient `data.results_by_ticker` (classé par symbole) au lieu de la forme plate ticker/average_score/results ci-dessus, car moyenner le sentiment entre tickers sans rapport donnerait un chiffre trompeur. Le poids du quota augmente avec le nombre de tickers demandés.",
         "ia_postman_link": "Télécharger la collection Postman →",
         "ia_ratelimit_note": "Chaque réponse authentifiée inclut les en-têtes X-RateLimit-Limit et X-RateLimit-Remaining, afin que vous puissiez cadencer vos requêtes au lieu de deviner à partir d'une erreur 429.",
         "ia_roadmap_title": "Feuille de route",
@@ -4987,6 +4993,8 @@ TRANSLATIONS = {
         "ve_page_name": "Vérifier l'e-mail",
     },
     "de": {
+        "ia_batch_note_events": "`ticker` akzeptiert auch eine durch Kommas getrennte Liste mit bis zu 10 Symbolen (z. B. \"AAPL,MSFT,TSLA\") für Watchlist-artige Abfragen — Ergebnisse werden über alle angeforderten Ticker zusammengeführt und dedupliziert. Das Kontingentgewicht skaliert mit der Anzahl der angeforderten Ticker.",
+        "ia_batch_note_sentiment": "`ticker` akzeptiert auch eine durch Kommas getrennte Liste mit bis zu 10 Symbolen. Batch-Anfragen liefern `data.results_by_ticker` (nach Symbol gruppiert) statt der obigen flachen ticker/average_score/results-Form, da eine Durchschnittsbildung der Stimmung über nicht verwandte Ticker eine irreführende Zahl wäre. Das Kontingentgewicht skaliert mit der Anzahl der angeforderten Ticker.",
         "ia_postman_link": "Postman-Sammlung herunterladen →",
         "ia_ratelimit_note": "Jede authentifizierte Antwort enthält die Header X-RateLimit-Limit und X-RateLimit-Remaining, damit Sie Ihre Anfragen takten können, statt anhand eines 429-Fehlers zu raten.",
         "ia_roadmap_title": "Roadmap",
@@ -6636,6 +6644,8 @@ TRANSLATIONS = {
         "ve_page_name": "E-Mail bestätigen",
     },
     "it": {
+        "ia_batch_note_events": "`ticker` accetta anche un elenco separato da virgole, fino a 10 simboli (es. \"AAPL,MSFT,TSLA\"), per query in stile watchlist — i risultati vengono uniti e deduplicati su tutti i ticker richiesti. Il peso della quota aumenta con il numero di ticker richiesti.",
+        "ia_batch_note_sentiment": "`ticker` accetta anche un elenco separato da virgole, fino a 10 simboli. Le richieste batch restituiscono `data.results_by_ticker` (raggruppato per simbolo) invece della forma piatta ticker/average_score/results sopra, poiché mediare il sentiment tra ticker non correlati sarebbe un numero fuorviante. Il peso della quota aumenta con il numero di ticker richiesti.",
         "ia_postman_link": "Scarica la collezione Postman →",
         "ia_ratelimit_note": "Ogni risposta autenticata include gli header X-RateLimit-Limit e X-RateLimit-Remaining, così puoi calibrare le richieste invece di indovinare da un errore 429.",
         "ia_roadmap_title": "Roadmap",
@@ -8285,6 +8295,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verifica email",
     },
     "pt": {
+        "ia_batch_note_events": "`ticker` também aceita uma lista separada por vírgulas, até 10 símbolos (ex. \"AAPL,MSFT,TSLA\"), para consultas estilo watchlist — os resultados são combinados e deduplicados entre todos os tickers solicitados. O peso da quota aumenta com o número de tickers solicitados.",
+        "ia_batch_note_sentiment": "`ticker` também aceita uma lista separada por vírgulas, até 10 símbolos. Os pedidos em lote devolvem `data.results_by_ticker` (agrupado por símbolo) em vez da forma plana ticker/average_score/results acima, já que fazer a média do sentimento entre tickers não relacionados seria um número enganoso. O peso da quota aumenta com o número de tickers solicitados.",
         "ia_postman_link": "Transferir coleção do Postman →",
         "ia_ratelimit_note": "Cada resposta autenticada inclui os cabeçalhos X-RateLimit-Limit e X-RateLimit-Remaining, para que possa ritmar os pedidos em vez de adivinhar a partir de um erro 429.",
         "ia_roadmap_title": "Roteiro",
@@ -9934,6 +9946,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar email",
     },
     "ru": {
+        "ia_batch_note_events": "`ticker` также принимает список через запятую, до 10 символов (например, \"AAPL,MSFT,TSLA\"), для запросов в стиле watchlist — результаты объединяются и дедуплицируются по всем запрошенным тикерам. Вес квоты растёт с числом запрошенных тикеров.",
+        "ia_batch_note_sentiment": "`ticker` также принимает список через запятую, до 10 символов. Пакетные запросы возвращают `data.results_by_ticker` (сгруппировано по символу) вместо плоской формы ticker/average_score/results выше, поскольку усреднение настроения по несвязанным тикерам было бы вводящим в заблуждение числом. Вес квоты растёт с числом запрошенных тикеров.",
         "ia_postman_link": "Скачать коллекцию Postman →",
         "ia_ratelimit_note": "Каждый аутентифицированный ответ включает заголовки X-RateLimit-Limit и X-RateLimit-Remaining, чтобы вы могли распределять запросы, а не угадывать по ошибке 429.",
         "ia_roadmap_title": "Дорожная карта",
@@ -11583,6 +11597,8 @@ TRANSLATIONS = {
         "ve_page_name": "Подтверждение почты",
     },
     "nl": {
+        "ia_batch_note_events": "`ticker` accepteert ook een door komma's gescheiden lijst, tot 10 symbolen (bijv. \"AAPL,MSFT,TSLA\"), voor watchlist-achtige query's — resultaten worden samengevoegd en gededupliceerd over alle opgevraagde tickers. Het quotagewicht schaalt met het aantal opgevraagde tickers.",
+        "ia_batch_note_sentiment": "`ticker` accepteert ook een door komma's gescheiden lijst, tot 10 symbolen. Batchverzoeken geven `data.results_by_ticker` terug (gegroepeerd per symbool) in plaats van de platte ticker/average_score/results-vorm hierboven, omdat het middelen van sentiment over ongerelateerde tickers een misleidend getal zou zijn. Het quotagewicht schaalt met het aantal opgevraagde tickers.",
         "ia_postman_link": "Postman-collectie downloaden →",
         "ia_ratelimit_note": "Elk geauthenticeerd antwoord bevat de headers X-RateLimit-Limit en X-RateLimit-Remaining, zodat je verzoeken kunt afstemmen in plaats van te gokken op basis van een 429.",
         "ia_roadmap_title": "Routekaart",
@@ -13232,6 +13248,8 @@ TRANSLATIONS = {
         "ve_page_name": "E-mail verifiëren",
     },
     "pl": {
+        "ia_batch_note_events": "`ticker` akceptuje też listę oddzieloną przecinkami, do 10 symboli (np. \"AAPL,MSFT,TSLA\"), do zapytań w stylu watchlisty — wyniki są scalane i deduplikowane dla wszystkich żądanych tickerów. Waga limitu rośnie wraz z liczbą żądanych tickerów.",
+        "ia_batch_note_sentiment": "`ticker` akceptuje też listę oddzieloną przecinkami, do 10 symboli. Zapytania wsadowe zwracają `data.results_by_ticker` (pogrupowane wg symbolu) zamiast płaskiej formy ticker/average_score/results powyżej, ponieważ uśrednianie sentymentu między niepowiązanymi tickerami byłoby mylącą liczbą. Waga limitu rośnie wraz z liczbą żądanych tickerów.",
         "ia_postman_link": "Pobierz kolekcję Postman →",
         "ia_ratelimit_note": "Każda uwierzytelniona odpowiedź zawiera nagłówki X-RateLimit-Limit i X-RateLimit-Remaining, dzięki czemu możesz kontrolować tempo żądań, zamiast zgadywać na podstawie błędu 429.",
         "ia_roadmap_title": "Plan rozwoju",
@@ -14881,6 +14899,8 @@ TRANSLATIONS = {
         "ve_page_name": "Weryfikacja e-mail",
     },
     "ro": {
+        "ia_batch_note_events": "`ticker` acceptă și o listă separată prin virgulă, până la 10 simboluri (ex. \"AAPL,MSFT,TSLA\"), pentru interogări de tip watchlist — rezultatele sunt combinate și deduplicate pentru toate tickerele solicitate. Ponderea cotei crește cu numărul de tickere solicitate.",
+        "ia_batch_note_sentiment": "`ticker` acceptă și o listă separată prin virgulă, până la 10 simboluri. Cererile în lot returnează `data.results_by_ticker` (grupat pe simbol) în loc de forma plată ticker/average_score/results de mai sus, deoarece medierea sentimentului între tickere nelegate ar fi un număr înșelător. Ponderea cotei crește cu numărul de tickere solicitate.",
         "ia_postman_link": "Descarcă colecția Postman →",
         "ia_ratelimit_note": "Fiecare răspuns autentificat include anteturile X-RateLimit-Limit și X-RateLimit-Remaining, astfel încât să poți regla ritmul cererilor în loc să ghicești pe baza unui 429.",
         "ia_roadmap_title": "Foaie de parcurs",
@@ -16530,6 +16550,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verificare email",
     },
     "uk": {
+        "ia_batch_note_events": "`ticker` також приймає список через кому, до 10 символів (наприклад, \"AAPL,MSFT,TSLA\"), для запитів у стилі watchlist — результати об'єднуються та дедуплікуються за всіма запитаними тікерами. Вага квоти зростає з кількістю запитаних тікерів.",
+        "ia_batch_note_sentiment": "`ticker` також приймає список через кому, до 10 символів. Пакетні запити повертають `data.results_by_ticker` (згруповано за символом) замість плоскої форми ticker/average_score/results вище, оскільки усереднення настрою за непов'язаними тікерами було б оманливим числом. Вага квоти зростає з кількістю запитаних тікерів.",
         "ia_postman_link": "Завантажити колекцію Postman →",
         "ia_ratelimit_note": "Кожна автентифікована відповідь містить заголовки X-RateLimit-Limit і X-RateLimit-Remaining, щоб ви могли розподіляти запити, а не вгадувати за помилкою 429.",
         "ia_roadmap_title": "Дорожня карта",
@@ -18179,6 +18201,8 @@ TRANSLATIONS = {
         "ve_page_name": "Підтвердження пошти",
     },
     "sr": {
+        "ia_batch_note_events": "`ticker` такође прихвата листу раздвојену зарезима, до 10 симбола (нпр. \"AAPL,MSFT,TSLA\"), за упите у стилу листе праћења — резултати се спајају и дедуплицирају за све тражене тикере. Тежина квоте расте са бројем тражених тикера.",
+        "ia_batch_note_sentiment": "`ticker` такође прихвата листу раздвојену зарезима, до 10 симбола. Групни захтеви враћају `data.results_by_ticker` (груписано по симболу) уместо равног облика ticker/average_score/results изнад, јер би просек расположења код неповезаних тикера био обмањујућ број. Тежина квоте расте са бројем тражених тикера.",
         "ia_postman_link": "Преузми Postman колекцију →",
         "ia_ratelimit_note": "Сваки аутентификовани одговор укључује заглавља X-RateLimit-Limit и X-RateLimit-Remaining, тако да можете да усклађујете захтеве уместо да нагађате на основу грешке 429.",
         "ia_roadmap_title": "Мапа пута",
@@ -19828,6 +19852,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikacija email-a",
     },
     "zh-TW": {
+        "ia_batch_note_events": "`ticker` 都可以傳入以逗號分隔嘅清單，最多10個代號（例如 \"AAPL,MSFT,TSLA\"），用嚟做watchlist式查詢——結果會跨所有請求嘅代號合併同去重。配額權重會跟住請求嘅代號數量成比例增加。",
+        "ia_batch_note_sentiment": "`ticker` 都可以傳入以逗號分隔嘅清單，最多10個代號。批量請求會回傳 `data.results_by_ticker`（按代號分組），而唔係上面嗰種扁平嘅ticker/average_score/results格式，因為將唔相關代號嘅情緒平均埋一齊會係一個誤導性嘅數字。配額權重會跟住請求嘅代號數量成比例增加。",
         "ia_postman_link": "下載 Postman collection →",
         "ia_ratelimit_note": "每個已驗證嘅回應都會包含 X-RateLimit-Limit 同 X-RateLimit-Remaining 標頭，等你可以自己調節請求節奏，而唔使靠 429 錯誤先估。",
         "ia_roadmap_title": "路線圖",
@@ -21478,6 +21504,8 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-HK": {
+        "ia_batch_note_events": "`ticker` 都可以傳入以逗號分隔嘅清單，最多10個代號（例如 \"AAPL,MSFT,TSLA\"），用嚟做watchlist式查詢——結果會跨所有請求嘅代號合併同去重。配額權重會跟住請求嘅代號數量成比例增加。",
+        "ia_batch_note_sentiment": "`ticker` 都可以傳入以逗號分隔嘅清單，最多10個代號。批量請求會回傳 `data.results_by_ticker`（按代號分組），而唔係上面嗰種扁平嘅ticker/average_score/results格式，因為將唔相關代號嘅情緒平均埋一齊會係一個誤導性嘅數字。配額權重會跟住請求嘅代號數量成比例增加。",
         "ia_postman_link": "下載 Postman collection →",
         "ia_ratelimit_note": "每個已驗證嘅回應都會包含 X-RateLimit-Limit 同 X-RateLimit-Remaining 標頭，等你可以自己調節請求節奏，而唔使靠 429 錯誤先估。",
         "ia_roadmap_title": "路線圖",
@@ -23128,6 +23156,8 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-CN": {
+        "ia_batch_note_events": "`ticker` 也可以传入以逗号分隔的列表，最多10个代码（例如 \"AAPL,MSFT,TSLA\"），用于watchlist式查询——结果会跨所有请求的代码合并去重。配额权重会随请求的代码数量成比例增加。",
+        "ia_batch_note_sentiment": "`ticker` 也可以传入以逗号分隔的列表，最多10个代码。批量请求会返回 `data.results_by_ticker`（按代码分组），而不是上面那种扁平的ticker/average_score/results格式，因为把不相关代码的情绪平均在一起会是一个误导性的数字。配额权重会随请求的代码数量成比例增加。",
         "ia_postman_link": "下载 Postman collection →",
         "ia_ratelimit_note": "每个已认证的响应都会包含 X-RateLimit-Limit 和 X-RateLimit-Remaining 标头，让你可以自己调节请求节奏，而不必靠 429 错误来猜测。",
         "ia_roadmap_title": "路线图",
@@ -24778,6 +24808,8 @@ TRANSLATIONS = {
         "ve_page_name": "验证邮箱",
     },
     "ja": {
+        "ia_batch_note_events": "`ticker` はカンマ区切りのリスト（最大10銘柄、例: \"AAPL,MSFT,TSLA\"）も受け付け、ウォッチリスト形式のクエリに使えます — 結果はリクエストされたすべてのティッカーで結合・重複排除されます。クォータの重みはリクエストされたティッカー数に応じて増加します。",
+        "ia_batch_note_sentiment": "`ticker` はカンマ区切りのリスト（最大10銘柄）も受け付けます。バッチリクエストは上記のフラットな ticker/average_score/results 形式ではなく、シンボルごとにグループ化された `data.results_by_ticker` を返します。関連のないティッカー間でセンチメントを平均すると誤解を招く数値になるためです。クォータの重みはリクエストされたティッカー数に応じて増加します。",
         "ia_postman_link": "Postman コレクションをダウンロード →",
         "ia_ratelimit_note": "認証済みのすべてのレスポンスには X-RateLimit-Limit と X-RateLimit-Remaining ヘッダーが含まれるため、429 エラーで推測する代わりにリクエストのペースを調整できます。",
         "ia_roadmap_title": "ロードマップ",
@@ -26427,6 +26459,8 @@ TRANSLATIONS = {
         "ve_page_name": "メール確認",
     },
     "ko": {
+        "ia_batch_note_events": "`ticker`는 쉼표로 구분된 목록(최대 10개 심볼, 예: \"AAPL,MSFT,TSLA\")도 허용하여 워치리스트 방식 쿼리에 사용할 수 있습니다 — 결과는 요청된 모든 티커에 걸쳐 병합 및 중복 제거됩니다. 할당량 가중치는 요청된 티커 수에 비례해 증가합니다.",
+        "ia_batch_note_sentiment": "`ticker`는 쉼표로 구분된 목록(최대 10개 심볼)도 허용합니다. 배치 요청은 위의 평평한 ticker/average_score/results 형식 대신 심볼별로 그룹화된 `data.results_by_ticker`를 반환합니다. 관련 없는 티커 간 감정을 평균화하면 오해의 소지가 있는 수치가 되기 때문입니다. 할당량 가중치는 요청된 티커 수에 비례해 증가합니다.",
         "ia_postman_link": "Postman 컬렉션 다운로드 →",
         "ia_ratelimit_note": "인증된 모든 응답에는 X-RateLimit-Limit 및 X-RateLimit-Remaining 헤더가 포함되어 있어, 429 오류로 추측하는 대신 요청 속도를 조절할 수 있습니다.",
         "ia_roadmap_title": "로드맵",
@@ -28076,6 +28110,8 @@ TRANSLATIONS = {
         "ve_page_name": "이메일 확인",
     },
     "hi": {
+        "ia_batch_note_events": "`ticker` अल्पविराम से अलग की गई सूची भी स्वीकार करता है, 10 प्रतीकों तक (जैसे \"AAPL,MSFT,TSLA\"), वॉचलिस्ट-शैली की क्वेरी के लिए — परिणाम अनुरोधित सभी टिकरों में मिलाए और डुप्लिकेट-हटाए जाते हैं। कोटा वज़न अनुरोधित टिकरों की संख्या के अनुसार बढ़ता है।",
+        "ia_batch_note_sentiment": "`ticker` अल्पविराम से अलग की गई सूची भी स्वीकार करता है, 10 प्रतीकों तक। बैच अनुरोध ऊपर दिए गए फ्लैट ticker/average_score/results स्वरूप के बजाय `data.results_by_ticker` (प्रतीक के अनुसार समूहित) लौटाते हैं, क्योंकि असंबंधित टिकरों में भावना का औसत निकालना भ्रामक संख्या होगी। कोटा वज़न अनुरोधित टिकरों की संख्या के अनुसार बढ़ता है।",
         "ia_postman_link": "Postman कलेक्शन डाउनलोड करें →",
         "ia_ratelimit_note": "हर प्रमाणित प्रतिक्रिया में X-RateLimit-Limit और X-RateLimit-Remaining हेडर शामिल होते हैं, ताकि आप 429 त्रुटि से अंदाज़ा लगाने के बजाय अनुरोधों की गति नियंत्रित कर सकें।",
         "ia_roadmap_title": "रोडमैप",
@@ -29725,6 +29761,8 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल सत्यापित करें",
     },
     "ar": {
+        "ia_batch_note_events": "يقبل `ticker` أيضًا قائمة مفصولة بفواصل، حتى 10 رموز (مثل \"AAPL,MSFT,TSLA\")، لاستعلامات على غرار قائمة المراقبة — يتم دمج النتائج وإزالة التكرار عبر جميع الرموز المطلوبة. يتناسب وزن الحصة مع عدد الرموز المطلوبة.",
+        "ia_batch_note_sentiment": "يقبل `ticker` أيضًا قائمة مفصولة بفواصل، حتى 10 رموز. تُرجع الطلبات المجمعة `data.results_by_ticker` (مجمعة حسب الرمز) بدلاً من الشكل المسطح ticker/average_score/results أعلاه، لأن متوسط المشاعر عبر رموز غير مرتبطة سيكون رقمًا مضللاً. يتناسب وزن الحصة مع عدد الرموز المطلوبة.",
         "ia_postman_link": "تنزيل مجموعة Postman →",
         "ia_ratelimit_note": "تتضمن كل استجابة موثقة رؤوس X-RateLimit-Limit و X-RateLimit-Remaining، حتى تتمكن من ضبط وتيرة الطلبات بدلاً من التخمين من خطأ 429.",
         "ia_roadmap_title": "خارطة الطريق",
@@ -31374,6 +31412,8 @@ TRANSLATIONS = {
         "ve_page_name": "التحقق من البريد الإلكتروني",
     },
     "id": {
+        "ia_batch_note_events": "`ticker` juga menerima daftar yang dipisahkan koma, hingga 10 simbol (mis. \"AAPL,MSFT,TSLA\"), untuk kueri bergaya watchlist — hasil digabungkan dan dideduplikasi di semua ticker yang diminta. Bobot kuota bertambah sesuai jumlah ticker yang diminta.",
+        "ia_batch_note_sentiment": "`ticker` juga menerima daftar yang dipisahkan koma, hingga 10 simbol. Permintaan batch mengembalikan `data.results_by_ticker` (dikelompokkan berdasarkan simbol) alih-alih bentuk datar ticker/average_score/results di atas, karena merata-ratakan sentimen di antara ticker yang tidak terkait akan menjadi angka yang menyesatkan. Bobot kuota bertambah sesuai jumlah ticker yang diminta.",
         "ia_postman_link": "Unduh koleksi Postman →",
         "ia_ratelimit_note": "Setiap respons terautentikasi menyertakan header X-RateLimit-Limit dan X-RateLimit-Remaining, sehingga Anda dapat mengatur laju permintaan alih-alih menebak dari error 429.",
         "ia_roadmap_title": "Peta jalan",
@@ -33023,6 +33063,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "th": {
+        "ia_batch_note_events": "`ticker` ยังรับรายการที่คั่นด้วยจุลภาค ได้สูงสุด 10 สัญลักษณ์ (เช่น \"AAPL,MSFT,TSLA\") สำหรับคำค้นแบบ watchlist — ผลลัพธ์จะถูกรวมและลบรายการซ้ำในทุกสัญลักษณ์ที่ร้องขอ น้ำหนักโควตาจะเพิ่มขึ้นตามจำนวนสัญลักษณ์ที่ร้องขอ",
+        "ia_batch_note_sentiment": "`ticker` ยังรับรายการที่คั่นด้วยจุลภาค ได้สูงสุด 10 สัญลักษณ์ คำขอแบบกลุ่มจะส่งคืน `data.results_by_ticker` (จัดกลุ่มตามสัญลักษณ์) แทนรูปแบบ ticker/average_score/results แบบแบนด้านบน เนื่องจากการเฉลี่ยความรู้สึกข้ามสัญลักษณ์ที่ไม่เกี่ยวข้องกันจะเป็นตัวเลขที่ทำให้เข้าใจผิด น้ำหนักโควตาจะเพิ่มขึ้นตามจำนวนสัญลักษณ์ที่ร้องขอ",
         "ia_postman_link": "ดาวน์โหลดคอลเลกชัน Postman →",
         "ia_ratelimit_note": "ทุกการตอบกลับที่ผ่านการยืนยันตัวตนจะมีส่วนหัว X-RateLimit-Limit และ X-RateLimit-Remaining เพื่อให้คุณกำหนดจังหวะคำขอได้แทนที่จะเดาจากข้อผิดพลาด 429",
         "ia_roadmap_title": "แผนงาน",
@@ -34672,6 +34714,8 @@ TRANSLATIONS = {
         "ve_page_name": "ยืนยันอีเมล",
     },
     "vi": {
+        "ia_batch_note_events": "`ticker` cũng chấp nhận danh sách phân tách bằng dấu phẩy, tối đa 10 mã (ví dụ \"AAPL,MSFT,TSLA\"), cho truy vấn kiểu watchlist — kết quả được gộp và loại trùng trên tất cả các mã được yêu cầu. Trọng số hạn ngạch tăng theo số lượng mã được yêu cầu.",
+        "ia_batch_note_sentiment": "`ticker` cũng chấp nhận danh sách phân tách bằng dấu phẩy, tối đa 10 mã. Yêu cầu theo lô trả về `data.results_by_ticker` (nhóm theo mã) thay vì dạng phẳng ticker/average_score/results ở trên, vì lấy trung bình cảm xúc giữa các mã không liên quan sẽ là một con số gây hiểu lầm. Trọng số hạn ngạch tăng theo số lượng mã được yêu cầu.",
         "ia_postman_link": "Tải bộ sưu tập Postman →",
         "ia_ratelimit_note": "Mọi phản hồi đã xác thực đều bao gồm tiêu đề X-RateLimit-Limit và X-RateLimit-Remaining, để bạn có thể điều chỉnh tốc độ yêu cầu thay vì đoán từ lỗi 429.",
         "ia_roadmap_title": "Lộ trình",
@@ -36321,6 +36365,8 @@ TRANSLATIONS = {
         "ve_page_name": "Xác minh email",
     },
     "tr": {
+        "ia_batch_note_events": "`ticker` ayrıca virgülle ayrılmış bir liste de kabul eder, en fazla 10 sembol (ör. \"AAPL,MSFT,TSLA\"), izleme listesi tarzı sorgular için — sonuçlar istenen tüm ticker'lar arasında birleştirilir ve tekrarlar kaldırılır. Kota ağırlığı istenen ticker sayısına göre artar.",
+        "ia_batch_note_sentiment": "`ticker` ayrıca virgülle ayrılmış bir liste de kabul eder, en fazla 10 sembol. Toplu istekler yukarıdaki düz ticker/average_score/results biçimi yerine sembole göre gruplanmış `data.results_by_ticker` döndürür, çünkü ilgisiz ticker'lar arasında duyarlılığı ortalamak yanıltıcı bir sayı olur. Kota ağırlığı istenen ticker sayısına göre artar.",
         "ia_postman_link": "Postman koleksiyonunu indir →",
         "ia_ratelimit_note": "Kimliği doğrulanmış her yanıt, X-RateLimit-Limit ve X-RateLimit-Remaining başlıklarını içerir, böylece isteklerinizi bir 429 hatasından tahmin etmek yerine hızını ayarlayabilirsiniz.",
         "ia_roadmap_title": "Yol haritası",
@@ -37970,6 +38016,8 @@ TRANSLATIONS = {
         "ve_page_name": "E-postayı Doğrula",
     },
     "fa": {
+        "ia_batch_note_events": "`ticker` همچنین یک فهرست جدا شده با کاما، تا ۱۰ نماد (مثلاً \"AAPL,MSFT,TSLA\")، برای پرس‌وجوهای سبک واچ‌لیست می‌پذیرد — نتایج در تمام نمادهای درخواستی ادغام و از تکرار حذف می‌شوند. وزن سهمیه با تعداد نمادهای درخواستی افزایش می‌یابد.",
+        "ia_batch_note_sentiment": "`ticker` همچنین یک فهرست جدا شده با کاما، تا ۱۰ نماد می‌پذیرد. درخواست‌های دسته‌ای به‌جای شکل مسطح ticker/average_score/results بالا، `data.results_by_ticker` (گروه‌بندی‌شده بر اساس نماد) را برمی‌گردانند، زیرا میانگین‌گیری احساسات میان نمادهای نامرتبط عددی گمراه‌کننده خواهد بود. وزن سهمیه با تعداد نمادهای درخواستی افزایش می‌یابد.",
         "ia_postman_link": "دانلود مجموعه Postman →",
         "ia_ratelimit_note": "هر پاسخ احراز هویت‌شده شامل هدرهای X-RateLimit-Limit و X-RateLimit-Remaining است، تا بتوانید سرعت درخواست‌ها را تنظیم کنید نه اینکه از خطای 429 حدس بزنید.",
         "ia_roadmap_title": "نقشه راه",
@@ -39619,6 +39667,8 @@ TRANSLATIONS = {
         "ve_page_name": "تأیید ایمیل",
     },
     "ur": {
+        "ia_batch_note_events": "`ticker` کاما سے الگ کی گئی فہرست بھی قبول کرتا ہے، 10 علامتوں تک (مثلاً \"AAPL,MSFT,TSLA\")، واچ لسٹ طرز کی کوئریز کے لیے — نتائج تمام درخواست شدہ ٹکرز میں ضم اور ڈپلیکیٹ ہٹا کر دیے جاتے ہیں۔ کوٹا وزن درخواست شدہ ٹکرز کی تعداد کے مطابق بڑھتا ہے۔",
+        "ia_batch_note_sentiment": "`ticker` کاما سے الگ کی گئی فہرست بھی قبول کرتا ہے، 10 علامتوں تک۔ بیچ درخواستیں اوپر دیے گئے فلیٹ ticker/average_score/results فارمیٹ کی بجائے `data.results_by_ticker` (علامت کے مطابق گروپ شدہ) واپس کرتی ہیں، کیونکہ غیر متعلقہ ٹکرز میں جذبات کا اوسط ایک گمراہ کن نمبر ہوگا۔ کوٹا وزن درخواست شدہ ٹکرز کی تعداد کے مطابق بڑھتا ہے۔",
         "ia_postman_link": "Postman کلیکشن ڈاؤن لوڈ کریں →",
         "ia_ratelimit_note": "ہر تصدیق شدہ ردعمل میں X-RateLimit-Limit اور X-RateLimit-Remaining ہیڈرز شامل ہوتے ہیں، تاکہ آپ 429 خرابی سے اندازہ لگانے کے بجائے درخواستوں کی رفتار کو کنٹرول کر سکیں۔",
         "ia_roadmap_title": "روڈ میپ",
@@ -41268,6 +41318,8 @@ TRANSLATIONS = {
         "ve_page_name": "ای میل کی تصدیق کریں",
     },
     "bn": {
+        "ia_batch_note_events": "`ticker` কমা দ্বারা পৃথক করা তালিকাও গ্রহণ করে, সর্বোচ্চ ১০টি প্রতীক (যেমন \"AAPL,MSFT,TSLA\"), watchlist-শৈলীর কোয়েরির জন্য — সমস্ত অনুরোধকৃত টিকারে ফলাফল একত্রিত ও ডুপ্লিকেট-মুক্ত করা হয়। কোটা ওজন অনুরোধকৃত টিকারের সংখ্যা অনুসারে বৃদ্ধি পায়।",
+        "ia_batch_note_sentiment": "`ticker` কমা দ্বারা পৃথক করা তালিকাও গ্রহণ করে, সর্বোচ্চ ১০টি প্রতীক। ব্যাচ অনুরোধগুলো উপরের ফ্ল্যাট ticker/average_score/results আকৃতির পরিবর্তে `data.results_by_ticker` (প্রতীক অনুযায়ী গোষ্ঠীবদ্ধ) ফেরত দেয়, কারণ অসম্পর্কিত টিকারগুলোর মধ্যে অনুভূতির গড় করা একটি বিভ্রান্তিকর সংখ্যা হবে। কোটা ওজন অনুরোধকৃত টিকারের সংখ্যা অনুসারে বৃদ্ধি পায়।",
         "ia_postman_link": "Postman কালেকশন ডাউনলোড করুন →",
         "ia_ratelimit_note": "প্রতিটি প্রমাণীকৃত প্রতিক্রিয়ায় X-RateLimit-Limit এবং X-RateLimit-Remaining হেডার অন্তর্ভুক্ত থাকে, যাতে আপনি 429 ত্রুটি থেকে অনুমান করার পরিবর্তে অনুরোধের গতি নিয়ন্ত্রণ করতে পারেন।",
         "ia_roadmap_title": "রোডম্যাপ",
@@ -42917,6 +42969,8 @@ TRANSLATIONS = {
         "ve_page_name": "ইমেইল যাচাই করুন",
     },
     "tl": {
+        "ia_batch_note_events": "Tinatanggap din ng `ticker` ang listahang pinaghihiwalay ng kuwit, hanggang 10 simbolo (hal. \"AAPL,MSFT,TSLA\"), para sa mga query na parang watchlist — pinagsasama at inaalis ang duplicate ng mga resulta sa lahat ng hiniling na ticker. Tumataas ang bigat ng kota ayon sa bilang ng hiniling na ticker.",
+        "ia_batch_note_sentiment": "Tinatanggap din ng `ticker` ang listahang pinaghihiwalay ng kuwit, hanggang 10 simbolo. Ang mga batch request ay nagbabalik ng `data.results_by_ticker` (pinagsama-sama ayon sa simbolo) sa halip na ang patag na ticker/average_score/results na anyo sa itaas, dahil ang pag-average ng damdamin sa hindi magkakaugnay na ticker ay magiging nakaliligaw na numero. Tumataas ang bigat ng kota ayon sa bilang ng hiniling na ticker.",
         "ia_postman_link": "I-download ang Postman collection →",
         "ia_ratelimit_note": "Ang bawat na-authenticate na tugon ay may kasamang X-RateLimit-Limit at X-RateLimit-Remaining headers, para maayos mo ang bilis ng mga request sa halip na manghula mula sa isang 429 error.",
         "ia_roadmap_title": "Roadmap",
@@ -44566,6 +44620,8 @@ TRANSLATIONS = {
         "ve_page_name": "I-verify ang Email",
     },
     "ms": {
+        "ia_batch_note_events": "`ticker` juga menerima senarai dipisahkan koma, sehingga 10 simbol (cth. \"AAPL,MSFT,TSLA\"), untuk pertanyaan gaya senarai pantau — hasil digabung dan dinyahpendua merentasi semua ticker yang diminta. Berat kuota berskala mengikut bilangan ticker yang diminta.",
+        "ia_batch_note_sentiment": "`ticker` juga menerima senarai dipisahkan koma, sehingga 10 simbol. Permintaan kelompok mengembalikan `data.results_by_ticker` (dikumpulkan mengikut simbol) dan bukannya bentuk rata ticker/average_score/results di atas, kerana purata sentimen merentasi ticker yang tidak berkaitan akan menjadi angka yang mengelirukan. Berat kuota berskala mengikut bilangan ticker yang diminta.",
         "ia_postman_link": "Muat turun koleksi Postman →",
         "ia_ratelimit_note": "Setiap respons yang disahkan merangkumi pengepala X-RateLimit-Limit dan X-RateLimit-Remaining, jadi anda boleh mengawal kadar permintaan dan bukannya meneka daripada ralat 429.",
         "ia_roadmap_title": "Peta jalan",
@@ -46215,6 +46271,8 @@ TRANSLATIONS = {
         "ve_page_name": "Sahkan E-mel",
     },
     "sw": {
+        "ia_batch_note_events": "`ticker` pia inakubali orodha iliyotenganishwa kwa koma, hadi alama 10 (mfano \"AAPL,MSFT,TSLA\"), kwa maswali ya mtindo wa watchlist — matokeo huunganishwa na kuondolewa nakala mbili katika ticker zote zilizoombwa. Uzito wa kiwango huongezeka kulingana na idadi ya ticker zilizoombwa.",
+        "ia_batch_note_sentiment": "`ticker` pia inakubali orodha iliyotenganishwa kwa koma, hadi alama 10. Maombi ya kundi hurejesha `data.results_by_ticker` (yamepangwa kwa alama) badala ya umbo tambarare la ticker/average_score/results hapo juu, kwa sababu kupata wastani wa hisia kati ya ticker zisizohusiana kungekuwa nambari ya kupotosha. Uzito wa kiwango huongezeka kulingana na idadi ya ticker zilizoombwa.",
         "ia_postman_link": "Pakua mkusanyiko wa Postman →",
         "ia_ratelimit_note": "Kila jibu lililothibitishwa linajumuisha vichwa vya X-RateLimit-Limit na X-RateLimit-Remaining, ili uweze kudhibiti kasi ya maombi badala ya kubashiri kutokana na hitilafu ya 429.",
         "ia_roadmap_title": "Ramani ya njia",
@@ -47864,6 +47922,8 @@ TRANSLATIONS = {
         "ve_page_name": "Thibitisha Barua Pepe",
     },
     "ne": {
+        "ia_batch_note_events": "`ticker` ले अल्पविरामले छुट्याइएको सूची पनि स्वीकार गर्छ, १० प्रतीकसम्म (जस्तै \"AAPL,MSFT,TSLA\"), वाचलिस्ट-शैलीको क्वेरीका लागि — नतिजाहरू अनुरोध गरिएका सबै टिकरहरूमा मर्ज र डुप्लिकेट हटाइन्छ। अनुरोध गरिएका टिकरहरूको संख्या अनुसार कोटा तौल बढ्छ।",
+        "ia_batch_note_sentiment": "`ticker` ले अल्पविरामले छुट्याइएको सूची पनि स्वीकार गर्छ, १० प्रतीकसम्म। ब्याच अनुरोधहरूले माथिको समतल ticker/average_score/results आकारको सट्टा `data.results_by_ticker` (प्रतीक अनुसार समूहीकृत) फर्काउँछन्, किनभने असम्बन्धित टिकरहरूमा भावनाको औसत निकाल्नु भ्रामक संख्या हुनेछ। अनुरोध गरिएका टिकरहरूको संख्या अनुसार कोटा तौल बढ्छ।",
         "ia_postman_link": "Postman संग्रह डाउनलोड गर्नुहोस् →",
         "ia_ratelimit_note": "हरेक प्रमाणीकृत प्रतिक्रियामा X-RateLimit-Limit र X-RateLimit-Remaining हेडरहरू समावेश हुन्छन्, ताकि तपाईं 429 त्रुटिबाट अनुमान गर्नुको सट्टा अनुरोधहरूको गति नियन्त्रण गर्न सक्नुहुन्छ।",
         "ia_roadmap_title": "रोडम्याप",
@@ -49513,6 +49573,8 @@ TRANSLATIONS = {
         "ve_page_name": "इमेल प्रमाणित गर्नुहोस्",
     },
     "mr": {
+        "ia_batch_note_events": "`ticker` स्वल्पविरामाने विभक्त केलेली यादी देखील स्वीकारतो, 10 चिन्हांपर्यंत (उदा. \"AAPL,MSFT,TSLA\"), वॉचलिस्ट-शैलीच्या क्वेरीसाठी — विनंती केलेल्या सर्व टिकर्समध्ये निकाल एकत्र आणि डुप्लिकेट काढून टाकले जातात. विनंती केलेल्या टिकर्सच्या संख्येनुसार कोटा वजन वाढते.",
+        "ia_batch_note_sentiment": "`ticker` स्वल्पविरामाने विभक्त केलेली यादी देखील स्वीकारतो, 10 चिन्हांपर्यंत. बॅच विनंत्या वरील सपाट ticker/average_score/results स्वरूपाऐवजी `data.results_by_ticker` (चिन्हानुसार गटबद्ध) परत करतात, कारण असंबंधित टिकर्समधील भावनांची सरासरी काढणे दिशाभूल करणारी संख्या असेल. विनंती केलेल्या टिकर्सच्या संख्येनुसार कोटा वजन वाढते.",
         "ia_postman_link": "Postman संग्रह डाउनलोड करा →",
         "ia_ratelimit_note": "प्रत्येक प्रमाणीकृत प्रतिसादामध्ये X-RateLimit-Limit आणि X-RateLimit-Remaining हेडर्स समाविष्ट असतात, जेणेकरून तुम्ही 429 त्रुटीवरून अंदाज लावण्याऐवजी विनंत्यांचा वेग नियंत्रित करू शकता.",
         "ia_roadmap_title": "रोडमॅप",
@@ -51162,6 +51224,8 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल पडताळा",
     },
     "te": {
+        "ia_batch_note_events": "`ticker` కామాతో వేరు చేయబడిన జాబితాను కూడా అంగీకరిస్తుంది, 10 చిహ్నాల వరకు (ఉదా. \"AAPL,MSFT,TSLA\"), watchlist-శైలి ప్రశ్నల కోసం — అభ్యర్థించిన అన్ని టికర్లలో ఫలితాలు విలీనం చేయబడి, నకిలీలు తొలగించబడతాయి. అభ్యర్థించిన టికర్ల సంఖ్యను బట్టి కోటా బరువు పెరుగుతుంది.",
+        "ia_batch_note_sentiment": "`ticker` కామాతో వేరు చేయబడిన జాబితాను కూడా అంగీకరిస్తుంది, 10 చిహ్నాల వరకు. బ్యాచ్ అభ్యర్థనలు పైన ఉన్న ఫ్లాట్ ticker/average_score/results రూపానికి బదులుగా `data.results_by_ticker` (చిహ్నం వారీగా సమూహం చేయబడింది) తిరిగి ఇస్తాయి, ఎందుకంటే సంబంధం లేని టికర్ల మధ్య సెంటిమెంట్‌ను సగటున తీయడం తప్పుదోవ పట్టించే సంఖ్య అవుతుంది. అభ్యర్థించిన టికర్ల సంఖ్యను బట్టి కోటా బరువు పెరుగుతుంది.",
         "ia_postman_link": "Postman కలెక్షన్‌ను డౌన్‌లోడ్ చేయండి →",
         "ia_ratelimit_note": "ప్రతి ప్రామాణీకరించిన స్పందనలో X-RateLimit-Limit మరియు X-RateLimit-Remaining హెడర్‌లు ఉంటాయి, తద్వారా మీరు 429 లోపం నుండి ఊహించే బదులు అభ్యర్థనల వేగాన్ని నియంత్రించవచ్చు.",
         "ia_roadmap_title": "రోడ్‌మ్యాప్",
@@ -52811,6 +52875,8 @@ TRANSLATIONS = {
         "ve_page_name": "ఇమెయిల్‌ను ధృవీకరించండి",
     },
     "ta": {
+        "ia_batch_note_events": "`ticker` கமாவால் பிரிக்கப்பட்ட பட்டியலையும் ஏற்கிறது, 10 சின்னங்கள் வரை (எ.கா. \"AAPL,MSFT,TSLA\"), watchlist பாணி வினவல்களுக்கு — கோரப்பட்ட அனைத்து டிக்கர்களிலும் முடிவுகள் இணைக்கப்பட்டு நகல் நீக்கப்படுகின்றன. கோரப்பட்ட டிக்கர்களின் எண்ணிக்கைக்கு ஏற்ப ஒதுக்கீட்டு எடை அதிகரிக்கும்.",
+        "ia_batch_note_sentiment": "`ticker` கமாவால் பிரிக்கப்பட்ட பட்டியலையும் ஏற்கிறது, 10 சின்னங்கள் வரை. தொகுதி கோரிக்கைகள் மேலே உள்ள தட்டையான ticker/average_score/results வடிவத்திற்குப் பதிலாக `data.results_by_ticker` (சின்னம் வாரியாக தொகுக்கப்பட்டது) திரும்பப் பெறுகின்றன, ஏனெனில் தொடர்பில்லாத டிக்கர்களுக்கு இடையே உணர்வை சராசரி செய்வது தவறான எண்ணாக இருக்கும். கோரப்பட்ட டிக்கர்களின் எண்ணிக்கைக்கு ஏற்ப ஒதுக்கீட்டு எடை அதிகரிக்கும்.",
         "ia_postman_link": "Postman சேகரிப்பைப் பதிவிறக்கவும் →",
         "ia_ratelimit_note": "ஒவ்வொரு அங்கீகரிக்கப்பட்ட பதிலிலும் X-RateLimit-Limit மற்றும் X-RateLimit-Remaining தலைப்புகள் அடங்கியுள்ளன, இதனால் 429 பிழையிலிருந்து யூகிப்பதற்குப் பதிலாக கோரிக்கைகளின் வேகத்தை நீங்கள் கட்டுப்படுத்தலாம்.",
         "ia_roadmap_title": "வரைபடம்",
@@ -54460,6 +54526,8 @@ TRANSLATIONS = {
         "ve_page_name": "மின்னஞ்சலைச் சரிபார்க்கவும்",
     },
     "gu": {
+        "ia_batch_note_events": "`ticker` અલ્પવિરામથી અલગ કરેલી યાદી પણ સ્વીકારે છે, 10 પ્રતીકો સુધી (દા.ત. \"AAPL,MSFT,TSLA\"), watchlist-શૈલીના ક્વેરી માટે — વિનંતી કરેલા બધા ટિકરમાં પરિણામો ભેગા અને ડુપ્લિકેટ દૂર કરવામાં આવે છે. વિનંતી કરેલા ટિકરની સંખ્યા મુજબ ક્વોટા વજન વધે છે.",
+        "ia_batch_note_sentiment": "`ticker` અલ્પવિરામથી અલગ કરેલી યાદી પણ સ્વીકારે છે, 10 પ્રતીકો સુધી. બેચ વિનંતીઓ ઉપરના સપાટ ticker/average_score/results સ્વરૂપને બદલે `data.results_by_ticker` (પ્રતીક મુજબ જૂથબદ્ધ) પરત કરે છે, કારણ કે અસંબંધિત ટિકર વચ્ચે લાગણીની સરેરાશ કાઢવી ભ્રામક સંખ્યા હશે. વિનંતી કરેલા ટિકરની સંખ્યા મુજબ ક્વોટા વજન વધે છે.",
         "ia_postman_link": "Postman કલેક્શન ડાઉનલોડ કરો →",
         "ia_ratelimit_note": "દરેક પ્રમાણિત પ્રતિભાવમાં X-RateLimit-Limit અને X-RateLimit-Remaining હેડર્સનો સમાવેશ થાય છે, જેથી તમે 429 ભૂલમાંથી અંદાજ લગાવવાને બદલે વિનંતીઓની ગતિ નિયંત્રિત કરી શકો.",
         "ia_roadmap_title": "રોડમેપ",
@@ -56109,6 +56177,8 @@ TRANSLATIONS = {
         "ve_page_name": "ઈમેલ ચકાસો",
     },
     "pa": {
+        "ia_batch_note_events": "`ticker` ਕਾਮੇ ਨਾਲ ਵੱਖ ਕੀਤੀ ਸੂਚੀ ਵੀ ਸਵੀਕਾਰ ਕਰਦਾ ਹੈ, 10 ਚਿੰਨ੍ਹਾਂ ਤੱਕ (ਜਿਵੇਂ \"AAPL,MSFT,TSLA\"), watchlist-ਸ਼ੈਲੀ ਦੀਆਂ ਪੁੱਛਗਿੱਛਾਂ ਲਈ — ਬੇਨਤੀ ਕੀਤੇ ਸਾਰੇ ਟਿਕਰਾਂ ਵਿੱਚ ਨਤੀਜੇ ਮਿਲਾਏ ਅਤੇ ਡੁਪਲੀਕੇਟ ਹਟਾਏ ਜਾਂਦੇ ਹਨ। ਬੇਨਤੀ ਕੀਤੇ ਟਿਕਰਾਂ ਦੀ ਗਿਣਤੀ ਅਨੁਸਾਰ ਕੋਟਾ ਭਾਰ ਵਧਦਾ ਹੈ।",
+        "ia_batch_note_sentiment": "`ticker` ਕਾਮੇ ਨਾਲ ਵੱਖ ਕੀਤੀ ਸੂਚੀ ਵੀ ਸਵੀਕਾਰ ਕਰਦਾ ਹੈ, 10 ਚਿੰਨ੍ਹਾਂ ਤੱਕ। ਬੈਚ ਬੇਨਤੀਆਂ ਉੱਪਰ ਦਿੱਤੇ ਸਮਤਲ ticker/average_score/results ਰੂਪ ਦੀ ਬਜਾਏ `data.results_by_ticker` (ਚਿੰਨ੍ਹ ਅਨੁਸਾਰ ਸਮੂਹਬੱਧ) ਵਾਪਸ ਕਰਦੀਆਂ ਹਨ, ਕਿਉਂਕਿ ਗੈਰ-ਸੰਬੰਧਿਤ ਟਿਕਰਾਂ ਵਿੱਚ ਭਾਵਨਾ ਦੀ ਔਸਤ ਕੱਢਣਾ ਗੁੰਮਰਾਹਕੁੰਨ ਸੰਖਿਆ ਹੋਵੇਗੀ। ਬੇਨਤੀ ਕੀਤੇ ਟਿਕਰਾਂ ਦੀ ਗਿਣਤੀ ਅਨੁਸਾਰ ਕੋਟਾ ਭਾਰ ਵਧਦਾ ਹੈ।",
         "ia_postman_link": "Postman ਸੰਗ੍ਰਹਿ ਡਾਊਨਲੋਡ ਕਰੋ →",
         "ia_ratelimit_note": "ਹਰ ਪ੍ਰਮਾਣਿਤ ਜਵਾਬ ਵਿੱਚ X-RateLimit-Limit ਅਤੇ X-RateLimit-Remaining ਹੈਡਰ ਸ਼ਾਮਲ ਹੁੰਦੇ ਹਨ, ਤਾਂ ਜੋ ਤੁਸੀਂ 429 ਗਲਤੀ ਤੋਂ ਅੰਦਾਜ਼ਾ ਲਗਾਉਣ ਦੀ ਬਜਾਏ ਬੇਨਤੀਆਂ ਦੀ ਗਤੀ ਨੂੰ ਕੰਟਰੋਲ ਕਰ ਸਕੋ।",
         "ia_roadmap_title": "ਰੋਡਮੈਪ",
@@ -57758,6 +57828,8 @@ TRANSLATIONS = {
         "ve_page_name": "ਈਮੇਲ ਦੀ ਤਸਦੀਕ ਕਰੋ",
     },
     "ml": {
+        "ia_batch_note_events": "`ticker` കോമയാൽ വേർതിരിച്ച പട്ടികയും സ്വീകരിക്കുന്നു, 10 ചിഹ്നങ്ങൾ വരെ (ഉദാ. \"AAPL,MSFT,TSLA\"), വാച്ച്‌ലിസ്റ്റ് ശൈലിയിലുള്ള ചോദ്യങ്ങൾക്ക് — അഭ്യർത്ഥിച്ച എല്ലാ ടിക്കറുകളിലും ഫലങ്ങൾ ലയിപ്പിച്ച് ഡ്യൂപ്ലിക്കേറ്റ് നീക്കം ചെയ്യുന്നു. അഭ്യർത്ഥിച്ച ടിക്കറുകളുടെ എണ്ണത്തിനനുസരിച്ച് ക്വാട്ട ഭാരം വർദ്ധിക്കുന്നു.",
+        "ia_batch_note_sentiment": "`ticker` കോമയാൽ വേർതിരിച്ച പട്ടികയും സ്വീകരിക്കുന്നു, 10 ചിഹ്നങ്ങൾ വരെ. ബാച്ച് അഭ്യർത്ഥനകൾ മുകളിലുള്ള പരന്ന ticker/average_score/results രൂപത്തിന് പകരം `data.results_by_ticker` (ചിഹ്നം അനുസരിച്ച് ഗ്രൂപ്പുചെയ്തത്) തിരികെ നൽകുന്നു, കാരണം ബന്ധമില്ലാത്ത ടിക്കറുകൾക്കിടയിൽ വികാരം ശരാശരിയാക്കുന്നത് തെറ്റിദ്ധരിപ്പിക്കുന്ന സംഖ്യയായിരിക്കും. അഭ്യർത്ഥിച്ച ടിക്കറുകളുടെ എണ്ണത്തിനനുസരിച്ച് ക്വാട്ട ഭാരം വർദ്ധിക്കുന്നു.",
         "ia_postman_link": "Postman ശേഖരം ഡൗൺലോഡ് ചെയ്യുക →",
         "ia_ratelimit_note": "ഓരോ പ്രാമാണീകരിച്ച പ്രതികരണത്തിലും X-RateLimit-Limit, X-RateLimit-Remaining ഹെഡറുകൾ ഉൾപ്പെടുന്നു, അതിനാൽ 429 പിശകിൽ നിന്ന് ഊഹിക്കുന്നതിനുപകരം അഭ്യർത്ഥനകളുടെ വേഗത നിയന്ത്രിക്കാം.",
         "ia_roadmap_title": "റോഡ്മാപ്പ്",
@@ -59407,6 +59479,8 @@ TRANSLATIONS = {
         "ve_page_name": "ഇമെയിൽ പരിശോധിക്കുക",
     },
     "kn": {
+        "ia_batch_note_events": "`ticker` ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿದ ಪಟ್ಟಿಯನ್ನೂ ಸ್ವೀಕರಿಸುತ್ತದೆ, 10 ಚಿಹ್ನೆಗಳವರೆಗೆ (ಉದಾ. \"AAPL,MSFT,TSLA\"), ವಾಚ್‌ಲಿಸ್ಟ್-ಶೈಲಿಯ ಪ್ರಶ್ನೆಗಳಿಗಾಗಿ — ವಿನಂತಿಸಿದ ಎಲ್ಲಾ ಟಿಕರ್‌ಗಳಲ್ಲಿ ಫಲಿತಾಂಶಗಳನ್ನು ವಿಲೀನಗೊಳಿಸಿ ನಕಲು ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ. ವಿನಂತಿಸಿದ ಟಿಕರ್‌ಗಳ ಸಂಖ್ಯೆಗೆ ಅನುಗುಣವಾಗಿ ಕೋಟಾ ತೂಕ ಹೆಚ್ಚಾಗುತ್ತದೆ.",
+        "ia_batch_note_sentiment": "`ticker` ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿದ ಪಟ್ಟಿಯನ್ನೂ ಸ್ವೀಕರಿಸುತ್ತದೆ, 10 ಚಿಹ್ನೆಗಳವರೆಗೆ. ಬ್ಯಾಚ್ ವಿನಂತಿಗಳು ಮೇಲಿನ ಫ್ಲಾಟ್ ticker/average_score/results ಆಕಾರದ ಬದಲು `data.results_by_ticker` (ಚಿಹ್ನೆಯ ಪ್ರಕಾರ ಗುಂಪುಗೊಳಿಸಲಾಗಿದೆ) ಹಿಂತಿರುಗಿಸುತ್ತವೆ, ಏಕೆಂದರೆ ಸಂಬಂಧವಿಲ್ಲದ ಟಿಕರ್‌ಗಳ ನಡುವೆ ಭಾವನೆಯನ್ನು ಸರಾಸರಿ ಮಾಡುವುದು ದಾರಿತಪ್ಪಿಸುವ ಸಂಖ್ಯೆಯಾಗಿರುತ್ತದೆ. ವಿನಂತಿಸಿದ ಟಿಕರ್‌ಗಳ ಸಂಖ್ಯೆಗೆ ಅನುಗುಣವಾಗಿ ಕೋಟಾ ತೂಕ ಹೆಚ್ಚಾಗುತ್ತದೆ.",
         "ia_postman_link": "Postman ಸಂಗ್ರಹವನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ →",
         "ia_ratelimit_note": "ಪ್ರತಿ ದೃಢೀಕರಿಸಿದ ಪ್ರತಿಕ್ರಿಯೆಯು X-RateLimit-Limit ಮತ್ತು X-RateLimit-Remaining ಹೆಡರ್‌ಗಳನ್ನು ಒಳಗೊಂಡಿದೆ, ಇದರಿಂದ ನೀವು 429 ದೋಷದಿಂದ ಊಹಿಸುವ ಬದಲು ವಿನಂತಿಗಳ ವೇಗವನ್ನು ನಿಯಂತ್ರಿಸಬಹುದು.",
         "ia_roadmap_title": "ರೋಡ್‌ಮ್ಯಾಪ್",
@@ -61056,6 +61130,8 @@ TRANSLATIONS = {
         "ve_page_name": "ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ",
     },
     "or": {
+        "ia_batch_note_events": "`ticker` ମଧ୍ୟ କମା ଦ୍ୱାରା ପୃଥକ ତାଲିକା ଗ୍ରହଣ କରେ, 10ଟି ପ୍ରତୀକ ପର୍ଯ୍ୟନ୍ତ (ଉଦା. \"AAPL,MSFT,TSLA\"), watchlist-ଶୈଳୀର କ୍ୱେରୀ ପାଇଁ — ଅନୁରୋଧ କରାଯାଇଥିବା ସମସ୍ତ ଟିକରରେ ଫଳାଫଳ ମିଶ୍ରିତ ଏବଂ ନକଲ ହଟାଯାଏ। ଅନୁରୋଧ କରାଯାଇଥିବା ଟିକର ସଂଖ୍ୟା ଅନୁସାରେ କୋଟା ଓଜନ ବୃଦ୍ଧି ପାଏ।",
+        "ia_batch_note_sentiment": "`ticker` ମଧ୍ୟ କମା ଦ୍ୱାରା ପୃଥକ ତାଲିକା ଗ୍ରହଣ କରେ, 10ଟି ପ୍ରତୀକ ପର୍ଯ୍ୟନ୍ତ। ବ୍ୟାଚ୍ ଅନୁରୋଧଗୁଡ଼ିକ ଉପରୋକ୍ତ ସମତଳ ticker/average_score/results ଆକୃତି ପରିବର୍ତ୍ତେ `data.results_by_ticker` (ପ୍ରତୀକ ଅନୁସାରେ ଗୋଷ୍ଠୀବଦ୍ଧ) ଫେରାଏ, କାରଣ ଅସମ୍ପର୍କିତ ଟିକରଗୁଡ଼ିକ ମଧ୍ୟରେ ଭାବନାର ହାରାହାରି ନେବା ଏକ ଭ୍ରାନ୍ତିଜନକ ସଂଖ୍ୟା ହେବ। ଅନୁରୋଧ କରାଯାଇଥିବା ଟିକର ସଂଖ୍ୟା ଅନୁସାରେ କୋଟା ଓଜନ ବୃଦ୍ଧି ପାଏ।",
         "ia_postman_link": "Postman ସଂଗ୍ରହ ଡାଉନଲୋଡ୍ କରନ୍ତୁ →",
         "ia_ratelimit_note": "ପ୍ରତ୍ୟେକ ପ୍ରାମାଣିକ ପ୍ରତିକ୍ରିୟାରେ X-RateLimit-Limit ଏବଂ X-RateLimit-Remaining ହେଡର ଅନ୍ତର୍ଭୁକ୍ତ, ଯାହା ଦ୍ୱାରା ଆପଣ 429 ତ୍ରୁଟିରୁ ଅନୁମାନ କରିବା ପରିବର୍ତ୍ତେ ଅନୁରୋଧର ଗତି ନିୟନ୍ତ୍ରଣ କରିପାରିବେ।",
         "ia_roadmap_title": "ରୋଡମ୍ୟାପ୍",
@@ -62705,6 +62781,8 @@ TRANSLATIONS = {
         "ve_page_name": "ଇମେଲ ଯାଞ୍ଚ କରନ୍ତୁ",
     },
     "ps": {
+        "ia_batch_note_events": "`ticker` د کاما لخوا جلا شوی لیست هم مني، تر 10 سمبولونو پورې (لکه \"AAPL,MSFT,TSLA\")، د watchlist ډول پوښتنو لپاره — پایلې د غوښتل شویو ټولو ټیکرونو په اوږدو کې یوځای او تکراري لرې کیږي. د کوٹا وزن د غوښتل شویو ټیکرونو شمیر سره مطابقت لري.",
+        "ia_batch_note_sentiment": "`ticker` د کاما لخوا جلا شوی لیست هم مني، تر 10 سمبولونو پورې. د دستې غوښتنې د پورتني تخت ticker/average_score/results بڼې پرځای `data.results_by_ticker` (د سمبول له مخې ډلبندي شوي) بیرته راګرځوي، ځکه چې د نامرتبطو ټیکرونو تر منځ د احساساتو اوسط یو ګمراه کوونکی شمیره ده. د کوٹا وزن د غوښتل شویو ټیکرونو شمیر سره مطابقت لري.",
         "ia_postman_link": "د Postman ټولګه ډاونلوډ کړئ →",
         "ia_ratelimit_note": "هر تایید شوی ځواب کې د X-RateLimit-Limit او X-RateLimit-Remaining هیډرونه شامل دي، ترڅو تاسو د 429 تېروتنې څخه اټکل کولو پرځای د غوښتنو سرعت تنظیم کړئ.",
         "ia_roadmap_title": "د لارې نقشه",
@@ -64354,6 +64432,8 @@ TRANSLATIONS = {
         "ve_page_name": "بریښنالیک تایید کړئ",
     },
     "ha": {
+        "ia_batch_note_events": "`ticker` kuma yana karɓar jerin da aka raba da waƙafi, har zuwa alamomi 10 (misali \"AAPL,MSFT,TSLA\"), don tambayoyin salon jerin sa ido — ana haɗa sakamako da cire kwafi a duk faɗin ticker da aka nema. Nauyin adadi yana ƙaruwa da yawan ticker da aka nema.",
+        "ia_batch_note_sentiment": "`ticker` kuma yana karɓar jerin da aka raba da waƙafi, har zuwa alamomi 10. Buƙatun tarin suna dawo da `data.results_by_ticker` (an tsara su bisa alama) maimakon salon lebur na ticker/average_score/results a sama, saboda auna matsakaicin ra'ayi tsakanin ticker marasa alaƙa zai zama lamba mai ɓatarwa. Nauyin adadi yana ƙaruwa da yawan ticker da aka nema.",
         "ia_postman_link": "Sauke tarin Postman →",
         "ia_ratelimit_note": "Kowane amsa da aka tantance ya haɗa da kanun X-RateLimit-Limit da X-RateLimit-Remaining, don ka iya daidaita saurin buƙatun maimakon yin hasashe daga kuskuren 429.",
         "ia_roadmap_title": "Taswirar hanya",
@@ -66003,6 +66083,8 @@ TRANSLATIONS = {
         "ve_page_name": "Tabbatar da Imel",
     },
     "ku": {
+        "ia_batch_note_events": "`ticker` her wiha lîsteyeke bi komayan veqetandî jî qebûl dike, heta 10 sembol (mînak \"AAPL,MSFT,TSLA\"), ji bo lêpirsînên bi şêwaza watchlist — encam li ser hemî tickerên daxwazkirî tên yekkirin û ducarî jê tê rakirin. Giraniya kotayê li gorî hejmara tickerên daxwazkirî zêde dibe.",
+        "ia_batch_note_sentiment": "`ticker` her wiha lîsteyeke bi komayan veqetandî jî qebûl dike, heta 10 sembol. Daxwazên komî li şûna forma têkil a ticker/average_score/results ya jorîn `data.results_by_ticker` (li gorî sembolê kombûyî) vedigerîne, ji ber ku navînî girtina hestê di navbera tickerên nepêwendîdar de dê hejmareke xapînok be. Giraniya kotayê li gorî hejmara tickerên daxwazkirî zêde dibe.",
         "ia_postman_link": "Berhevoka Postman dakêşe →",
         "ia_ratelimit_note": "Her bersiveke pejirandî sernavên X-RateLimit-Limit û X-RateLimit-Remaining vedihewîne, ji ber vê yekê tu dikarî lezê daxwazan bi rêk bixî li şûna texmîn kirinê ji çewtiya 429.",
         "ia_roadmap_title": "Nexşeya rê",
@@ -67652,6 +67734,8 @@ TRANSLATIONS = {
         "ve_page_name": "E-nameyê Pejirand",
     },
     "si": {
+        "ia_batch_note_events": "`ticker` කොමා මගින් වෙන් කළ ලැයිස්තුවක් ද පිළිගනී, සංකේත 10ක් දක්වා (උදා. \"AAPL,MSFT,TSLA\"), watchlist-විලාසී විමසුම් සඳහා — ඉල්ලූ සියලුම ටිකර් හරහා ප්‍රතිඵල ඒකාබද්ධ කර නැවත සිදුවීම් ඉවත් කරයි. ඉල්ලූ ටිකර් ගණනට අනුව කෝටා බර වැඩි වේ.",
+        "ia_batch_note_sentiment": "`ticker` කොමා මගින් වෙන් කළ ලැයිස්තුවක් ද පිළිගනී, සංකේත 10ක් දක්වා. පැකේජ ඉල්ලීම් ඉහත සමතල ticker/average_score/results හැඩය වෙනුවට `data.results_by_ticker` (සංකේතය අනුව සමූහගත) ලබා දෙයි, මන්ද අදාළ නොවන ටිකර් අතර හැඟීම් සාමාන්‍ය කිරීම නොමඟ යවන සංඛ්‍යාවක් වනු ඇත. ඉල්ලූ ටිකර් ගණනට අනුව කෝටා බර වැඩි වේ.",
         "ia_postman_link": "Postman එකතුව බාගන්න →",
         "ia_ratelimit_note": "සෑම සත්‍යාපිත ප්‍රතිචාරයකම X-RateLimit-Limit සහ X-RateLimit-Remaining ශීර්ෂ ඇතුළත් වේ, එබැවින් ඔබට 429 දෝෂයකින් අනුමාන කරනවා වෙනුවට ඉල්ලීම් වේගය පාලනය කළ හැක.",
         "ia_roadmap_title": "මාර්ග සිතියම",
@@ -69301,6 +69385,8 @@ TRANSLATIONS = {
         "ve_page_name": "විද්‍යුත් තැපෑල තහවුරු කරන්න",
     },
     "uz": {
+        "ia_batch_note_events": "`ticker` shuningdek vergul bilan ajratilgan roʻyxatni ham qabul qiladi, 10 tagacha belgi (masalan, \"AAPL,MSFT,TSLA\"), watchlist uslubidagi soʻrovlar uchun — natijalar barcha soʻralgan tikerlar boʻyicha birlashtiriladi va takrorlanishlar olib tashlanadi. Kvota vazni soʻralgan tikerlar soniga qarab oshadi.",
+        "ia_batch_note_sentiment": "`ticker` shuningdek vergul bilan ajratilgan roʻyxatni ham qabul qiladi, 10 tagacha belgi. Paket soʻrovlari yuqoridagi tekis ticker/average_score/results shakli oʻrniga `data.results_by_ticker` (belgi boʻyicha guruhlangan) qaytaradi, chunki bogʻliq boʻlmagan tikerlar orasida kayfiyatni oʻrtachalashtirish chalgʻituvchi raqam boʻladi. Kvota vazni soʻralgan tikerlar soniga qarab oshadi.",
         "ia_postman_link": "Postman to'plamini yuklab oling →",
         "ia_ratelimit_note": "Har bir autentifikatsiya qilingan javobda X-RateLimit-Limit va X-RateLimit-Remaining sarlavhalari mavjud, shuning uchun siz 429 xatosidan taxmin qilish o'rniga so'rovlar tezligini boshqarishingiz mumkin.",
         "ia_roadmap_title": "Yo'l xaritasi",
@@ -70950,6 +71036,8 @@ TRANSLATIONS = {
         "ve_page_name": "Elektron pochtani tasdiqlash",
     },
     "az": {
+        "ia_batch_note_events": "`ticker` həmçinin vergüllə ayrılmış siyahını da qəbul edir, 10 simvola qədər (məs. \"AAPL,MSFT,TSLA\"), watchlist tərzli sorğular üçün — nəticələr sorğu edilən bütün tikerlər üzrə birləşdirilir və təkrarlar silinir. Kvota çəkisi sorğu edilən tikerlərin sayına görə artır.",
+        "ia_batch_note_sentiment": "`ticker` həmçinin vergüllə ayrılmış siyahını da qəbul edir, 10 simvola qədər. Toplu sorğular yuxarıdakı düz ticker/average_score/results formasının əvəzinə `data.results_by_ticker` (simvola görə qruplaşdırılmış) qaytarır, çünki əlaqəsiz tikerlər arasında əhval-ruhiyyəni ortalamaq yanıltıcı rəqəm olardı. Kvota çəkisi sorğu edilən tikerlərin sayına görə artır.",
         "ia_postman_link": "Postman kolleksiyasını yükləyin →",
         "ia_ratelimit_note": "Hər autentifikasiya edilmiş cavaba X-RateLimit-Limit və X-RateLimit-Remaining başlıqları daxildir, beləliklə siz sorğuların sürətini 429 xətasından təxmin etmək əvəzinə tənzimləyə bilərsiniz.",
         "ia_roadmap_title": "Yol xəritəsi",
@@ -72599,6 +72687,8 @@ TRANSLATIONS = {
         "ve_page_name": "E-poçtu Təsdiqlə",
     },
     "jv": {
+        "ia_batch_note_events": "`ticker` uga nampa dhaptar sing dipisahake koma, nganti 10 simbol (mis. \"AAPL,MSFT,TSLA\"), kanggo pitakonan gaya watchlist — asil digabung lan dihapus duplikate ing kabeh ticker sing diminta. Bobot kuota mundhak miturut jumlah ticker sing diminta.",
+        "ia_batch_note_sentiment": "`ticker` uga nampa dhaptar sing dipisahake koma, nganti 10 simbol. Panjaluk batch mbalekake `data.results_by_ticker` (dikelompokake miturut simbol) tinimbang wangun rata ticker/average_score/results ing ndhuwur, amarga ngukur rata-rata sentimen antarane ticker sing ora ana gandhengane bakal dadi angka sing nyasarake. Bobot kuota mundhak miturut jumlah ticker sing diminta.",
         "ia_postman_link": "Undhuh koleksi Postman →",
         "ia_ratelimit_note": "Saben respon sing wis diverifikasi kalebu header X-RateLimit-Limit lan X-RateLimit-Remaining, supaya sampeyan bisa ngatur kacepetan panjaluk tinimbang ngira-ira saka kesalahan 429.",
         "ia_roadmap_title": "Peta dalan",
@@ -74248,6 +74338,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "su": {
+        "ia_batch_note_events": "`ticker` ogé nampi daptar anu dipisahkeun ku koma, nepi ka 10 simbol (contona \"AAPL,MSFT,TSLA\"), pikeun query gaya watchlist — hasil digabungkeun sarta dihapus duplikasi dina sadaya ticker anu dipénta. Beurat kuota naék nurutkeun jumlah ticker anu dipénta.",
+        "ia_batch_note_sentiment": "`ticker` ogé nampi daptar anu dipisahkeun ku koma, nepi ka 10 simbol. Paménta batch mulangkeun `data.results_by_ticker` (dikelompokkeun dumasar simbol) tibatan wangun rata ticker/average_score/results di luhur, sabab ngarata-ratakeun sentimen antar ticker anu teu aya patalina bakal jadi angka anu nyasabkeun. Beurat kuota naék nurutkeun jumlah ticker anu dipénta.",
         "ia_postman_link": "Undhuh koléksi Postman →",
         "ia_ratelimit_note": "Unggal réspon anu geus diotentikasi ngawengku header X-RateLimit-Limit jeung X-RateLimit-Remaining, supaya anjeun bisa ngatur laju paménta tinimbang nebak tina kasalahan 429.",
         "ia_roadmap_title": "Peta jalan",
@@ -75897,6 +75989,8 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "pcm": {
+        "ia_batch_note_events": "`ticker` fit take list wey dem separate with comma, up to 10 symbols (e.g. \"AAPL,MSFT,TSLA\"), for watchlist-type queries -- results go merge and remove duplicate across all the tickers wey you request. Quota weight go increase based on how many tickers you request.",
+        "ia_batch_note_sentiment": "`ticker` fit take list wey dem separate with comma, up to 10 symbols. Batch requests go return `data.results_by_ticker` (group by symbol) instead of the flat ticker/average_score/results shape wey dey above, because to average sentiment across tickers wey no relate go be number wey fit mislead you. Quota weight go increase based on how many tickers you request.",
         "ia_postman_link": "Download Postman collection →",
         "ia_ratelimit_note": "Every response wey don authenticate get X-RateLimit-Limit and X-RateLimit-Remaining headers, so you fit pace your requests instead of dey guess from 429 error.",
         "ia_roadmap_title": "Roadmap",
