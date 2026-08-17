@@ -76,6 +76,8 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 .copy-btn{position:absolute;top:8px;right:8px;background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-muted);font-size:0.68rem;padding:4px 9px;border-radius:6px;cursor:pointer;font-family:inherit}
 .copy-btn:hover{color:var(--accent-blue);border-color:var(--accent-blue)}
 .copy-btn.copied{color:var(--accent-green);border-color:var(--accent-green)}
+.try-result{margin:0;white-space:pre-wrap;word-break:break-word}
+.try-path-preview{font-family:monospace;font-size:0.75rem;color:var(--accent-blue);background:rgba(211,84,0,0.1);padding:3px 8px;border-radius:6px;display:inline-block;margin-top:6px}
 
 /* 2026-08-14 quickstart step layout (task #828) */
 .qs-steps{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
@@ -187,6 +189,57 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
       </div>
     </div>
     <p style="text-align:center;margin-top:18px;font-size:0.83rem;color:var(--text-muted)"><span data-i18n="ia_qs_footer">Prefer Python or Node? Same endpoint, one method call.</span> <a href="#sdks" data-i18n="ia_qs_footer_link">See the official SDKs →</a></p>
+  </div>
+
+  <!-- 2026-08-17 (task #4 follow-up, AJ: "重有咩可以升級" -- upgrade #1,
+       live try-it-now console): a real client-side fetch() straight to
+       api.xfinlab.com using the visitor's own key -- nothing routes
+       through XFINLAB's own servers first, and the key is never stored
+       or logged by this page, only sent in the direct request to the
+       API itself. Reuses the SDK section's .sdk-card/.code-block visual
+       language and the existing copyCode() helper rather than inventing
+       new components. Endpoint dropdown reuses the same ia_ep*_name
+       i18n keys already translated for the #endpoints cards below, so
+       this didn't need its own set of per-endpoint-name translations. -->
+  <div class="section" id="try-it">
+    <div class="section-title" data-i18n="ia_try_title">Try it live</div>
+    <div class="section-sub"><span data-i18n="ia_try_sub">Paste your API key, pick an endpoint, and see a real response — right here, no code required.</span> <a href="#access" data-i18n="ia_try_get_key_link">Don't have one? Get a free key ↓</a></div>
+    <div class="sdk-card" style="max-width:640px;margin:0 auto;padding:20px 22px">
+      <div class="form-row">
+        <label for="tryKey" data-i18n="ia_try_label_key">Your API key</label>
+        <input type="password" id="tryKey" data-i18n-placeholder="ia_try_placeholder_key" placeholder="xfl_..." autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label for="tryEndpoint" data-i18n="ia_try_label_endpoint">Endpoint</label>
+        <select id="tryEndpoint" onchange="tryUpdateFields()">
+          <option value="events" data-i18n="ia_ep1_name">Events</option>
+          <option value="sentiment" data-i18n="ia_ep2_name">Sentiment</option>
+          <option value="debate" data-i18n="ia_ep3_name">AI Debate</option>
+          <option value="intel" data-i18n="ia_ep4_name">AI Intelligence Feed</option>
+          <option value="technical" data-i18n="ia_ep5_name">Technical &amp; Market Structure</option>
+          <option value="stress-test" data-i18n="ia_ep6_name">Monte Carlo Stress Test</option>
+          <option value="regime-signal" data-i18n="ia_ep7_name">Regime-Aware Signal</option>
+        </select>
+        <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
+      </div>
+      <div class="form-row">
+        <label for="tryTicker" data-i18n="ia_try_label_ticker">Ticker</label>
+        <input type="text" id="tryTicker" data-i18n-placeholder="ia_try_placeholder_ticker" placeholder="AAPL" value="AAPL" style="text-transform:uppercase" oninput="tryUpdatePathPreview()">
+      </div>
+      <div class="form-row" id="tryAmountRow" style="display:none">
+        <label for="tryAmount" data-i18n="ia_try_label_amount">Amount</label>
+        <input type="number" id="tryAmount" value="10000" min="1">
+      </div>
+      <div class="form-row" id="tryHorizonRow" style="display:none">
+        <label for="tryHorizon" data-i18n="ia_try_label_horizon">Horizon (days)</label>
+        <input type="number" id="tryHorizon" value="252" min="1">
+      </div>
+      <button type="button" class="form-submit" id="tryRunBtn" onclick="runTryIt()" data-i18n="ia_try_run_btn">Run request</button>
+      <div style="margin-top:16px">
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('tryResult',this)" data-i18n="ia_copy_btn">Copy</button><pre class="try-result" id="tryResult" data-i18n="ia_try_placeholder_response">Response will appear here.</pre></div>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-muted);margin:14px 0 0;text-align:center" data-i18n="ia_try_note">This runs directly from your browser against the live API. Your key is sent only to XFINLAB's API — never stored or logged by this page.</p>
+    </div>
   </div>
 
   <div class="section" id="endpoints">
@@ -520,6 +573,98 @@ function copyCode(id, btn) {
     btn.classList.add('copied');
     setTimeout(function() { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
   }).catch(function() {});
+}
+
+// 2026-08-17 (task #4 follow-up, live try-it-now console): one config
+// entry per public endpoint. path() builds the real request path from
+// whatever ticker the visitor typed -- events/intel tolerate an empty
+// ticker (fall back to the un-scoped/"latest" variant the API itself
+// supports), everything else requires one and runTryIt() validates that
+// before firing. Weights/tier-gating are NOT special-cased here on
+// purpose: a free-tier key hitting AI Debate or AI Intelligence Feed
+// should see the API's own real 402/403 error, not a client-side guess
+// at what it would say -- same "no fabrication" principle as the rest
+// of this product.
+const TRY_ENDPOINTS = {
+  'events':          { method: 'GET',  needsTicker: false, needsAmount: false, path: function(tk) { return tk ? '/intelligence/v1/events?ticker=' + encodeURIComponent(tk) : '/intelligence/v1/events'; } },
+  'sentiment':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/sentiment?ticker=' + encodeURIComponent(tk); } },
+  'debate':          { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/debate?ticker=' + encodeURIComponent(tk); } },
+  'intel':           { method: 'GET',  needsTicker: false, needsAmount: false, path: function(tk) { return tk ? '/intelligence/v1/intel/' + encodeURIComponent(tk) : '/intelligence/v1/intel/latest'; } },
+  'technical':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/technical/' + encodeURIComponent(tk); } },
+  'stress-test':     { method: 'POST', needsTicker: true,  needsAmount: true,  path: function() { return '/intelligence/v1/stress-test'; } },
+  'regime-signal':   { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/regime-signal/' + encodeURIComponent(tk); } },
+};
+
+function tryUpdateFields() {
+  const cfg = TRY_ENDPOINTS[document.getElementById('tryEndpoint').value];
+  const show = cfg.needsAmount ? 'block' : 'none';
+  document.getElementById('tryAmountRow').style.display = show;
+  document.getElementById('tryHorizonRow').style.display = show;
+  tryUpdatePathPreview();
+}
+
+function tryUpdatePathPreview() {
+  const cfg = TRY_ENDPOINTS[document.getElementById('tryEndpoint').value];
+  const ticker = document.getElementById('tryTicker').value.trim();
+  document.getElementById('tryPathPreview').textContent = cfg.method + ' ' + cfg.path(ticker);
+}
+
+async function runTryIt() {
+  const btn = document.getElementById('tryRunBtn');
+  const resultEl = document.getElementById('tryResult');
+  const originalBtnText = btn.textContent;
+  const apiKey = document.getElementById('tryKey').value.trim();
+  const cfg = TRY_ENDPOINTS[document.getElementById('tryEndpoint').value];
+  const ticker = document.getElementById('tryTicker').value.trim().toUpperCase();
+
+  if (!apiKey) {
+    resultEl.textContent = t('ia_try_err_no_key', 'Enter your API key first.');
+    return;
+  }
+  if (cfg.needsTicker && !ticker) {
+    resultEl.textContent = t('ia_try_err_no_ticker', 'Enter a ticker symbol.');
+    return;
+  }
+  const amount = parseFloat(document.getElementById('tryAmount').value);
+  if (cfg.needsAmount && (!amount || amount <= 0)) {
+    resultEl.textContent = t('ia_try_err_no_amount', 'Enter an amount.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = t('ia_try_running_btn', 'Running...');
+  resultEl.textContent = '...';
+
+  const path = cfg.path(ticker);
+  const started = (window.performance && performance.now) ? performance.now() : Date.now();
+  try {
+    let res;
+    if (cfg.method === 'POST') {
+      const body = { symbol: ticker, amount: amount };
+      const horizon = parseInt(document.getElementById('tryHorizon').value, 10);
+      if (horizon) body.horizon_days = horizon;
+      res = await fetch(API + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+        body: JSON.stringify(body),
+      });
+    } else {
+      res = await fetch(API + path, { headers: { 'X-API-Key': apiKey } });
+    }
+    const elapsed = Math.round(((window.performance && performance.now) ? performance.now() : Date.now()) - started);
+    let data = null;
+    try { data = await res.json(); } catch (e) {}
+    const statusWord = res.ok ? t('ia_try_status_ok', 'Success') : t('ia_try_status_err', 'Error');
+    const pretty = data !== null ? JSON.stringify(data, null, 2) : t('ia_try_err_network', 'Network error — check your connection and try again.');
+    resultEl.textContent = cfg.method + ' ' + path + '\n' + res.status + ' ' + statusWord + ' · ' + elapsed + ' ms\n\n' + pretty;
+  } catch (err) {
+    resultEl.textContent = t('ia_try_err_network', 'Network error — check your connection and try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = originalBtnText;
+}
+if (document.getElementById('tryEndpoint')) {
+  tryUpdatePathPreview();
 }
 
 // 2026-07-30: which tier cards to show is admin-controlled (see
