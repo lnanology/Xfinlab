@@ -136,6 +136,7 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-17",
         "changes": [
+            {"type": "added", "text": "Third-party API directory submission copy prepared for APIs.guru and the Postman API Network (see API_DIRECTORY_SUBMISSION.md in the repo) -- pending AJ's own account action to actually submit."},
             {"type": "added", "text": "Postman collection at GET /api/intelligence/postman.json -- import via Postman's Import > Link, every request pre-filled with a working example."},
             {"type": "added", "text": "Public roadmap at GET /api/intelligence/roadmap (this page, #roadmap) -- backs the Pro plan's previously-unbacked \"public roadmap\" promise."},
             {"type": "added", "text": "X-RateLimit-Limit / X-RateLimit-Remaining headers on every authenticated response, so clients can pace requests instead of discovering the ceiling from a 429."},
@@ -214,9 +215,9 @@ INTELLIGENCE_ROADMAP = [
         "text": "Events and Sentiment accepting a comma-separated list of tickers in one call, for anyone tracking a watchlist instead of a single symbol.",
     },
     {
-        "status": "planned",
+        "status": "in_progress",
         "title": "Listings on third-party API directories",
-        "text": "RapidAPI, APIs.guru and similar -- pure discoverability, no functional change.",
+        "text": "APIs.guru and Postman API Network submission copy is ready (see API_DIRECTORY_SUBMISSION.md in the repo) -- actual submission needs AJ's own account on each site, so it's prepared but not yet live. RapidAPI flagged separately as a heavier lift (it proxies traffic through its own gateway/billing, not pure discoverability like the other two).",
     },
     {
         "status": "planned",
