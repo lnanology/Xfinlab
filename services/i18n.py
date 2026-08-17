@@ -39,6 +39,7 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "ia_openapi_link": "View OpenAPI spec →",
         "ia_try_title": "Try it live",
         "ia_try_sub": "Paste your API key, pick an endpoint, and see a real response — right here, no code required.",
         "ia_try_get_key_link": "Don't have one? Get a free key ↓",
@@ -1676,6 +1677,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verify Email",
     },
     "es": {
+        "ia_openapi_link": "Ver especificación OpenAPI →",
         "ia_try_title": "Pruébalo en vivo",
         "ia_try_sub": "Pega tu clave de API, elige un endpoint y ve una respuesta real — aquí mismo, sin código.",
         "ia_try_get_key_link": "¿No tienes una? Consigue una clave gratis ↓",
@@ -3312,6 +3314,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar correo",
     },
     "fr": {
+        "ia_openapi_link": "Voir la spécification OpenAPI →",
         "ia_try_title": "Essayez en direct",
         "ia_try_sub": "Collez votre clé API, choisissez un endpoint et voyez une vraie réponse — ici même, sans code.",
         "ia_try_get_key_link": "Vous n'en avez pas ? Obtenez une clé gratuite ↓",
@@ -4948,6 +4951,7 @@ TRANSLATIONS = {
         "ve_page_name": "Vérifier l'e-mail",
     },
     "de": {
+        "ia_openapi_link": "OpenAPI-Spezifikation ansehen →",
         "ia_try_title": "Live ausprobieren",
         "ia_try_sub": "Füge deinen API-Schlüssel ein, wähle einen Endpoint und sieh eine echte Antwort — direkt hier, ohne Code.",
         "ia_try_get_key_link": "Noch keinen? Kostenlosen Schlüssel holen ↓",
@@ -6584,6 +6588,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-Mail bestätigen",
     },
     "it": {
+        "ia_openapi_link": "Visualizza la specifica OpenAPI →",
         "ia_try_title": "Provalo dal vivo",
         "ia_try_sub": "Incolla la tua chiave API, scegli un endpoint e vedi una risposta reale — proprio qui, senza codice.",
         "ia_try_get_key_link": "Non ne hai una? Ottieni una chiave gratuita ↓",
@@ -8220,6 +8225,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifica email",
     },
     "pt": {
+        "ia_openapi_link": "Ver especificação OpenAPI →",
         "ia_try_title": "Experimente ao vivo",
         "ia_try_sub": "Cole a sua chave de API, escolha um endpoint e veja uma resposta real — aqui mesmo, sem código.",
         "ia_try_get_key_link": "Não tem uma? Obtenha uma chave gratuita ↓",
@@ -9856,6 +9862,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar email",
     },
     "ru": {
+        "ia_openapi_link": "Посмотреть спецификацию OpenAPI →",
         "ia_try_title": "Попробовать вживую",
         "ia_try_sub": "Вставьте свой API-ключ, выберите endpoint и увидьте реальный ответ — прямо здесь, без кода.",
         "ia_try_get_key_link": "Нет ключа? Получите бесплатный ключ ↓",
@@ -11492,6 +11499,7 @@ TRANSLATIONS = {
         "ve_page_name": "Подтверждение почты",
     },
     "nl": {
+        "ia_openapi_link": "Bekijk OpenAPI-specificatie →",
         "ia_try_title": "Probeer het live",
         "ia_try_sub": "Plak je API-sleutel, kies een endpoint en zie een echte reactie — hier direct, geen code nodig.",
         "ia_try_get_key_link": "Heb je er nog geen? Haal een gratis sleutel ↓",
@@ -13128,6 +13136,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-mail verifiëren",
     },
     "pl": {
+        "ia_openapi_link": "Zobacz specyfikację OpenAPI →",
         "ia_try_title": "Wypróbuj na żywo",
         "ia_try_sub": "Wklej swój klucz API, wybierz endpoint i zobacz prawdziwą odpowiedź — od razu tutaj, bez kodu.",
         "ia_try_get_key_link": "Nie masz klucza? Zdobądź darmowy klucz ↓",
@@ -14764,6 +14773,7 @@ TRANSLATIONS = {
         "ve_page_name": "Weryfikacja e-mail",
     },
     "ro": {
+        "ia_openapi_link": "Vezi specificația OpenAPI →",
         "ia_try_title": "Încearcă în direct",
         "ia_try_sub": "Lipește cheia ta API, alege un endpoint și vezi un răspuns real — chiar aici, fără cod.",
         "ia_try_get_key_link": "Nu ai una? Obține o cheie gratuită ↓",
@@ -16400,6 +16410,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verificare email",
     },
     "uk": {
+        "ia_openapi_link": "Переглянути специфікацію OpenAPI →",
         "ia_try_title": "Спробувати наживо",
         "ia_try_sub": "Вставте свій API-ключ, оберіть endpoint і побачте справжню відповідь — прямо тут, без коду.",
         "ia_try_get_key_link": "Немає ключа? Отримайте безкоштовний ключ ↓",
@@ -18036,6 +18047,7 @@ TRANSLATIONS = {
         "ve_page_name": "Підтвердження пошти",
     },
     "sr": {
+        "ia_openapi_link": "Погледај OpenAPI спецификацију →",
         "ia_try_title": "Испробај уживо",
         "ia_try_sub": "Налепи свој API кључ, изабери endpoint и види прави одговор — овде, без кода.",
         "ia_try_get_key_link": "Немаш га? Набави бесплатан кључ ↓",
@@ -19672,6 +19684,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikacija email-a",
     },
     "zh-TW": {
+        "ia_openapi_link": "查看OpenAPI規格 →",
         "ia_try_title": "立即試用",
         "ia_try_sub": "貼上你嘅API key，揀一個endpoint，即刻睇到真實回應——就喺呢度，唔使寫code。",
         "ia_try_get_key_link": "仲未有key？攞一個免費key ↓",
@@ -21309,6 +21322,7 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-HK": {
+        "ia_openapi_link": "查看OpenAPI規格 →",
         "ia_try_title": "即刻試用",
         "ia_try_sub": "貼上你嘅API key，揀一個endpoint，即刻睇到真實回應——就喺呢度，唔使寫code。",
         "ia_try_get_key_link": "仲未有key？攞一個免費key ↓",
@@ -22946,6 +22960,7 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-CN": {
+        "ia_openapi_link": "查看OpenAPI规格 →",
         "ia_try_title": "立即试用",
         "ia_try_sub": "粘贴你的API key，选择一个endpoint，即刻看到真实响应——就在这里，无需写代码。",
         "ia_try_get_key_link": "还没有key？获取一个免费key ↓",
@@ -24583,6 +24598,7 @@ TRANSLATIONS = {
         "ve_page_name": "验证邮箱",
     },
     "ja": {
+        "ia_openapi_link": "OpenAPI仕様を見る →",
         "ia_try_title": "ライブで試す",
         "ia_try_sub": "APIキーを貼り付けてエンドポイントを選び、その場で本物のレスポンスを確認 — コード不要です。",
         "ia_try_get_key_link": "まだお持ちでない方は 無料キーを取得 ↓",
@@ -26219,6 +26235,7 @@ TRANSLATIONS = {
         "ve_page_name": "メール確認",
     },
     "ko": {
+        "ia_openapi_link": "OpenAPI 사양 보기 →",
         "ia_try_title": "실시간으로 사용해보기",
         "ia_try_sub": "API 키를 붙여넣고 엔드포인트를 선택하면 실제 응답을 바로 여기서 확인할 수 있어요 — 코드 필요 없음.",
         "ia_try_get_key_link": "아직 키가 없나요? 무료 키 받기 ↓",
@@ -27855,6 +27872,7 @@ TRANSLATIONS = {
         "ve_page_name": "이메일 확인",
     },
     "hi": {
+        "ia_openapi_link": "OpenAPI स्पेसिफिकेशन देखें →",
         "ia_try_title": "इसे लाइव आज़माएं",
         "ia_try_sub": "अपनी API key पेस्ट करें, एक endpoint चुनें, और यहीं एक वास्तविक प्रतिक्रिया देखें — कोई कोड नहीं चाहिए।",
         "ia_try_get_key_link": "आपके पास एक नहीं है? मुफ़्त key पाएं ↓",
@@ -29491,6 +29509,7 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल सत्यापित करें",
     },
     "ar": {
+        "ia_openapi_link": "عرض مواصفات OpenAPI ←",
         "ia_try_title": "جربه مباشرة",
         "ia_try_sub": "الصق مفتاح API الخاص بك، اختر نقطة نهاية، وشاهد استجابة حقيقية — هنا مباشرة، بدون كتابة أي كود.",
         "ia_try_get_key_link": "ليس لديك واحد؟ احصل على مفتاح مجاني ↓",
@@ -31127,6 +31146,7 @@ TRANSLATIONS = {
         "ve_page_name": "التحقق من البريد الإلكتروني",
     },
     "id": {
+        "ia_openapi_link": "Lihat spesifikasi OpenAPI →",
         "ia_try_title": "Coba langsung",
         "ia_try_sub": "Tempel API key Anda, pilih endpoint, dan lihat respons nyata — di sini, tanpa perlu kode.",
         "ia_try_get_key_link": "Belum punya? Dapatkan key gratis ↓",
@@ -32763,6 +32783,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "th": {
+        "ia_openapi_link": "ดูข้อกำหนด OpenAPI →",
         "ia_try_title": "ลองใช้งานจริง",
         "ia_try_sub": "วาง API key ของคุณ เลือก endpoint แล้วดูการตอบกลับจริง — ที่นี่เลย ไม่ต้องเขียนโค้ด",
         "ia_try_get_key_link": "ยังไม่มี key? รับ key ฟรี ↓",
@@ -34399,6 +34420,7 @@ TRANSLATIONS = {
         "ve_page_name": "ยืนยันอีเมล",
     },
     "vi": {
+        "ia_openapi_link": "Xem đặc tả OpenAPI →",
         "ia_try_title": "Dùng thử trực tiếp",
         "ia_try_sub": "Dán API key của bạn, chọn một endpoint, và xem phản hồi thực — ngay tại đây, không cần viết code.",
         "ia_try_get_key_link": "Chưa có key? Nhận key miễn phí ↓",
@@ -36035,6 +36057,7 @@ TRANSLATIONS = {
         "ve_page_name": "Xác minh email",
     },
     "tr": {
+        "ia_openapi_link": "OpenAPI şartnamesini görüntüle →",
         "ia_try_title": "Canlı deneyin",
         "ia_try_sub": "API anahtarınızı yapıştırın, bir endpoint seçin ve gerçek bir yanıtı hemen burada görün — kod gerekmez.",
         "ia_try_get_key_link": "Henüz yok mu? Ücretsiz anahtar alın ↓",
@@ -37671,6 +37694,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-postayı Doğrula",
     },
     "fa": {
+        "ia_openapi_link": "مشاهده مشخصات OpenAPI ←",
         "ia_try_title": "همین حالا امتحان کنید",
         "ia_try_sub": "کلید API خود را جای‌گذاری کنید، یک endpoint انتخاب کنید و یک پاسخ واقعی را همین‌جا ببینید — بدون نیاز به کد.",
         "ia_try_get_key_link": "کلید ندارید؟ یک کلید رایگان دریافت کنید ↓",
@@ -39307,6 +39331,7 @@ TRANSLATIONS = {
         "ve_page_name": "تأیید ایمیل",
     },
     "ur": {
+        "ia_openapi_link": "OpenAPI وضاحت دیکھیں ←",
         "ia_try_title": "اسے لائیو آزمائیں",
         "ia_try_sub": "اپنی API کی پیسٹ کریں، ایک endpoint منتخب کریں، اور یہیں ایک حقیقی جواب دیکھیں — کوئی کوڈ درکار نہیں۔",
         "ia_try_get_key_link": "آپ کے پاس نہیں ہے؟ ایک مفت کی حاصل کریں ↓",
@@ -40943,6 +40968,7 @@ TRANSLATIONS = {
         "ve_page_name": "ای میل کی تصدیق کریں",
     },
     "bn": {
+        "ia_openapi_link": "OpenAPI স্পেসিফিকেশন দেখুন →",
         "ia_try_title": "লাইভ চেষ্টা করুন",
         "ia_try_sub": "আপনার API key পেস্ট করুন, একটি endpoint বেছে নিন, এবং এখানেই একটি বাস্তব প্রতিক্রিয়া দেখুন — কোনো কোড লাগবে না।",
         "ia_try_get_key_link": "একটি নেই? একটি বিনামূল্যে key নিন ↓",
@@ -42579,6 +42605,7 @@ TRANSLATIONS = {
         "ve_page_name": "ইমেইল যাচাই করুন",
     },
     "tl": {
+        "ia_openapi_link": "Tingnan ang OpenAPI spec →",
         "ia_try_title": "Subukan nang live",
         "ia_try_sub": "I-paste ang API key mo, pumili ng endpoint, at makita ang totoong response — dito mismo, walang code na kailangan.",
         "ia_try_get_key_link": "Wala ka pang isa? Kumuha ng libreng key ↓",
@@ -44215,6 +44242,7 @@ TRANSLATIONS = {
         "ve_page_name": "I-verify ang Email",
     },
     "ms": {
+        "ia_openapi_link": "Lihat spesifikasi OpenAPI →",
         "ia_try_title": "Cuba secara langsung",
         "ia_try_sub": "Tampal kunci API anda, pilih endpoint, dan lihat respons sebenar — di sini, tanpa kod diperlukan.",
         "ia_try_get_key_link": "Belum ada? Dapatkan kunci percuma ↓",
@@ -45851,6 +45879,7 @@ TRANSLATIONS = {
         "ve_page_name": "Sahkan E-mel",
     },
     "sw": {
+        "ia_openapi_link": "Ona spesifikesheni ya OpenAPI →",
         "ia_try_title": "Jaribu moja kwa moja",
         "ia_try_sub": "Bandika ufunguo wako wa API, chagua endpoint, na uone jibu halisi — hapa hapa, bila hitaji la msimbo.",
         "ia_try_get_key_link": "Huna moja? Pata ufunguo wa bure ↓",
@@ -47487,6 +47516,7 @@ TRANSLATIONS = {
         "ve_page_name": "Thibitisha Barua Pepe",
     },
     "ne": {
+        "ia_openapi_link": "OpenAPI स्पेसिफिकेशन हेर्नुहोस् →",
         "ia_try_title": "लाइभ प्रयास गर्नुहोस्",
         "ia_try_sub": "आफ्नो API key टाँस्नुहोस्, एउटा endpoint छान्नुहोस्, र यहीं एउटा वास्तविक प्रतिक्रिया हेर्नुहोस् — कुनै कोड आवश्यक छैन।",
         "ia_try_get_key_link": "तपाईंसँग छैन? निःशुल्क key प्राप्त गर्नुहोस् ↓",
@@ -49123,6 +49153,7 @@ TRANSLATIONS = {
         "ve_page_name": "इमेल प्रमाणित गर्नुहोस्",
     },
     "mr": {
+        "ia_openapi_link": "OpenAPI तपशील पहा →",
         "ia_try_title": "थेट वापरून पहा",
         "ia_try_sub": "तुमची API key पेस्ट करा, एक endpoint निवडा, आणि इथेच खरा प्रतिसाद पहा — कोणत्याही कोडची गरज नाही.",
         "ia_try_get_key_link": "तुमच्याकडे नाही? मोफत key मिळवा ↓",
@@ -50759,6 +50790,7 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल पडताळा",
     },
     "te": {
+        "ia_openapi_link": "OpenAPI స్పెసిఫికేషన్‌ను చూడండి →",
         "ia_try_title": "ప్రత్యక్షంగా ప్రయత్నించండి",
         "ia_try_sub": "మీ API key పేస్ట్ చేయండి, ఒక endpoint ఎంచుకోండి, మరియు ఇక్కడే నిజమైన స్పందనను చూడండి — ఎలాంటి కోడ్ అవసరం లేదు.",
         "ia_try_get_key_link": "మీ దగ్గర లేదా? ఉచిత key పొందండి ↓",
@@ -52395,6 +52427,7 @@ TRANSLATIONS = {
         "ve_page_name": "ఇమెయిల్‌ను ధృవీకరించండి",
     },
     "ta": {
+        "ia_openapi_link": "OpenAPI விவரக்குறிப்பைப் பார்க்கவும் →",
         "ia_try_title": "நேரடியாக முயற்சிக்கவும்",
         "ia_try_sub": "உங்கள் API விசையை ஒட்டவும், ஒரு endpoint ஐத் தேர்ந்தெடுக்கவும், இங்கேயே ஒரு உண்மையான பதிலைப் பார்க்கவும் — குறியீடு தேவையில்லை.",
         "ia_try_get_key_link": "உங்களிடம் இல்லையா? இலவச விசையைப் பெறுங்கள் ↓",
@@ -54031,6 +54064,7 @@ TRANSLATIONS = {
         "ve_page_name": "மின்னஞ்சலைச் சரிபார்க்கவும்",
     },
     "gu": {
+        "ia_openapi_link": "OpenAPI સ્પષ્ટીકરણ જુઓ →",
         "ia_try_title": "લાઇવ અજમાવો",
         "ia_try_sub": "તમારી API કી પેસ્ટ કરો, એક endpoint પસંદ કરો, અને અહીં જ સાચો પ્રતિભાવ જુઓ — કોઈ કોડની જરૂર નથી.",
         "ia_try_get_key_link": "તમારી પાસે નથી? મફત કી મેળવો ↓",
@@ -55667,6 +55701,7 @@ TRANSLATIONS = {
         "ve_page_name": "ઈમેલ ચકાસો",
     },
     "pa": {
+        "ia_openapi_link": "OpenAPI ਵਿਸ਼ੇਸ਼ਤਾ ਵੇਖੋ →",
         "ia_try_title": "ਲਾਈਵ ਅਜ਼ਮਾਓ",
         "ia_try_sub": "ਆਪਣੀ API ਕੁੰਜੀ ਪੇਸਟ ਕਰੋ, ਇੱਕ endpoint ਚੁਣੋ, ਅਤੇ ਇੱਥੇ ਹੀ ਇੱਕ ਅਸਲ ਜਵਾਬ ਦੇਖੋ — ਕੋਈ ਕੋਡ ਦੀ ਲੋੜ ਨਹੀਂ।",
         "ia_try_get_key_link": "ਤੁਹਾਡੇ ਕੋਲ ਇੱਕ ਨਹੀਂ ਹੈ? ਮੁਫ਼ਤ ਕੁੰਜੀ ਪ੍ਰਾਪਤ ਕਰੋ ↓",
@@ -57303,6 +57338,7 @@ TRANSLATIONS = {
         "ve_page_name": "ਈਮੇਲ ਦੀ ਤਸਦੀਕ ਕਰੋ",
     },
     "ml": {
+        "ia_openapi_link": "OpenAPI സ്പെസിഫിക്കേഷൻ കാണുക →",
         "ia_try_title": "ലൈവായി പരീക്ഷിക്കുക",
         "ia_try_sub": "നിങ്ങളുടെ API കീ പേസ്റ്റ് ചെയ്യുക, ഒരു endpoint തിരഞ്ഞെടുക്കുക, ഇവിടെ തന്നെ ഒരു യഥാർത്ഥ പ്രതികരണം കാണുക — കോഡ് ആവശ്യമില്ല.",
         "ia_try_get_key_link": "നിങ്ങൾക്ക് ഒന്നില്ലേ? സൗജന്യ കീ നേടുക ↓",
@@ -58939,6 +58975,7 @@ TRANSLATIONS = {
         "ve_page_name": "ഇമെയിൽ പരിശോധിക്കുക",
     },
     "kn": {
+        "ia_openapi_link": "OpenAPI ವಿಶೇಷಣ ವೀಕ್ಷಿಸಿ →",
         "ia_try_title": "ಲೈವ್‌ನಲ್ಲಿ ಪ್ರಯತ್ನಿಸಿ",
         "ia_try_sub": "ನಿಮ್ಮ API ಕೀಯನ್ನು ಅಂಟಿಸಿ, ಒಂದು endpoint ಆಯ್ಕೆಮಾಡಿ, ಮತ್ತು ಇಲ್ಲಿಯೇ ನಿಜವಾದ ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ನೋಡಿ — ಯಾವುದೇ ಕೋಡ್ ಅಗತ್ಯವಿಲ್ಲ.",
         "ia_try_get_key_link": "ನಿಮ್ಮ ಬಳಿ ಇಲ್ಲವೇ? ಉಚಿತ ಕೀ ಪಡೆಯಿರಿ ↓",
@@ -60575,6 +60612,7 @@ TRANSLATIONS = {
         "ve_page_name": "ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ",
     },
     "or": {
+        "ia_openapi_link": "OpenAPI ବିଶେଷତା ଦେଖନ୍ତୁ →",
         "ia_try_title": "ଲାଇଭ୍‌ରେ ଚେଷ୍ଟା କରନ୍ତୁ",
         "ia_try_sub": "ଆପଣଙ୍କର API କୀ ପେଷ୍ଟ କରନ୍ତୁ, ଏକ endpoint ବାଛନ୍ତୁ, ଏବଂ ଏଠାରେ ହିଁ ଏକ ପ୍ରକୃତ ପ୍ରତିକ୍ରିୟା ଦେଖନ୍ତୁ — କୌଣସି କୋଡ୍ ଆବଶ୍ୟକ ନାହିଁ।",
         "ia_try_get_key_link": "ଆପଣଙ୍କ ପାଖରେ ନାହିଁ? ଏକ ମାଗଣା କୀ ପାଆନ୍ତୁ ↓",
@@ -62211,6 +62249,7 @@ TRANSLATIONS = {
         "ve_page_name": "ଇମେଲ ଯାଞ୍ଚ କରନ୍ତୁ",
     },
     "ps": {
+        "ia_openapi_link": "د OpenAPI مشخصات وګورئ ←",
         "ia_try_title": "دا په ژوندي ډول وازمویئ",
         "ia_try_sub": "خپله API کیلي پیسټ کړئ، یو endpoint وټاکئ، او دلته یو ریښتینی ځواب وګورئ — هیڅ کوډ ته اړتیا نشته.",
         "ia_try_get_key_link": "تاسو یو نلرئ؟ یو وړیا کیلي ترلاسه کړئ ↓",
@@ -63847,6 +63886,7 @@ TRANSLATIONS = {
         "ve_page_name": "بریښنالیک تایید کړئ",
     },
     "ha": {
+        "ia_openapi_link": "Duba ƙayyadaddun OpenAPI →",
         "ia_try_title": "Gwada shi kai tsaye",
         "ia_try_sub": "Manna maɓallin API naka, zaɓi wuri ƙarshe, kuma ka ga ainihin amsa — nan take, babu buƙatar lambar shirye-shirye.",
         "ia_try_get_key_link": "Ba ka da ɗaya? Sami maɓalli kyauta ↓",
@@ -65483,6 +65523,7 @@ TRANSLATIONS = {
         "ve_page_name": "Tabbatar da Imel",
     },
     "ku": {
+        "ia_openapi_link": "Diyariya OpenAPI bibîne →",
         "ia_try_title": "Rasterast biceribîne",
         "ia_try_sub": "Mifteya xwe ya API bicivîne, xala dawîn hilbijêre, û li vir bersivek rastîn bibîne — tu kod hewce nake.",
         "ia_try_get_key_link": "Ya te tune? Mifteyeke belaş bistîne ↓",
@@ -67119,6 +67160,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-nameyê Pejirand",
     },
     "si": {
+        "ia_openapi_link": "OpenAPI පිරිවිතර බලන්න →",
         "ia_try_title": "සජීවීව උත්සාහ කරන්න",
         "ia_try_sub": "ඔබේ API යතුර අලවන්න, endpoint එකක් තෝරන්න, සහ මෙතැනම සැබෑ ප්‍රතිචාරයක් බලන්න — කේතයක් අවශ්‍ය නැත.",
         "ia_try_get_key_link": "එකක් නැද්ද? නොමිලේ යතුරක් ලබාගන්න ↓",
@@ -68755,6 +68797,7 @@ TRANSLATIONS = {
         "ve_page_name": "විද්‍යුත් තැපෑල තහවුරු කරන්න",
     },
     "uz": {
+        "ia_openapi_link": "OpenAPI spetsifikatsiyasini ko'rish →",
         "ia_try_title": "Jonli sinab ko'ring",
         "ia_try_sub": "API kalitingizni joylashtiring, endpointni tanlang va shu yerda haqiqiy javobni ko'ring — hech qanday kod talab qilinmaydi.",
         "ia_try_get_key_link": "Sizda yo'qmi? Bepul kalit oling ↓",
@@ -70391,6 +70434,7 @@ TRANSLATIONS = {
         "ve_page_name": "Elektron pochtani tasdiqlash",
     },
     "az": {
+        "ia_openapi_link": "OpenAPI spesifikasiyasına bax →",
         "ia_try_title": "Canlı sınayın",
         "ia_try_sub": "API açarınızı yapışdırın, bir endpoint seçin və elə burada real cavabı görün — heç bir koda ehtiyac yoxdur.",
         "ia_try_get_key_link": "Sizdə yoxdur? Pulsuz açar əldə edin ↓",
@@ -72027,6 +72071,7 @@ TRANSLATIONS = {
         "ve_page_name": "E-poçtu Təsdiqlə",
     },
     "jv": {
+        "ia_openapi_link": "Deleng spesifikasi OpenAPI →",
         "ia_try_title": "Cobi langsung",
         "ia_try_sub": "Tempelake API key sampeyan, pilih endpoint, lan deleng respon nyata ing kene — ora perlu kode.",
         "ia_try_get_key_link": "Durung duwe? Njaluk key gratis ↓",
@@ -73663,6 +73708,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "su": {
+        "ia_openapi_link": "Tingali spésifikasi OpenAPI →",
         "ia_try_title": "Cobian langsung",
         "ia_try_sub": "Témpélkeun konci API anjeun, pilih endpoint, sareng tingali réspon nyata di dieu — teu peryogi kode.",
         "ia_try_get_key_link": "Acan gaduh? Kéngingkeun konci gratis ↓",
@@ -75299,6 +75345,7 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "pcm": {
+        "ia_openapi_link": "Check di OpenAPI spec →",
         "ia_try_title": "Try am live",
         "ia_try_sub": "Paste your API key, pick one endpoint, and see one real response — right here, no code need am.",
         "ia_try_get_key_link": "You no get one? Get free key ↓",

@@ -29,6 +29,7 @@ this one new product line, not a retrofit of the existing 50 endpoints
 from typing import Optional
 
 from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi.openapi.utils import get_openapi
 
 from services import api_key_service, intelligence_quota_service
 from services import rss_news_service
@@ -567,6 +568,110 @@ def intelligence_regime_signal(
         data={"current_regime": current, "regime_used": lookup_regime, **result},
         meta={"ticker": ticker},
     )
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-17 (task #4 follow-up, AJ: "重有咩可以升級" -- upgrade #2, OpenAPI
+# spec export): a hand-scoped OpenAPI 3.x document covering ONLY the 7/8
+# publicly-documented endpoints above -- deliberately NOT the app's default
+# /openapi.json (which would leak all ~50 internal routers: admin, auth,
+# billing, etc. -- see backend/main.py, no custom openapi_url was ever set).
+# Built from get_openapi(routes=router.routes) so path/param/request-body
+# schemas (esp. StressTestRequest) stay in sync with the real route
+# signatures automatically, then filtered down to just PUBLIC_INTEL_PATHS
+# and re-prefixed with /api to match the real mounted path. No response_model
+# is set on any of these routes (see _envelope() above -- every endpoint
+# returns the same {"success","data","meta","error"} shape by convention
+# rather than a per-endpoint Pydantic model), so response schemas in the
+# generated doc are intentionally generic; the value here is accurate
+# paths/params/auth/request-body docs a codegen tool or Postman can import.
+# ---------------------------------------------------------------------------
+PUBLIC_INTEL_PATHS = {
+    "/intelligence/v1/events",
+    "/intelligence/v1/sentiment",
+    "/intelligence/v1/debate",
+    "/intelligence/v1/intel/latest",
+    "/intelligence/v1/intel/{ticker}",
+    "/intelligence/v1/technical/{ticker}",
+    "/intelligence/v1/stress-test",
+    "/intelligence/v1/regime-signal/{ticker}",
+}
+
+# Endpoints that can return a 503 (upstream engine unreachable) on top of
+# the shared 401/429 -- see intelligence_sentiment/intelligence_debate above.
+_PATHS_WITH_503 = {"/intelligence/v1/sentiment", "/intelligence/v1/debate"}
+
+
+@router.get("/intelligence/openapi.json", include_in_schema=False)
+def intelligence_openapi_spec():
+    raw = get_openapi(
+        title="XFINLAB Intelligence API",
+        version="1.0.0",
+        description=(
+            "Structured, real market intelligence for developers -- market events, "
+            "FinBERT sentiment, multi-agent AI debate, an AI-structured intelligence "
+            "feed, technical/market-structure analysis, Monte Carlo stress testing, "
+            "and a regime-aware signal. Every response is traceable to a real "
+            "computation -- never a fabricated number or confidence score. "
+            "Get a free key instantly at "
+            "https://www.xfinlab.com/intelligence-api.html#access"
+        ),
+        routes=router.routes,
+    )
+
+    filtered_paths: dict = {}
+    for path, item in (raw.get("paths") or {}).items():
+        if path not in PUBLIC_INTEL_PATHS:
+            continue
+        for method_item in item.values():
+            if not isinstance(method_item, dict):
+                continue
+            method_item["security"] = [{"ApiKeyAuth": []}]
+            responses = method_item.setdefault("responses", {})
+            responses["401"] = {"description": "Missing or invalid X-API-Key header"}
+            responses["429"] = {"description": "Daily quota exceeded for this key's tier"}
+            if path in _PATHS_WITH_503:
+                responses["503"] = {"description": "Upstream engine temporarily unavailable"}
+        filtered_paths["/api" + path] = item
+
+    # Only keep schemas actually referenced by the filtered paths (e.g. not
+    # EarlyAccessRequest/FreeSignupRequest, which belong to routes excluded
+    # from this public doc). Closure over nested refs (e.g. HTTPValidation
+    # Error -> ValidationError) since a kept schema can itself reference
+    # another schema not directly named in any path.
+    import json as _json
+    import re as _re
+    all_schemas = (raw.get("components") or {}).get("schemas", {})
+    referenced = set(_re.findall(r'"#/components/schemas/([A-Za-z0-9_]+)"', _json.dumps(filtered_paths)))
+    changed = True
+    while changed:
+        changed = False
+        for name in list(referenced):
+            schema = all_schemas.get(name)
+            if not schema:
+                continue
+            for ref in _re.findall(r'"#/components/schemas/([A-Za-z0-9_]+)"', _json.dumps(schema)):
+                if ref not in referenced:
+                    referenced.add(ref)
+                    changed = True
+    kept_schemas = {name: schema for name, schema in all_schemas.items() if name in referenced}
+
+    return {
+        "openapi": raw.get("openapi", "3.1.0"),
+        "info": {
+            "title": "XFINLAB Intelligence API",
+            "version": "1.0.0",
+            "description": raw.get("info", {}).get("description", ""),
+        },
+        "servers": [{"url": "https://api.xfinlab.com"}],
+        "paths": filtered_paths,
+        "components": {
+            "schemas": kept_schemas,
+            "securitySchemes": {
+                "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-API-Key"}
+            },
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
