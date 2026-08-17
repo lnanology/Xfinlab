@@ -39,6 +39,9 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "ia_changelog_title": "Changelog",
+        "ia_changelog_sub": "What's shipped, chronologically.",
+        "ia_changelog_json_link": "View as JSON →",
         "ia_schema_toggle": "Response fields",
         "ia_schema_note_sentiment": "When zero headlines are found, the shape shifts slightly: articles_analyzed moves into data (data.articles_analyzed) instead of meta, and average_score is omitted entirely — worth handling as its own case in your client code.",
         "ia_schema_note_intel": "The most dynamic response on this API — quant_signals and event_chain fields depend on what data resolved for each cluster. Everything nullable above is genuinely conditional, not a fixed schema you can assume is always fully populated.",
@@ -1681,6 +1684,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verify Email",
     },
     "es": {
+        "ia_changelog_title": "Registro de cambios",
+        "ia_changelog_sub": "Lo que se ha lanzado, en orden cronológico.",
+        "ia_changelog_json_link": "Ver como JSON →",
         "ia_schema_toggle": "Campos de la respuesta",
         "ia_schema_note_sentiment": "Cuando no se encuentra ningún titular, la forma cambia ligeramente: articles_analyzed pasa a data (data.articles_analyzed) en lugar de meta, y average_score se omite por completo — vale la pena manejarlo como un caso especial en tu código cliente.",
         "ia_schema_note_intel": "La respuesta más dinámica de esta API — los campos quant_signals y event_chain dependen de qué datos se resolvieron para cada clúster. Todo lo marcado como nulo arriba es genuinamente condicional, no un esquema fijo que puedas asumir siempre completo.",
@@ -3322,6 +3328,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar correo",
     },
     "fr": {
+        "ia_changelog_title": "Journal des modifications",
+        "ia_changelog_sub": "Ce qui a été publié, par ordre chronologique.",
+        "ia_changelog_json_link": "Voir en JSON →",
         "ia_schema_toggle": "Champs de la réponse",
         "ia_schema_note_sentiment": "Lorsqu'aucun titre n'est trouvé, la forme change légèrement : articles_analyzed passe dans data (data.articles_analyzed) au lieu de meta, et average_score est complètement omis — à traiter comme un cas particulier dans votre code client.",
         "ia_schema_note_intel": "La réponse la plus dynamique de cette API — les champs quant_signals et event_chain dépendent des données résolues pour chaque cluster. Tout ce qui est marqué nullable ci-dessus est réellement conditionnel, pas un schéma fixe toujours entièrement rempli.",
@@ -4963,6 +4972,9 @@ TRANSLATIONS = {
         "ve_page_name": "Vérifier l'e-mail",
     },
     "de": {
+        "ia_changelog_title": "Änderungsprotokoll",
+        "ia_changelog_sub": "Was veröffentlicht wurde, chronologisch.",
+        "ia_changelog_json_link": "Als JSON ansehen →",
         "ia_schema_toggle": "Antwortfelder",
         "ia_schema_note_sentiment": "Wenn keine Schlagzeilen gefunden werden, ändert sich die Form leicht: articles_analyzed wandert in data (data.articles_analyzed) statt in meta, und average_score wird komplett weggelassen — es lohnt sich, dies als eigenen Fall in deinem Client-Code zu behandeln.",
         "ia_schema_note_intel": "Die dynamischste Antwort dieser API — quant_signals- und event_chain-Felder hängen davon ab, welche Daten für jeden Cluster aufgelöst wurden. Alles oben als nullable Markierte ist wirklich bedingt, kein festes Schema, das immer vollständig gefüllt ist.",
@@ -6604,6 +6616,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-Mail bestätigen",
     },
     "it": {
+        "ia_changelog_title": "Changelog",
+        "ia_changelog_sub": "Cosa è stato rilasciato, in ordine cronologico.",
+        "ia_changelog_json_link": "Visualizza come JSON →",
         "ia_schema_toggle": "Campi della risposta",
         "ia_schema_note_sentiment": "Quando non viene trovato nessun titolo, la forma cambia leggermente: articles_analyzed si sposta in data (data.articles_analyzed) invece che in meta, e average_score viene omesso completamente — vale la pena gestirlo come caso a parte nel tuo codice client.",
         "ia_schema_note_intel": "La risposta più dinamica di questa API — i campi quant_signals ed event_chain dipendono da quali dati sono stati risolti per ogni cluster. Tutto ciò che è segnato come nullable sopra è realmente condizionale, non uno schema fisso sempre completamente popolato.",
@@ -8245,6 +8260,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifica email",
     },
     "pt": {
+        "ia_changelog_title": "Registo de alterações",
+        "ia_changelog_sub": "O que foi lançado, cronologicamente.",
+        "ia_changelog_json_link": "Ver como JSON →",
         "ia_schema_toggle": "Campos da resposta",
         "ia_schema_note_sentiment": "Quando nenhuma manchete é encontrada, a forma muda ligeiramente: articles_analyzed move-se para data (data.articles_analyzed) em vez de meta, e average_score é omitido por completo — vale a pena tratar isso como um caso especial no seu código cliente.",
         "ia_schema_note_intel": "A resposta mais dinâmica desta API — os campos quant_signals e event_chain dependem dos dados resolvidos para cada cluster. Tudo marcado como nullable acima é genuinamente condicional, não um esquema fixo sempre totalmente preenchido.",
@@ -9886,6 +9904,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar email",
     },
     "ru": {
+        "ia_changelog_title": "Журнал изменений",
+        "ia_changelog_sub": "Что было выпущено, в хронологическом порядке.",
+        "ia_changelog_json_link": "Посмотреть как JSON →",
         "ia_schema_toggle": "Поля ответа",
         "ia_schema_note_sentiment": "Если заголовки не найдены, форма немного меняется: articles_analyzed переходит в data (data.articles_analyzed) вместо meta, а average_score полностью опускается — стоит обработать это как отдельный случай в вашем клиентском коде.",
         "ia_schema_note_intel": "Самый динамичный ответ этого API — поля quant_signals и event_chain зависят от того, какие данные разрешились для каждого кластера. Всё помеченное выше как nullable действительно условно, а не фиксированная схема, всегда полностью заполненная.",
@@ -11527,6 +11548,9 @@ TRANSLATIONS = {
         "ve_page_name": "Подтверждение почты",
     },
     "nl": {
+        "ia_changelog_title": "Wijzigingslogboek",
+        "ia_changelog_sub": "Wat er is uitgebracht, chronologisch.",
+        "ia_changelog_json_link": "Bekijk als JSON →",
         "ia_schema_toggle": "Responsvelden",
         "ia_schema_note_sentiment": "Als er geen headlines worden gevonden, verandert de vorm licht: articles_analyzed verhuist naar data (data.articles_analyzed) in plaats van meta, en average_score wordt volledig weggelaten — de moeite waard om als apart geval in je clientcode te behandelen.",
         "ia_schema_note_intel": "De meest dynamische respons van deze API — quant_signals- en event_chain-velden hangen af van welke data voor elke cluster is opgelost. Alles hierboven gemarkeerd als nullable is echt voorwaardelijk, geen vast schema dat altijd volledig gevuld is.",
@@ -13168,6 +13192,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-mail verifiëren",
     },
     "pl": {
+        "ia_changelog_title": "Dziennik zmian",
+        "ia_changelog_sub": "Co zostało wydane, chronologicznie.",
+        "ia_changelog_json_link": "Zobacz jako JSON →",
         "ia_schema_toggle": "Pola odpowiedzi",
         "ia_schema_note_sentiment": "Gdy nie znaleziono żadnych nagłówków, kształt nieznacznie się zmienia: articles_analyzed przenosi się do data (data.articles_analyzed) zamiast meta, a average_score jest całkowicie pomijane — warto obsłużyć to jako osobny przypadek w kodzie klienta.",
         "ia_schema_note_intel": "Najbardziej dynamiczna odpowiedź w tym API — pola quant_signals i event_chain zależą od tego, jakie dane rozwiązano dla każdego klastra. Wszystko oznaczone powyżej jako nullable jest naprawdę warunkowe, a nie stałym schematem zawsze w pełni wypełnionym.",
@@ -14809,6 +14836,9 @@ TRANSLATIONS = {
         "ve_page_name": "Weryfikacja e-mail",
     },
     "ro": {
+        "ia_changelog_title": "Jurnal de modificări",
+        "ia_changelog_sub": "Ce a fost lansat, cronologic.",
+        "ia_changelog_json_link": "Vezi ca JSON →",
         "ia_schema_toggle": "Câmpuri de răspuns",
         "ia_schema_note_sentiment": "Când nu se găsește niciun titlu, forma se schimbă ușor: articles_analyzed se mută în data (data.articles_analyzed) în loc de meta, iar average_score este omis complet — merită tratat ca un caz separat în codul tău client.",
         "ia_schema_note_intel": "Cel mai dinamic răspuns al acestui API — câmpurile quant_signals și event_chain depind de ce date s-au rezolvat pentru fiecare cluster. Tot ce este marcat mai sus ca nullable este cu adevărat condițional, nu o schemă fixă mereu complet populată.",
@@ -16450,6 +16480,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificare email",
     },
     "uk": {
+        "ia_changelog_title": "Журнал змін",
+        "ia_changelog_sub": "Що було випущено, у хронологічному порядку.",
+        "ia_changelog_json_link": "Переглянути як JSON →",
         "ia_schema_toggle": "Поля відповіді",
         "ia_schema_note_sentiment": "Якщо заголовків не знайдено, форма трохи змінюється: articles_analyzed переходить у data (data.articles_analyzed) замість meta, а average_score повністю опускається — варто обробити це як окремий випадок у вашому клієнтському коді.",
         "ia_schema_note_intel": "Найдинамічніша відповідь цього API — поля quant_signals та event_chain залежать від того, які дані розв'язалися для кожного кластера. Все позначене вище як nullable є справді умовним, а не фіксованою схемою, завжди повністю заповненою.",
@@ -18091,6 +18124,9 @@ TRANSLATIONS = {
         "ve_page_name": "Підтвердження пошти",
     },
     "sr": {
+        "ia_changelog_title": "Дневник измена",
+        "ia_changelog_sub": "Шта је објављено, хронолошки.",
+        "ia_changelog_json_link": "Погледај као JSON →",
         "ia_schema_toggle": "Поља одговора",
         "ia_schema_note_sentiment": "Када нема пронађених наслова, облик се мало мења: articles_analyzed прелази у data (data.articles_analyzed) уместо у meta, а average_score се потпуно изоставља — вредно је третирати ово као посебан случај у вашем клијентском коду.",
         "ia_schema_note_intel": "Најдинамичнији одговор на овом API-ју — поља quant_signals и event_chain зависе од тога која су подаци разрешени за сваки кластер. Све означено горе као nullable је заиста условно, а не фиксна шема која је увек потпуно попуњена.",
@@ -19732,6 +19768,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikacija email-a",
     },
     "zh-TW": {
+        "ia_changelog_title": "更新日誌",
+        "ia_changelog_sub": "按時間順序記錄咗嘅每次更新。",
+        "ia_changelog_json_link": "以JSON查看 →",
         "ia_schema_toggle": "回應欄位",
         "ia_schema_note_sentiment": "當搵唔到任何headline嗰陣，結構會有少少唔同：articles_analyzed會由meta搬入去data入面（data.articles_analyzed），average_score就會完全冇咗——建議喺你嘅client code入面獨立處理呢個情況。",
         "ia_schema_note_intel": "呢個API入面變化最大嘅回應——quant_signals同event_chain嘅欄位視乎每個cluster實際解析到咩數據。上面所有標咗nullable嘅欄位都係真係有條件先出現，唔係一個永遠齊全嘅固定schema。",
@@ -21374,6 +21413,9 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-HK": {
+        "ia_changelog_title": "更新日誌",
+        "ia_changelog_sub": "按時間順序記錄咗嘅每次更新。",
+        "ia_changelog_json_link": "以JSON查看 →",
         "ia_schema_toggle": "回應欄位",
         "ia_schema_note_sentiment": "當搵唔到任何headline嗰陣，結構會有少少唔同：articles_analyzed會由meta搬入去data入面（data.articles_analyzed），average_score就會完全冇咗——建議喺你嘅client code入面獨立處理呢個情況。",
         "ia_schema_note_intel": "呢個API入面變化最大嘅回應——quant_signals同event_chain嘅欄位視乎每個cluster實際解析到咩數據。上面所有標咗nullable嘅欄位都係真係有條件先出現，唔係一個永遠齊全嘅固定schema。",
@@ -23016,6 +23058,9 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-CN": {
+        "ia_changelog_title": "更新日志",
+        "ia_changelog_sub": "按时间顺序记录的每次更新。",
+        "ia_changelog_json_link": "以JSON查看 →",
         "ia_schema_toggle": "响应字段",
         "ia_schema_note_sentiment": "当找不到任何headline时，结构会有些许不同：articles_analyzed会从meta移到data里面（data.articles_analyzed），average_score则会完全消失——建议在你的client代码里单独处理这种情况。",
         "ia_schema_note_intel": "这个API中变化最大的响应——quant_signals和event_chain的字段取决于每个cluster实际解析到什么数据。上面所有标记为nullable的字段都是真实有条件才出现，而不是一个永远完整的固定schema。",
@@ -24658,6 +24703,9 @@ TRANSLATIONS = {
         "ve_page_name": "验证邮箱",
     },
     "ja": {
+        "ia_changelog_title": "変更履歴",
+        "ia_changelog_sub": "これまでの更新を時系列で。",
+        "ia_changelog_json_link": "JSONで見る →",
         "ia_schema_toggle": "レスポンスフィールド",
         "ia_schema_note_sentiment": "見出しが1件も見つからない場合、形が少し変わります: articles_analyzedがmetaではなくdata（data.articles_analyzed）に移動し、average_scoreは完全に省略されます — クライアントコードでは別ケースとして扱う価値があります。",
         "ia_schema_note_intel": "このAPIで最も動的なレスポンスです — quant_signalsとevent_chainのフィールドは、各クラスターでどのデータが解決されたかによって変わります。上記でnullableとマークされているものはすべて本当に条件付きであり、常に完全に埋まっている固定スキーマではありません。",
@@ -26299,6 +26347,9 @@ TRANSLATIONS = {
         "ve_page_name": "メール確認",
     },
     "ko": {
+        "ia_changelog_title": "변경 로그",
+        "ia_changelog_sub": "지금까지 배포된 내용을 시간순으로.",
+        "ia_changelog_json_link": "JSON으로 보기 →",
         "ia_schema_toggle": "응답 필드",
         "ia_schema_note_sentiment": "헤드라인이 하나도 없으면 형태가 약간 달라집니다: articles_analyzed가 meta 대신 data(data.articles_analyzed) 안으로 이동하고 average_score는 완전히 생략됩니다 — 클라이언트 코드에서 별도 케이스로 처리하는 것이 좋습니다.",
         "ia_schema_note_intel": "이 API에서 가장 동적인 응답입니다 — quant_signals와 event_chain 필드는 각 클러스터에서 어떤 데이터가 해결되었는지에 따라 달라집니다. 위에서 nullable로 표시된 모든 항목은 진짜로 조건부이며, 항상 완전히 채워지는 고정 스키마가 아닙니다.",
@@ -27940,6 +27991,9 @@ TRANSLATIONS = {
         "ve_page_name": "이메일 확인",
     },
     "hi": {
+        "ia_changelog_title": "चेंजलॉग",
+        "ia_changelog_sub": "क्या-क्या रिलीज़ हुआ, कालानुक्रमिक रूप से।",
+        "ia_changelog_json_link": "JSON के रूप में देखें →",
         "ia_schema_toggle": "रिस्पॉन्स फ़ील्ड्स",
         "ia_schema_note_sentiment": "जब कोई हेडलाइन नहीं मिलती, तो आकार थोड़ा बदल जाता है: articles_analyzed meta के बजाय data (data.articles_analyzed) में चला जाता है, और average_score पूरी तरह छोड़ दिया जाता है — इसे अपने क्लाइंट कोड में एक अलग केस के रूप में संभालना उचित है।",
         "ia_schema_note_intel": "इस API का सबसे डायनामिक रिस्पॉन्स — quant_signals और event_chain फ़ील्ड्स इस पर निर्भर करते हैं कि प्रत्येक क्लस्टर के लिए कौन-सा डेटा हल हुआ। ऊपर nullable के रूप में चिह्नित सब कुछ वास्तव में सशर्त है, कोई निश्चित स्कीमा नहीं जो हमेशा पूरी तरह भरी हो।",
@@ -29581,6 +29635,9 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल सत्यापित करें",
     },
     "ar": {
+        "ia_changelog_title": "سجل التغييرات",
+        "ia_changelog_sub": "ما تم إصداره، بالترتيب الزمني.",
+        "ia_changelog_json_link": "عرض كـ JSON ←",
         "ia_schema_toggle": "حقول الاستجابة",
         "ia_schema_note_sentiment": "عندما لا يتم العثور على أي عنوان، يتغير الشكل قليلاً: يتم نقل articles_analyzed إلى data (data.articles_analyzed) بدلاً من meta، ويتم حذف average_score تمامًا — يستحق التعامل معه كحالة منفصلة في كود العميل الخاص بك.",
         "ia_schema_note_intel": "الاستجابة الأكثر ديناميكية في هذا API — تعتمد حقول quant_signals و event_chain على البيانات التي تم حلها لكل مجموعة. كل ما تم وضع علامة عليه أعلاه كـ nullable هو مشروط بالفعل، وليس مخططًا ثابتًا دائمًا مملوءًا بالكامل.",
@@ -31222,6 +31279,9 @@ TRANSLATIONS = {
         "ve_page_name": "التحقق من البريد الإلكتروني",
     },
     "id": {
+        "ia_changelog_title": "Changelog",
+        "ia_changelog_sub": "Apa yang sudah dirilis, secara kronologis.",
+        "ia_changelog_json_link": "Lihat sebagai JSON →",
         "ia_schema_toggle": "Kolom respons",
         "ia_schema_note_sentiment": "Saat tidak ada headline yang ditemukan, bentuknya sedikit berubah: articles_analyzed berpindah ke data (data.articles_analyzed) alih-alih meta, dan average_score dihilangkan sepenuhnya — layak ditangani sebagai kasus tersendiri di kode klien Anda.",
         "ia_schema_note_intel": "Respons paling dinamis di API ini — bidang quant_signals dan event_chain bergantung pada data apa yang teratasi untuk setiap cluster. Semua yang ditandai nullable di atas benar-benar bersyarat, bukan skema tetap yang selalu terisi penuh.",
@@ -32863,6 +32923,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "th": {
+        "ia_changelog_title": "บันทึกการเปลี่ยนแปลง",
+        "ia_changelog_sub": "สิ่งที่เปิดตัวแล้ว เรียงตามลำดับเวลา",
+        "ia_changelog_json_link": "ดูเป็น JSON →",
         "ia_schema_toggle": "ฟิลด์การตอบกลับ",
         "ia_schema_note_sentiment": "เมื่อไม่พบพาดหัวข่าวเลย รูปแบบจะเปลี่ยนไปเล็กน้อย: articles_analyzed จะย้ายเข้าไปใน data (data.articles_analyzed) แทนที่จะอยู่ใน meta และ average_score จะถูกละไว้ทั้งหมด — ควรจัดการเป็นกรณีแยกในโค้ดฝั่งไคลเอนต์ของคุณ",
         "ia_schema_note_intel": "การตอบกลับที่มีการเปลี่ยนแปลงมากที่สุดใน API นี้ — ฟิลด์ quant_signals และ event_chain ขึ้นอยู่กับข้อมูลที่แก้ไขได้สำหรับแต่ละคลัสเตอร์ ทุกอย่างที่ทำเครื่องหมายว่า nullable ด้านบนเป็นเงื่อนไขจริง ไม่ใช่ schema คงที่ที่เต็มเสมอ",
@@ -34504,6 +34567,9 @@ TRANSLATIONS = {
         "ve_page_name": "ยืนยันอีเมล",
     },
     "vi": {
+        "ia_changelog_title": "Nhật ký thay đổi",
+        "ia_changelog_sub": "Những gì đã ra mắt, theo trình tự thời gian.",
+        "ia_changelog_json_link": "Xem dạng JSON →",
         "ia_schema_toggle": "Trường phản hồi",
         "ia_schema_note_sentiment": "Khi không tìm thấy tiêu đề nào, cấu trúc thay đổi một chút: articles_analyzed chuyển vào data (data.articles_analyzed) thay vì meta, và average_score bị bỏ qua hoàn toàn — nên xử lý như một trường hợp riêng trong mã client của bạn.",
         "ia_schema_note_intel": "Phản hồi năng động nhất của API này — các trường quant_signals và event_chain phụ thuộc vào dữ liệu nào được giải quyết cho mỗi cụm. Mọi thứ được đánh dấu nullable ở trên đều thực sự có điều kiện, không phải một schema cố định luôn được điền đầy đủ.",
@@ -36145,6 +36211,9 @@ TRANSLATIONS = {
         "ve_page_name": "Xác minh email",
     },
     "tr": {
+        "ia_changelog_title": "Değişiklik günlüğü",
+        "ia_changelog_sub": "Yayınlananlar, kronolojik sırayla.",
+        "ia_changelog_json_link": "JSON olarak görüntüle →",
         "ia_schema_toggle": "Yanıt alanları",
         "ia_schema_note_sentiment": "Hiçbir başlık bulunamadığında şekil biraz değişir: articles_analyzed, meta yerine data (data.articles_analyzed) içine taşınır ve average_score tamamen atlanır — istemci kodunuzda ayrı bir durum olarak ele almaya değer.",
         "ia_schema_note_intel": "Bu API'deki en dinamik yanıt — quant_signals ve event_chain alanları her küme için hangi verilerin çözüldüğüne bağlıdır. Yukarıda nullable olarak işaretlenen her şey gerçekten koşulludur, her zaman tamamen doldurulmuş sabit bir şema değildir.",
@@ -37786,6 +37855,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-postayı Doğrula",
     },
     "fa": {
+        "ia_changelog_title": "گزارش تغییرات",
+        "ia_changelog_sub": "آنچه منتشر شده، به ترتیب زمانی.",
+        "ia_changelog_json_link": "مشاهده به صورت JSON ←",
         "ia_schema_toggle": "فیلدهای پاسخ",
         "ia_schema_note_sentiment": "وقتی هیچ تیتری پیدا نشود، شکل کمی تغییر می‌کند: articles_analyzed به جای meta به data (data.articles_analyzed) منتقل می‌شود و average_score به‌طور کامل حذف می‌شود — ارزش دارد که این را به‌عنوان یک حالت جداگانه در کد کلاینت خود مدیریت کنید.",
         "ia_schema_note_intel": "پویاترین پاسخ در این API — فیلدهای quant_signals و event_chain به داده‌هایی بستگی دارند که برای هر خوشه حل شده‌اند. هر چیزی که در بالا به‌عنوان nullable علامت‌گذاری شده واقعاً شرطی است، نه یک طرح‌واره ثابت که همیشه کاملاً پر است.",
@@ -39427,6 +39499,9 @@ TRANSLATIONS = {
         "ve_page_name": "تأیید ایمیل",
     },
     "ur": {
+        "ia_changelog_title": "چینج لاگ",
+        "ia_changelog_sub": "جو کچھ ریلیز ہوا، تاریخ وار ترتیب میں۔",
+        "ia_changelog_json_link": "JSON کے طور پر دیکھیں ←",
         "ia_schema_toggle": "ریسپانس فیلڈز",
         "ia_schema_note_sentiment": "جب کوئی ہیڈ لائن نہیں ملتی تو شکل تھوڑی بدل جاتی ہے: articles_analyzed meta کے بجائے data (data.articles_analyzed) میں چلا جاتا ہے، اور average_score مکمل طور پر چھوڑ دیا جاتا ہے — اپنے کلائنٹ کوڈ میں اسے الگ کیس کے طور پر ہینڈل کرنا مناسب ہے۔",
         "ia_schema_note_intel": "اس API کا سب سے متحرک ریسپانس — quant_signals اور event_chain فیلڈز اس بات پر منحصر ہیں کہ ہر کلسٹر کے لیے کون سا ڈیٹا حل ہوا۔ اوپر nullable کے طور پر نشان زد ہر چیز واقعی مشروط ہے، کوئی مقررہ اسکیما نہیں جو ہمیشہ مکمل طور پر بھرا ہو۔",
@@ -41068,6 +41143,9 @@ TRANSLATIONS = {
         "ve_page_name": "ای میل کی تصدیق کریں",
     },
     "bn": {
+        "ia_changelog_title": "চেঞ্জলগ",
+        "ia_changelog_sub": "কালানুক্রমিকভাবে যা প্রকাশিত হয়েছে।",
+        "ia_changelog_json_link": "JSON হিসেবে দেখুন →",
         "ia_schema_toggle": "প্রতিক্রিয়া ফিল্ড",
         "ia_schema_note_sentiment": "যখন কোনো হেডলাইন পাওয়া যায় না, তখন আকৃতি সামান্য পরিবর্তিত হয়: articles_analyzed meta-এর পরিবর্তে data-তে (data.articles_analyzed) স্থানান্তরিত হয়, এবং average_score সম্পূর্ণভাবে বাদ দেওয়া হয় — আপনার ক্লায়েন্ট কোডে এটিকে আলাদা কেস হিসেবে হ্যান্ডেল করা উচিত।",
         "ia_schema_note_intel": "এই API-এর সবচেয়ে গতিশীল প্রতিক্রিয়া — quant_signals এবং event_chain ফিল্ড প্রতিটি ক্লাস্টারের জন্য কোন ডেটা সমাধান হয়েছে তার উপর নির্ভর করে। উপরে nullable হিসেবে চিহ্নিত সবকিছুই প্রকৃতপক্ষে শর্তসাপেক্ষ, সবসময় সম্পূর্ণরূপে পূর্ণ একটি নির্দিষ্ট স্কিমা নয়।",
@@ -42709,6 +42787,9 @@ TRANSLATIONS = {
         "ve_page_name": "ইমেইল যাচাই করুন",
     },
     "tl": {
+        "ia_changelog_title": "Changelog",
+        "ia_changelog_sub": "Ano ang na-release, ayon sa pagkakasunod-sunod ng oras.",
+        "ia_changelog_json_link": "Tingnan bilang JSON →",
         "ia_schema_toggle": "Mga field ng response",
         "ia_schema_note_sentiment": "Kapag walang nahanap na headline, medyo nagbabago ang hugis: lumilipat ang articles_analyzed sa data (data.articles_analyzed) sa halip na sa meta, at ganap na tinatanggal ang average_score — sulit na tratuhin ito bilang hiwalay na kaso sa client code mo.",
         "ia_schema_note_intel": "Ang pinaka-dynamic na response sa API na ito — nakadepende ang mga field na quant_signals at event_chain sa kung anong data ang na-resolve para sa bawat cluster. Lahat ng minarkahan bilang nullable sa itaas ay tunay na may kondisyon, hindi isang fixed na schema na laging kumpleto.",
@@ -44350,6 +44431,9 @@ TRANSLATIONS = {
         "ve_page_name": "I-verify ang Email",
     },
     "ms": {
+        "ia_changelog_title": "Log perubahan",
+        "ia_changelog_sub": "Apa yang telah dilancarkan, secara kronologi.",
+        "ia_changelog_json_link": "Lihat sebagai JSON →",
         "ia_schema_toggle": "Medan respons",
         "ia_schema_note_sentiment": "Apabila tiada tajuk berita ditemui, bentuknya berubah sedikit: articles_analyzed berpindah ke data (data.articles_analyzed) dan bukannya meta, dan average_score ditinggalkan sepenuhnya — berbaloi dikendalikan sebagai kes berasingan dalam kod klien anda.",
         "ia_schema_note_intel": "Respons paling dinamik pada API ini — medan quant_signals dan event_chain bergantung pada data yang diselesaikan untuk setiap kluster. Semua yang ditandakan nullable di atas adalah benar-benar bersyarat, bukan skema tetap yang sentiasa dipenuhi sepenuhnya.",
@@ -45991,6 +46075,9 @@ TRANSLATIONS = {
         "ve_page_name": "Sahkan E-mel",
     },
     "sw": {
+        "ia_changelog_title": "Kumbukumbu ya mabadiliko",
+        "ia_changelog_sub": "Kilichotolewa, kwa mpangilio wa wakati.",
+        "ia_changelog_json_link": "Ona kama JSON →",
         "ia_schema_toggle": "Sehemu za jibu",
         "ia_schema_note_sentiment": "Wakati hakuna kichwa cha habari kilichopatikana, umbo hubadilika kidogo: articles_analyzed huhamia data (data.articles_analyzed) badala ya meta, na average_score huachwa kabisa — inafaa kushughulikiwa kama kesi yake mwenyewe katika msimbo wako wa mteja.",
         "ia_schema_note_intel": "Jibu la kubadilika zaidi katika API hii — sehemu za quant_signals na event_chain hutegemea data gani ilitatuliwa kwa kila kundi. Kila kitu kilichowekwa alama nullable hapo juu ni cha masharti kwa kweli, si muundo maalum unaojazwa kikamilifu kila wakati.",
@@ -47632,6 +47719,9 @@ TRANSLATIONS = {
         "ve_page_name": "Thibitisha Barua Pepe",
     },
     "ne": {
+        "ia_changelog_title": "परिवर्तन लग",
+        "ia_changelog_sub": "के-के जारी भयो, कालक्रमिक रूपमा।",
+        "ia_changelog_json_link": "JSON को रूपमा हेर्नुहोस् →",
         "ia_schema_toggle": "प्रतिक्रिया फिल्डहरू",
         "ia_schema_note_sentiment": "जब कुनै हेडलाइन फेला पर्दैन, आकार अलिकति परिवर्तन हुन्छ: articles_analyzed meta को सट्टा data (data.articles_analyzed) मा सर्छ, र average_score पूर्ण रूपमा हटाइन्छ — तपाईंको क्लाइन्ट कोडमा यसलाई छुट्टै केसको रूपमा ह्यान्डल गर्नु राम्रो हुन्छ।",
         "ia_schema_note_intel": "यो API मा सबैभन्दा गतिशील प्रतिक्रिया — quant_signals र event_chain फिल्डहरू प्रत्येक क्लस्टरको लागि कुन डेटा समाधान भयो भन्नेमा निर्भर गर्छ। माथि nullable भनी चिन्ह लगाइएको सबै कुरा साँच्चै सशर्त हो, सधैं पूर्ण रूपमा भरिएको निश्चित स्कीमा होइन।",
@@ -49273,6 +49363,9 @@ TRANSLATIONS = {
         "ve_page_name": "इमेल प्रमाणित गर्नुहोस्",
     },
     "mr": {
+        "ia_changelog_title": "चेंजलॉग",
+        "ia_changelog_sub": "काय रिलीज झाले, कालक्रमानुसार.",
+        "ia_changelog_json_link": "JSON म्हणून पहा →",
         "ia_schema_toggle": "प्रतिसाद फील्ड्स",
         "ia_schema_note_sentiment": "जेव्हा एकही हेडलाइन सापडत नाही, तेव्हा आकार थोडा बदलतो: articles_analyzed meta ऐवजी data मध्ये (data.articles_analyzed) जाते, आणि average_score पूर्णपणे वगळले जाते — तुमच्या क्लायंट कोडमध्ये हे स्वतंत्र केस म्हणून हाताळणे योग्य आहे.",
         "ia_schema_note_intel": "या API मधील सर्वात डायनॅमिक प्रतिसाद — quant_signals आणि event_chain फील्ड्स प्रत्येक क्लस्टरसाठी कोणता डेटा सोडवला गेला यावर अवलंबून असतात. वर nullable म्हणून चिन्हांकित केलेले सर्व काही खरोखर सशर्त आहे, नेहमी पूर्णपणे भरलेली निश्चित स्कीमा नाही.",
@@ -50914,6 +51007,9 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल पडताळा",
     },
     "te": {
+        "ia_changelog_title": "చేంజ్‌లాగ్",
+        "ia_changelog_sub": "ఏమి విడుదలైందో, కాలక్రమానుసారం.",
+        "ia_changelog_json_link": "JSONగా చూడండి →",
         "ia_schema_toggle": "ప్రతిస్పందన ఫీల్డ్‌లు",
         "ia_schema_note_sentiment": "ఏ హెడ్‌లైన్ కనుగొనబడనప్పుడు, ఆకారం కొద్దిగా మారుతుంది: articles_analyzed meta కి బదులుగా data లోకి (data.articles_analyzed) వెళుతుంది, మరియు average_score పూర్తిగా విస్మరించబడుతుంది — మీ క్లయింట్ కోడ్‌లో దీన్ని ప్రత్యేక కేసుగా నిర్వహించడం విలువైనది.",
         "ia_schema_note_intel": "ఈ APIలో అత్యంత డైనమిక్ ప్రతిస్పందన — quant_signals మరియు event_chain ఫీల్డ్‌లు ప్రతి క్లస్టర్ కోసం ఏ డేటా పరిష్కరించబడిందో దానిపై ఆధారపడి ఉంటాయి. పైన nullable గా గుర్తించబడిన ప్రతిదీ నిజంగా షరతులతో కూడినది, ఎల్లప్పుడూ పూర్తిగా నిండి ఉండే స్థిర స్కీమా కాదు.",
@@ -52555,6 +52651,9 @@ TRANSLATIONS = {
         "ve_page_name": "ఇమెయిల్‌ను ధృవీకరించండి",
     },
     "ta": {
+        "ia_changelog_title": "மாற்றப்பதிவு",
+        "ia_changelog_sub": "என்ன வெளியிடப்பட்டது, காலவரிசைப்படி.",
+        "ia_changelog_json_link": "JSON ஆக காண்க →",
         "ia_schema_toggle": "பதில் புலங்கள்",
         "ia_schema_note_sentiment": "எந்த தலைப்புச் செய்தியும் கிடைக்காதபோது, வடிவம் சற்று மாறுகிறது: articles_analyzed meta க்குப் பதிலாக data இல் (data.articles_analyzed) நகர்கிறது, மேலும் average_score முழுவதுமாக தவிர்க்கப்படுகிறது — உங்கள் கிளையன்ட் குறியீட்டில் இதை தனி வழக்காக கையாள்வது மதிப்புள்ளது.",
         "ia_schema_note_intel": "இந்த APIயில் மிகவும் மாறும் பதில் — quant_signals மற்றும் event_chain புலங்கள் ஒவ்வொரு கிளஸ்டருக்கும் என்ன தரவு தீர்க்கப்பட்டது என்பதைப் பொறுத்தது. மேலே nullable எனக் குறிக்கப்பட்ட அனைத்தும் உண்மையிலேயே நிபந்தனைக்குட்பட்டவை, எப்போதும் முழுமையாக நிரப்பப்பட்ட நிலையான திட்டவட்டம் அல்ல.",
@@ -54196,6 +54295,9 @@ TRANSLATIONS = {
         "ve_page_name": "மின்னஞ்சலைச் சரிபார்க்கவும்",
     },
     "gu": {
+        "ia_changelog_title": "ચેન્જલોગ",
+        "ia_changelog_sub": "શું રિલીઝ થયું, કાલક્રમિક રીતે.",
+        "ia_changelog_json_link": "JSON તરીકે જુઓ →",
         "ia_schema_toggle": "પ્રતિભાવ ફીલ્ડ્સ",
         "ia_schema_note_sentiment": "જ્યારે કોઈ હેડલાઇન મળતી નથી, ત્યારે આકાર થોડો બદલાય છે: articles_analyzed meta ને બદલે data માં (data.articles_analyzed) જાય છે, અને average_score સંપૂર્ણપણે છોડી દેવામાં આવે છે — તમારા ક્લાયન્ટ કોડમાં આને અલગ કેસ તરીકે હેન્ડલ કરવું યોગ્ય છે.",
         "ia_schema_note_intel": "આ API માં સૌથી ડાયનેમિક પ્રતિભાવ — quant_signals અને event_chain ફીલ્ડ્સ દરેક ક્લસ્ટર માટે કયો ડેટા ઉકેલાયો તેના પર આધાર રાખે છે. ઉપર nullable તરીકે ચિહ્નિત થયેલ બધું ખરેખર શરતી છે, હંમેશા સંપૂર્ણ રીતે ભરેલ નિશ્ચિત સ્કીમા નથી.",
@@ -55837,6 +55939,9 @@ TRANSLATIONS = {
         "ve_page_name": "ઈમેલ ચકાસો",
     },
     "pa": {
+        "ia_changelog_title": "ਚੇਂਜਲੌਗ",
+        "ia_changelog_sub": "ਕੀ ਰਿਲੀਜ਼ ਹੋਇਆ, ਸਮੇਂ ਅਨੁਸਾਰ।",
+        "ia_changelog_json_link": "JSON ਵਜੋਂ ਵੇਖੋ →",
         "ia_schema_toggle": "ਜਵਾਬ ਫੀਲਡ",
         "ia_schema_note_sentiment": "ਜਦੋਂ ਕੋਈ ਸੁਰਖੀ ਨਹੀਂ ਮਿਲਦੀ, ਤਾਂ ਆਕਾਰ ਥੋੜ੍ਹਾ ਬਦਲਦਾ ਹੈ: articles_analyzed meta ਦੀ ਬਜਾਏ data (data.articles_analyzed) ਵਿੱਚ ਚਲਾ ਜਾਂਦਾ ਹੈ, ਅਤੇ average_score ਪੂਰੀ ਤਰ੍ਹਾਂ ਛੱਡ ਦਿੱਤਾ ਜਾਂਦਾ ਹੈ — ਆਪਣੇ ਕਲਾਇੰਟ ਕੋਡ ਵਿੱਚ ਇਸਨੂੰ ਵੱਖਰੇ ਕੇਸ ਵਜੋਂ ਸੰਭਾਲਣਾ ਯੋਗ ਹੈ।",
         "ia_schema_note_intel": "ਇਸ API ਵਿੱਚ ਸਭ ਤੋਂ ਗਤੀਸ਼ੀਲ ਜਵਾਬ — quant_signals ਅਤੇ event_chain ਫੀਲਡ ਇਸ ਗੱਲ 'ਤੇ ਨਿਰਭਰ ਕਰਦੇ ਹਨ ਕਿ ਹਰੇਕ ਕਲੱਸਟਰ ਲਈ ਕਿਹੜਾ ਡੇਟਾ ਹੱਲ ਹੋਇਆ। ਉੱਪਰ nullable ਵਜੋਂ ਚਿੰਨ੍ਹਿਤ ਹਰ ਚੀਜ਼ ਸੱਚਮੁੱਚ ਸ਼ਰਤੀਆ ਹੈ, ਹਮੇਸ਼ਾ ਪੂਰੀ ਤਰ੍ਹਾਂ ਭਰਿਆ ਹੋਇਆ ਸਥਿਰ ਸਕੀਮਾ ਨਹੀਂ।",
@@ -57478,6 +57583,9 @@ TRANSLATIONS = {
         "ve_page_name": "ਈਮੇਲ ਦੀ ਤਸਦੀਕ ਕਰੋ",
     },
     "ml": {
+        "ia_changelog_title": "ചേഞ്ച്‌ലോഗ്",
+        "ia_changelog_sub": "എന്താണ് പുറത്തിറങ്ങിയത്, കാലക്രമത്തിൽ.",
+        "ia_changelog_json_link": "JSON ആയി കാണുക →",
         "ia_schema_toggle": "പ്രതികരണ ഫീൽഡുകൾ",
         "ia_schema_note_sentiment": "ഒരു തലക്കെട്ടും കണ്ടെത്താത്തപ്പോൾ, രൂപം അല്പം മാറുന്നു: articles_analyzed meta-യ്ക്ക് പകരം data-യിലേക്ക് (data.articles_analyzed) നീങ്ങുന്നു, average_score പൂർണ്ണമായും ഒഴിവാക്കപ്പെടുന്നു — നിങ്ങളുടെ ക്ലയന്റ് കോഡിൽ ഇത് ഒരു പ്രത്യേക കേസായി കൈകാര്യം ചെയ്യുന്നത് മൂല്യവത്താണ്.",
         "ia_schema_note_intel": "ഈ API-യിലെ ഏറ്റവും ചലനാത്മകമായ പ്രതികരണം — quant_signals, event_chain ഫീൽഡുകൾ ഓരോ ക്ലസ്റ്ററിനും ഏത് ഡാറ്റ പരിഹരിക്കപ്പെട്ടു എന്നതിനെ ആശ്രയിച്ചിരിക്കുന്നു. മുകളിൽ nullable എന്ന് അടയാളപ്പെടുത്തിയ എല്ലാം യഥാർത്ഥത്തിൽ സോപാധികമാണ്, എപ്പോഴും പൂർണ്ണമായി നിറഞ്ഞ ഒരു നിശ്ചിത സ്കീമ അല്ല.",
@@ -59119,6 +59227,9 @@ TRANSLATIONS = {
         "ve_page_name": "ഇമെയിൽ പരിശോധിക്കുക",
     },
     "kn": {
+        "ia_changelog_title": "ಚೇಂಜ್‌ಲಾಗ್",
+        "ia_changelog_sub": "ಏನು ಬಿಡುಗಡೆಯಾಗಿದೆ, ಕಾಲಾನುಕ್ರಮವಾಗಿ.",
+        "ia_changelog_json_link": "JSON ಆಗಿ ವೀಕ್ಷಿಸಿ →",
         "ia_schema_toggle": "ಪ್ರತಿಕ್ರಿಯೆ ಕ್ಷೇತ್ರಗಳು",
         "ia_schema_note_sentiment": "ಯಾವುದೇ ಶೀರ್ಷಿಕೆ ಕಂಡುಬರದಿದ್ದಾಗ, ಆಕಾರ ಸ್ವಲ್ಪ ಬದಲಾಗುತ್ತದೆ: articles_analyzed meta ಬದಲಿಗೆ data ಗೆ (data.articles_analyzed) ಸ್ಥಳಾಂತರಗೊಳ್ಳುತ್ತದೆ, ಮತ್ತು average_score ಸಂಪೂರ್ಣವಾಗಿ ಬಿಟ್ಟುಬಿಡಲಾಗುತ್ತದೆ — ನಿಮ್ಮ ಕ್ಲೈಂಟ್ ಕೋಡ್‌ನಲ್ಲಿ ಇದನ್ನು ಪ್ರತ್ಯೇಕ ಪ್ರಕರಣವಾಗಿ ನಿರ್ವಹಿಸುವುದು ಯೋಗ್ಯವಾಗಿದೆ.",
         "ia_schema_note_intel": "ಈ APIಯಲ್ಲಿ ಅತ್ಯಂತ ಕ್ರಿಯಾತ್ಮಕ ಪ್ರತಿಕ್ರಿಯೆ — quant_signals ಮತ್ತು event_chain ಕ್ಷೇತ್ರಗಳು ಪ್ರತಿ ಕ್ಲಸ್ಟರ್‌ಗೆ ಯಾವ ಡೇಟಾ ಪರಿಹರಿಸಲ್ಪಟ್ಟಿತು ಎಂಬುದರ ಮೇಲೆ ಅವಲಂಬಿತವಾಗಿದೆ. ಮೇಲೆ nullable ಎಂದು ಗುರುತಿಸಲಾದ ಎಲ್ಲವೂ ನಿಜವಾಗಿಯೂ ಷರತ್ತುಬದ್ಧವಾಗಿದೆ, ಯಾವಾಗಲೂ ಸಂಪೂರ್ಣವಾಗಿ ತುಂಬಿದ ಸ್ಥಿರ ಸ್ಕೀಮಾ ಅಲ್ಲ.",
@@ -60760,6 +60871,9 @@ TRANSLATIONS = {
         "ve_page_name": "ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ",
     },
     "or": {
+        "ia_changelog_title": "ଚେଞ୍ଜଲଗ୍",
+        "ia_changelog_sub": "କ'ଣ ରିଲିଜ୍ ହେଲା, କାଳକ୍ରମିକ ଭାବରେ।",
+        "ia_changelog_json_link": "JSON ଭାବରେ ଦେଖନ୍ତୁ →",
         "ia_schema_toggle": "ପ୍ରତିକ୍ରିୟା କ୍ଷେତ୍ର",
         "ia_schema_note_sentiment": "ଯେତେବେଳେ କୌଣସି ହେଡଲାଇନ୍ ମିଳେ ନାହିଁ, ଆକୃତି ଟିକିଏ ବଦଳିଯାଏ: articles_analyzed meta ପରିବର୍ତ୍ତେ data ମଧ୍ୟରେ (data.articles_analyzed) ଯାଏ, ଏବଂ average_score ସମ୍ପୂର୍ଣ୍ଣ ଭାବରେ ଛାଡି ଦିଆଯାଏ — ଆପଣଙ୍କ କ୍ଲାଏଣ୍ଟ କୋଡ୍‌ରେ ଏହାକୁ ଏକ ପୃଥକ କେସ୍ ଭାବରେ ପରିଚାଳନା କରିବା ଉପଯୁକ୍ତ।",
         "ia_schema_note_intel": "ଏହି API ରେ ସବୁଠାରୁ ଗତିଶୀଳ ପ୍ରତିକ୍ରିୟା — quant_signals ଏବଂ event_chain କ୍ଷେତ୍ର ପ୍ରତ୍ୟେକ କ୍ଲଷ୍ଟର ପାଇଁ କେଉଁ ଡାଟା ସମାଧାନ ହେଲା ତାହା ଉପରେ ନିର୍ଭର କରେ। ଉପରେ nullable ଭାବରେ ଚିହ୍ନିତ ସବୁକିଛି ପ୍ରକୃତରେ ସର୍ତ୍ତସାପେକ୍ଷ, ସର୍ବଦା ସମ୍ପୂର୍ଣ୍ଣ ଭାବରେ ପୂର୍ଣ୍ଣ ଏକ ସ୍ଥିର ସ୍କିମା ନୁହେଁ।",
@@ -62401,6 +62515,9 @@ TRANSLATIONS = {
         "ve_page_name": "ଇମେଲ ଯାଞ୍ଚ କରନ୍ତୁ",
     },
     "ps": {
+        "ia_changelog_title": "د بدلونونو لړلیک",
+        "ia_changelog_sub": "هغه څه چې خپاره شوي، د وخت په ترتیب سره.",
+        "ia_changelog_json_link": "د JSON په توګه وګورئ ←",
         "ia_schema_toggle": "د ځواب ساحې",
         "ia_schema_note_sentiment": "کله چې هیڅ سرلیک ونه موندل شي، بڼه لږ بدلیږي: articles_analyzed د meta پرځای data (data.articles_analyzed) ته لاړ شي، او average_score په بشپړه توګه پریښودل کیږي — ستاسو د کلاینټ کوډ کې د دې لپاره جلا قضیه سمبال کول ارزښت لري.",
         "ia_schema_note_intel": "په دې API کې خورا متحرک ځواب — quant_signals او event_chain ساحې دې پورې تړاو لري چې د هرې کلستر لپاره کوم ډاټا حل شوی. پورته د nullable په توګه نښه شوی هر څه واقعیا شرطي دی، تل بشپړ ډکه ثابته سکیما نه ده.",
@@ -64042,6 +64159,9 @@ TRANSLATIONS = {
         "ve_page_name": "بریښنالیک تایید کړئ",
     },
     "ha": {
+        "ia_changelog_title": "Tarihin canje-canje",
+        "ia_changelog_sub": "Abin da aka fitar, bisa tsarin lokaci.",
+        "ia_changelog_json_link": "Duba a matsayin JSON →",
         "ia_schema_toggle": "Filayen amsa",
         "ia_schema_note_sentiment": "Idan babu wani taken labarai da aka samu, siffar tana canzawa kaɗan: articles_analyzed yana motsawa zuwa data (data.articles_analyzed) maimakon meta, kuma ana barin average_score gaba ɗaya — yana da daraja a kula da wannan a matsayin harka ta daban a cikin lambar abokin ciniki naka.",
         "ia_schema_note_intel": "Amsa mafi motsi a wannan API — filayen quant_signals da event_chain sun dogara da irin bayanan da aka warware wa kowace ƙungiya. Duk abin da aka yiwa alama nullable a sama gaskiya ne mai sharadi, ba tsayayyen tsari da ake yawan cikawa gaba ɗaya ba.",
@@ -65683,6 +65803,9 @@ TRANSLATIONS = {
         "ve_page_name": "Tabbatar da Imel",
     },
     "ku": {
+        "ia_changelog_title": "Guherînname",
+        "ia_changelog_sub": "Tiştê hatiye weşandin, li gorî dema wê.",
+        "ia_changelog_json_link": "Wek JSON bibîne →",
         "ia_schema_toggle": "Qadên bersivê",
         "ia_schema_note_sentiment": "Dema ku çu sernav nayê dîtin, şêwe hinekî diguhere: articles_analyzed li şûna meta diçe hundirê data (data.articles_analyzed), û average_score bi tevahî tê avêtin — hêjayî ye ku di koda xwe ya muşteriyê de wek rewşeke cuda were rêvebirin.",
         "ia_schema_note_intel": "Bersiva herî dînamîk a vê API-yê — qadên quant_signals û event_chain girêdayî ne bi kîjan daneyan ku ji bo her kombûnê hatine çareserkirin. Her tişta ku li jor wek nullable hatiye nîşankirin bi rastî şertî ye, ne şemayeke sabît a ku her gav bi tevahî tijî ye.",
@@ -67324,6 +67447,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-nameyê Pejirand",
     },
     "si": {
+        "ia_changelog_title": "වෙනස්කම් ලොගය",
+        "ia_changelog_sub": "නිකුත් කළ දේ, කාලානුක්‍රමිකව.",
+        "ia_changelog_json_link": "JSON ලෙස බලන්න →",
         "ia_schema_toggle": "ප්‍රතිචාර ක්ෂේත්‍ර",
         "ia_schema_note_sentiment": "කිසිදු ශීර්ෂයක් හමු නොවූ විට, හැඩය ටිකක් වෙනස් වේ: articles_analyzed meta වෙනුවට data (data.articles_analyzed) වෙතට ගමන් කරයි, සහ average_score සම්පූර්ණයෙන්ම මඟහරිනු ලැබේ — ඔබේ ක්ලයන්ට් කේතයේ මෙය වෙනම අවස්ථාවක් ලෙස හැසිරවීම වටී.",
         "ia_schema_note_intel": "මෙම API හි වඩාත්ම ගතික ප්‍රතිචාරය — quant_signals සහ event_chain ක්ෂේත්‍ර සෑම පොකුරක් සඳහාම විසඳූ දත්ත මත රඳා පවතී. ඉහත nullable ලෙස සලකුණු කර ඇති සියල්ල සැබවින්ම කොන්දේසි සහිතයි, සැමවිටම සම්පූර්ණයෙන් පිරවූ ස්ථාවර ක්‍රමයක් නොවේ.",
@@ -68965,6 +69091,9 @@ TRANSLATIONS = {
         "ve_page_name": "විද්‍යුත් තැපෑල තහවුරු කරන්න",
     },
     "uz": {
+        "ia_changelog_title": "O'zgarishlar jurnali",
+        "ia_changelog_sub": "Nima chiqarilgani, xronologik tartibda.",
+        "ia_changelog_json_link": "JSON sifatida ko'rish →",
         "ia_schema_toggle": "Javob maydonlari",
         "ia_schema_note_sentiment": "Hech qanday sarlavha topilmaganda, shakl biroz o'zgaradi: articles_analyzed meta o'rniga data ichiga (data.articles_analyzed) ko'chadi va average_score butunlay tashlab yuboriladi — buni mijoz kodingizda alohida holat sifatida ko'rib chiqish foydali.",
         "ia_schema_note_intel": "Ushbu API'dagi eng dinamik javob — quant_signals va event_chain maydonlari har bir klaster uchun qanday ma'lumotlar hal qilinganiga bog'liq. Yuqorida nullable deb belgilangan hamma narsa haqiqatan ham shartli, har doim to'liq to'ldirilgan qat'iy sxema emas.",
@@ -70606,6 +70735,9 @@ TRANSLATIONS = {
         "ve_page_name": "Elektron pochtani tasdiqlash",
     },
     "az": {
+        "ia_changelog_title": "Dəyişiklik jurnalı",
+        "ia_changelog_sub": "Nə buraxılıb, xronoloji qaydada.",
+        "ia_changelog_json_link": "JSON kimi bax →",
         "ia_schema_toggle": "Cavab sahələri",
         "ia_schema_note_sentiment": "Heç bir başlıq tapılmadıqda, forma bir az dəyişir: articles_analyzed meta əvəzinə data-ya (data.articles_analyzed) keçir və average_score tamamilə buraxılır — bunu müştəri kodunuzda ayrıca hal kimi idarə etmək dəyərlidir.",
         "ia_schema_note_intel": "Bu API-də ən dinamik cavab — quant_signals və event_chain sahələri hər klaster üçün hansı məlumatların həll olunduğundan asılıdır. Yuxarıda nullable kimi işarələnən hər şey həqiqətən şərtlidir, həmişə tam doldurulmuş sabit sxem deyil.",
@@ -72247,6 +72379,9 @@ TRANSLATIONS = {
         "ve_page_name": "E-poçtu Təsdiqlə",
     },
     "jv": {
+        "ia_changelog_title": "Changelog",
+        "ia_changelog_sub": "Apa sing wis dirilis, kanthi kronologis.",
+        "ia_changelog_json_link": "Deleng minangka JSON →",
         "ia_schema_toggle": "Field respon",
         "ia_schema_note_sentiment": "Yen ora ana headline sing ditemokake, wangune rada beda: articles_analyzed pindhah menyang data (data.articles_analyzed) tinimbang meta, lan average_score dilirwakake babar pisan — pantes ditangani minangka kasus dhewe ing kode klien sampeyan.",
         "ia_schema_note_intel": "Respon sing paling dinamis ing API iki — field quant_signals lan event_chain gumantung saka data apa sing dirampungake kanggo saben klaster. Kabeh sing ditandhani nullable ing dhuwur pancen kondisional, dudu skema tetep sing tansah diisi lengkap.",
@@ -73888,6 +74023,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "su": {
+        "ia_changelog_title": "Log parobihan",
+        "ia_changelog_sub": "Naon anu geus dirilis, sacara kronologis.",
+        "ia_changelog_json_link": "Tingali salaku JSON →",
         "ia_schema_toggle": "Widang réspon",
         "ia_schema_note_sentiment": "Nalika euweuh headline anu kapanggih, wangunna robih saeutik: articles_analyzed pindah kana data (data.articles_analyzed) tinimbang meta, sareng average_score dileungitkeun sacara lengkep — pantes ditangani salaku kasus nyalira dina kode klien anjeun.",
         "ia_schema_note_intel": "Réspon anu paling dinamis dina API ieu — widang quant_signals sareng event_chain gumantung kana data anu direngsekeun pikeun unggal klaster. Sadaya anu ditandaan nullable di luhur nyaéta leres-leres kondisional, sanés skema tetep anu salawasna kaeusi lengkep.",
@@ -75529,6 +75667,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikasi Email",
     },
     "pcm": {
+        "ia_changelog_title": "Changelog",
+        "ia_changelog_sub": "Wetin don release, according to time.",
+        "ia_changelog_json_link": "Check am as JSON →",
         "ia_schema_toggle": "Response fields",
         "ia_schema_note_sentiment": "When no headline dey found, di shape go slightly change: articles_analyzed dey move enter data (data.articles_analyzed) instead of meta, and average_score no dey show at all — e worth am to handle am as its own case for your client code.",
         "ia_schema_note_intel": "Di most dynamic response for dis API — quant_signals and event_chain fields dey depend on wetin data resolve for each cluster. Everything wey dem mark as nullable above dey genuinely conditional, e no be fixed schema wey always full completely.",

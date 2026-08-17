@@ -88,6 +88,16 @@ details.schema-details[open] summary::after{content:" ▴"}
 .schema-field code{font-family:monospace;color:var(--accent-blue);background:rgba(211,84,0,0.08);padding:1px 5px;border-radius:4px;font-size:0.72rem}
 .schema-type{font-family:monospace;font-size:0.68rem;color:var(--text-muted)}
 .schema-note{font-size:0.72rem;color:var(--text-muted);margin-top:8px;font-style:italic}
+.changelog-entry{margin-bottom:22px}
+.changelog-date{font-family:monospace;font-size:0.78rem;font-weight:700;color:var(--text-primary);margin-bottom:8px}
+.changelog-change{font-size:0.82rem;color:var(--text-secondary);line-height:1.6;margin-bottom:6px;padding-left:2px}
+.changelog-tag{display:inline-block;font-size:0.62rem;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:99px;margin-right:8px;vertical-align:middle;white-space:nowrap}
+.changelog-tag.added{background:rgba(34,197,94,0.12);color:var(--accent-green)}
+.changelog-tag.changed{background:rgba(211,84,0,0.12);color:var(--accent-blue)}
+.changelog-tag.fixed{background:rgba(234,179,8,0.15);color:#CA8A04}
+#statusWidget a{color:var(--accent-blue);text-decoration:none}
+.status-dot-ok{color:var(--accent-green)}
+.status-dot-down{color:#DC2626}
 
 /* 2026-08-14 quickstart step layout (task #828) */
 .qs-steps{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
@@ -255,6 +265,13 @@ details.schema-details[open] summary::after{content:" ▴"}
   <div class="section" id="endpoints">
     <div class="section-title" data-i18n="ia_ep_title">Seven endpoints, one API key</div>
     <div class="section-sub"><span data-i18n="ia_ep_sub">Every response is AI-structured JSON — never raw scraped article text.</span> <a href="https://api.xfinlab.com/api/intelligence/openapi.json" target="_blank" rel="noopener" data-i18n="ia_openapi_link">View OpenAPI spec →</a></div>
+    <!-- 2026-08-17 (task #4 follow-up, upgrade #4): live, not historical --
+         calls GET /intelligence/status on load and renders per-capability
+         dots. No stored uptime history (see chat: no new scheduled job /
+         DB table for this pass), so deliberately no fabricated uptime %;
+         "True" here means "not gated behind an external reachability
+         check" per that endpoint's own docstring, shown as-is. -->
+    <div id="statusWidget" style="text-align:center;margin:-14px 0 26px;font-size:0.78rem;color:var(--text-muted)"><span id="statusDot">●</span>&nbsp;<span id="statusSummary">Checking live status…</span> <a href="#changelog" style="margin-left:4px">Changelog →</a></div>
     <div class="endpoints">
       <div class="ep-card">
         <div class="ep-head">
@@ -554,6 +571,20 @@ await client.sentiment('AAPL');</span></div>
     <p style="max-width:640px;margin:16px auto 0;font-size:0.83rem;color:var(--text-muted);text-align:center" data-i18n="ia_mcp_note2">Auth and quota are identical to the REST API above — same X-API-Key, same free tier, same weighted daily limit. No separate free ride through MCP.</p>
   </div>
 
+  <!-- 2026-08-17 (task #4 follow-up, "重有咩可以升級" -- upgrade #4,
+       changelog): entries come from GET /intelligence/changelog
+       (INTELLIGENCE_CHANGELOG in api/intelligence.py), hand-maintained,
+       Keep-a-Changelog style. Rendered client-side so the JSON feed stays
+       the single source of truth -- no duplicated content to keep in
+       sync between this page and the API response. Entry text is kept in
+       English, same convention as the code/JSON examples elsewhere on
+       this page (only the section title/sub below are i18n keys). -->
+  <div class="section" id="changelog">
+    <div class="section-title" data-i18n="ia_changelog_title">Changelog</div>
+    <div class="section-sub"><span data-i18n="ia_changelog_sub">What's shipped, chronologically.</span> <a href="https://api.xfinlab.com/api/intelligence/changelog" target="_blank" rel="noopener" data-i18n="ia_changelog_json_link">View as JSON →</a></div>
+    <div id="changelogList" style="max-width:640px;margin:0 auto"></div>
+  </div>
+
   <div class="section">
     <div class="section-title" data-i18n="ia_plans_title">Plans</div>
     <div class="section-sub" data-i18n="ia_plans_sub">Free is instant and automated. Pro/Enterprise are still set up personally — pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
@@ -792,6 +823,67 @@ async function applyPlanVisibility() {
   }
 }
 applyPlanVisibility();
+
+// 2026-08-17 (task #4 follow-up, "重有咩可以升級" -- upgrade #4, live status
+// widget): reads GET /intelligence/status live on every page load -- no
+// stored history, no scheduled job, nothing to maintain. See that
+// endpoint's own docstring in api/intelligence.py for why 5 of the 7
+// capabilities are always true (they don't have an external reachability
+// gate at all, so "true" here isn't a fabricated uptime claim).
+async function applyStatusWidget() {
+  const el = document.getElementById('statusSummary');
+  try {
+    const res = await fetch(`${API}/intelligence/status`);
+    const json = await res.json();
+    const flags = (json && json.data) || {};
+    const entries = Object.entries(flags);
+    const upCount = entries.filter(function(e) { return e[1] === true; }).length;
+    const allUp = upCount === entries.length;
+    document.getElementById('statusDot').className = allUp ? 'status-dot-ok' : 'status-dot-down';
+    el.textContent = allUp
+      ? 'All 7 endpoints operational'
+      : upCount + '/' + entries.length + ' endpoints operational (' + entries.filter(function(e){return e[1]!==true;}).map(function(e){return e[0];}).join(', ') + ' degraded)';
+  } catch (e) {
+    el.textContent = 'Live status unavailable right now';
+  }
+}
+applyStatusWidget();
+
+// 2026-08-17 (task #4 follow-up, changelog): renders GET /intelligence/
+// changelog client-side -- the JSON response is the single source of
+// truth, this is just a view over it, so the page can never drift out of
+// sync with the API's own changelog feed.
+async function loadChangelog() {
+  const el = document.getElementById('changelogList');
+  try {
+    const res = await fetch(`${API}/intelligence/changelog`);
+    const json = await res.json();
+    const entries = (json && json.data) || [];
+    el.innerHTML = '';
+    entries.forEach(function(entry) {
+      const wrap = document.createElement('div');
+      wrap.className = 'changelog-entry';
+      const dateEl = document.createElement('div');
+      dateEl.className = 'changelog-date';
+      dateEl.textContent = entry.date;
+      wrap.appendChild(dateEl);
+      (entry.changes || []).forEach(function(change) {
+        const row = document.createElement('div');
+        row.className = 'changelog-change';
+        const tag = document.createElement('span');
+        tag.className = 'changelog-tag ' + change.type;
+        tag.textContent = change.type;
+        row.appendChild(tag);
+        row.appendChild(document.createTextNode(change.text));
+        wrap.appendChild(row);
+      });
+      el.appendChild(wrap);
+    });
+  } catch (e) {
+    el.textContent = 'Could not load changelog right now.';
+  }
+}
+loadChangelog();
 
 function selectPlan(tier) {
   document.getElementById('accessTier').value = tier;

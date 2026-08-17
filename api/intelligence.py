@@ -77,12 +77,97 @@ def _check_and_spend_quota(api_key: str, tier: str, endpoint: str) -> dict:
 def intelligence_status():
     """Public, unauthenticated -- lets a prospective developer check what's
     live before they even have a key, same pattern as
-    GET /api/agent-debate/status."""
+    GET /api/agent-debate/status.
+
+    2026-08-17 (task #4 follow-up, "重有咩可以升級" -- upgrade #4, live status
+    widget): extended from the original 3 keys (events/sentiment/debate) to
+    cover all 7 public endpoints. Only sentiment and debate have a genuine
+    binary gate here -- their route handlers explicitly raise 503 if
+    finbert_available()/debate_available() is false (see intelligence_
+    sentiment/intelligence_debate above). The other 5 (events, intel,
+    technical, stress_test, regime_signal) never 503 by design -- on an
+    upstream hiccup they soft-fail to 200 with an `error` field or null
+    sub-fields instead (see the schema docs on intelligence-api.html). So
+    `True` here means "not gated behind an external reachability check",
+    not a claimed uptime guarantee -- deliberately not fabricating a
+    monitoring signal that doesn't exist for endpoints that don't have one.
+    """
     return _envelope(data={
         "events": True,  # rss_news_service has no external gate
         "sentiment": finbert_available(),
         "debate": debate_available(),
+        "intel": True,  # never 503s -- returns partial/null fields on AI failure instead
+        "technical": True,  # no external AI gate
+        "stress_test": True,  # pure computation once price history resolves
+        "regime_signal": True,  # reads a local persisted leaderboard, no external gate
     })
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-17 (task #4 follow-up, "重有咩可以升級" -- upgrade #4, changelog):
+# hand-maintained, Keep-a-Changelog-style entries -- deliberately NOT
+# auto-generated from git log (would be noisy/unfiltered and could leak
+# internal-only commit messages). Every entry below is dated against a real
+# docstring/comment already in this file or intelligence-api.html (see the
+# "2026-0X-XX" markers throughout both), not invented after the fact.
+# Exposed both as JSON (for integrators who want to watch for breaking
+# changes programmatically) and rendered on intelligence-api.html#changelog.
+# ---------------------------------------------------------------------------
+INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-17",
+        "changes": [
+            {"type": "added", "text": "Changelog and live status widget (this page, #changelog)."},
+            {"type": "added", "text": "Per-endpoint response field documentation on each endpoint card."},
+            {"type": "added", "text": "Scoped OpenAPI 3.1 spec export at GET /api/intelligence/openapi.json."},
+            {"type": "added", "text": "Live \"Try it\" console -- run real requests against the API from this page."},
+            {"type": "added", "text": "Full translation of this page into all 47 supported XFINLAB languages."},
+            {"type": "changed", "text": "Data Sourcing split into a standalone \"US price data\" card and a merged \"Taiwan & other markets\" card."},
+            {"type": "fixed", "text": "Endpoint-count heading corrected from \"Six endpoints\" to \"Seven endpoints\" (Regime-Aware Signal, shipped 2026-08-10, wasn't reflected in the page copy)."},
+        ],
+    },
+    {
+        "date": "2026-08-14",
+        "changes": [
+            {"type": "added", "text": "MCP Server documented and published -- 7 tools mirroring the REST endpoints, for Claude and other MCP-compatible AI agents."},
+        ],
+    },
+    {
+        "date": "2026-08-11",
+        "changes": [
+            {"type": "changed", "text": "News source switched from an RSS feed with non-commercial-use terms to GDELT (public domain) plus official press-release wires (GlobeNewswire, PR Newswire) -- full commercial-redistribution licensing."},
+            {"type": "fixed", "text": "GET /v1/technical/{ticker} no longer includes the raw OHLC price-bar array in its response -- every price-derived field is a computed result now, not the underlying feed."},
+        ],
+    },
+    {
+        "date": "2026-08-10",
+        "changes": [
+            {"type": "added", "text": "GET /v1/regime-signal/{ticker} -- current causal market regime plus the best-performing signal combo for that regime, backed by walk-forward-validated backtests."},
+        ],
+    },
+    {
+        "date": "2026-07-31",
+        "changes": [
+            {"type": "added", "text": "GET /v1/intel/latest and GET /v1/intel/{ticker} -- the AI Intelligence Feed, clustered/enriched event intelligence with an AI-written narrative."},
+            {"type": "added", "text": "GET /v1/technical/{ticker} -- confluence, trend, MACD, chart patterns, and market structure."},
+            {"type": "added", "text": "POST /v1/stress-test -- historical-bootstrap Monte Carlo simulation."},
+            {"type": "added", "text": "Automated Free-tier self-serve signup (POST /v1/signup) -- keys issued and emailed instantly, no admin step."},
+        ],
+    },
+    {
+        "date": "2026-07-30",
+        "changes": [
+            {"type": "added", "text": "Intelligence API v1 launch -- GET /v1/events, GET /v1/sentiment, GET /v1/debate."},
+        ],
+    },
+]
+
+
+@router.get("/intelligence/changelog")
+def intelligence_changelog():
+    """Public, unauthenticated. See INTELLIGENCE_CHANGELOG's docstring
+    comment above for why this is hand-maintained rather than generated."""
+    return _envelope(data=INTELLIGENCE_CHANGELOG)
 
 
 # ---------------------------------------------------------------------------
