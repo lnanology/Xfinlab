@@ -28,7 +28,7 @@ this one new product line, not a retrofit of the existing 50 endpoints
 """
 from typing import Optional
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request, Response
 from fastapi.openapi.utils import get_openapi
 
 from services import api_key_service, intelligence_quota_service
@@ -61,15 +61,34 @@ def _require_api_key(x_api_key: str = Header(None, alias="X-API-Key")) -> dict:
     return result
 
 
-def _check_and_spend_quota(api_key: str, tier: str, endpoint: str) -> dict:
+def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Response) -> dict:
+    """2026-08-17 (roadmap item #1, "重有咩可以做" round 2): also stamps
+    X-RateLimit-Limit / X-RateLimit-Remaining on `response` so a client can
+    pace its own requests instead of discovering the ceiling by hitting a
+    429. `response` is the FastAPI-injected Response each caller receives
+    via its own `response: Response` parameter -- mutating its `.headers`
+    here is honored on the final response even though the route still
+    returns a plain dict body (see FastAPI's Response-as-dependency
+    pattern). Unlimited tiers (enterprise, limit==-1) report "unlimited"
+    rather than a fabricated number."""
     weight = intelligence_quota_service.weight_for(endpoint)
     quota = intelligence_quota_service.check(api_key, tier)
     if not quota["allowed"]:
         raise HTTPException(
             status_code=429,
             detail=f"Daily quota exceeded ({quota['used']}/{quota['limit']} calls used today for tier '{tier}')",
+            headers={
+                "X-RateLimit-Limit": str(quota["limit"]),
+                "X-RateLimit-Remaining": "0",
+            },
         )
     intelligence_quota_service.increment(api_key, weight=weight)
+    if quota["limit"] == -1:
+        response.headers["X-RateLimit-Limit"] = "unlimited"
+        response.headers["X-RateLimit-Remaining"] = "unlimited"
+    else:
+        response.headers["X-RateLimit-Limit"] = str(quota["limit"])
+        response.headers["X-RateLimit-Remaining"] = str(max(0, quota["remaining"] - weight))
     return quota
 
 
@@ -117,6 +136,8 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-17",
         "changes": [
+            {"type": "added", "text": "Public roadmap at GET /api/intelligence/roadmap (this page, #roadmap) -- backs the Pro plan's previously-unbacked \"public roadmap\" promise."},
+            {"type": "added", "text": "X-RateLimit-Limit / X-RateLimit-Remaining headers on every authenticated response, so clients can pace requests instead of discovering the ceiling from a 429."},
             {"type": "added", "text": "Changelog and live status widget (this page, #changelog)."},
             {"type": "added", "text": "Per-endpoint response field documentation on each endpoint card."},
             {"type": "added", "text": "Scoped OpenAPI 3.1 spec export at GET /api/intelligence/openapi.json."},
@@ -186,11 +207,6 @@ def intelligence_changelog():
 # so this list only ever shows what's still ahead.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_ROADMAP = [
-    {
-        "status": "planned",
-        "title": "Rate-limit response headers",
-        "text": "X-RateLimit-Remaining / X-RateLimit-Limit on every response, so clients can pace requests without guessing from 429s.",
-    },
     {
         "status": "planned",
         "title": "Postman collection",
@@ -401,12 +417,13 @@ def intelligence_self_serve_signup(body: FreeSignupRequest, request: Request):
 @router.get("/intelligence/v1/events")
 def intelligence_events(
     request: Request,
+    response: Response,
     ticker: Optional[str] = None,
     limit: int = 20,
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "events")
+    _check_and_spend_quota(x_api_key, auth["tier"], "events", response)
 
     limit = max(1, min(limit, 100))
     if ticker:
@@ -432,12 +449,13 @@ def intelligence_events(
 
 @router.get("/intelligence/v1/sentiment")
 def intelligence_sentiment(
+    response: Response,
     ticker: str,
     limit: int = 10,
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "sentiment")
+    _check_and_spend_quota(x_api_key, auth["tier"], "sentiment", response)
 
     if not finbert_available():
         raise HTTPException(status_code=503, detail="Sentiment engine temporarily unavailable")
@@ -473,6 +491,7 @@ def intelligence_sentiment(
 
 @router.get("/intelligence/v1/debate")
 def intelligence_debate(
+    response: Response,
     ticker: str,
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
@@ -481,7 +500,7 @@ def intelligence_debate(
     services/agent_debate_service.py) -- weighted 5x in the quota counter,
     same reasoning api/agent_debate.py already applies to logged-in users."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "debate")
+    _check_and_spend_quota(x_api_key, auth["tier"], "debate", response)
 
     if not debate_available():
         raise HTTPException(status_code=503, detail="Debate engine temporarily unavailable")
@@ -524,12 +543,13 @@ def intelligence_debate(
 
 @router.get("/intelligence/v1/intel/latest")
 def intelligence_latest(
+    response: Response,
     limit: int = 5,
     lang: str = "zh-HK",
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "intel")
+    _check_and_spend_quota(x_api_key, auth["tier"], "intel", response)
 
     # Caps how many event-clusters get the full (up to 2-AI-call +
     # per-ticker quant lookup) treatment per request -- see
@@ -546,13 +566,14 @@ def intelligence_latest(
 
 @router.get("/intelligence/v1/intel/{ticker}")
 def intelligence_ticker(
+    response: Response,
     ticker: str,
     limit: int = 5,
     lang: str = "zh-HK",
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "intel")
+    _check_and_spend_quota(x_api_key, auth["tier"], "intel", response)
 
     limit = max(1, min(limit, 10))
     ticker = ticker.upper()
@@ -578,6 +599,7 @@ def intelligence_ticker(
 
 @router.get("/intelligence/v1/technical/{ticker}")
 def intelligence_technical(
+    response: Response,
     ticker: str,
     period: str = "6mo",
     interval: str = "1d",
@@ -592,7 +614,7 @@ def intelligence_technical(
     function already does for the website (task #592's fix), so API
     consumers get real localized labels too, not just en/zh."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "technical")
+    _check_and_spend_quota(x_api_key, auth["tier"], "technical", response)
 
     from services.technical_analysis_service import get_technical_analysis
 
@@ -633,6 +655,7 @@ class StressTestRequest(BaseModel):
 @router.post("/intelligence/v1/stress-test")
 def intelligence_stress_test(
     body: StressTestRequest,
+    response: Response,
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     """Real historical-bootstrap Monte Carlo (see services/monte_carlo_
@@ -642,7 +665,7 @@ def intelligence_stress_test(
     caps stress-lab.html's own callers get; POST (not GET) since this is
     the heaviest-compute endpoint in this router after `debate`/`intel`."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "stress_test")
+    _check_and_spend_quota(x_api_key, auth["tier"], "stress_test", response)
 
     from services.monte_carlo_service import simulate, DEFAULT_N_SIMULATIONS
 
@@ -674,6 +697,7 @@ def intelligence_stress_test(
 
 @router.get("/intelligence/v1/regime-signal/{ticker}")
 def intelligence_regime_signal(
+    response: Response,
     ticker: str,
     regime: Optional[str] = None,
     min_trades: int = 5,
@@ -687,7 +711,7 @@ def intelligence_regime_signal(
     `regime` is omitted, the current regime is computed first and used
     for the lookup -- the actual "what should I use right now" answer."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "regime")
+    _check_and_spend_quota(x_api_key, auth["tier"], "regime", response)
 
     from services.regime_router_service import get_best_for_regime, get_current_regime
 
@@ -824,6 +848,7 @@ def intelligence_openapi_spec():
 
 @router.get("/intelligence/v1/world/market-map")
 def world_market_map(
+    response: Response,
     regions: Optional[str] = None,
     news_limit: int = 6,
     include_sentiment: bool = True,
@@ -836,7 +861,7 @@ def world_market_map(
     See services/world_engine_service.list_regions() / GET
     /intelligence/v1/world/regions for valid keys."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "world_map")
+    _check_and_spend_quota(x_api_key, auth["tier"], "world_map", response)
 
     from services.world_engine_service import get_global_market_map
 
