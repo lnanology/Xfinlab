@@ -34,6 +34,28 @@
 .result-row{display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
 .result-label{color:var(--text3);flex-shrink:0}
 .result-value{font-weight:600;color:var(--text);min-width:0;overflow-wrap:break-word;word-break:break-word;text-align:right}
+/* 2026-08-18 (AJ: "終端機密集式" trial, option 2 of the site-wide UI
+   mockups): scoped to ONLY the main AI-result panel (the 11 rows right
+   under the chart) as a preview, not a site-wide theme change -- deliber-
+   ately self-contained hardcoded colors, not the --navy/--text theme
+   variables, so this panel always renders as a dark terminal regardless
+   of the page's own light/dark toggle state (same idea as an embedded
+   code/console block keeping its own chrome). Every other .result-row
+   usage on this page (market structure events, backtest stats, regime
+   router, multi-timeframe table) is untouched -- still the original
+   light/dashed style. Directional coloring (.dir-up/.dir-down) is only
+   applied where the backend's own value is a real binary (trend:
+   上升/下降, confluence: 偏多/偏空, MACD: 看漲/看跌) -- never guessed. */
+.terminal-panel{background:#0d1525;border:1px solid #1e2d45;border-radius:6px;padding:0.2rem 0.9rem;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+.terminal-row{display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.5rem 0;border-bottom:1px solid #1e2d45}
+.terminal-row:last-child{border-bottom:none}
+.terminal-label{color:#94a3b8;font-size:0.72rem;letter-spacing:0.03em;flex-shrink:0}
+.terminal-value{color:#e2e8f0;font-size:0.82rem;font-weight:700;text-align:right;min-width:0;overflow-wrap:break-word;word-break:break-word}
+.terminal-value.dir-up{color:#10b981}
+.terminal-value.dir-down{color:#ef4444}
+.terminal-value.dir-up::before{content:"▲ "}
+.terminal-value.dir-down::before{content:"▼ "}
+@media(max-width:480px){.terminal-row{flex-direction:column;align-items:flex-start;gap:0.15rem}.terminal-value{text-align:left}}
 /* 2026-07-19 fix: no gap + no min-width/word-break on the flex children
    meant a longer result-value string (e.g. a full English confidence
    sentence once AI replies started following site language, or the
@@ -160,17 +182,19 @@
       <div id="resultContent">
       <h3 style="margin-top:0" data-i18n="ca_result_title">AI 分析結果 <span class="meta-line" id="dataSourceTag" style="display:inline;margin-left:0.4rem"></span></h3>
 
-      <div class="result-row"><div class="result-label" data-i18n="ca_trend">趨勢方向</div><div class="result-value" id="trendValue">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_support">支撐位</div><div class="result-value" id="supportValue">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_resistance">阻力位</div><div class="result-value" id="resistanceValue">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_fib">0.618 回調位</div><div class="result-value" id="fibValue">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_confluence">綜合訊號（Confluence）</div><div class="result-value" id="confluenceValue">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_volume_zone">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
-      <div class="result-row"><div class="result-label">RSI</div><div class="result-value" id="rsiValue">-</div></div>
-      <div class="result-row"><div class="result-label">MACD</div><div class="result-value" id="macdValue">-</div></div>
-      <div class="result-row" id="patternSummaryRow"><div class="result-label" data-i18n="ca_pattern_summary">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_risk_tips">風險提示</div><div class="result-value" id="riskTips">-</div></div>
-      <div class="result-row"><div class="result-label" data-i18n="ca_recommendation">建議</div><div class="result-value" id="recommendationValue">-</div></div>
+      <div class="terminal-panel">
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_trend">趨勢方向</div><div class="terminal-value" id="trendValue">-</div></div>
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_support">支撐位</div><div class="terminal-value" id="supportValue">-</div></div>
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_resistance">阻力位</div><div class="terminal-value" id="resistanceValue">-</div></div>
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_fib">0.618 回調位</div><div class="terminal-value" id="fibValue">-</div></div>
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_confluence">綜合訊號（Confluence）</div><div class="terminal-value" id="confluenceValue">-</div></div>
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_volume_zone">關鍵成交量區</div><div class="terminal-value" id="volumeZone">-</div></div>
+      <div class="terminal-row"><div class="terminal-label">RSI</div><div class="terminal-value" id="rsiValue">-</div></div>
+      <div class="terminal-row"><div class="terminal-label">MACD</div><div class="terminal-value" id="macdValue">-</div></div>
+      <div class="terminal-row" id="patternSummaryRow"><div class="terminal-label" data-i18n="ca_pattern_summary">型態辨識</div><div class="terminal-value" id="patternSummary">-</div></div>
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_risk_tips">風險提示</div><div class="terminal-value" id="riskTips">-</div></div>
+      <div class="terminal-row"><div class="terminal-label" data-i18n="ca_recommendation">建議</div><div class="terminal-value" id="recommendationValue">-</div></div>
+      </div>
 
       <div id="patternBlock">
       <h4 style="margin-top:0.8rem" data-i18n="ca_pattern_detail_title">型態詳情</h4>
@@ -668,6 +692,19 @@ function safeSetText(id, value) {
   el.textContent = value;
 }
 
+// 2026-08-18 (terminal-panel trial): sets the .dir-up/.dir-down accent
+// class on a .terminal-value element. Only called with a real backend
+// binary as input (trend: 上升/下降, confluence: 偏多/偏空, MACD's own
+// 看漲/看跌 trend string) -- never a guessed/derived direction, same
+// honesty posture as chart_pattern_service.py's verdicts.
+function setDirClass(id, dir) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('dir-up', 'dir-down');
+  if (dir === 'up') el.classList.add('dir-up');
+  else if (dir === 'down') el.classList.add('dir-down');
+}
+
 // Non-blocking inline error banner -- replaces the old alert() on
 // analysis failure, which forced the user to click "OK" before they
 // could do anything else. Errors now show as a dismissible inline
@@ -958,18 +995,23 @@ async function runTickerSearch(symbolOverride){
     safeSetText('dataSourceTag', t('ca_data_source_search','（支撐/阻力/RSI/MACD 來自真實歷史數據）'));
     const noRealData = t('ca_no_real_data','未有真實數據');
     safeSetText('trendValue', res.trend || '-');
+    setDirClass('trendValue', res.trend === '上升' ? 'up' : res.trend === '下降' ? 'down' : null);
     safeSetText('supportValue', res.support ? res.support.level : noRealData);
     safeSetText('resistanceValue', res.resistance ? res.resistance.level : noRealData);
     safeSetText('fibValue', res.fibonacci_0618 ? res.fibonacci_0618.level_0618 : noRealData);
     if(res.confluence){
       const c = res.confluence;
       safeSetText('confluenceValue', `${caDirectionLabel(c.direction)}（${t('ca_reco_confidence_label','信心')}${caConfidenceLabel(c.confidence)}，${c.signals_counted}${t('ca_signals_counted_suffix','個訊號')}）`);
+      setDirClass('confluenceValue', c.direction === '偏多' ? 'up' : c.direction === '偏空' ? 'down' : null);
     } else {
       safeSetText('confluenceValue', noRealData);
+      setDirClass('confluenceValue', null);
     }
     safeSetText('volumeZone', res.volume_desc || '-');
     safeSetText('rsiValue', res.rsi != null ? res.rsi : '-');
     safeSetText('macdValue', res.macd ? res.macd.trend : '-');
+    const macdTrend = res.macd ? res.macd.trend : '';
+    setDirClass('macdValue', macdTrend.includes('看漲') ? 'up' : macdTrend.includes('看跌') ? 'down' : null);
 
     // 2026-07-26 fix: patterns now come from services/chart_pattern_
     // service.py's real swing-point geometry (see get_technical_analysis
