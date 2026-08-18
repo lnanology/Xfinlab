@@ -345,7 +345,15 @@ nav {
 }
 
 .container {
-  max-width: 1000px;
+  /* 2026-08-18 (AJ: "左右再拉闊 跟TOPBAR HOME-API 闊度一樣，所有功能頁跟"):
+     was 1000px, narrower than the 1160px max-width every homepage/
+     localized-index <nav> already uses (see index.html's #idxNav and the
+     18 localized index.html <nav> tags). Bumped to 1160px so every
+     feature page built on this shared .container (dashboard, ai-analysis,
+     chart-analysis, settings, pricing, intelligence-api, etc.) lines up
+     with that same width standard site-wide, instead of each page having
+     its own slightly-different content width. */
+  max-width: 1160px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem;
   flex: 1;

@@ -25,7 +25,10 @@
 <script src="js/share-tools.js"></script>
 <style>
 /* Page-specific small adjustments while fully using site style */
-.container{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem;flex:1}
+/* 2026-08-18: removed the local .container max-width override that used
+   to live here (was 1200px) -- css/style.css's shared .container is now
+   1160px site-wide (AJ: "所有功能頁跟"), so this page just inherits it
+   like every other feature page instead of carrying its own value. */
 .upload-hint{color:var(--text3);font-size:0.9rem;margin-top:0.6rem;text-align:center}
 .meta-line{font-size:0.82rem;color:var(--text2);margin-top:0.5rem}
 /* 2026-08-18 ("電腦睇要左右各 不同資料，不要一條滑下去"): was a fixed
