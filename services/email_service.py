@@ -82,6 +82,33 @@ class EmailService:
         return EmailService.send(to_email, "額度即將用完 - XFINLAB", html)
 
     @staticmethod
+    def send_intelligence_api_quota_exceeded(to_email: str, tier: str, limit: int) -> bool:
+        """2026-08-18: fires once per key per day, at the exact moment a
+        free-tier Intelligence API key hits its daily call limit (see
+        api/intelligence.py's _check_and_spend_quota + services/
+        intelligence_quota_service.py's should_send_upgrade_nudge dedup).
+        English, not Chinese -- this is the developer API's own audience
+        (intelligence-api.html is English-first), unlike the consumer-app
+        send_quota_warning() above. Honest framing: no urgency-manufacturing
+        countdown, no fake scarcity -- the free tier really does reset
+        tomorrow, and this just tells them that plus what Pro actually
+        costs."""
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#080c14;color:#e2e8f0;padding:40px;border-radius:12px;">
+            <h1 style="color:#00d4ff;font-size:1.3rem;">You've hit today's free-tier limit</h1>
+            <p>Your XFINLAB Intelligence API key ({tier} tier) has used its {limit} weighted calls for today.</p>
+            <p>Two options:</p>
+            <ul style="padding-left:20px;">
+                <li>Nothing to do -- your free quota resets automatically at midnight UTC.</li>
+                <li>Or upgrade to Pro: 5,000 calls/day for $49/month.</li>
+            </ul>
+            <a href="https://www.xfinlab.com/intelligence-api.html#access" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">Request Pro access</a>
+            <p style="color:#64748b;font-size:0.82rem;">You're getting this because your API key just returned a 429. This is a one-time note for today -- you won't get another one until you hit the limit again on a different day.</p>
+        </div>
+        """
+        return EmailService.send(to_email, "XFINLAB Intelligence API -- daily free-tier limit reached", html)
+
+    @staticmethod
     def send_price_alert(to_email: str, name: str, ticker: str, price: float, change: str) -> bool:
         """Send price alert email"""
         html = f"""

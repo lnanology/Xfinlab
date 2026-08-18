@@ -153,3 +153,59 @@ def increment(api_key: str, weight: int = 1):
 
 def weight_for(endpoint: str) -> int:
     return ENDPOINT_WEIGHT.get(endpoint, 1)
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-18: dedup tracking for the "you hit your free-tier limit" email
+# nudge (api/intelligence.py's _check_and_spend_quota). Separate tiny table
+# rather than a column bolted onto intelligence_api_usage -- this tracks
+# "was an email sent today", a different concern from "how many calls were
+# made today", and keeping them apart means neither table's meaning gets
+# muddied. Same UNIQUE(api_key, date) + INSERT...ON CONFLICT idiom as the
+# rest of this file.
+# ---------------------------------------------------------------------------
+
+def _init_nudge_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS intelligence_upgrade_nudges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            api_key TEXT NOT NULL,
+            date TEXT NOT NULL,
+            UNIQUE(api_key, date)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_nudge_table()
+
+
+def should_send_upgrade_nudge(api_key: str) -> bool:
+    """True if no nudge has been recorded for this key today -- call BEFORE
+    sending, then record_upgrade_nudge_sent() only after the email actually
+    goes out (same check-then-record split as check()/increment() above),
+    so a send failure doesn't silently mark the day as "already nudged"."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM intelligence_upgrade_nudges WHERE api_key=? AND date=?",
+            (api_key, today),
+        ).fetchone()
+        return row is None
+    finally:
+        conn.close()
+
+
+def record_upgrade_nudge_sent(api_key: str):
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    conn.execute(
+        "INSERT INTO intelligence_upgrade_nudges (api_key, date) VALUES (?, ?) "
+        "ON CONFLICT(api_key, date) DO NOTHING",
+        (api_key, today),
+    )
+    conn.commit()
+    conn.close()

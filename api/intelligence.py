@@ -61,6 +61,33 @@ def _require_api_key(x_api_key: str = Header(None, alias="X-API-Key")) -> dict:
     return result
 
 
+def _maybe_send_upgrade_nudge(api_key: str, tier: str, limit: int) -> None:
+    """2026-08-18: fires the "you hit your free-tier limit" email exactly
+    once per key per day, at the moment a 429 is about to be raised. Only
+    for `free` -- Pro is already paying and Enterprise is unlimited, so
+    neither tier has anything to upgrade to via this nudge. Entirely
+    best-effort: wrapped so a DB hiccup, a missing email, or an SMTP
+    failure can never turn a normal 429 into a 500. This is the answer to
+    AJ's "比人拉我API, 我得到咩" -- the free tier itself doesn't make
+    money, but the exact moment someone maxes it out is the highest-intent
+    moment to ask if they want more, so that moment shouldn't be a silent
+    JSON error."""
+    if tier != "free":
+        return
+    try:
+        if not intelligence_quota_service.should_send_upgrade_nudge(api_key):
+            return
+        email = api_key_service.get_email_for_key(api_key)
+        if not email:
+            return
+        from services.email_service import EmailService
+        sent = EmailService.send_intelligence_api_quota_exceeded(email, tier, limit)
+        if sent:
+            intelligence_quota_service.record_upgrade_nudge_sent(api_key)
+    except Exception:
+        pass
+
+
 _MAX_BATCH_TICKERS = 10
 
 
@@ -102,6 +129,7 @@ def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Res
     weight = intelligence_quota_service.weight_for(endpoint) * max(1, multiplier)
     quota = intelligence_quota_service.check(api_key, tier)
     if not quota["allowed"]:
+        _maybe_send_upgrade_nudge(api_key, tier, quota["limit"])
         raise HTTPException(
             status_code=429,
             detail=f"Daily quota exceeded ({quota['used']}/{quota['limit']} calls used today for tier '{tier}')",
@@ -164,6 +192,7 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-18",
         "changes": [
+            {"type": "added", "text": "Free-tier keys now get a one-time-per-day email when they hit their daily quota (429), pointing at Pro instead of just returning a bare error."},
             {"type": "added", "text": "Listed on APIs.guru and the Postman API Network (public workspace, published docs) -- the API is now discoverable outside xfinlab.com, not just prepared for submission."},
         ],
     },

@@ -127,6 +127,40 @@ def verify_key(key: str) -> dict:
         conn.close()
 
 
+def get_email_for_key(key: str) -> "str | None":
+    """2026-08-18 (quota-exceeded upgrade nudge): the one lookup neither
+    verify_key() nor anything else in this file exposes -- given a raw key,
+    return the email to notify, or None if the key is unknown/inactive.
+    Checks self_serve_api_keys first (email is stored directly there),
+    then falls back to api_keys -> users (admin-issued keys only carry a
+    user_id, so this needs the join). Never raises; a lookup failure just
+    means no nudge gets sent, not a broken request."""
+    if not key:
+        return None
+    conn = _get_db()
+    try:
+        row = conn.execute(
+            "SELECT email FROM self_serve_api_keys WHERE key=? AND active=1", (key,)
+        ).fetchone()
+        if row:
+            return row["email"]
+
+        row2 = conn.execute(
+            """
+            SELECT u.email AS email
+            FROM api_keys k JOIN users u ON u.id = k.user_id
+            WHERE k.key=? AND k.active=1
+            """,
+            (key,),
+        ).fetchone()
+        if row2:
+            return row2["email"]
+
+        return None
+    finally:
+        conn.close()
+
+
 def list_keys_for_email(email: str) -> list:
     conn = _get_db()
     try:
