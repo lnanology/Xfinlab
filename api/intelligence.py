@@ -162,6 +162,12 @@ def intelligence_status():
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
     {
+        "date": "2026-08-18",
+        "changes": [
+            {"type": "added", "text": "Listed on APIs.guru and the Postman API Network (public workspace, published docs) -- the API is now discoverable outside xfinlab.com, not just prepared for submission."},
+        ],
+    },
+    {
         "date": "2026-08-17",
         "changes": [
             {"type": "added", "text": "GET /v1/events and GET /v1/sentiment now accept a comma-separated list of up to 10 tickers (e.g. \"AAPL,MSFT,TSLA\") for watchlist-style queries -- single-ticker requests are unaffected, batch requests cost proportionally more quota."},
@@ -238,11 +244,6 @@ def intelligence_changelog():
 # so this list only ever shows what's still ahead.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_ROADMAP = [
-    {
-        "status": "in_progress",
-        "title": "Listings on third-party API directories",
-        "text": "APIs.guru and Postman API Network submission copy is ready (see API_DIRECTORY_SUBMISSION.md in the repo) -- actual submission needs AJ's own account on each site, so it's prepared but not yet live. RapidAPI flagged separately as a heavier lift (it proxies traffic through its own gateway/billing, not pure discoverability like the other two).",
-    },
     {
         "status": "planned",
         "title": "Published SDKs on PyPI / npm",
