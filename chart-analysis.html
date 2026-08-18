@@ -60,6 +60,29 @@
 .pattern-qa-a.is-possible{color:var(--green,#16A34A)}
 .pattern-qa-a.is-not-possible{color:var(--text3)}
 .pattern-qa-a.is-unclear{color:var(--text2)}
+/* 2026-08-18 (AJ: "UI 介面好悶" -- pattern-details redesign, option A
+   "重點式": detected patterns get their own prominent row; the other
+   ~17 (mostly 不可能/不明, same visual weight as detected in the old
+   19-card flat grid) collapse into a <details> so the page leads with
+   what was actually found instead of a wall of near-identical gray
+   cards. No fabricated confidence numbers added -- still the same
+   honest 可能/不可能/不明 verdicts from chart_pattern_service.py, just
+   restructured by visual priority. */
+.pattern-detected-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.6rem;margin-top:0.6rem}
+.pattern-detected-card{background:var(--navy3);border:1.5px solid var(--green,#16A34A);border-radius:8px;padding:0.7rem 0.8rem;display:flex;align-items:center;gap:0.6rem}
+.pattern-detected-dot{width:8px;height:8px;border-radius:50%;background:var(--green,#16A34A);flex-shrink:0}
+.pattern-detected-name{font-weight:700;color:var(--text);line-height:1.3;overflow-wrap:break-word}
+.pattern-detected-verdict{font-size:0.78rem;color:var(--green,#16A34A);margin-top:0.1rem}
+.pattern-none-detected{color:var(--text3);font-size:0.85rem;padding:0.4rem 0;margin:0}
+.pattern-rest-details{margin-top:0.7rem}
+.pattern-rest-details summary{cursor:pointer;font-size:0.8rem;color:var(--text2);font-weight:600;list-style:none}
+.pattern-rest-details summary::-webkit-details-marker{display:none}
+.pattern-rest-details summary::after{content:" ▾"}
+.pattern-rest-details[open] summary::after{content:" ▴"}
+.pattern-rest-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.6rem}
+.pattern-rest-pill{font-size:0.72rem;padding:0.25rem 0.55rem;border-radius:6px;background:var(--navy3);border:1px solid var(--border2)}
+.pattern-rest-pill.is-not-possible{color:var(--text3)}
+.pattern-rest-pill.is-unclear{color:var(--text2)}
 .education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
 @media(max-width:980px){.analysis-section{grid-template-columns:1fr}}
 .tf-btn{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.3rem 0.7rem;border-radius:5px;cursor:pointer;font-size:0.78rem;font-family:inherit}
@@ -158,7 +181,12 @@
            fitCardText()) -- see PATTERN_KEYS/renderPatternDetails below.
            Left empty here; populated on page load and after every
            search/timeframe-switch. -->
-      <div class="pattern-qa-grid" id="patternList"></div>
+      <div class="pattern-detected-grid" id="patternDetectedGrid"></div>
+      <p class="pattern-none-detected" id="patternNoneDetected" style="display:none" data-i18n="ca_pattern_none_detected">No pattern was detected as likely this time -- expand below to see all 19 checked.</p>
+      <details class="pattern-rest-details" id="patternRestDetails" style="display:none">
+        <summary id="patternRestSummary"></summary>
+        <div class="pattern-rest-list" id="patternRestList"></div>
+      </details>
       </div>
 
       <div id="marketStructureBlock" style="display:none">
@@ -662,7 +690,7 @@ function hideSearchError() {
 // upload mode's AI-vision result and search mode's real swing-point-
 // geometry result (services/chart_pattern_service.py) return the exact
 // same 17 keys with the same "可能"/"不可能" literals, so one renderer
-// can fill in the patternList table regardless of which flow produced it.
+// can fill in the detected/rest pattern lists regardless of which flow produced it.
 const PATTERN_KEYS = ['p_double_top','p_double_bottom','p_head_shoulder_top','p_head_shoulder_bottom',
   'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
   'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island',
@@ -732,37 +760,83 @@ function fitCardText(el, maxPx, minPx) {
 // to the question label when available; omitted entirely for the
 // upload flow (always called with {} or undefined there), so nothing
 // changes for that path.
+// 2026-08-18 redesign (AJ: "UI 介面好悶", option A "重點式" -- see git log
+// for the 3 mockup options this was chosen from): the old version put all
+// 19 patterns in one flat grid regardless of verdict, so a real detection
+// (1-3 cards, typically) was visually drowned out by ~16-18 near-identical
+// gray "不可能"/"不明" cards. This splits the same 19 keys/verdicts (still
+// exactly what chart_pattern_service.py returns -- no new data, no
+// fabricated confidence score) into two tiers: detected patterns get their
+// own prominent bordered row up top; everything else collapses into a
+// <details> so it's available (never hidden/lost) without competing for
+// attention. Shared by both flows exactly as before.
 function renderPatternDetails(patterns, directions) {
-  const list = document.getElementById('patternList');
-  if (!list) return;
+  const detectedGrid = document.getElementById('patternDetectedGrid');
+  const noneMsg = document.getElementById('patternNoneDetected');
+  const restDetails = document.getElementById('patternRestDetails');
+  const restSummary = document.getElementById('patternRestSummary');
+  const restList = document.getElementById('patternRestList');
+  if (!detectedGrid || !restDetails) return;
+
   const hasData = !!(patterns && Object.keys(patterns).length);
-  const unclear = t('ca_unclear', '不明');
-  list.innerHTML = '';
+  detectedGrid.innerHTML = '';
+  if (restList) restList.innerHTML = '';
+
+  if (!hasData) {
+    if (noneMsg) noneMsg.style.display = 'none';
+    restDetails.style.display = 'none';
+    return;
+  }
+
+  const detectedKeys = [];
+  const restKeys = [];
   PATTERN_KEYS.forEach(key => {
-    const raw = hasData ? patterns[key] : null;
-    const isPossible = raw === '可能';
-    const isNotPossible = raw === '不可能';
-    const answerText = raw ? caVerdictLabel(raw) : (hasData ? unclear : '-');
-
-    const card = document.createElement('div');
-    card.className = 'pattern-qa-card';
-
-    const q = document.createElement('span');
-    q.className = 'pattern-qa-q';
-    const dirSuffix = isPossible ? patternDirectionSuffix(key, directions) : '';
-    q.textContent = t(`ca_${key}`, key).replace(/[:：]\s*$/, '') + dirSuffix;
-
-    const a = document.createElement('span');
-    a.id = key; // kept for any future direct-id lookups; harmless otherwise
-    a.className = 'pattern-qa-a' + (isPossible ? ' is-possible' : isNotPossible ? ' is-not-possible' : ' is-unclear');
-    a.textContent = answerText;
-
-    card.appendChild(q);
-    card.appendChild(a);
-    list.appendChild(card);
-    fitCardText(q);
-    fitCardText(a, 15, 10);
+    if (patterns[key] === '可能') detectedKeys.push(key);
+    else restKeys.push(key);
   });
+
+  detectedKeys.forEach(key => {
+    const card = document.createElement('div');
+    card.className = 'pattern-detected-card';
+
+    const dot = document.createElement('span');
+    dot.className = 'pattern-detected-dot';
+
+    const textWrap = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'pattern-detected-name';
+    name.textContent = t(`ca_${key}`, key).replace(/[:：]\s*$/, '') + patternDirectionSuffix(key, directions);
+
+    const verdict = document.createElement('div');
+    verdict.className = 'pattern-detected-verdict';
+    verdict.textContent = caVerdictLabel('可能');
+
+    textWrap.appendChild(name);
+    textWrap.appendChild(verdict);
+    card.appendChild(dot);
+    card.appendChild(textWrap);
+    detectedGrid.appendChild(card);
+    fitCardText(name, 14, 11);
+  });
+
+  if (noneMsg) noneMsg.style.display = detectedKeys.length ? 'none' : 'block';
+
+  if (restKeys.length && restList && restSummary) {
+    restDetails.style.display = '';
+    restSummary.textContent = t('ca_pattern_rest_toggle', 'Show the other {n} checked patterns').replace('{n}', restKeys.length);
+    restKeys.forEach(key => {
+      const raw = patterns[key];
+      const isNotPossible = raw === '不可能';
+      const pill = document.createElement('span');
+      pill.className = 'pattern-rest-pill' + (isNotPossible ? ' is-not-possible' : ' is-unclear');
+      const label = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+      const verdictText = raw ? caVerdictLabel(raw) : t('ca_unclear', '不明');
+      pill.textContent = `${label} · ${verdictText}`;
+      restList.appendChild(pill);
+    });
+  } else {
+    restDetails.style.display = 'none';
+  }
 }
 
 // 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): switchMode()
