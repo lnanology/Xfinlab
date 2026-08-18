@@ -26,37 +26,14 @@
 <style>
 /* Page-specific small adjustments while fully using site style */
 /* 2026-08-18: removed the local .container max-width override that used
-   to live here (was 1200px) -- css/style.css's shared .container is now
+   to live here (was 1000px) -- css/style.css's shared .container is now
    1160px site-wide (AJ: "所有功能頁跟"), so this page just inherits it
    like every other feature page instead of carrying its own value. */
 .upload-hint{color:var(--text3);font-size:0.9rem;margin-top:0.6rem;text-align:center}
 .meta-line{font-size:0.82rem;color:var(--text2);margin-top:0.5rem}
-/* 2026-08-18 (AJ picked "三欄儀表板" from the 5-option layout mockup,
-   then two follow-up fixes):
-   1) "下面畸形，Strategy Historical Backtest 全向下" -- backtestResult
-      renders 7 rows of long label+long sentence text
-      (requestBacktestCompare() below -- e.g. "黃金交叉/死亡交叉（50/200MA）"
-      + "勝率56.2%（16次交易）· 平均回報3.22% · 最大回撤14.04%"), which
-      overflowed/wrapped badly at a ~350px 1/3-width column -- so
-      #backtestBlock and #klineChartPanel (a candlestick chart reads
-      better full-width than at 1/3) both carry .analysis-full to take a
-      full row.
-   2) "跟比例排滿空間，可 2 可 3" -- a fixed 3-column CSS grid left a
-      visibly empty gap whenever a row landed with only 2 tiles (e.g.
-      regime-router + AI-commentary), since grid tracks don't reflow to
-      fill leftover space. Switched .analysis-section from CSS grid to
-      flexbox: each .analysis-main tile is flex:1 1 320px, so a row packs
-      as many tiles as fit (2 or 3, depending on width) and whichever
-      tiles land in a row stretch with flex-grow to fill it completely --
-      no more leftover empty column. .analysis-full still forces a
-      standalone full-width row via flex-basis:100%. .single-col is kept
-      as a utility class (still used by the mobile breakpoint below) in
-      case any future page reuses this same section pattern for
-      genuinely single-column content. */
-.analysis-section{margin-top:1.2rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start}
-.analysis-section.single-col{flex-direction:column}
-.analysis-full{flex-basis:100%}
-.analysis-main{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;flex:1 1 320px;min-width:0}
+.analysis-section{margin-top:1.2rem;display:grid;grid-template-columns:1fr 320px;gap:1rem}
+.analysis-section.single-col{grid-template-columns:1fr}
+.analysis-main{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
 .result-row{display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
 .result-label{color:var(--text3);flex-shrink:0}
 .result-value{font-weight:600;color:var(--text);min-width:0;overflow-wrap:break-word;word-break:break-word;text-align:right}
@@ -110,7 +87,7 @@
 .pattern-rest-pill.is-not-possible{color:var(--text3)}
 .pattern-rest-pill.is-unclear{color:var(--text2)}
 .education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
-@media(max-width:980px){.analysis-section .analysis-main{flex-basis:100%}}
+@media(max-width:980px){.analysis-section{grid-template-columns:1fr}}
 .tf-btn{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.3rem 0.7rem;border-radius:5px;cursor:pointer;font-size:0.78rem;font-family:inherit}
 .tf-btn.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
 .tf-btn:disabled{opacity:0.5;cursor:not-allowed}
@@ -172,34 +149,18 @@
 
   <div id="searchErrorBanner" style="display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid var(--accent-red,#DC2626);color:var(--accent-red,#DC2626);font-size:0.85rem"></div>
 
-  <!-- 2026-08-18 (AJ picked "三欄儀表板" from the 5-option layout mockup,
-       superseding the same-day left/right 2-column change): every data
-       block is now its own tile flowing through a 3-column grid instead
-       of a fixed left/right split -- chart, AI 分析結果+型態詳情
-       (kept together: #resultContent is also the shareBar screenshot
-       target, see js/share-tools.js's renderShareBar('shareBar',
-       'resultContent', ...) call further down -- splitting it into two
-       separate tiles would break what gets captured for sharing), 市場結構,
-       跨時間框架, 策略歷史回測, 市況配對 Regime Router, AI 文字解讀 are all
-       equal-width tiles; 教育 + decisionFooter/brokerCta/downloadReportBtn
-       form one full-width bar at the bottom (.analysis-full spans all 3
-       columns). Below the existing 980px breakpoint the grid still
-       collapses to a single column, so mobile is unaffected. Every
-       element below is still wired purely via getElementById() in JS
-       (confirmed via grep -- no nextElementSibling/parentElement/
-       closest() relative-DOM code anywhere in this file), so moving
-       these blocks around does not touch any rendering logic. -->
-  <div class="analysis-section" id="analysisSection">
-    <div class="analysis-main analysis-full panel" id="klineChartPanel" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem">
-        <h4 style="margin:0" data-i18n="ca_tv_title">K線圖</h4>
-        <div id="klineTfRow" style="display:flex;gap:4px;flex-wrap:wrap"></div>
-      </div>
-      <div id="patternToggleRow" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:0.6rem"></div>
-      <div id="klineChart" style="height:460px"></div>
+  <div class="panel" id="klineChartPanel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem">
+      <h4 style="margin:0" data-i18n="ca_tv_title">K線圖</h4>
+      <div id="klineTfRow" style="display:flex;gap:4px;flex-wrap:wrap"></div>
     </div>
+    <div id="patternToggleRow" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:0.6rem"></div>
+    <div id="klineChart" style="height:460px"></div>
+  </div>
 
-    <div class="analysis-main" id="resultContent">
+  <div class="analysis-section single-col" id="analysisSection">
+    <div class="analysis-main">
+      <div id="resultContent">
       <h3 style="margin-top:0" data-i18n="ca_result_title">AI 分析結果 <span class="meta-line" id="dataSourceTag" style="display:inline;margin-left:0.4rem"></span></h3>
 
       <div class="result-row"><div class="result-label" data-i18n="ca_trend">趨勢方向</div><div class="result-value" id="trendValue">-</div></div>
@@ -230,65 +191,63 @@
         <div class="pattern-rest-list" id="patternRestList"></div>
       </details>
       </div>
-    </div>
 
-    <div class="analysis-main" id="marketStructureBlock" style="display:none">
-      <h4 style="margin-top:0" data-i18n="ca_ms_title">市場結構（Market Structure）</h4>
-      <div class="result-row"><div class="result-label" data-i18n="ca_ms_prior">先前結構</div><div class="result-value" id="msPriorStructure">-</div></div>
-      <!-- 2026-07-30 addition (Market Structure Engine V2): quantified
-           0-100 sub-engine scores, replacing the old boolean-only read.
-           Hidden when data.market_structure has no score fields (e.g. an
-           older cached response) so this degrades gracefully. -->
-      <div class="pattern-qa-grid" id="msScoreGrid" style="margin-top:0.5rem;display:none"></div>
-      <!-- 2026-07-30 addition: Order Flow / Volume Profile / Institutional
-           Footprint. These 3 are OHLCV-only APPROXIMATIONS (no real
-           order-book/tick/dark-pool data available to this codebase) --
-           kept in their own grid with a distinct disclosure line so they
-           are never confused with the 6 primary calibrated-weight scores
-           above. Hidden entirely when the backend sends no proxy data. -->
-      <div class="pattern-qa-grid" id="msProxyGrid" style="margin-top:0.5rem;display:none"></div>
-      <div id="msEvents" style="margin-top:0.4rem"></div>
-    </div>
+      <div id="marketStructureBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_ms_title">市場結構（Market Structure）</h4>
+        <div class="result-row"><div class="result-label" data-i18n="ca_ms_prior">先前結構</div><div class="result-value" id="msPriorStructure">-</div></div>
+        <!-- 2026-07-30 addition (Market Structure Engine V2): quantified
+             0-100 sub-engine scores, replacing the old boolean-only read.
+             Hidden when data.market_structure has no score fields (e.g. an
+             older cached response) so this degrades gracefully. -->
+        <div class="pattern-qa-grid" id="msScoreGrid" style="margin-top:0.5rem;display:none"></div>
+        <!-- 2026-07-30 addition: Order Flow / Volume Profile / Institutional
+             Footprint. These 3 are OHLCV-only APPROXIMATIONS (no real
+             order-book/tick/dark-pool data available to this codebase) --
+             kept in their own grid with a distinct disclosure line so they
+             are never confused with the 6 primary calibrated-weight scores
+             above. Hidden entirely when the backend sends no proxy data. -->
+        <div class="pattern-qa-grid" id="msProxyGrid" style="margin-top:0.5rem;display:none"></div>
+        <div id="msEvents" style="margin-top:0.4rem"></div>
+      </div>
 
-    <div class="analysis-main" id="mtfBlock" style="display:none">
-      <h4 style="margin-top:0" data-i18n="ca_mtf_title">跨時間框架（選填）</h4>
-      <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_mtf_hint">比較週線/日線/1小時嘅趨勢是否一致（非必需，主動按先會查）</p>
-      <button class="btn-secondary" id="mtfBtn" onclick="requestMultiTimeframe()" data-i18n="ca_mtf_btn" style="border-color:var(--blue,#D35400)">📊 查看跨時間框架</button>
-      <div id="mtfResult" style="margin-top:0.6rem"></div>
-    </div>
+      <div id="mtfBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_mtf_title">跨時間框架（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_mtf_hint">比較週線/日線/1小時嘅趨勢是否一致（非必需，主動按先會查）</p>
+        <button class="btn-secondary" id="mtfBtn" onclick="requestMultiTimeframe()" data-i18n="ca_mtf_btn" style="border-color:var(--blue,#D35400)">📊 查看跨時間框架</button>
+        <div id="mtfResult" style="margin-top:0.6rem"></div>
+      </div>
 
-    <div class="analysis-main analysis-full" id="backtestBlock" style="display:none">
-      <h4 style="margin-top:0" data-i18n="ca_backtest_title">策略歷史回測（選填）</h4>
-      <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_backtest_hint">用真實歷史數據回測幾種策略嘅過往勝率／回報／回撤（非必需，主動按先會查；細樣本統計學上唔可靠，過去表現不代表未來）</p>
-      <button class="btn-secondary" id="backtestBtn" onclick="requestBacktestCompare()" data-i18n="ca_backtest_btn" style="border-color:var(--blue,#D35400)">🧪 回測比較策略</button>
-      <div id="backtestResult" style="margin-top:0.6rem"></div>
-    </div>
+      <div id="backtestBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_backtest_title">策略歷史回測（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_backtest_hint">用真實歷史數據回測幾種策略嘅過往勝率／回報／回撤（非必需，主動按先會查；細樣本統計學上唔可靠，過去表現不代表未來）</p>
+        <button class="btn-secondary" id="backtestBtn" onclick="requestBacktestCompare()" data-i18n="ca_backtest_btn" style="border-color:var(--blue,#D35400)">🧪 回測比較策略</button>
+        <div id="backtestResult" style="margin-top:0.6rem"></div>
+      </div>
 
-    <!-- Regime Router (P3 of the Quant Research Factory roadmap, 2026-08-10):
-         same button-triggered lazy-fetch pattern as Multi-Timeframe/Backtest
-         above. Shows the current causal market regime (fast live call) plus
-         whichever composed signal combo (services/formula_composer_service.py)
-         has historically performed best in that same regime, per services/
-         regime_router_service.py. Coverage of the "best combo" half grows as
-         the scheduled scan job works through the platform's core symbol
-         universe, so this honestly shows "not enough data yet" for most
-         tickers not yet scanned rather than faking a result. -->
-    <div class="analysis-main" id="regimeRouterBlock" style="display:none">
-      <h4 style="margin-top:0" data-i18n="ca_regime_router_title">市況配對 Regime Router（選填）</h4>
-      <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_regime_router_hint">睇下現時市況同歷史上邊個訊號組合表現最好（非必需，主動按先會查；歷史統計，唔係投資建議）</p>
-      <button class="btn-secondary" id="regimeRouterBtn" onclick="requestRegimeRouter()" data-i18n="ca_regime_router_btn" style="border-color:var(--blue,#D35400)">🧭 查看市況配對</button>
-      <div id="regimeRouterResult" style="margin-top:0.6rem"></div>
-    </div>
+      <!-- Regime Router (P3 of the Quant Research Factory roadmap, 2026-08-10):
+           same button-triggered lazy-fetch pattern as Multi-Timeframe/Backtest
+           above. Shows the current causal market regime (fast live call) plus
+           whichever composed signal combo (services/formula_composer_service.py)
+           has historically performed best in that same regime, per services/
+           regime_router_service.py. Coverage of the "best combo" half grows as
+           the scheduled scan job works through the platform's core symbol
+           universe, so this honestly shows "not enough data yet" for most
+           tickers not yet scanned rather than faking a result. -->
+      <div id="regimeRouterBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_regime_router_title">市況配對 Regime Router（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_regime_router_hint">睇下現時市況同歷史上邊個訊號組合表現最好（非必需，主動按先會查；歷史統計，唔係投資建議）</p>
+        <button class="btn-secondary" id="regimeRouterBtn" onclick="requestRegimeRouter()" data-i18n="ca_regime_router_btn" style="border-color:var(--blue,#D35400)">🧭 查看市況配對</button>
+        <div id="regimeRouterResult" style="margin-top:0.6rem"></div>
+      </div>
 
-    <div class="analysis-main" id="aiCommentaryBlock" style="display:none">
-      <h4 style="margin-top:0" data-i18n="ca_ai_commentary_title">AI 文字解讀（選填）</h4>
-      <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_ai_commentary_hint">型態辨識需要截圖先做到；呢度可以叫AI將上面嘅真實數據寫成一段易讀總結（非必需，主動按先會叫AI）</p>
-      <button class="btn-secondary" id="commentaryBtn" onclick="requestAiCommentary()" data-i18n="ca_ai_commentary_btn" style="border-color:var(--blue,#D35400)">🤖 產生AI文字解讀</button>
-      <p class="meta-line" id="commentaryResult" style="margin-top:0.6rem"></p>
-    </div>
+      <div id="aiCommentaryBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_ai_commentary_title">AI 文字解讀（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_ai_commentary_hint">型態辨識需要截圖先做到；呢度可以叫AI將上面嘅真實數據寫成一段易讀總結（非必需，主動按先會叫AI）</p>
+        <button class="btn-secondary" id="commentaryBtn" onclick="requestAiCommentary()" data-i18n="ca_ai_commentary_btn" style="border-color:var(--blue,#D35400)">🤖 產生AI文字解讀</button>
+        <p class="meta-line" id="commentaryResult" style="margin-top:0.6rem"></p>
+      </div>
 
-    <div class="analysis-full">
-      <div class="education" style="margin-top:0">
+      <div class="education">
         <h4 data-i18n="ca_edu_title">AI 教育：指標說明</h4>
         <p><strong data-i18n="ca_edu_support_term">支撐位</strong><span data-i18n="ca_edu_support_desc">：價格下跌時多方可能出現買盤的位置，若跌破可能轉為賣壓。</span></p>
         <p><strong data-i18n="ca_edu_resistance_term">阻力位</strong><span data-i18n="ca_edu_resistance_desc">：價格上漲時空方可能出現的賣壓位置，若突破可能帶來延續上漲。</span></p>
@@ -298,10 +257,12 @@
       <div id="decisionFooter"></div>
       <div id="brokerCta"></div>
       <button class="btn-secondary" id="downloadReportBtn" type="button" data-i18n="report_download_pdf" style="display:none;margin-top:0.6rem">📄 下載 PDF 報告</button>
+      </div>
+
+      <div id="shareBar"></div>
+
     </div>
   </div>
-
-  <div id="shareBar"></div>
 
 </div>
 
