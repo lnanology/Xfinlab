@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import Optional
 
@@ -77,7 +77,7 @@ async def submit_feedback(body: FeedbackRequest):
 
 
 @router.get("/feedback/list")
-def get_feedback(token: str, type: Optional[str] = None):
+def get_feedback(token: str, request: Request, type: Optional[str] = None):
     """
     2026-07-30 addition: optional `type` filter, backward compatible --
     omitting it returns every row exactly as before. Added so the
@@ -85,12 +85,27 @@ def get_feedback(token: str, type: Optional[str] = None):
     with type="intelligence_early_access", see api/intelligence.py) can be
     listed separately from general bug-report/feature-request feedback in
     admin.html, without needing its own dedicated table.
+
+    2026-08-18 fix (AJ saw inconsistent errors on admin.html -- Feature
+    Flags panel said "401: Invalid token" while this panel said "403:
+    Admin only" for what turned out to be the exact same expired
+    adminToken): this endpoint used to do its own ad-hoc
+    verify_token()+sub-email check, collapsing "token doesn't decode at
+    all" and "token decodes but isn't the admin" into a single 403 --
+    unlike every other admin endpoint in api/admin.py, which uses the
+    shared verify_admin() helper and reports those as 401 vs 403
+    respectively. Switched to verify_admin() so the error code/message is
+    consistent with the rest of the admin panel, and so this endpoint
+    also gets the IP-allowlist check and audit-log entry every other
+    admin action already gets (it was silently skipping both before).
+    The actual root cause of AJ's specific 401/403s is unrelated to this
+    inconsistency -- see backend/auth/jwt_handler.py: JWT_SECRET isn't
+    set in the deployment env, so a fresh random signing secret is
+    generated on every backend restart, invalidating every existing
+    token (including the admin session) until it's set permanently.
     """
-    from backend.auth.jwt_handler import verify_token
-    from fastapi import HTTPException
-    payload = verify_token(token)
-    if not payload or payload.get("sub") != "abcoaj888@gmail.com":
-        raise HTTPException(status_code=403, detail="Admin only")
+    from api.admin import verify_admin
+    verify_admin(token, "get_feedback", request)
 
     conn = get_db()
     if type:
