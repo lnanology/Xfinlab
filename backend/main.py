@@ -89,6 +89,7 @@ from auth.social_login import router as social_login_router
 from auth.whatsapp_auth import router as whatsapp_auth_router
 from api.telegram_webhook import router as telegram_webhook_router
 from api.webhooks_paddle import router as webhooks_paddle_router
+from api.webhooks_stripe import router as webhooks_stripe_router
 from api.video import router as video_router
 from api.formulas import router as formulas_router
 
@@ -261,6 +262,7 @@ app.include_router(social_login_router, prefix="/api", tags=["Social Login"])
 app.include_router(whatsapp_auth_router, prefix="/api", tags=["WhatsApp OTP"])
 app.include_router(telegram_webhook_router, prefix="/api", tags=["Telegram Webhook"])
 app.include_router(webhooks_paddle_router, prefix="/api", tags=["Paddle Webhook"])
+app.include_router(webhooks_stripe_router, prefix="/api", tags=["Stripe Payments"])
 app.include_router(video_router, prefix="/api", tags=["Video Engine"])
 app.include_router(formulas_router, prefix="/api", tags=["Formula Engine"])
 

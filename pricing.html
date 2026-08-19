@@ -271,7 +271,7 @@
         <div class="period" id="basicPeriod" data-i18n="pricing_free_period">/month</div>
       </div>
       <div class="plan-desc" data-i18n="pricing_basic_desc">A light step up for casual investors who want full feature access.</div>
-      <button class="btn-plan btn-starter" onclick="handleUpgrade('basic')" data-i18n="pricing_basic_btn">Start Basic</button>
+      <button class="btn-plan btn-starter" onclick="handleUpgrade('basic', this)" data-i18n="pricing_basic_btn">Start Basic</button>
       <div class="features-label" data-i18n="pricing_everything_free_plus">Everything in Free, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">All feature modules unlocked</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">Unlimited watchlist</span></div>
@@ -295,7 +295,7 @@
       </div>
       <div class="promo-badge" data-i18n="pricing_pro_promo_badge">Intro price, limited time</div>
       <div class="plan-desc" data-i18n="pricing_pro_desc">For active investors who want more AI firepower.</div>
-      <button class="btn-plan btn-starter" onclick="handleUpgrade('pro')" data-i18n="pricing_pro_btn">Start Pro Plan</button>
+      <button class="btn-plan btn-starter" onclick="handleUpgrade('pro', this)" data-i18n="pricing_pro_btn">Start Pro Plan</button>
       <div class="features-label" data-i18n="pricing_everything_basic_plus">Everything in Basic, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_advanced_unlock">Unlocks all advanced AI engines (Agent Debate, Smart Beta, Scenario Lab, Market Regime, Multi-Timeframe)</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">Unlimited watchlist</span></div>
@@ -310,7 +310,7 @@
         <div class="period" id="proplusPeriod" data-i18n="pricing_free_period">/month</div>
       </div>
       <div class="plan-desc" data-i18n="pricing_proplus_desc">Institutional-grade AI research for serious traders.</div>
-      <button class="btn-plan btn-pro" onclick="handleUpgrade('proplus')" data-i18n="pricing_proplus_btn">Start Pro+ Plan</button>
+      <button class="btn-plan btn-pro" onclick="handleUpgrade('proplus', this)" data-i18n="pricing_proplus_btn">Start Pro+ Plan</button>
       <div class="features-label" data-i18n="pricing_everything_pro_plus">Everything in Pro, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">All feature modules unlocked</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f8">AI Research Assistant</span></div>
@@ -325,7 +325,7 @@
         <div class="period" id="professionalPeriod" data-i18n="pricing_free_period">/month</div>
       </div>
       <div class="plan-desc" data-i18n="pricing_professional_desc">Full-power AI research for professionals who need everything.</div>
-      <button class="btn-plan btn-pro" onclick="handleUpgrade('professional')" data-i18n="pricing_professional_btn">Go Professional</button>
+      <button class="btn-plan btn-pro" onclick="handleUpgrade('professional', this)" data-i18n="pricing_professional_btn">Go Professional</button>
       <div class="features-label" data-i18n="pricing_everything_proplus_plus">Everything in Pro+, plus</div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f8">API access</span></div>
       <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f5">Early access to new features</span></div>
@@ -574,13 +574,53 @@ function applyRegionalPricing() {
 document.addEventListener('DOMContentLoaded', applyRegionalPricing);
 document.addEventListener('i18nApplied', applyRegionalPricing);
 
-function handleUpgrade(plan) {
+// 2026-08-19 (AJ: "Stripe同Paddle並存"): real checkout, replacing the old
+// permanent "coming soon" alert. Tries Stripe first (POST
+// /api/stripe/create-checkout-session), falls back to Paddle (POST
+// /api/paddle/create-checkout-session) if Stripe isn't configured yet for
+// this specific plan+cycle combo, and only falls back to the original
+// "coming soon" message if NEITHER provider has that combo's price ID set
+// yet -- see api/webhooks_stripe.py / api/webhooks_paddle.py, both
+// dormant-safe until AJ finishes setting up the relevant Railway env vars.
+// Every real tier (basic/pro/proplus/professional) and both billing
+// cycles go through this same path -- nothing here is Pro-only.
+async function _tryCheckout(url, token, plan, cycle) {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, plan, cycle }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.checkout_url || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function handleUpgrade(plan, btn) {
   const token = localStorage.getItem('xfinlab_token');
   if (!token) {
     window.location.href = 'login.html';
     return;
   }
-  // 之後接 Paddle
+  const cycle = isAnnual ? 'annual' : 'monthly';
+
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = t('pricing_upgrade_loading', 'Loading checkout…'); }
+
+  let checkoutUrl = await _tryCheckout('https://api.xfinlab.com/api/stripe/create-checkout-session', token, plan, cycle);
+  if (!checkoutUrl) {
+    checkoutUrl = await _tryCheckout('https://api.xfinlab.com/api/paddle/create-checkout-session', token, plan, cycle);
+  }
+
+  if (checkoutUrl) {
+    window.location.href = checkoutUrl;
+    return;
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = originalText; }
   const msgTemplate = t('pricing_alert_upgrade_soon', "Upgrading to {plan} plan coming soon! We'll notify you when payment is available.");
   alert(msgTemplate.replace('{plan}', plan.toUpperCase()));
 }

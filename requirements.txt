@@ -22,3 +22,4 @@ Pillow==12.2.0
 dnspython==2.8.0
 QuantLib==1.43
 sympy==1.14.0
+stripe==15.5.1

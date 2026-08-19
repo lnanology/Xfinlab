@@ -13,11 +13,22 @@ instead of either crashing or -- far worse -- accepting unverified,
 unsigned requests as real payments. It only becomes live once a real
 Paddle account exists and its webhook secret is set as an env var.
 
+2026-08-19 (AJ: "Stripe同Paddle並存"): added the checkout-creation half
+(POST /paddle/create-checkout-session, mirroring api/webhooks_stripe.py's
+endpoint of the same name) and generalized the webhook's plan resolution
+from a hardcoded "pro" to any of pricing.html's 4 real, backend-enforced
+tiers (basic/pro/proplus/professional -- see services/token_quota_service
+.py's PLAN_TOKEN_PCT), sharing the exact same grant logic as Stripe via
+services/plan_grant_service.py. The env var names for the pro tier
+(PADDLE_PRICE_ID_PRO_MONTHLY/PADDLE_PRICE_ID_PRO_ANNUAL) are unchanged --
+they already matched the new generalized `PADDLE_PRICE_ID_{PLAN}_{CYCLE}`
+pattern, so this is a non-breaking extension, not a migration.
+
 Field names below (event_type, data.custom_data, data.items[].price.id,
-etc.) follow Paddle Billing's documented webhook payload shape as of
-this writing. They are NOT yet verified against a real captured payload
--- there is no live Paddle sandbox account in this session to test
-against -- so treat this as "should work, verify against Paddle's
+etc.) follow Paddle Billing's documented webhook/Transactions API shape
+as of this writing. They are NOT yet verified against a real captured
+payload -- there is no live Paddle sandbox account in this session to
+test against -- so treat this as "should work, verify against Paddle's
 sandbox 'send test event' feature before relying on it in production."
 Every field access below is defensive (.get() with fallbacks) specifically
 because of that: a shape mismatch should degrade to "skipped, logged",
@@ -29,19 +40,131 @@ import logging
 import os
 import time
 
-from fastapi import APIRouter, Request
+import requests
+from fastapi import APIRouter, HTTPException, Request
+
+from services.plan_grant_service import grant_plan, VALID_PLANS, VALID_CYCLES
 
 router = APIRouter()
 logger = logging.getLogger("xfinlab.webhooks.paddle")
 
 PADDLE_WEBHOOK_SECRET = os.getenv("PADDLE_WEBHOOK_SECRET", "")
 
+# Server-side API key for CREATING transactions (Paddle dashboard ->
+# Developer Tools -> Authentication) -- distinct from PADDLE_WEBHOOK_SECRET
+# above, which only verifies INCOMING webhook signatures. Also dormant:
+# /paddle/create-checkout-session 503s until this is set.
+PADDLE_API_KEY = os.getenv("PADDLE_API_KEY", "")
+PADDLE_ENV = os.getenv("PADDLE_ENV", "sandbox")  # "sandbox" or "production"
+PADDLE_API_BASE = (
+    "https://api.paddle.com" if PADDLE_ENV == "production" else "https://sandbox-api.paddle.com"
+)
+SITE_URL = os.getenv("SITE_URL", "https://www.xfinlab.com")
+
 # Map your real Paddle Billing price IDs here once they exist (Paddle
-# dashboard -> Catalog -> Prices). Until then both are empty and every
-# event's plan lookup below simply logs "unknown price_id, skipped" --
-# same dormant-safe posture as the rest of this file.
-PADDLE_PRICE_ID_PRO_MONTHLY = os.getenv("PADDLE_PRICE_ID_PRO_MONTHLY", "")
-PADDLE_PRICE_ID_PRO_ANNUAL = os.getenv("PADDLE_PRICE_ID_PRO_ANNUAL", "")
+# dashboard -> Catalog -> Prices). Generalized pattern
+# PADDLE_PRICE_ID_{PLAN}_{CYCLE} -- PADDLE_PRICE_ID_PRO_MONTHLY/
+# PADDLE_PRICE_ID_PRO_ANNUAL are the same two names this file has always
+# used, the other 6 (basic/proplus/professional x monthly/annual) are new
+# and equally dormant-safe (empty by default). Until a given combo's env
+# var is set, that tier simply isn't offered/recognized yet -- same
+# posture as the rest of this file.
+
+
+def _price_id_for(plan: str, cycle: str) -> str:
+    return os.getenv(f"PADDLE_PRICE_ID_{plan.upper()}_{cycle.upper()}", "")
+
+
+def _reverse_price_lookup(price_id: str):
+    """Fallback for webhook events that don't carry custom_data.xfinlab_plan
+    (e.g. a transaction created manually in the Paddle dashboard rather
+    than via /paddle/create-checkout-session below) -- matches the raw
+    Paddle price_id back to a (plan, cycle) pair by checking every real
+    tier's configured env var."""
+    for plan in VALID_PLANS:
+        for cycle in VALID_CYCLES:
+            if price_id and _price_id_for(plan, cycle) == price_id:
+                return plan, cycle
+    return None, None
+
+
+@router.get("/paddle/status")
+def paddle_status():
+    """Public, no secrets -- mirrors /stripe/status so pricing.html can
+    show a real checkout button only for tiers AJ has actually configured
+    in both PADDLE_API_KEY and that tier's price ID env var."""
+    if not PADDLE_API_KEY:
+        return {"enabled": False, "live_price_keys": []}
+    live = []
+    for plan in VALID_PLANS:
+        for cycle in VALID_CYCLES:
+            if _price_id_for(plan, cycle):
+                live.append(f"{plan}-{cycle}")
+    return {"enabled": True, "live_price_keys": live}
+
+
+@router.post("/paddle/create-checkout-session")
+async def create_checkout_session(request: Request):
+    """Creates a real Paddle transaction via the REST API and returns its
+    hosted checkout.url -- same "create server-side, redirect the browser"
+    shape as api/webhooks_stripe.py's endpoint of the same name, so
+    pricing.html's frontend code can treat both providers identically."""
+    if not PADDLE_API_KEY:
+        raise HTTPException(status_code=503, detail="Paddle is not configured yet")
+
+    body = await request.json()
+    token = body.get("token", "")
+    plan = (body.get("plan") or "").strip().lower()
+    cycle = (body.get("cycle") or "monthly").strip().lower()
+
+    if plan not in VALID_PLANS:
+        raise HTTPException(status_code=400, detail=f"Unknown plan {plan!r}")
+    if cycle not in VALID_CYCLES:
+        raise HTTPException(status_code=400, detail=f"Unknown billing cycle {cycle!r}")
+
+    from backend.auth.jwt_handler import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id = payload.get("id")
+    email = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    price_id = _price_id_for(plan, cycle)
+    if not price_id:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Paddle price ID for {plan}/{cycle} is not configured yet",
+        )
+
+    custom_data = {"xfinlab_user_id": str(user_id), "xfinlab_plan": plan, "xfinlab_cycle": cycle}
+    try:
+        resp = requests.post(
+            f"{PADDLE_API_BASE}/transactions",
+            headers={
+                "Authorization": f"Bearer {PADDLE_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "items": [{"price_id": price_id, "quantity": 1}],
+                "customer": {"email": email} if email else None,
+                "custom_data": custom_data,
+                "checkout": {"url": f"{SITE_URL}/pricing.html?paddle=return"},
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        checkout_url = (resp.json().get("data") or {}).get("checkout", {}).get("url")
+    except Exception as e:
+        logger.warning(f"[paddle_checkout] transaction creation failed for user {user_id}: {e}")
+        raise HTTPException(status_code=502, detail="Could not start Paddle checkout, please try again")
+
+    if not checkout_url:
+        logger.warning(f"[paddle_checkout] transaction created but no checkout.url in response for user {user_id}")
+        raise HTTPException(status_code=502, detail="Could not start Paddle checkout, please try again")
+
+    return {"status": "ok", "checkout_url": checkout_url}
 
 
 def _verify_signature(raw_body: bytes, signature_header: str) -> bool:
@@ -67,10 +190,9 @@ def _verify_signature(raw_body: bytes, signature_header: str) -> bool:
 
 def _resolve_user_id(data: dict):
     """Expects the checkout to have been created with
-    `custom_data: {"xfinlab_user_id": <id>}` -- this must be set on the
-    checkout/transaction creation side (frontend or backend) whenever the
-    real Paddle checkout is wired up, so the webhook knows which XFINLAB
-    account to credit. Falls back to None (caller skips) if missing."""
+    `custom_data: {"xfinlab_user_id": <id>}` -- set automatically by
+    /paddle/create-checkout-session above for every real checkout this
+    site initiates. Falls back to None (caller skips) if missing."""
     custom_data = data.get("custom_data") or {}
     uid = custom_data.get("xfinlab_user_id")
     try:
@@ -79,13 +201,27 @@ def _resolve_user_id(data: dict):
         return None
 
 
-def _resolve_price_id(data: dict):
+def _resolve_plan_cycle(data: dict):
+    """Prefers custom_data.xfinlab_plan/xfinlab_cycle (set by this file's
+    own checkout endpoint above) -- falls back to reverse-matching the raw
+    Paddle price_id against the configured env vars for any transaction
+    that didn't go through /paddle/create-checkout-session (e.g. one
+    created manually in the Paddle dashboard for testing)."""
+    custom_data = data.get("custom_data") or {}
+    plan = (custom_data.get("xfinlab_plan") or "").strip().lower()
+    cycle = (custom_data.get("xfinlab_cycle") or "monthly").strip().lower()
+    if plan in VALID_PLANS and cycle in VALID_CYCLES:
+        return plan, cycle
+
     items = data.get("items") or []
     for item in items:
         price = item.get("price") or {}
-        if price.get("id"):
-            return price["id"]
-    return None
+        price_id = price.get("id")
+        if price_id:
+            plan, cycle = _reverse_price_lookup(price_id)
+            if plan:
+                return plan, cycle
+    return None, None
 
 
 @router.post("/webhooks/paddle")
@@ -125,35 +261,21 @@ async def paddle_webhook(request: Request):
         logger.warning(f"[paddle_webhook] {event_type}: no custom_data.xfinlab_user_id, skipping")
         return {"status": "skipped", "reason": "no xfinlab_user_id in custom_data"}
 
-    price_id = _resolve_price_id(data)
+    plan, cycle = _resolve_plan_cycle(data)
+    if plan is None:
+        logger.warning(f"[paddle_webhook] {event_type}: could not resolve plan/cycle, skipping")
+        return {"status": "skipped", "reason": "unrecognized plan/price_id"}
 
-    if price_id and PADDLE_PRICE_ID_PRO_ANNUAL and price_id == PADDLE_PRICE_ID_PRO_ANNUAL:
-        # Exactly the function api/admin.py's mark-annual-pro endpoint
-        # calls manually today -- real 1-year expiry + referral reward,
-        # see services/referral_service.py's docstring on this function.
-        from services.referral_service import ReferralService
-        result = ReferralService.mark_annual_pro_payment(user_id)
-        logger.info(f"[paddle_webhook] {event_type}: annual Pro granted to user {user_id}")
-        return {"status": "ok", "action": "annual_pro_granted", "result": result}
-
-    if price_id and PADDLE_PRICE_ID_PRO_MONTHLY and price_id == PADDLE_PRICE_ID_PRO_MONTHLY:
-        # Recurring monthly: extend plan_expires_at by one billing period
-        # on every successful charge (initial + each renewal), rather
-        # than a single fixed date -- Paddle itself owns the recurring
-        # schedule; this just keeps our local expiry-aware resolver
-        # (services/quota_middleware.py resolve_real_plan()) in sync with
-        # "still an active paying subscriber as of the last charge."
-        import datetime
-        import sqlite3
-
-        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
-        expires_at = (datetime.datetime.utcnow() + datetime.timedelta(days=35)).strftime("%Y-%m-%d %H:%M:%S")
-        conn = sqlite3.connect(db_path)
-        conn.execute("UPDATE users SET plan='pro', plan_expires_at=? WHERE id=?", (expires_at, user_id))
-        conn.commit()
-        conn.close()
-        logger.info(f"[paddle_webhook] {event_type}: monthly Pro renewed for user {user_id} until {expires_at}")
-        return {"status": "ok", "action": "monthly_pro_renewed", "plan_expires_at": expires_at}
-
-    logger.warning(f"[paddle_webhook] {event_type}: unrecognized price_id {price_id!r}, skipped")
-    return {"status": "skipped", "reason": f"unrecognized price_id {price_id!r}"}
+    # Paddle fires transaction.completed/subscription.activated on both the
+    # initial sale AND every renewal (no separate "renewal" event type like
+    # Stripe's invoice.paid) -- calling grant_plan() again on a real annual
+    # renewal a year later is correct, not a bug: for pro+annual it re-runs
+    # ReferralService.mark_annual_pro_payment(), which extends plan_expires_at
+    # another year (exactly what a renewal should do) while its own
+    # mark_paid_conversion() call stays idempotent per referred user, so the
+    # one-time referral reward can never be double-granted. For monthly
+    # combos, grant_plan() always sets a fresh rolling ~35-day expiry, which
+    # is the intended behavior on every single charge, initial or renewal.
+    result = grant_plan(user_id, plan, cycle)
+    logger.info(f"[paddle_webhook] {event_type}: {result['action']} for user {user_id}")
+    return {"status": "ok", "action": result["action"], **{k: v for k, v in result.items() if k != "action"}}
