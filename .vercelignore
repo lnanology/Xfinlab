@@ -1,0 +1,63 @@
+# 2026-08-20: Vercel serves the static frontend only (xfinlab.com) -- the
+# real FastAPI backend runs on Railway (api.xfinlab.com, see Procfile /
+# railway.json). Vercel has zero-config Python auto-detection: it was
+# scanning api/*.py + requirements.txt and bundling the entire backend dep
+# tree (pandas, numpy, scikit-learn, QuantLib, stripe, ...) as serverless
+# functions, which is redundant (Railway already runs it) and started
+# hard-failing the build once that tree crossed Vercel's 500MB per-function
+# bundle limit. Excluding all backend-only paths below stops Vercel from
+# ever detecting a Python function and makes this a plain static deploy.
+
+# Backend Python packages / routers
+ai/
+api/
+auth/
+backend/
+components/
+config/
+database/
+docs/
+engines/
+generated_videos/
+growth/
+models/
+modules/
+reports/
+scripts/
+sdk/
+security/
+services/
+strategies/
+tests/
+assets/
+
+# Backend runtime / deploy config (Railway-only)
+requirements.txt
+requirements-dev.txt
+Procfile
+railway.json
+railway-cron.json
+nixpacks.toml
+litestream.yml
+xfinlab.db
+
+# Dev-only Python scripts, not part of the site
+mock-server.py
+get_youtube_refresh_token.py
+test_crypto.py
+test_decision.py
+test_event.py
+test_news.py
+
+# Local dev / tooling clutter
+.venv/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+.continue/
+.claude/
+.github/
+.env
+.env.local
+.DS_Store
+下午07_52_01.png
