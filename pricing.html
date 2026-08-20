@@ -467,12 +467,20 @@ let isAnnual = false;
 // annual payment buys, matching each Stripe Price's 14-month recurring
 // interval), not a price multiplier -- the price shown here must match
 // what Stripe actually charges, so this is now x12.
-const ANNUAL_MULTIPLIER = 12; // annual price = monthly x 12 (customer then gets 14 months of access before renewal -- 2 months free)
+const ANNUAL_MULTIPLIER = 12; // fallback annual = monthly x 12 (customer then gets 14 months of access before renewal -- 2 months free) -- used for the Pro list-price strike-through and the regional-pricing approximation below, neither of which is a real charge
+// 2026-08-19 (AJ: "Basic Annual你打咗$70，想Basic有額外折扣"): Basic gets a
+// deeper-than-standard annual discount ($70, not the plain x12 $120) as a
+// deliberate entry-tier promo -- so annual prices are no longer a uniform
+// x12 formula, they're the exact real Stripe Price amounts AJ created,
+// one per plan. Pro/Pro+/Professional happen to equal monthly x12; Basic
+// doesn't, and that's intentional. Update this dict (not the multiplier
+// above) if any plan's real Stripe annual price ever changes.
+const ANNUAL_PRICES = { basic: 70, pro: 216, proplus: 588, professional: 1788 };
 // 2026-07-26 fix ("將Pro顯示做$29->$18優惠價"): pro's MONTHLY_PRICES entry is
 // now the real/effective price ($18) that toggleBilling() actually uses for
-// both the big amount and the annual (x12) calculation -- $29 only ever
-// appears as the struck-through reference price via PRO_LIST_PRICE below,
-// so the two numbers can never drift out of sync with each other.
+// the big amount -- $29 only ever appears as the struck-through reference
+// price via PRO_LIST_PRICE below, so the two numbers can never drift out
+// of sync with each other.
 const MONTHLY_PRICES = { basic: 10, pro: 18, proplus: 49, professional: 149 };
 const PRO_LIST_PRICE = 29;
 const TOKEN_PCTS = { Basic: 30, Pro: 50, Proplus: 70, Professional: 90 };
@@ -493,7 +501,8 @@ function toggleBilling() {
     const priceEl = document.getElementById(key + 'Price');
     const periodEl = document.getElementById(key + 'Period');
     const monthly = MONTHLY_PRICES[key];
-    if (priceEl) priceEl.textContent = '$' + (isAnnual ? monthly * ANNUAL_MULTIPLIER : monthly);
+    const annual = ANNUAL_PRICES[key] != null ? ANNUAL_PRICES[key] : monthly * ANNUAL_MULTIPLIER;
+    if (priceEl) priceEl.textContent = '$' + (isAnnual ? annual : monthly);
     if (periodEl) periodEl.textContent = periodText;
   });
 
