@@ -457,10 +457,20 @@
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
 let isAnnual = false;
-const ANNUAL_MULTIPLIER = 14; // annual price = monthly x 14 (product decision 2026-07-13)
+// 2026-08-19 fix (AJ, setting up real Stripe products: "上面4個係分別PLAN的
+// 年付12個月送2個，共付是12個月可用14個月" -- pay 12 months' worth, get 14
+// months of access/validity, i.e. 2 months free): this used to be 14 here,
+// which made the DISPLAYED annual price monthly x 14 (e.g. Pro showed
+// $252/year) while the real Stripe Prices AJ actually created charge
+// monthly x 12 (Pro Annual = $216) -- a real display-vs-charge mismatch.
+// The x14 is a validity-period multiplier (how many months of access one
+// annual payment buys, matching each Stripe Price's 14-month recurring
+// interval), not a price multiplier -- the price shown here must match
+// what Stripe actually charges, so this is now x12.
+const ANNUAL_MULTIPLIER = 12; // annual price = monthly x 12 (customer then gets 14 months of access before renewal -- 2 months free)
 // 2026-07-26 fix ("將Pro顯示做$29->$18優惠價"): pro's MONTHLY_PRICES entry is
 // now the real/effective price ($18) that toggleBilling() actually uses for
-// both the big amount and the annual (x14) calculation -- $29 only ever
+// both the big amount and the annual (x12) calculation -- $29 only ever
 // appears as the struck-through reference price via PRO_LIST_PRICE below,
 // so the two numbers can never drift out of sync with each other.
 const MONTHLY_PRICES = { basic: 10, pro: 18, proplus: 49, professional: 149 };
