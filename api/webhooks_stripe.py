@@ -168,7 +168,15 @@ async def stripe_webhook(request: Request):
     sig_header = request.headers.get("stripe-signature", "")
     stripe = _stripe()
     try:
-        event = stripe.Webhook.construct_event(raw_body, sig_header, STRIPE_WEBHOOK_SECRET)
+        # 2026-08-21 fix: AJ's first real webhook delivery crashed here --
+        # stripe==15.5.1's construct_event() returns a stripe.Event object,
+        # not a plain dict, and this SDK version's Event deliberately
+        # blocks .get() ("'get' is a dict method, but a Event is not a
+        # dict... Use .to_dict() to convert it" -- Railway deploy logs,
+        # AttributeError at this exact line). .to_dict() up front so every
+        # .get() below (already written assuming a plain dict, matching
+        # webhooks_paddle.py's convention) keeps working unchanged.
+        event = stripe.Webhook.construct_event(raw_body, sig_header, STRIPE_WEBHOOK_SECRET).to_dict()
     except Exception as e:
         logger.warning(f"[stripe_webhook] signature verification failed: {e}")
         return {"status": "rejected", "reason": "invalid signature"}
@@ -190,7 +198,10 @@ async def stripe_webhook(request: Request):
         meta = {"user_id": None, "plan": None, "cycle": "monthly"}
         if sub_id:
             try:
-                sub = stripe.Subscription.retrieve(sub_id)
+                # Same stripe.Event .get()-blocking behavior applies to
+                # every other StripeObject in this SDK version -- .to_dict()
+                # here too, same reasoning as above.
+                sub = stripe.Subscription.retrieve(sub_id).to_dict()
                 meta = _resolve_meta({"metadata": sub.get("metadata") or {}})
             except Exception as e:
                 logger.warning(f"[stripe_webhook] invoice.paid: could not resolve subscription {sub_id}: {e}")
