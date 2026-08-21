@@ -119,7 +119,13 @@ async def create_checkout_session(request: Request):
     try:
         session = stripe.checkout.Session.create(
             mode="subscription",
-            payment_method_types=["card"],
+            # 2026-08-21 fix: AJ's account has Stripe Managed Payments
+            # enabled by default, which now handles payment method
+            # selection itself and REJECTS an explicit payment_method_types
+            # list with a 400 ("Unsupported parameter: payment_method_types
+            # ... Managed Payments ... handles this parameter for you") --
+            # confirmed via Railway deploy logs during AJ's first live test
+            # checkout. Omitting it lets Stripe/Managed Payments choose.
             line_items=[{"price": price_id, "quantity": 1}],
             client_reference_id=str(user_id),
             customer_email=email,
