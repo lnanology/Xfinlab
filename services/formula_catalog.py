@@ -88,6 +88,12 @@ _CATEGORY_MAP = {
     "pivot_points_classic": "structure", "pivot_points_camarilla": "structure",
     "regression_channel": "structure",
 
+    # services.formula_engine (2026-08-21, AJ: "江恩理論，加入所有ENGINE") --
+    # classic W.D. Gann geometric/numerological levels, kept as its own
+    # category rather than folded into "structure" since it's a distinct
+    # named technique users will specifically look for.
+    "gann_angles": "gann", "gann_square_of_9": "gann", "gann_time_cycles": "gann",
+
     # services.formula_engine_quantlib (task #777) -- fixed income, real
     # day-count/schedule bond math + dividend-aware American options.
     "bond_clean_price": "fixed_income", "bond_dirty_price": "fixed_income",
@@ -109,6 +115,7 @@ CATEGORIES = {
     "tvm": {"label": "Time Value of Money", "label_zh": "資金時間價值"},
     "stats": {"label": "Statistics & Probability", "label_zh": "統計與概率"},
     "structure": {"label": "Market Structure / Chart Math", "label_zh": "市場結構與圖表數學"},
+    "gann": {"label": "Gann Theory", "label_zh": "江恩理論"},
     "fixed_income": {"label": "Fixed Income & Advanced Derivatives (QuantLib)", "label_zh": "固定收益與進階衍生工具"},
     "solver": {"label": "Reverse Solvers (SymPy)", "label_zh": "反解求解器"},
 }

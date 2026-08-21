@@ -1023,3 +1023,67 @@ def regression_channel(closes: Sequence[float]) -> dict:
         "lower": [f - 2 * resid_std for f in fitted],
         "slope": reg["slope"],
     }
+
+
+# -- Gann Theory (2026-08-21, AJ: "江恩理論，加入所有ENGINE") --------------
+# Classic W.D. Gann geometric/numerological techniques, same neutral-
+# levels-only treatment as the Fibonacci/pivot functions above: no BUY/
+# SELL signal, no claim of backtested edge -- these are the standard
+# published formulas for the technique itself, nothing more.
+
+_GANN_ANGLE_RATIOS = {
+    "1x8": 1 / 8, "1x4": 1 / 4, "1x3": 1 / 3, "1x2": 1 / 2, "1x1": 1.0,
+    "2x1": 2.0, "3x1": 3.0, "4x1": 4.0, "8x1": 8.0,
+}
+_GANN_SQ9_ANGLES = [45, 90, 135, 180, 225, 270, 315, 360]
+_GANN_CYCLE_DAYS = [30, 45, 60, 90, 120, 144, 180, 270, 360]
+
+
+def gann_angles(anchor_price: float, unit_slope: float, bars_elapsed: int, direction: str = "up") -> dict:
+    """Gann Fan Angles: classic trendlines fanned out from a significant
+    swing pivot at fixed price-per-time ratios -- 1x8, 1x4, 1x3, 1x2, 1x1
+    (the master 45-degree line), 2x1, 3x1, 4x1, 8x1 (e.g. "2x1" rises 2
+    price units per 1 time unit, steeper than 1x1; "1x2" rises 1 price
+    unit per 2 time units, shallower). Gann angles have no universal
+    scale -- `unit_slope` is the price-per-bar rate that defines this
+    instrument/timeframe's own "1x1" line (callers typically derive it
+    from the swing's own price range divided by its bar count, e.g.
+    (swing_high - swing_low) / bars_in_swing). Returns each angle's
+    projected price `bars_elapsed` bars after the anchor pivot;
+    direction="up" fans upward from a swing low, "down" fans downward
+    from a swing high."""
+    sign = 1 if direction == "up" else -1
+    return {
+        name: anchor_price + sign * ratio * unit_slope * bars_elapsed
+        for name, ratio in _GANN_ANGLE_RATIOS.items()
+    }
+
+
+def gann_square_of_9(price: float) -> dict:
+    """Gann Square of Nine: root = sqrt(price), then for each angle in
+    {45,90,135,180,225,270,315,360} degrees, level = (root +/- angle/180)^2
+    -- the commonly published "trading formula" reduction of Gann's
+    spiral-of-odd-squares (one full 360-degree rotation = +/-2 on the
+    square root). Produces a symmetric ring of candidate resistance
+    (rXXX, above price) and support (sXXX, below price) levels radiating
+    from the anchor price."""
+    root = math.sqrt(price)
+    out = {}
+    for a in _GANN_SQ9_ANGLES:
+        out[f"r{a}"] = (root + a / 180) ** 2
+        out[f"s{a}"] = max(0.0, (root - a / 180) ** 2)
+    return out
+
+
+def gann_time_cycles(pivot_index: int) -> dict:
+    """Gann Time Cycles: classic anniversary/square-number day counts
+    {30,45,60,90,120,144,180,270,360} projected forward from a significant
+    pivot bar -- candidate future dates where price is more likely to
+    change character (trend change, reversal, or acceleration), per
+    Gann's time-price-squaring theory. `pivot_index` is any integer bar/
+    day count (e.g. an OHLC DataFrame row index, or days-since-epoch);
+    the caller maps the returned bar indices back to real calendar dates
+    using whichever index their own price series uses. A mechanical
+    day-count projection -- no claim of predictive power beyond the
+    classical technique itself."""
+    return {f"{d}d": pivot_index + d for d in _GANN_CYCLE_DAYS}

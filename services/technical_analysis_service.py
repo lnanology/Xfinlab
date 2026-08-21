@@ -43,6 +43,7 @@ from typing import Dict, List, Optional
 
 from services.chart_pattern_service import detect_patterns as _detect_chart_patterns
 from services.market_structure_engine import compute_market_structure as _compute_market_structure_v2
+from services.formula_engine import gann_angles as _gann_angles, gann_square_of_9 as _gann_square_of_9
 from services.i18n import get_translations
 from services.outbound_http import get_with_backoff
 
@@ -165,6 +166,13 @@ class TechnicalAnalysisService:
         # keep working unchanged whether or not they read this new key.
         atr14_series = self._atr(highs, lows, closes, 14)
         atr14 = round(float(atr14_series.iloc[-1]), 4) if not atr14_series.empty else None
+
+        # 2026-08-21 addition (AJ: "江恩理論，加入所有ENGINE") -- Gann
+        # Square of Nine + angle fan, anchored on the same swing points
+        # already computed above for _fibonacci(). See _gann()'s own
+        # docstring; needs atr14 for the fan's price-per-bar rate so this
+        # sits after atr14 is computed.
+        gann = self._gann(swing_highs, swing_lows, last_close, atr14)
         bb_upper, bb_mid, bb_lower = self._bollinger(closes, 20, 2)
         bb_last = (
             {
@@ -271,6 +279,7 @@ class TechnicalAnalysisService:
             ichimoku=ichimoku_last,
             donchian=donchian_last,
             keltner=keltner_last,
+            gann=gann,
         )
 
         decision_levels = self._decision_levels(
@@ -324,6 +333,7 @@ class TechnicalAnalysisService:
             "support": support,
             "resistance": resistance,
             "fibonacci_0618": fib,
+            "gann": gann,
             "volume_ratio": vol_ratio,
             "volume_desc": volume_desc,
             "swing_highs": [round(float(x), 2) for x in swing_highs[-5:]],
@@ -886,6 +896,56 @@ class TechnicalAnalysisService:
             "level_0382": round(swing_high - diff * 0.382, 2),
         }
 
+    @staticmethod
+    def _gann(
+        swing_highs: List[float],
+        swing_lows: List[float],
+        last_close: float,
+        atr14: Optional[float] = None,
+    ) -> Optional[Dict]:
+        """
+        Gann Theory levels (2026-08-21, AJ: "江恩理論，加入所有ENGINE") --
+        real math via services/formula_engine.py's gann_square_of_9() /
+        gann_angles(), not re-derived here. Two pieces:
+
+        1. Square of Nine rotations off TODAY's close (`square_of_9`) --
+           a symmetric ring of candidate resistance/support levels, same
+           spirit as _support_resistance()'s clustered zones above.
+        2. A Fan of angles (`fan`) anchored on the same significant swing
+           _fibonacci() uses (swing_low if price sits above the swing's
+           midpoint, else swing_high), projected 10 bars out. Gann angles
+           need a price-per-bar "1x1" rate with no universal scale --
+           this uses ATR14 (already computed elsewhere in get_analysis())
+           as that rate, since it's a real, already-available measure of
+           this instrument's typical daily range; falls back to 2% of
+           the swing's own range if ATR isn't available yet.
+
+        Returns None when there isn't a valid swing to anchor on (same
+        guard _fibonacci() uses) -- never fabricates a level from nothing.
+        """
+        if not swing_highs or not swing_lows or last_close <= 0:
+            return None
+        swing_high = max(swing_highs)
+        swing_low = min(swing_lows)
+        if swing_high <= swing_low:
+            return None
+
+        unit_slope = atr14 if atr14 and atr14 > 0 else (swing_high - swing_low) * 0.02
+        up = last_close >= (swing_high + swing_low) / 2
+        anchor = swing_low if up else swing_high
+
+        return {
+            "square_of_9": {k: round(v, 2) for k, v in _gann_square_of_9(last_close).items()},
+            "fan": {
+                k: round(v, 2)
+                for k, v in _gann_angles(
+                    anchor, unit_slope, bars_elapsed=10, direction="up" if up else "down"
+                ).items()
+            },
+            "anchor_price": round(anchor, 2),
+            "anchor_type": "swing_low" if up else "swing_high",
+        }
+
 
     # Phase 1 Confluence Engine upgrade: each signal type now carries a
     # weight instead of counting equally. Weights reflect how much a signal
@@ -914,6 +974,12 @@ class TechnicalAnalysisService:
         "donchian": 1.0,
         "ichimoku": 1.0,
         "keltner": 0.8,
+        # 2026-08-21 addition (AJ: "江恩理論，加入所有ENGINE") -- weighted
+        # like the other single-technique proximity checks (donchian/
+        # ichimoku), not as high as support/resistance since Square of
+        # Nine levels are a mathematical construct rather than levels
+        # price has actually touched before.
+        "gann": 1.0,
     }
 
     @classmethod
@@ -932,6 +998,7 @@ class TechnicalAnalysisService:
         ichimoku: Optional[Dict] = None,
         donchian: Optional[Dict] = None,
         keltner: Optional[Dict] = None,
+        gann: Optional[Dict] = None,
         proximity_tolerance: float = 0.03,
     ) -> Dict:
         """
@@ -1033,6 +1100,21 @@ class TechnicalAnalysisService:
                 signals.append({"signal": "現價突破Keltner上軌，強勢延續", "bias": 1, "weight": w["keltner"]})
             elif last_close <= keltner["lower"]:
                 signals.append({"signal": "現價跌穿Keltner下軌，弱勢延續", "bias": -1, "weight": w["keltner"]})
+
+        # 12. Gann Square of Nine level proximity (2026-08-21 addition) --
+        # same proximity-check shape as #4 support/resistance, applied to
+        # the nearest Square of Nine resistance/support ring instead of a
+        # touched swing-point zone.
+        if gann and gann.get("square_of_9") and last_close > 0:
+            sq9 = gann["square_of_9"]
+            r_levels = [v for k, v in sq9.items() if k.startswith("r")]
+            s_levels = [v for k, v in sq9.items() if k.startswith("s")]
+            nearest_r = min(r_levels, key=lambda v: abs(v - last_close)) if r_levels else None
+            nearest_s = min(s_levels, key=lambda v: abs(last_close - v)) if s_levels else None
+            if nearest_r is not None and abs(nearest_r - last_close) / last_close <= proximity_tolerance:
+                signals.append({"signal": "現價貼近江恩九宮格阻力位，回落風險", "bias": -1, "weight": w["gann"]})
+            elif nearest_s is not None and abs(last_close - nearest_s) / last_close <= proximity_tolerance:
+                signals.append({"signal": "現價貼近江恩九宮格支撐位，反彈機會", "bias": 1, "weight": w["gann"]})
 
         counted = len(signals)
         weight_total = sum(s["weight"] for s in signals)
