@@ -243,7 +243,7 @@
 <div class="period" data-i18n="pricing_free_period" id="basicPeriod">/महिना</div>
 </div>
 <div class="plan-desc" data-i18n="pricing_basic_desc">पूर्ण फीचर अ‍ॅक्सेस हवा असलेल्या प्रासंगिक गुंतवणूकदारांसाठी छोटी पायरी.</div>
-<button class="btn-plan btn-starter" data-i18n="pricing_basic_btn" onclick="handleUpgrade('basic')">Basic सह सुरू करा</button>
+<button class="btn-plan btn-starter" data-i18n="pricing_basic_btn" onclick=\"handleUpgrade('basic', this)\">Basic सह सुरू करा</button>
 <div class="features-label" data-i18n="pricing_everything_free_plus">मोफत मधील सर्व काही, तसेच</div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">सर्व फीचर मॉड्यूल्स अनलॉक</span></div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">अमर्यादित वॉचलिस्ट</span></div>
@@ -266,7 +266,7 @@
 </div>
 <div class="promo-badge" data-i18n="pricing_pro_promo_badge">परिचयात्मक किंमत, मर्यादित वेळ</div>
 <div class="plan-desc" data-i18n="pricing_pro_desc">अधिक AI सामर्थ्य हवे असलेल्या सक्रिय गुंतवणूकदारांसाठी.</div>
-<button class="btn-plan btn-starter" data-i18n="pricing_pro_btn" onclick="handleUpgrade('pro')">Pro योजना सुरू करा</button>
+<button class="btn-plan btn-starter" data-i18n="pricing_pro_btn" onclick=\"handleUpgrade('pro', this)\">Pro योजना सुरू करा</button>
 <div class="features-label" data-i18n="pricing_everything_basic_plus">Basic मधील सर्व काही, अधिक</div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_advanced_unlock">सर्व प्रगत AI इंजिन अनलॉक करते (एजंट डिबेट, Smart Beta, सिनारिओ लॅब, मार्केट रेजिम, मल्टी-टाइमफ्रेम)</span></div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">अमर्यादित वॉचलिस्ट</span></div>
@@ -280,7 +280,7 @@
 <div class="period" data-i18n="pricing_free_period" id="proplusPeriod">/महिना</div>
 </div>
 <div class="plan-desc" data-i18n="pricing_proplus_desc">गंभीर ट्रेडर्ससाठी संस्थात्मक-स्तरीय AI संशोधन.</div>
-<button class="btn-plan btn-pro" data-i18n="pricing_proplus_btn" onclick="handleUpgrade('proplus')">Pro+ सह सुरू करा</button>
+<button class="btn-plan btn-pro" data-i18n="pricing_proplus_btn" onclick=\"handleUpgrade('proplus', this)\">Pro+ सह सुरू करा</button>
 <div class="features-label" data-i18n="pricing_everything_pro_plus">Pro मधील सर्व काही, तसेच</div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">सर्व फीचर मॉड्यूल्स अनलॉक</span></div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f8">AI संशोधन सहाय्यक</span></div>
@@ -294,7 +294,7 @@
 <div class="period" data-i18n="pricing_free_period" id="professionalPeriod">/महिना</div>
 </div>
 <div class="plan-desc" data-i18n="pricing_professional_desc">सर्व काही हवे असलेल्या व्यावसायिकांसाठी पूर्ण-सामर्थ्य AI संशोधन.</div>
-<button class="btn-plan btn-pro" data-i18n="pricing_professional_btn" onclick="handleUpgrade('professional')">Professional वर जा</button>
+<button class="btn-plan btn-pro" data-i18n="pricing_professional_btn" onclick=\"handleUpgrade('professional', this)\">Professional वर जा</button>
 <div class="features-label" data-i18n="pricing_everything_proplus_plus">Pro+ मधील सर्व काही, अधिक</div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f8">API प्रवेश</span></div>
 <div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f5">नवीन वैशिष्ट्यांमध्ये लवकर प्रवेश</span></div>
@@ -402,12 +402,30 @@
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
 
 let isAnnual = false;
-const ANNUAL_MULTIPLIER = 14; // annual price = monthly x 14 (product decision 2026-07-13)
+// 2026-08-19 fix (AJ, setting up real Stripe products: "上面4個係分別PLAN的
+// 年付12個月送2個，共付是12個月可用14個月" -- pay 12 months' worth, get 14
+// months of access/validity, i.e. 2 months free): this used to be 14 here,
+// which made the DISPLAYED annual price monthly x 14 (e.g. Pro showed
+// $252/year) while the real Stripe Prices AJ actually created charge
+// monthly x 12 (Pro Annual = $216) -- a real display-vs-charge mismatch.
+// The x14 is a validity-period multiplier (how many months of access one
+// annual payment buys, matching each Stripe Price's 14-month recurring
+// interval), not a price multiplier -- the price shown here must match
+// what Stripe actually charges, so this is now x12.
+const ANNUAL_MULTIPLIER = 12; // fallback annual = monthly x 12 (customer then gets 14 months of access before renewal -- 2 months free) -- used for the Pro list-price strike-through and the regional-pricing approximation below, neither of which is a real charge
+// 2026-08-19 (AJ: "Basic Annual你打咗$70，想Basic有額外折扣"): Basic gets a
+// deeper-than-standard annual discount ($70, not the plain x12 $120) as a
+// deliberate entry-tier promo -- so annual prices are no longer a uniform
+// x12 formula, they're the exact real Stripe Price amounts AJ created,
+// one per plan. Pro/Pro+/Professional happen to equal monthly x12; Basic
+// doesn't, and that's intentional. Update this dict (not the multiplier
+// above) if any plan's real Stripe annual price ever changes.
+const ANNUAL_PRICES = { basic: 70, pro: 216, proplus: 588, professional: 1788 };
 // 2026-07-26 fix ("將Pro顯示做$29->$18優惠價"): pro's MONTHLY_PRICES entry is
 // now the real/effective price ($18) that toggleBilling() actually uses for
-// both the big amount and the annual (x14) calculation -- $29 only ever
-// appears as the struck-through reference price via PRO_LIST_PRICE below,
-// so the two numbers can never drift out of sync with each other.
+// the big amount -- $29 only ever appears as the struck-through reference
+// price via PRO_LIST_PRICE below, so the two numbers can never drift out
+// of sync with each other.
 const MONTHLY_PRICES = { basic: 10, pro: 18, proplus: 49, professional: 149 };
 const PRO_LIST_PRICE = 29;
 const TOKEN_PCTS = { Basic: 30, Pro: 50, Proplus: 70, Professional: 90 };
@@ -428,7 +446,8 @@ function toggleBilling() {
     const priceEl = document.getElementById(key + 'Price');
     const periodEl = document.getElementById(key + 'Period');
     const monthly = MONTHLY_PRICES[key];
-    if (priceEl) priceEl.textContent = '$' + (isAnnual ? monthly * ANNUAL_MULTIPLIER : monthly);
+    const annual = ANNUAL_PRICES[key] != null ? ANNUAL_PRICES[key] : monthly * ANNUAL_MULTIPLIER;
+    if (priceEl) priceEl.textContent = '$' + (isAnnual ? annual : monthly);
     if (periodEl) periodEl.textContent = periodText;
   });
 
@@ -451,13 +470,53 @@ function toggleMorePlans() {
 }
 
 
-function handleUpgrade(plan) {
+// 2026-08-19 (AJ: "Stripe同Paddle並存"): real checkout, replacing the old
+// permanent "coming soon" alert. Tries Stripe first (POST
+// /api/stripe/create-checkout-session), falls back to Paddle (POST
+// /api/paddle/create-checkout-session) if Stripe isn't configured yet for
+// this specific plan+cycle combo, and only falls back to the original
+// "coming soon" message if NEITHER provider has that combo's price ID set
+// yet -- see api/webhooks_stripe.py / api/webhooks_paddle.py, both
+// dormant-safe until AJ finishes setting up the relevant Railway env vars.
+// Every real tier (basic/pro/proplus/professional) and both billing
+// cycles go through this same path -- nothing here is Pro-only.
+async function _tryCheckout(url, token, plan, cycle) {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, plan, cycle }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.checkout_url || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function handleUpgrade(plan, btn) {
   const token = localStorage.getItem('xfinlab_token');
   if (!token) {
     window.location.href = 'login.html';
     return;
   }
-  // 之後接 Paddle
+  const cycle = isAnnual ? 'annual' : 'monthly';
+
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = t('pricing_upgrade_loading', 'Loading checkout…'); }
+
+  let checkoutUrl = await _tryCheckout('https://api.xfinlab.com/api/stripe/create-checkout-session', token, plan, cycle);
+  if (!checkoutUrl) {
+    checkoutUrl = await _tryCheckout('https://api.xfinlab.com/api/paddle/create-checkout-session', token, plan, cycle);
+  }
+
+  if (checkoutUrl) {
+    window.location.href = checkoutUrl;
+    return;
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = originalText; }
   const msgTemplate = t('pricing_alert_upgrade_soon', "Upgrading to {plan} plan coming soon! We'll notify you when payment is available.");
   alert(msgTemplate.replace('{plan}', plan.toUpperCase()));
 }
