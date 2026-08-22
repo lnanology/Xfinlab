@@ -46,6 +46,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=DM+Serif+Display:ital@0;1&amp;display=swap" rel="stylesheet"/>
 <link href="/css/style.css?v=20260802" rel="stylesheet"/>
 <script src="/js/nav.js"></script>
+<script src="/js/user-avatar.js"></script>
 <script src="/js/theme-toggle.js"></script>
 <script src="/js/share-widget.js"></script>
 <script src="/js/points-badge.js"></script>
@@ -421,6 +422,7 @@
 <script src="/js/smart-router.js"></script>
 <script src="/js/i18n.js"></script>
 <script src="/js/prob-display.js"></script>
+<script src="/js/sparkline.js"></script>
 <meta content="XFINLAB — هوش تصمیم‌گیری برای سرمایه‌گذاران" property="og:title"/>
 <meta content="XFINLAB: پژوهش سرمایه‌گذاری با هوش مصنوعی در سطح نهادی. Decision Score™، Confidence™، RiskDNA™ — هوش تصمیم‌گیری برای سهام، ETF و ارزهای دیجیتال با داده‌های واقعی بازار." property="og:description"/>
 <meta content="https://www.xfinlab.com/fa/index.html" property="og:url"/>
@@ -473,14 +475,19 @@
 </nav>
 <div class="user-topbar" id="userTopbar" style="display:none">
 <div class="user-topbar-inner">
-<span class="user-topbar-name" id="userTopbarName">👤</span>
 <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
-<button class="user-topbar-btn" id="topbarSettingsBtn" type="button">👤 <span data-i18n="topbar_account">حساب کاربری</span></button>
+<button class="user-topbar-btn" id="topbarSettingsBtn" type="button"><span id="topbarAvatarIcon"></span><span data-i18n="topbar_account" id="topbarAcctLabel">حساب کاربری</span></button>
 <div class="user-topbar-flyout" id="topbarSettingsFlyout" style="min-width:220px">
 <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
 <div data-i18n="dash_signed_in_as" style="font-size:0.72rem;color:var(--muted)">وارد شده به‌عنوان</div>
 <div id="topbarDropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px"></div>
 <div id="topbarDropdownPlan" style="font-size:0.7rem;color:var(--amber);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
+<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:6px">
+<button type="button" data-gender="m" class="topbar-gender-btn" id="topbarGenderM" title="男"></button>
+<button type="button" data-gender="f" class="topbar-gender-btn" id="topbarGenderF" title="女"></button>
+<input type="text" id="topbarNameInput" maxlength="40" style="flex:1;min-width:0;background:var(--bg-secondary,#f1f5f9);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:0.78rem">
+</div>
+<button type="button" id="topbarProfileSaveBtn" data-i18n="profile_save_btn" style="width:100%;margin-top:6px;background:var(--accent-blue,#2563EB);color:#fff;border:none;border-radius:6px;padding:6px 8px;font-size:0.76rem;cursor:pointer">Save name / icon</button>
 </div>
 <a href="/fa/pricing.html" style="color:var(--amber)">⭐ <span data-i18n="dash_view_plans">مشاهده طرح‌ها</span></a>
 <a href="#" onclick="topbarCopyReferral(); return false;">🔗 <span data-i18n="dash_menu_referral">کپی لینک معرفی</span></a>
@@ -874,28 +881,89 @@ function initUserTopbar() {
   if (bar) bar.style.display = 'block';
   try {
     const user = JSON.parse(localStorage.getItem('xfinlab_user') || '{}');
-    const nameEl = document.getElementById('userTopbarName');
-    if (nameEl && user.name) nameEl.textContent = '👤 ' + user.name.split(' ')[0];
-    // 帳戶flyout入面嗰個email/PLAN，同dashboard.html個accountBtn dropdown
-    // 一樣直接讀返localStorage嗰份xfinlab_user，唔使多打一次API。
     const emailEl = document.getElementById('topbarDropdownEmail');
     const planEl = document.getElementById('topbarDropdownPlan');
     if (emailEl) emailEl.textContent = user.email || '';
     if (planEl) planEl.textContent = (user.plan || 'free').toUpperCase() + ' ' + (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['dash_plan_suffix'] || 'PLAN');
+    renderTopbarAvatar(user);
+    wireTopbarProfileEdit(user);
   } catch(e) {}
-  // CSS :hover已經可以喺桌面版指住「帳戶」就滑出返個dropdown，呢度加多
-  // 一個click-toggle，等冇hover嘅觸控裝置（手機/平板）都撳得到。
   const settingsBtn = document.getElementById('topbarSettingsBtn');
   const flyout = document.getElementById('topbarSettingsFlyout');
   if (settingsBtn && flyout) {
     settingsBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       flyout.classList.toggle('open');
+      if (flyout.classList.contains('open') && window.innerWidth <= 480) {
+        flyout.style.top = (settingsBtn.getBoundingClientRect().bottom + 8) + 'px';
+      }
     });
     document.addEventListener('click', function() {
       flyout.classList.remove('open');
     });
   }
+}
+function renderTopbarAvatar(user) {
+  try {
+    const iconEl = document.getElementById('topbarAvatarIcon');
+    const labelEl = document.getElementById('topbarAcctLabel');
+    if (iconEl && window.XflAvatar) iconEl.innerHTML = XflAvatar.icon(user.avatar_gender, 16);
+    if (labelEl) {
+      const nm = window.XflAvatar ? XflAvatar.displayName(user) : '';
+      labelEl.textContent = nm || labelEl.textContent;
+    }
+    const mBtn = document.getElementById('topbarGenderM');
+    const fBtn = document.getElementById('topbarGenderF');
+    if (mBtn && window.XflAvatar) mBtn.innerHTML = XflAvatar.icon('m', 16);
+    if (fBtn && window.XflAvatar) fBtn.innerHTML = XflAvatar.icon('f', 16);
+    [mBtn, fBtn].forEach(function(b) {
+      if (b) b.classList.toggle('topbar-gender-active', b.dataset.gender === user.avatar_gender);
+    });
+    const nameInput = document.getElementById('topbarNameInput');
+    if (nameInput && document.activeElement !== nameInput) nameInput.value = user.name || '';
+  } catch(e) {}
+}
+
+function wireTopbarProfileEdit(user) {
+  const mBtn = document.getElementById('topbarGenderM');
+  const fBtn = document.getElementById('topbarGenderF');
+  [mBtn, fBtn].forEach(function(b) {
+    if (!b || b.dataset.xflWired) return;
+    b.dataset.xflWired = '1';
+    b.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      user.avatar_gender = b.dataset.gender;
+      renderTopbarAvatar(user);
+    });
+  });
+  const saveBtn = document.getElementById('topbarProfileSaveBtn');
+  if (!saveBtn || saveBtn.dataset.xflWired) return;
+  saveBtn.dataset.xflWired = '1';
+  saveBtn.addEventListener('click', async function(ev) {
+    ev.stopPropagation();
+    const nameInput = document.getElementById('topbarNameInput');
+    const nm = (nameInput && nameInput.value || '').trim();
+    if (!nm) return;
+    saveBtn.disabled = true;
+    try {
+      const token = user.token || localStorage.getItem('xfinlab_token') || '';
+      const res = await fetch(`${API}/auth/profile?token=${encodeURIComponent(token)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nm, avatar_gender: user.avatar_gender || null })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        user.name = data.name;
+        user.avatar_gender = data.avatar_gender;
+        user.oauth_provider = data.oauth_provider;
+        user.name_is_custom = data.name_is_custom;
+        localStorage.setItem('xfinlab_user', JSON.stringify(user));
+        renderTopbarAvatar(user);
+      }
+    } catch(e) {}
+    saveBtn.disabled = false;
+  });
 }
 initUserTopbar();
 
@@ -1359,6 +1427,11 @@ loadTrackRecord();
 // 每張卡撳落去經過homepagePreviewNavigate()嘅全站一次性preview閘。
 const TOPOPP_ORDER = ['stock', 'futures', 'crypto'];
 const TOPOPP_CLASS_KEYS = {'stock': 'topopp_class_stock', 'futures': 'topopp_class_futures', 'crypto': 'topopp_class_crypto'};
+function renderTopOppSparkline(arr, dirClass) {
+  return (typeof XflSparkline !== 'undefined')
+    ? XflSparkline.render(arr, dirClass, { className: 'top-opp-sparkline' })
+    : '';
+}
 async function loadTopOpportunities() {
   const grid = document.getElementById('topOppGrid');
   if (!grid) return;
@@ -1380,10 +1453,12 @@ async function loadTopOpportunities() {
           ${item.volume_desc ? `<span>${t('idx_volume_label','成交量')}: ${trVolumeDesc(item.volume_desc)}</span>` : ''}
           ${itemDispConf != null ? `<span>${t('idx_prob_label','機率')}: ${itemDispConf}%</span>` : ''}
         </div>` : '';
+      const sparkHtml = renderTopOppSparkline(item.sparkline, dirClass);
       return `<a class="top-opp-card" href="${href}" onclick="return homepagePreviewNavigate('${href}', event)">
         <div class="top-opp-class">${classLabel}</div>
         <div class="top-opp-ticker">${trPulseLabel(item.label)}（${item.ticker}）</div>
         <div class="top-opp-price">$${item.price}</div>
+        ${sparkHtml}
         <div class="top-opp-dir ${dirClass}">${trDirection(item.confluence_direction)}</div>
         ${metaHtml}
       </a>`;
