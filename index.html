@@ -668,23 +668,30 @@
         <span data-i18n="idx_nav_features">功能</span>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </summary>
-      <!-- "滑出置中功能底，字也置中": panel is centered under the 功能
-           button itself (left:50%+translateX(-50%), not right:0-anchored
-           any more) and its links are center-aligned (text-align:center
-           on the container, inherited by the block-level <a>s inside). -->
-      <div id="idxNavFeatPanel" style="position:absolute;left:50%;transform:translateX(-50%);top:calc(100% + 10px);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;min-width:190px;padding:6px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:200;text-align:center">
-        <a href="ai-analysis.html" data-i18n="nav_analysis" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI市場分析</a>
-        <a href="chat.html" data-i18n="nav_chat" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AI對話</a>
-        <a href="screener.html" data-i18n="nav_screener" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">篩選器</a>
-        <a href="chart-analysis.html" data-i18n="nav_chart" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">K線分析</a>
-        <a href="company-compare.html" data-i18n="nav_compare" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">AB公司比較</a>
-        <a href="stress-lab.html" data-i18n="nav_stress" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">壓力測試室</a>
-        <a href="anomaly.html" data-i18n="nav_anomaly" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">異常偵測</a>
-        <a href="portfolio.html" data-i18n="nav_portfolio" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">組合配置</a>
-        <a href="news-denoise.html" data-i18n="nav_news_denoise" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">新聞降噪</a>
-        <a href="probability-scan.html" data-i18n="nav_probability" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">機率掃描</a>
-        <a href="pairs-scan.html" data-i18n="nav_pairs" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">配對套利</a>
-        <a href="market-brief.html" data-i18n="nav_free_signals" style="display:block;padding:9px 12px;border-radius:8px;color:var(--text,#0f172a);text-decoration:none;font-size:0.88rem;white-space:nowrap">每日市場快訊</a>
+      <!-- 2026-08-23 (AJ: "按 功能 滑出卡片式選擇，文字帶縮圖"): was a
+           plain vertical text-only link list -- now a 3-col grid of small
+           "app launcher"-style cards, each an icon (emoji thumbnail,
+           matching this same homepage's existing icon language -- see
+           #liveSteps above, which already pairs an icon with most of
+           these exact same page links) stacked over its label. IMPORTANT:
+           data-i18n sits on the inner .idx-feat-label SPAN, not the outer
+           anchor tag -- js/i18n.js's apply() does `el.textContent =
+           translation` on whatever element carries data-i18n, so putting
+           it on the anchor itself would silently wipe out the icon span
+           every time a translation loads. -->
+      <div id="idxNavFeatPanel" style="position:absolute;left:50%;transform:translateX(-50%);top:calc(100% + 10px);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;width:300px;padding:10px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:200;display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+        <a href="ai-analysis.html" class="idx-feat-card"><span class="idx-feat-icon">🔬</span><span class="idx-feat-label" data-i18n="nav_analysis">AI市場分析</span></a>
+        <a href="chat.html" class="idx-feat-card"><span class="idx-feat-icon">💬</span><span class="idx-feat-label" data-i18n="nav_chat">AI對話</span></a>
+        <a href="screener.html" class="idx-feat-card"><span class="idx-feat-icon">🔎</span><span class="idx-feat-label" data-i18n="nav_screener">篩選器</span></a>
+        <a href="chart-analysis.html" class="idx-feat-card"><span class="idx-feat-icon">📈</span><span class="idx-feat-label" data-i18n="nav_chart">K線分析</span></a>
+        <a href="company-compare.html" class="idx-feat-card"><span class="idx-feat-icon">🆚</span><span class="idx-feat-label" data-i18n="nav_compare">AB公司比較</span></a>
+        <a href="stress-lab.html" class="idx-feat-card"><span class="idx-feat-icon">⚠️</span><span class="idx-feat-label" data-i18n="nav_stress">壓力測試室</span></a>
+        <a href="anomaly.html" class="idx-feat-card"><span class="idx-feat-icon">🚨</span><span class="idx-feat-label" data-i18n="nav_anomaly">異常偵測</span></a>
+        <a href="portfolio.html" class="idx-feat-card"><span class="idx-feat-icon">📊</span><span class="idx-feat-label" data-i18n="nav_portfolio">組合配置</span></a>
+        <a href="news-denoise.html" class="idx-feat-card"><span class="idx-feat-icon">🔇</span><span class="idx-feat-label" data-i18n="nav_news_denoise">新聞降噪</span></a>
+        <a href="probability-scan.html" class="idx-feat-card"><span class="idx-feat-icon">🎲</span><span class="idx-feat-label" data-i18n="nav_probability">機率掃描</span></a>
+        <a href="pairs-scan.html" class="idx-feat-card"><span class="idx-feat-icon">⚖️</span><span class="idx-feat-label" data-i18n="nav_pairs">配對套利</span></a>
+        <a href="market-brief.html" class="idx-feat-card"><span class="idx-feat-icon">🔔</span><span class="idx-feat-label" data-i18n="nav_free_signals">每日市場快訊</span></a>
       </div>
     </details>
     <a href="intelligence-api.html" data-i18n="nav_api" style="font-size:1rem;color:var(--text2,#475569);text-decoration:none">API</a>
@@ -725,7 +732,12 @@
   </div>
 </nav>
 <style>
-  #idxNavFeatPanel a:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
+  /* 2026-08-23 (AJ: "按 功能 滑出卡片式選擇，文字帶縮圖"): card grid --
+     replaces the old plain vertical text-link-list styling. */
+  .idx-feat-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 4px;border-radius:10px;color:var(--text,#0f172a);text-decoration:none;text-align:center}
+  .idx-feat-card:hover{background:var(--bg-secondary,#f1f5f9);color:var(--accent)}
+  .idx-feat-icon{font-size:1.5rem;line-height:1}
+  .idx-feat-label{font-size:0.74rem;line-height:1.25;white-space:normal}
   /* <summary> ships a default disclosure triangle in most browsers --
      hide it since #idxNavFeatBtn already has its own chevron SVG. */
   #idxNavFeatBtn{list-style:none}
@@ -749,7 +761,7 @@
     /* transform:none cancels the base left:50%+translateX(-50%) centering
        trick (transform still applies even once position becomes static) --
        margin:auto does the centering instead once it's a normal block. */
-    #idxNavFeatPanel{position:static;left:auto;transform:none;margin:8px auto 0;width:min(280px,calc(100vw - 48px))}
+    #idxNavFeatPanel{position:static;left:auto;transform:none;margin:8px auto 0;width:min(300px,calc(100vw - 48px))}
   }
 </style>
 <script>
