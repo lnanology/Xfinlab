@@ -68,7 +68,19 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
 .dash-cell-label{font-size:0.72rem;color:var(--text-muted);margin-bottom:0.3rem;overflow-wrap:break-word}
 .dash-cell-value{font-size:0.95rem;font-weight:600;overflow-wrap:break-word;word-break:break-word;hyphens:auto}
 
-.ai-summary-box{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;line-height:1.6}
+.ai-summary-box{background:var(--bg-card);border:1px solid var(--border-color);border-left:3px solid var(--border-color);border-radius:0 12px 12px 0;padding:1rem 1.2rem;margin-bottom:1rem;line-height:1.75;color:var(--text-secondary)}
+.ai-summary-box p{margin:0}
+.ai-summary-label{font-size:0.72rem;font-weight:700;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:0.5rem}
+/* 2026-08-23 (AJ: "分2份，一份跟綠色，一份跟紅色，如果中間就一份過"): the
+   narrative AI summary box tints green when the rating is bullish/buy,
+   red when bearish/sell, and stays the neutral default border-color for
+   hold/neutral -- a single untinted treatment, not a third color. Reuses
+   XflSparkline.dirClass()'s bull/bear/neutral mapping so this always
+   agrees with the sparkline color shown next to the rating above. */
+.ai-summary-box.bull{border-left-color:var(--accent-green)}
+.ai-summary-box.bull .ai-summary-label{color:var(--accent-green)}
+.ai-summary-box.bear{border-left-color:var(--accent-red)}
+.ai-summary-box.bear .ai-summary-label{color:var(--accent-red)}
 
 .xfl-accordion{border:1px solid var(--border-color);border-radius:10px;margin-bottom:0.6rem;overflow:hidden}
 /* 2026-08-06 fix ("agent debate 的 start debate 按不出來"): js/mobile-
@@ -954,7 +966,14 @@ async function runAnalysis(){
     }
     if (regimeLabel) summaryParts.push(`${regimeNowLabel}${regimeLabel}`);
     summaryBox.style.display = 'block';
-    summaryBox.textContent = summaryParts.join('。') + '。';
+    // 2026-08-23 (AJ: "分2份，一份跟綠色，一份跟紅色，如果中間就一份過"):
+    // tint the box by the SAME rating already shown in heroRating/the
+    // sparkline above (dirClass -> bull/bear/neutral) so the color always
+    // agrees with the rest of the page instead of being a separate call.
+    const summaryDir = hero.rating && typeof XflSparkline !== 'undefined' ? XflSparkline.dirClass(hero.rating) : 'neutral';
+    summaryBox.className = 'ai-summary-box' + (summaryDir !== 'neutral' ? ' ' + summaryDir : '');
+    const summaryLabel = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_summary_label'])||'AI 分析摘要';
+    summaryBox.innerHTML = `<div class="ai-summary-label">${summaryLabel}</div><p>${summaryParts.join('。')}。</p>`;
 
     // Decision Report™ footer -- reuses the SAME real numbers already
     // shown above (tech_score as the composite decision figure, the
