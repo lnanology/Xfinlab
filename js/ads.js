@@ -25,7 +25,7 @@
    influencing XFINLAB's research -- same posture as the broker affiliate CTA
    docstring ("never let commission change the analysis"). */
 (function () {
-  var PUBLISHER_ID = ""; // e.g. "ca-pub-1234567890123456" -- fill in once AdSense approves the account
+  var PUBLISHER_ID = "ca-pub-2316823074282488"; // AJ's approved AdSense publisher ID, filled 2026-08-23
 
   if (!PUBLISHER_ID) return; // silently no-op, see docstring above
 
