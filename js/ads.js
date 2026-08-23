@@ -29,11 +29,22 @@
 
   if (!PUBLISHER_ID) return; // silently no-op, see docstring above
 
-  var loader = document.createElement("script");
-  loader.async = true;
-  loader.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + PUBLISHER_ID;
-  loader.crossOrigin = "anonymous";
-  document.head.appendChild(loader);
+  // 2026-08-23 (AdSense site-verification pass): every page's <head> now
+  // also carries the literal <script src=".../adsbygoogle.js?client=...">
+  // tag directly in the HTML source (Google's site-ownership verification
+  // needs to find it there, not only injected later by this file). Guard
+  // against creating a SECOND loader script here when that static one is
+  // already present, instead of silently double-loading the same script.
+  var alreadyLoaded = document.querySelector(
+    'script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]'
+  );
+  if (!alreadyLoaded) {
+    var loader = document.createElement("script");
+    loader.async = true;
+    loader.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + PUBLISHER_ID;
+    loader.crossOrigin = "anonymous";
+    document.head.appendChild(loader);
+  }
 
   document.querySelectorAll(".ad-slot").forEach(function (slot) {
     var ins = document.createElement("ins");
