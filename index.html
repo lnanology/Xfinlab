@@ -281,36 +281,37 @@
   /* Live AI Result -- "AI is working" showcase, right under Hero */
   .live-section { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
   .live-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
-  .live-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 8px; }
-  .live-step { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 16px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); opacity: 0.4; transition: opacity 0.4s, border-color 0.4s; }
-  .live-step.active { opacity: 1; border-color: rgba(var(--accent-rgb),0.35); }
-  .live-step.done { opacity: 0.75; }
-  .live-step-icon { font-size: 1.4rem; }
-  .live-step-label { font-size: 0.78rem; color: var(--label); }
-  .live-step.active .live-step-label { color: var(--accent); font-weight: 600; }
-  .live-step-clickable { cursor: pointer; }
-  .live-step-clickable:hover { border-color: rgba(var(--accent-rgb),0.5); opacity: 1; }
-  @media (max-width: 640px) { .live-steps { grid-template-columns: repeat(2, 1fr); } }
-  /* 2026-08-23 (AJ: "呢9格用量子運動圖顯示"): small "atom" animation --
-     nucleus + 3 tilted orbit rings, each with its own electron dot
-     spinning at a different speed/direction. Nested <g>s: the OUTER g's
-     static rotate(0/60/120) tilts each orbit's plane, the INNER .q-spin
-     g gets the actual CSS rotation animation, so the static tilt and the
-     continuous spin compose without fighting each other. transform-box:
-     fill-box + transform-origin:50% 50% rotates each ellipse+dot pair
-     around its own geometric center regardless of the SVG's viewBox
-     coordinates (more robust than hardcoding a pixel transform-origin).
-     Purely decorative -- .live-step's existing opacity-based active/done
-     state (driven by cycleLiveSteps() below, unchanged) still does the
-     real "AI is working on this step now" signaling; this just gives
-     idle/active tiles alike a sense of constant background computation,
-     matching the section's "AI 正在分析緊真實市場數據" copy. */
-  .quantum-atom { display: block; width: 1.4em; height: 1.4em; overflow: visible; }
-  .quantum-atom .q-spin { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin 3.2s linear infinite; }
-  .quantum-atom .q-spin-2 { animation-duration: 4.4s; animation-direction: reverse; }
-  .quantum-atom .q-spin-3 { animation-duration: 5.6s; }
+  /* 2026-08-23 v2 (AJ: "改成一個量子圖顯示，每個粒子等於一個卡片在移動"):
+     ONE shared orbital SVG diagram replaces the old 3x3 grid-of-boxes --
+     see the HTML comment above #liveSteps for the full rotation/counter-
+     rotation mechanics. .live-step/.live-step-clickable/.active/.done
+     class NAMES are unchanged (cycleLiveSteps() below still targets them
+     by id, untouched) but now style a small moving SVG particle instead
+     of a bordered box -- opacity still communicates the real active/done
+     pipeline-step state, transform:scale swaps in for the old
+     border-color emphasis since a moving dot has no border to highlight. */
+  .quantum-diagram { display: block; width: min(320px, 78vw); height: auto; margin: 8px auto 0; overflow: visible; }
+  .q-core { animation: qcore-pulse 2s ease-in-out infinite; }
+  @keyframes qcore-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .q-ring-1 { transform-origin: 150px 150px; animation: qspin 18s linear infinite; }
+  .q-ring-2 { transform-origin: 150px 150px; animation: qspin 26s linear infinite reverse; }
+  .q-ring-3 { transform-origin: 150px 150px; animation: qspin 34s linear infinite; }
+  .q-counter-1 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 18s linear infinite; }
+  .q-counter-2 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 26s linear infinite reverse; }
+  .q-counter-3 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 34s linear infinite; }
   @keyframes qspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .quantum-atom .q-spin { animation: none; } }
+  @keyframes qspin-rev { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+  .live-step { cursor: pointer; opacity: 0.55; transition: opacity 0.4s, transform 0.25s; transform: scale(1); transform-box: fill-box; transform-origin: 50% 50%; }
+  .live-step .q-dot { fill: var(--accent); transition: fill 0.25s; }
+  .live-step .q-glyph { font-size: 10px; pointer-events: none; }
+  .live-step.active { opacity: 1; transform: scale(1.25); }
+  .live-step.active .q-dot { fill: var(--accent-blue,#2563eb); }
+  .live-step.done { opacity: 0.8; }
+  .live-step:hover { opacity: 1; transform: scale(1.15); }
+  @media (max-width: 640px) { .quantum-diagram { width: min(280px, 90vw); } }
+  @media (prefers-reduced-motion: reduce) {
+    .q-ring-1, .q-ring-2, .q-ring-3, .q-counter-1, .q-counter-2, .q-counter-3, .q-core { animation: none; }
+  }
 
   /* Decision Intelligence brand core */
   .decision-section { max-width: 1000px; margin: 0 auto; padding: 20px 24px 60px; }
@@ -950,30 +951,47 @@
   <div class="live-box">
     <div class="section-label" style="margin-bottom:6px" data-i18n="live_label">Live AI Result</div>
     <div class="section-title" style="margin-bottom:4px;font-size:1.4rem" data-i18n="live_title">AI 正在分析緊真實市場數據</div>
-    <div class="live-steps" id="liveSteps">
-      <!-- 2026-08-23 (AJ: "呢9格用量子運動圖顯示"): all 9 tiles' icons
-           replaced with the SAME small animated "atom" SVG (nucleus +
-           3 tilted orbit rings, each with its own electron dot spinning
-           at a different speed/direction via pure CSS @keyframes -- see
-           .quantum-atom rules above) instead of each tile's previous
-           distinct static emoji/icon. Purely decorative motion cue for
-           "AI is actively computing" -- zero JS cost (existing
-           cycleLiveSteps() below still drives the real active/done
-           state via opacity, unchanged), zero images, respects
-           prefers-reduced-motion. -->
-      <div class="live-step live-step-clickable" id="liveStep1" onclick="homepagePreviewNavigate('news.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step1">Reading News...</div></div>
-      <div class="live-step live-step-clickable" id="liveStep2" onclick="homepagePreviewNavigate('chart-analysis.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step2">Scanning Charts...</div></div>
-      <div class="live-step live-step-clickable" id="liveStep3" onclick="homepagePreviewNavigate('stress-lab.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step3">Calculating Risk...</div></div>
-      <div class="live-step live-step-clickable" id="liveStep4" onclick="homepagePreviewNavigate('ai-analysis.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step4">Generating Research...</div></div>
-      <!-- 2026-07-20 addition: only 4 of the site's ~12 real engines had a
-           tile here, per user request to add 5 more so this section better
-           represents the range of what's actually on the platform. -->
-      <div class="live-step live-step-clickable" id="liveStep5" onclick="homepagePreviewNavigate('company-compare.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step5">Comparing Companies...</div></div>
-      <div class="live-step live-step-clickable" id="liveStep6" onclick="homepagePreviewNavigate('screener.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step6">Screening Stocks...</div></div>
-      <div class="live-step live-step-clickable" id="liveStep7" onclick="homepagePreviewNavigate('portfolio.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step7">Balancing Portfolio...</div></div>
-      <div class="live-step live-step-clickable" id="liveStep8" onclick="homepagePreviewNavigate('anomaly.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step8">Detecting Anomalies...</div></div>
-      <div class="live-step live-step-clickable" id="liveStep9" onclick="homepagePreviewNavigate('pairs-scan.html')"><div class="live-step-icon"><svg class="quantum-atom" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2.2" fill="var(--accent)"/><g transform="rotate(0 16 16)"><g class="q-spin q-spin-1"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent)"/></g></g><g transform="rotate(60 16 16)"><g class="q-spin q-spin-2"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-blue,#2563eb)"/></g></g><g transform="rotate(120 16 16)"><g class="q-spin q-spin-3"><ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="var(--border,#cbd5e1)" stroke-width="1"/><circle cx="29" cy="16" r="1.5" fill="var(--accent-green,#22c55e)"/></g></g></svg></div><div class="live-step-label" data-i18n="live_step9">Scanning Pairs...</div></div>
-    </div>
+    <!-- 2026-08-23 v2 (AJ: "改成一個量子圖顯示，每個粒子等於一個卡片在
+         移動" -- follow-up to the earlier per-tile atom-icon pass): that
+         version kept the 3x3 grid-of-boxes layout and only swapped each
+         box's static icon for a small looping atom animation. AJ wants
+         ONE shared orbital diagram instead, where the 9 "cards" (same 9
+         real engine pages as before, same onclick/ids/cycleLiveSteps()
+         driven active/done state) themselves ARE the moving particles --
+         3 rings of 3 particles each. Ring rotation uses CSS on the outer
+         group; each particle's inner group.q-counter-N spins the
+         opposite direction at the SAME speed as its ring, canceling the
+         net rotation so its dot+glyph stay upright while still
+         translating smoothly around the circle (classic "orbiting label"
+         trick). Ring groups rotate around the SVG's fixed 150,150 center
+         (default view-box-relative transform-origin, no fill-box needed
+         since it's a known constant); each particle's counter-group uses
+         transform-box:fill-box so it spins around ITS OWN center
+         regardless of how far translate() pushed it out. Full page name
+         still lives in a <title> child (native tooltip + still picked up
+         by js/i18n.js's data-i18n textContent pass) since long translated
+         labels riding along a moving 20px dot would overflow/collide in
+         longer languages -- the always-visible glyph is the same short
+         emoji already used for these same 9 pages in the 功能 flyout
+         above, so identity stays recognizable without text. -->
+    <svg class="quantum-diagram" id="liveSteps" viewBox="0 0 300 300" role="img" aria-label="Live AI Result">
+      <circle class="q-core" cx="150" cy="150" r="6" fill="var(--accent)"/>
+      <g class="q-ring q-ring-1">
+        <g transform="rotate(0 150 150)"><g transform="translate(200 150)"><g class="q-counter-1"><g class="live-step live-step-clickable" id="liveStep1" onclick="homepagePreviewNavigate('news.html')"><title data-i18n="live_step1">Reading News...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">📰</text></g></g></g></g>
+        <g transform="rotate(120 150 150)"><g transform="translate(200 150)"><g class="q-counter-1"><g class="live-step live-step-clickable" id="liveStep2" onclick="homepagePreviewNavigate('chart-analysis.html')"><title data-i18n="live_step2">Scanning Charts...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">📈</text></g></g></g></g>
+        <g transform="rotate(240 150 150)"><g transform="translate(200 150)"><g class="q-counter-1"><g class="live-step live-step-clickable" id="liveStep3" onclick="homepagePreviewNavigate('stress-lab.html')"><title data-i18n="live_step3">Calculating Risk...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">⚠️</text></g></g></g></g>
+      </g>
+      <g class="q-ring q-ring-2">
+        <g transform="rotate(40 150 150)"><g transform="translate(240 150)"><g class="q-counter-2"><g class="live-step live-step-clickable" id="liveStep4" onclick="homepagePreviewNavigate('ai-analysis.html')"><title data-i18n="live_step4">Generating Research...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">🔬</text></g></g></g></g>
+        <g transform="rotate(160 150 150)"><g transform="translate(240 150)"><g class="q-counter-2"><g class="live-step live-step-clickable" id="liveStep5" onclick="homepagePreviewNavigate('company-compare.html')"><title data-i18n="live_step5">Comparing Companies...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">🆚</text></g></g></g></g>
+        <g transform="rotate(280 150 150)"><g transform="translate(240 150)"><g class="q-counter-2"><g class="live-step live-step-clickable" id="liveStep6" onclick="homepagePreviewNavigate('screener.html')"><title data-i18n="live_step6">Screening Stocks...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">🔎</text></g></g></g></g>
+      </g>
+      <g class="q-ring q-ring-3">
+        <g transform="rotate(80 150 150)"><g transform="translate(278 150)"><g class="q-counter-3"><g class="live-step live-step-clickable" id="liveStep7" onclick="homepagePreviewNavigate('portfolio.html')"><title data-i18n="live_step7">Balancing Portfolio...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">📊</text></g></g></g></g>
+        <g transform="rotate(200 150 150)"><g transform="translate(278 150)"><g class="q-counter-3"><g class="live-step live-step-clickable" id="liveStep8" onclick="homepagePreviewNavigate('anomaly.html')"><title data-i18n="live_step8">Detecting Anomalies...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">🚨</text></g></g></g></g>
+        <g transform="rotate(320 150 150)"><g transform="translate(278 150)"><g class="q-counter-3"><g class="live-step live-step-clickable" id="liveStep9" onclick="homepagePreviewNavigate('pairs-scan.html')"><title data-i18n="live_step9">Scanning Pairs...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">⚖️</text></g></g></g></g>
+      </g>
+    </svg>
   </div>
 </div>
 
