@@ -357,6 +357,11 @@ def _compute_all_signals() -> List[Dict]:
 
             confluence = tech.get("confluence", {})
             score = confluence.get("score", 0.0)
+            # 2026-08-23 (AJ: "9張卡片加小K線圖" -- best_opportunity on the
+            # 9-category board reuses this list's [0]): same free-reuse
+            # pattern as _compute_pulse()/_compute_top_opportunities().
+            ohlc = tech.get("ohlc") or []
+            sparkline = [round(float(bar["close"]), 4) for bar in ohlc[-20:] if bar.get("close") is not None]
             candidates.append({
                 "asset_class": asset_class,
                 "asset_class_label": _ASSET_CLASS_LABELS[asset_class],
@@ -366,6 +371,7 @@ def _compute_all_signals() -> List[Dict]:
                 "confluence_direction": confluence.get("direction"),
                 "confluence_confidence_pct": confluence.get("confidence_pct"),
                 "volume_desc": tech.get("volume_desc"),
+                "sparkline": sparkline,
                 "_score": score,
             })
 
@@ -655,6 +661,12 @@ def _compute_fastest_growth() -> Optional[Dict]:
             if first_close != first_close or last_close != last_close or first_close <= 0:
                 continue
             pct_change = round((last_close - first_close) / first_close * 100, 2)
+            # 2026-08-23 (AJ: "9張卡片加小K線圖"): same free-reuse pattern as
+            # _compute_top_opportunities()/_compute_pulse()'s sparkline --
+            # hist is already fetched for the pct_change calc above, so
+            # this is just slicing the last 20 real closes, no new call.
+            closes = hist["Close"].dropna().tail(20)
+            sparkline = [round(float(v), 4) for v in closes.tolist()]
         except Exception:
             continue
         if best is None or pct_change > best["pct_change_1mo"]:
@@ -663,6 +675,7 @@ def _compute_fastest_growth() -> Optional[Dict]:
                 "label": _TICKER_LABELS.get(ticker, ticker),
                 "pct_change_1mo": pct_change,
                 "last_close": last_close,
+                "sparkline": sparkline,
             }
     return best
 
@@ -689,6 +702,22 @@ def _compute_highest_yield() -> Optional[Dict]:
                 "label": _DIVIDEND_LABELS.get(ticker, ticker),
                 "dividend_yield_pct": round(yield_pct, 2),
             }
+    # 2026-08-23 (AJ: "9張卡片加小K線圖"): unlike the other 8 categories,
+    # this one only ever calls yf.Ticker().info (fundamentals), never
+    # fetches OHLC history -- so there's nothing to slice a sparkline out
+    # of for free. One extra small history fetch, but only for the SINGLE
+    # winning ticker (not the whole 10-name basket) after the winner is
+    # already decided, and this whole endpoint is cached 10 minutes -- an
+    # acceptable one-off cost for a glance-able chart, not a per-candidate
+    # cost multiplied across the basket.
+    if best:
+        try:
+            hist = fetch_ohlc_history(best["ticker"], period="1mo")
+            if hist is not None and not hist.empty and "Close" in hist:
+                closes = hist["Close"].dropna().tail(20)
+                best["sparkline"] = [round(float(v), 4) for v in closes.tolist()]
+        except Exception:
+            best["sparkline"] = []
     return best
 
 
@@ -705,12 +734,18 @@ def _compute_best_at_timeframe(period: str, interval: str) -> Optional[Dict]:
         confluence = tech.get("confluence", {})
         score = confluence.get("score", 0.0)
         if best is None or abs(score) > abs(best["_score"]):
+            # 2026-08-23 (AJ: "9張卡片加小K線圖"): same free-reuse pattern
+            # as _compute_pulse()/_compute_top_opportunities() -- tech.get(
+            # "ohlc") is already fetched for the confluence score above.
+            ohlc = tech.get("ohlc") or []
+            sparkline = [round(float(bar["close"]), 4) for bar in ohlc[-20:] if bar.get("close") is not None]
             best = {
                 "ticker": ticker,
                 "label": _TICKER_LABELS.get(ticker, ticker),
                 "confluence_direction": confluence.get("direction"),
                 "confluence_confidence_pct": confluence.get("confidence_pct"),
                 "last_close": tech.get("last_close"),
+                "sparkline": sparkline,
                 "_score": score,
             }
     if best:

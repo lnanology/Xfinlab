@@ -120,13 +120,22 @@ def _fetch_basket_ranked(country):
     ranked = []
     for ticker, name in basket:
         volume = 0
+        sparkline = []
         try:
             hist = fetch_ohlc_history(ticker, period="7d")
             if not hist.empty and "Volume" in hist:
                 volume = int(hist["Volume"].sum())
+            # 2026-08-23 (AJ: "9張卡片加小K線圖" -- the homepage 9-category
+            # board's "trending" card uses stocks[0] from this list): same
+            # free-reuse pattern used elsewhere on this data -- hist is
+            # already fetched for the volume sum above, just also keep the
+            # last ~20 real closes for a glance-able sparkline, no new call.
+            if not hist.empty and "Close" in hist:
+                closes = hist["Close"].dropna().tail(20)
+                sparkline = [round(float(v), 4) for v in closes.tolist()]
         except Exception:
             volume = 0
-        ranked.append({"symbol": ticker, "name": name, "volume": volume, "source": "basket_volume"})
+        ranked.append({"symbol": ticker, "name": name, "volume": volume, "source": "basket_volume", "sparkline": sparkline})
     ranked.sort(key=lambda s: s["volume"], reverse=True)
     return ranked
 
