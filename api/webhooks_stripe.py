@@ -118,7 +118,13 @@ def get_account_status() -> dict:
     )
     try:
         stripe = _stripe()
-        acct = stripe.Account.retrieve()
+        # 2026-08-24 fix: stripe.Account.retrieve() returns a StripeObject,
+        # not a plain dict -- .get() isn't supported on it in this
+        # stripe-python version (raised "'get' is a dict method, but a
+        # Account is not a dict" in production). .to_dict() converts it
+        # (recursively, so nested `requirements` becomes a real dict too)
+        # before any .get() calls below.
+        acct = stripe.Account.retrieve().to_dict()
         requirements = acct.get("requirements", {}) or {}
         return {
             "configured": True,
