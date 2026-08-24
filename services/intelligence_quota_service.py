@@ -81,6 +81,15 @@ ENDPOINT_WEIGHT = {
     # call) so weighted the same. Same pending-business-approval caveat as
     # every other number in this dict.
     "regime": 3,
+    # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- "Probabilistic
+    # K-Line Path"): wraps services/probabilistic_forecast_service.py's
+    # get_probabilistic_forecast() -- one OHLC fetch + a vectorized numpy
+    # bootstrap resample (same cost shape as `stress_test`) PLUS an
+    # optional direction_probability_service model load/predict and a
+    # free capital_flow_engine cache read. Weighted one above stress_test
+    # to reflect the extra (cheap but real) ML inference step. Same
+    # pending-business-approval caveat as every other number in this dict.
+    "forecast": 4,
 }
 
 

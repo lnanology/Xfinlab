@@ -175,6 +175,7 @@ def intelligence_status():
         "technical": True,  # no external AI gate
         "stress_test": True,  # pure computation once price history resolves
         "regime_signal": True,  # reads a local persisted leaderboard, no external gate
+        "forecast": True,  # pure computation once price history resolves, ml_cross_check/capital_flow_context degrade individually rather than gating the whole endpoint
     })
 
 
@@ -189,6 +190,13 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-24",
+        "changes": [
+            {"type": "added", "text": "GET /v1/forecast/{ticker} -- Bear/Base/Bull price-path fan chart (10th/50th/90th percentile of a real historical-return bootstrap) plus an independently-validated ML up-probability cross-check and a capital-flow/liquidity regime reading. Never fabricates a fixed bull/base/bear probability split."},
+            {"type": "added", "text": "Self-serve Pro checkout is now live (real Stripe subscription) -- Pro no longer requires the manual early-access follow-up."},
+        ],
+    },
     {
         "date": "2026-08-18",
         "changes": [
@@ -832,6 +840,43 @@ def intelligence_stress_test(
         return _envelope(data=None, error=result.get("message", "Simulation unavailable"))
 
     return _envelope(data=result, meta={"symbol": body.symbol.upper()})
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- "Probabilistic
+# K-Line Path Generator", flagship for the Intelligence API v2 direction
+# discussed with AJ): packages services/probabilistic_forecast_service.py.
+# GET with a path param (not POST like stress-test) since this needs no
+# `amount` -- everything is expressed in the ticker's own price terms.
+# ---------------------------------------------------------------------------
+
+@router.get("/intelligence/v1/forecast/{ticker}")
+def intelligence_forecast(
+    ticker: str,
+    response: Response,
+    horizon_days: int = 5,
+    n_simulations: int = None,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Bear/Base/Bull fan-chart price path (10th/50th/90th percentile of a
+    real historical-return bootstrap, see services/probabilistic_forecast_
+    service.py's module docstring for the full honesty contract), plus an
+    independently-validated ML up-probability cross-check when one exists,
+    plus a capital-flow/liquidity regime reading. Never fabricates a fixed
+    bull/base/bear PROBABILITY split -- the returned band_note explains
+    what the percentiles actually mean."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "forecast", response)
+
+    from services.probabilistic_forecast_service import get_probabilistic_forecast, MAX_HORIZON_DAYS
+
+    ticker = ticker.upper().strip()
+    horizon_days = max(1, min(int(horizon_days or 5), MAX_HORIZON_DAYS))
+    result = get_probabilistic_forecast(ticker, horizon_days=horizon_days, n_simulations=n_simulations)
+    if not result.get("available"):
+        return _envelope(data=None, error=result.get("message", f"No forecast available for {ticker}"))
+
+    return _envelope(data=result, meta={"ticker": ticker, "horizon_days": horizon_days})
 
 
 # ---------------------------------------------------------------------------
