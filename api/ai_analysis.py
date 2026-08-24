@@ -546,6 +546,37 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         capital_flow_forecast = None
 
+    # 2026-08-24 (AJ: "只要個網站帶人用功能就係有實數據？" -- answer: no,
+    # not unless usage is logged and graded). Same Prediction Ledger
+    # already used for direction_probability_service above, new
+    # source="capital_flow_forecast" row per (symbol, day, horizon) --
+    # the existing scheduled grading job (backend/main.py's
+    # _run_prediction_ledger_grading_job) is source-agnostic, so it picks
+    # these up automatically, no separate job needed. Logged for every
+    # plan tier (the forecast is computed above regardless of is_pro_plan,
+    # only its DISPLAY is gated) since the point is building an honest
+    # track record from real usage, not gating the ledger by who paid.
+    # up_probability_pct here is capital_flow_forecast's internal
+    # sim_up_probability_pct (see that module's honesty note on why it's
+    # never shown in the UI) -- price_at_prediction is the forecast's own
+    # last_close, not `market.get("price")`, since that's the exact price
+    # the bootstrap simulation actually ran from.
+    try:
+        if capital_flow_forecast:
+            from services.prediction_ledger_service import record_prediction as _record_cf_prediction
+            _record_cf_prediction(
+                symbol,
+                {
+                    "available": True,
+                    "up_probability_pct": capital_flow_forecast.get("sim_up_probability_pct"),
+                    "horizon_days": capital_flow_forecast.get("horizon_days"),
+                },
+                price_at_prediction=capital_flow_forecast.get("last_close"),
+                source="capital_flow_forecast",
+            )
+    except Exception:
+        pass
+
     return {
         "data": {
             "scores": {

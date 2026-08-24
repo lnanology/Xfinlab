@@ -244,12 +244,19 @@ def grade_pending_predictions(calendar_day_buffer: float = 1.4) -> Dict:
     return {"graded": graded, "errors": errors, "skipped_too_recent": too_recent}
 
 
-def get_ledger_stats(symbol: Optional[str] = None) -> Dict:
+def get_ledger_stats(symbol: Optional[str] = None, source: Optional[str] = None) -> Dict:
     """Aggregate accuracy stats over all GRADED predictions (optionally
-    filtered to one symbol). This is the honesty scoreboard the module
-    docstring describes -- hit_rate_pct and avg_brier_score are the two
-    numbers that actually answer "is this model any good", as opposed
-    to a backtest's own self-reported holdout_accuracy_pct."""
+    filtered to one symbol and/or one source). This is the honesty
+    scoreboard the module docstring describes -- hit_rate_pct and
+    avg_brier_score are the two numbers that actually answer "is this
+    model any good", as opposed to a backtest's own self-reported
+    holdout_accuracy_pct.
+    2026-08-24: added `source` filter so multiple ledger-writers sharing
+    this one table (direction_probability_service,
+    capital_flow_forecast, ...) can each be scored separately -- e.g.
+    admin.py's /admin/prediction-ledger?source=capital_flow_forecast --
+    without one source's volume drowning out another's in a blended
+    number."""
     conn = _get_db()
     try:
         where = "WHERE graded = 1"
@@ -257,6 +264,9 @@ def get_ledger_stats(symbol: Optional[str] = None) -> Dict:
         if symbol:
             where += " AND symbol = ?"
             params.append(symbol.upper().strip())
+        if source:
+            where += " AND source = ?"
+            params.append(source.strip())
         rows = conn.execute(f"SELECT * FROM prediction_ledger {where}", params).fetchall()
 
         pending_where = "WHERE graded = 0"
@@ -264,6 +274,9 @@ def get_ledger_stats(symbol: Optional[str] = None) -> Dict:
         if symbol:
             pending_where += " AND symbol = ?"
             pending_params.append(symbol.upper().strip())
+        if source:
+            pending_where += " AND source = ?"
+            pending_params.append(source.strip())
         pending_count = conn.execute(
             f"SELECT COUNT(*) as c FROM prediction_ledger {pending_where}", pending_params
         ).fetchone()["c"]
@@ -298,14 +311,18 @@ def get_ledger_stats(symbol: Optional[str] = None) -> Dict:
     }
 
 
-def get_recent_predictions(limit: int = 50, symbol: Optional[str] = None) -> List[Dict]:
+def get_recent_predictions(limit: int = 50, symbol: Optional[str] = None, source: Optional[str] = None) -> List[Dict]:
     conn = _get_db()
     try:
-        where = ""
+        clauses: List[str] = []
         params: List = []
         if symbol:
-            where = "WHERE symbol = ?"
+            clauses.append("symbol = ?")
             params.append(symbol.upper().strip())
+        if source:
+            clauses.append("source = ?")
+            params.append(source.strip())
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
         rows = conn.execute(
             f"SELECT * FROM prediction_ledger {where} ORDER BY predicted_at DESC, id DESC LIMIT ?",
             params + [limit],

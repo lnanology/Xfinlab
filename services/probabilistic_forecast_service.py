@@ -79,12 +79,23 @@ def _simulate_day_by_day_bands(closes: np.ndarray, horizon_days: int, n_simulati
         # sampled trajectory).
         bands[name] = [round(float(v), 4) for v in np.percentile(price_paths, pct, axis=0)]
 
+    # 2026-08-24 (AJ: "只要個網站帶人用功能就係有實數據？" -- wiring Capital
+    # Flow Forecast into services/prediction_ledger_service.py so real
+    # usage actually accumulates a graded track record, not just traffic).
+    # This is the one number computed here that is NOT surfaced to the UI
+    # (see this module's own docstring on deliberately not fabricating/
+    # displaying a fixed "Bull probability = X%" to end users) -- it exists
+    # purely as an honest, directly-counted-from-the-same-simulation input
+    # for the prediction ledger to log and later grade against reality.
+    sim_up_probability_pct = round(float((price_paths[:, -1] > last_close).mean() * 100), 2)
+
     return {
         "last_close": round(last_close, 4),
         "bear_path": bands["bear"],
         "base_path": bands["base"],
         "bull_path": bands["bull"],
         "n_real_observations": len(log_returns),
+        "sim_up_probability_pct": sim_up_probability_pct,
     }
 
 
@@ -159,6 +170,12 @@ def get_probabilistic_forecast(symbol: str, horizon_days: int = 5, n_simulations
         ),
         "ml_cross_check": ml_cross_check,
         "capital_flow_context": capital_flow_context,
+        # Internal-only, not rendered by ai-analysis.html's
+        # renderCapitalFlowForecast() -- see the honesty note in
+        # _simulate_day_by_day_bands() above. Consumed by
+        # services/prediction_ledger_service.py so this forecast can be
+        # graded against reality later.
+        "sim_up_probability_pct": sim["sim_up_probability_pct"],
         "method": (
             "bootstrap resampling of real daily log returns (i.i.d.), "
             "day-by-day percentile band -- same underlying method as "
