@@ -24,11 +24,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from services.request_ip import get_client_ip
 from services.safe_json import SafeJSONResponse
 from services.ai_provenance import (
     is_ai_content_route,
@@ -128,7 +126,12 @@ reset_admin_password_if_requested()
 # calling. In-memory backend is fine for our current single-instance Railway
 # deployment; would need a Redis backend if we ever scale to multiple
 # instances (limits would then be per-instance, not global).
-limiter = Limiter(key_func=get_client_ip, default_limits=["100/minute"])
+# 2026-08-24: the Limiter object itself now lives in services/rate_limiter.py
+# so AI-cost-heavy routers (api/ai_analysis.py, api/chat.py) can import the
+# SAME instance for a stricter per-endpoint @limiter.limit(...) on top of
+# this 100/minute blanket default, without importing backend.main back into
+# them (circular).
+from services.rate_limiter import limiter
 app.state.limiter = limiter
 
 

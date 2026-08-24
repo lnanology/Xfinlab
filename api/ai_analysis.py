@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from services.rate_limiter import limiter
 from services.market_data_service import MarketDataService
 from services.news_service import NewsService
 from services.technical_analysis_service import get_technical_analysis_raw_and_translated
@@ -20,7 +21,17 @@ news_svc = NewsService()
 
 
 @router.post("/ai-analysis")
-async def ai_analysis(body: dict):
+# 2026-08-24 (site audit follow-up, "AI cost-heavy endpoints have no
+# tighter individual caps"): this endpoint fans out into multiple real
+# data fetches + engine calls (fundamentals/technical/news/smart_beta/
+# regime/scenario) per request, the most expensive single call on this
+# router -- tightened well below the blanket 100/minute default. Still
+# generous for a real user running several tickers in a row; mainly
+# blunts scripted scraping bursts. Per services/quota_middleware.py's
+# own docstrings, this is IP-based (raw request volume) and layered on
+# top of, not instead of, the existing per-USER plan/points gating.
+@limiter.limit("20/minute")
+async def ai_analysis(request: Request, body: dict):
     from services.quota_middleware import check_token_budget, record_ai_token_usage
 
     symbols = body.get("symbols", [])

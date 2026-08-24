@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from services.rate_limiter import limiter
 from ai.ai_router import get_ai_response_with_escalation
 from services.i18n import ai_language_instruction
 from services.ticker_shorthand import build_context_note
@@ -11,7 +12,14 @@ MAX_HISTORY_TURNS = 6  # keep prompt short so cost/latency stays predictable
 
 
 @router.post("/chat")
-async def chat(body: dict):
+# 2026-08-24 (site audit follow-up, "AI cost-heavy endpoints have no
+# tighter individual caps"): every message here is a real LLM call --
+# tightened below the blanket 100/minute default, same reasoning as
+# api/ai_analysis.py's @limiter.limit above. Per-user token budgets
+# (services/quota_middleware.py) still govern actual cost; this is just
+# the raw-request-volume safety net.
+@limiter.limit("30/minute")
+async def chat(request: Request, body: dict):
     """
     XFINLAB AI 投資助手 chat endpoint.
 
