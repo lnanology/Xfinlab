@@ -74,7 +74,7 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
    row); the mobile media query further down overrides it to order:0 so
    it renders above the welcome/messages content instead -- see that
    query for the full reasoning. */
-.chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.chat-area{flex:1;width:100%;min-width:0;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 .welcome,.messages{order:2}
 .img-preview{order:3}
 .input-area{order:4}
@@ -130,7 +130,19 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
    positionInputTools() above still selects '.welcome-grid' to relocate
    #inputTools on mobile) even though its CSS is now a flex pill-wrap
    instead of a 3-col grid -- renaming it would silently break that JS. */
-.welcome{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem;padding-top:min(9vh,4rem);text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* 2026-08-24 fix ("個AICHAT劃面得一半" -- AI Chat screen only filling half
+   the viewport): .main/.chat-area/.messages all explicitly set
+   min-height:0 (needed for a flex:1 item inside a flex-column parent to
+   actually grow to fill available space instead of clamping to its own
+   content's intrinsic min-height) -- .welcome was the one flex:1 item in
+   this exact chain that DIDN'T have it, an inconsistency against this
+   same file's own established pattern. Without it, #welcome could refuse
+   to expand past its own content height in some browsers/zoom levels,
+   leaving the whole welcome+input block sized to its content instead of
+   the full viewport, with dead space below down to the footer. Also
+   width:100% -- belt-and-braces alongside flex:1 so this never depends
+   on flex-basis:auto resolving correctly on its own. */
+.welcome{position:relative;flex:1;width:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem;padding-top:min(9vh,4rem);text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch}
 /* 2026-08-22 v2 (AJ: "好似無點改" -- the first pass's glow/pills were too
    subtle to read as a redesign at a glance). Made the glow much bigger/
    more saturated (closer to the reference screenshot's dominant lit-up
@@ -1556,10 +1568,31 @@ async function submitFeedback() {
 }
 </script>
 
-<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
-<footer>
-  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_chat">Research Copilot</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Cookie Policy</a></div>
-</footer>
+<!-- 2026-08-24 fix ("個AICHAT劃面得一半" -- make the chat area FULL height):
+     chat.html is the one page on this site that opts into a true
+     single-viewport "app shell" layout (html,body{height:100dvh;
+     overflow:hidden} + .main{flex:1}, see that CSS block's own 2026-07-21
+     comment) -- every other page (chart-analysis.html, stress-lab.html,
+     portfolio.html, etc.) is a normal SCROLLING page where a full-size
+     <footer> at the bottom is fine. Here, a full-size footer + ad slot
+     were still competing with #chatArea for a share of that fixed
+     100dvh, shrinking the actual chat area well below "full". Collapsed
+     by default into a slim, always-visible strip (flex-shrink:0, ~34px)
+     so #chatArea gets effectively the whole viewport; click to expand
+     and see the ad slot + full legal links without losing them from the
+     page (compliance links stay reachable, just not eating chat space
+     by default). -->
+<div id="legalBar" style="flex-shrink:0;border-top:1px solid var(--border-color);background:var(--bg-card)">
+  <button onclick="const b=document.getElementById('legalBarBody');const open=b.style.display!=='none';b.style.display=open?'none':'block';document.getElementById('legalBarToggle').textContent=open?'▲':'▼';" id="legalBarToggleBtn" style="width:100%;background:transparent;border:none;color:var(--text-muted);font-size:0.72rem;padding:6px 1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+    <span data-i18n="chat_legal_toggle">Legal &amp; Disclosures</span><span id="legalBarToggle">▼</span>
+  </button>
+  <div id="legalBarBody" style="display:none">
+    <div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+    <footer>
+      <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_chat">Research Copilot</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Cookie Policy</a></div>
+    </footer>
+  </div>
+</div>
 <script src="js/cookie-consent.js"></script>
 <script src="js/anti-scrape.js"></script>
 <script src="js/ads.js"></script>
