@@ -880,6 +880,21 @@ def get_prediction_ledger(token: str, request: Request, symbol: str = None, sour
     }
 
 
+@router.get("/admin/stripe-account-status")
+def get_stripe_account_status(token: str, request: Request):
+    """
+    2026-08-24 (AJ: "點知面家個STRIPE係咪完全可收款提款無問題"): live check
+    against Stripe's own Account.retrieve() -- see
+    api/webhooks_stripe.py's get_account_status() for the full honesty
+    note on why this is a separate call from the public /stripe/status
+    (that one only checks env vars, this one asks Stripe directly
+    whether the account can actually accept charges and pay out).
+    """
+    verify_admin(token, "get_stripe_account_status", request)
+    from api.webhooks_stripe import get_account_status
+    return get_account_status()
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """

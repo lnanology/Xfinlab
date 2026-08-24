@@ -94,6 +94,51 @@ def _api_price_id_for(tier: str) -> str:
     return os.getenv(f"STRIPE_PRICE_ID_API_{tier.upper()}", "")
 
 
+def get_account_status() -> dict:
+    """2026-08-24 (AJ: "點知面家個STRIPE係咪完全可收款提款無問題" -- how do
+    I know the Stripe setup can actually accept payments and pay out
+    with no issues). GET /stripe/status above only reports whether
+    STRIPE_SECRET_KEY and price ID env vars are SET -- it never asks
+    Stripe whether the underlying account has actually cleared
+    onboarding/KYC. This calls stripe.Account.retrieve() (no account id
+    -- returns whatever account the configured API key belongs to) for
+    the real, live answer: charges_enabled/payouts_enabled plus exactly
+    what Stripe is still waiting on (requirements.currently_due), the
+    same data shown on the Dashboard's "Activate your account" banner.
+    Admin-only consumer: api/admin.py's GET /admin/stripe-account-status.
+    Read-only, never raises -- a failed/misconfigured key must not break
+    the admin panel, just report the failure honestly."""
+    if not STRIPE_SECRET_KEY:
+        return {"configured": False, "message": "STRIPE_SECRET_KEY not set"}
+
+    key_mode = (
+        "live" if STRIPE_SECRET_KEY.startswith("sk_live_")
+        else "test" if STRIPE_SECRET_KEY.startswith("sk_test_")
+        else "unknown"
+    )
+    try:
+        stripe = _stripe()
+        acct = stripe.Account.retrieve()
+        requirements = acct.get("requirements", {}) or {}
+        return {
+            "configured": True,
+            "key_mode": key_mode,
+            "charges_enabled": acct.get("charges_enabled"),
+            "payouts_enabled": acct.get("payouts_enabled"),
+            "details_submitted": acct.get("details_submitted"),
+            "currently_due": requirements.get("currently_due", []),
+            "past_due": requirements.get("past_due", []),
+            "pending_verification": requirements.get("pending_verification", []),
+            "disabled_reason": requirements.get("disabled_reason"),
+            "current_deadline": requirements.get("current_deadline"),
+            "country": acct.get("country"),
+            "default_currency": acct.get("default_currency"),
+        }
+    except Exception as e:
+        logger.exception("stripe.get_account_status: Account.retrieve() failed")
+        return {"configured": True, "key_mode": key_mode, "error": str(e)}
+
+
 def _stripe():
     """Lazy import + configure -- keeps `stripe` an optional dependency at
     module-import time (mirrors this codebase's "dormant until

@@ -198,6 +198,7 @@
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
     <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> Audit Log</div>
     <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> Security Scan</div>
+    <div class="nav-item" onclick="showPage('stripeaccount')"><span class="icon">💳</span> Stripe Account</div>
     <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> Prediction Ledger</div>
     <div class="nav-item" onclick="showPage('composer')"><span class="icon">🧩</span> Formula Composer</div>
     <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> Feedback</div>
@@ -778,6 +779,20 @@
       </div>
     </div>
 
+    <!-- Stripe Account Status (2026-08-24, AJ: "點知面家個STRIPE係咪完全可收款提款無問題") -->
+    <div class="page" id="page-stripeaccount">
+      <div class="page-title">Stripe Account</div>
+      <div class="page-sub">Live check against Stripe's own Account.retrieve() -- not just whether STRIPE_SECRET_KEY/price IDs are set (see the public /stripe/status for that). This answers whether the account can actually accept charges and pay out right now, and exactly what Stripe is still waiting on if not.</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Account Status</span>
+          <span id="stripeAcctMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="stripeAcctSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadStripeAccountStatus()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
     <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
     <div class="page" id="page-predledger">
       <div class="page-title">Prediction Ledger</div>
@@ -1227,6 +1242,7 @@ function showPage(name) {
   if (name === 'flags') { loadFlags(); loadEarlyAccessRequests(); }
   if (name === 'auditlog') loadAuditLog();
   if (name === 'security') loadSecurityScan();
+  if (name === 'stripeaccount') loadStripeAccountStatus();
   if (name === 'content') loadContentVariants();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
@@ -1792,6 +1808,71 @@ function renderSecurityScan(data) {
       <div style="font-size:0.78rem">${new Date(h.created_at).toLocaleString()}</div>
       <span style="font-size:0.72rem;color:${h.any_flags ? 'var(--red)' : 'var(--green)'}">${h.any_flags ? '⚠️ Issues' : '✅ Clean'}</span>
     </div>`).join('') || '<div class="empty">No history yet</div>';
+}
+
+// 2026-08-24 (AJ: "點知面家個STRIPE係咪完全可收款提款無問題"): live pull
+// against api/admin.py's GET /admin/stripe-account-status, which itself
+// calls stripe.Account.retrieve() -- the real answer, not just whether
+// env vars are set. Renders charges_enabled/payouts_enabled as green/red
+// pills plus a plain list of anything Stripe is still waiting on
+// (requirements.currently_due) so AJ knows exactly what to go fix on the
+// Dashboard if either is false.
+async function loadStripeAccountStatus() {
+  document.getElementById('stripeAcctSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('stripeAcctMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/stripe-account-status?token=${adminToken}`);
+    const data = await res.json();
+    renderStripeAccountStatus(data);
+  } catch (e) {
+    document.getElementById('stripeAcctSummary').innerHTML = '<div class="empty">Failed to load Stripe account status</div>';
+  }
+}
+
+function renderStripeAccountStatus(data) {
+  const el = document.getElementById('stripeAcctSummary');
+  if (!data || !data.configured) {
+    el.innerHTML = `<div class="empty">Stripe not configured yet -- STRIPE_SECRET_KEY is not set on Railway.</div>`;
+    return;
+  }
+  if (data.error) {
+    el.innerHTML = `<div class="empty">STRIPE_SECRET_KEY is set (${escapeHtml(data.key_mode || 'unknown')} mode) but the live Stripe API call failed: ${escapeHtml(data.error)}</div>`;
+    return;
+  }
+  document.getElementById('stripeAcctMeta').textContent = `${(data.key_mode || 'unknown').toUpperCase()} MODE`;
+
+  const pill = (ok) => ok
+    ? `<span style="color:var(--green);font-weight:600">✅ Enabled</span>`
+    : `<span style="color:var(--red);font-weight:600">❌ Disabled</span>`;
+
+  const dueList = [...(data.currently_due || []), ...(data.past_due || [])];
+  const dueHtml = dueList.length
+    ? `<div style="font-size:0.76rem;color:var(--red);padding:8px 0 0 0;line-height:1.7">Stripe still needs: ${dueList.map(escapeHtml).join(', ')}</div>`
+    : `<div style="font-size:0.76rem;color:var(--green);padding:8px 0 0 0">No outstanding requirements.</div>`;
+
+  const keyModeWarning = data.key_mode === 'test'
+    ? `<div style="font-size:0.76rem;color:var(--red);padding:8px 0 0 0">⚠️ This is a TEST key -- checkout will work but no real money moves. Swap in the sk_live_... key on Railway when ready to go live.</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Charges Enabled</span></div>
+      <div style="font-size:0.8rem">${pill(data.charges_enabled)}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Payouts Enabled</span></div>
+      <div style="font-size:0.8rem">${pill(data.payouts_enabled)}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Details Submitted</span></div>
+      <div style="font-size:0.8rem">${pill(data.details_submitted)}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Country / Currency</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(data.country || '—')} / ${escapeHtml((data.default_currency || '—').toUpperCase())}</div>
+    </div>
+    ${dueHtml}
+    ${keyModeWarning}`;
 }
 
 async function loadPredictionLedger() {
