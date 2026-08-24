@@ -455,6 +455,31 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+# 2026-08-24 (Capital Flow Engine, task following on from Gann/à la carte
+# work): services/capital_flow_engine.py's snapshot (7-region + 11-sector
+# rotation + FRED liquidity, ~18 basket tickers) MUST be computed off the
+# request path -- confirmed live that a cache-miss inline compute inside
+# get_technical_analysis() made the first /chart-search request after
+# every cache expiry time out (>180s). This cron is now the ONLY thing
+# that ever calls the slow path (refresh_capital_flow_cache ->
+# get_capital_flow_snapshot(force_refresh=True)); every live request just
+# reads whatever's already cached, same interval-trigger pattern as
+# _run_watchlist_anomaly_job above.
+def _run_capital_flow_refresh_job():
+    try:
+        from services.capital_flow_engine import refresh_capital_flow_cache
+        refresh_capital_flow_cache()
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_capital_flow_refresh_job,
+    "interval",
+    minutes=30,
+    id="capital_flow_engine_refresh",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

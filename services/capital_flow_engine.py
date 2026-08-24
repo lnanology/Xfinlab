@@ -168,19 +168,28 @@ def _compute_snapshot() -> Dict:
 
 
 def get_capital_flow_snapshot(force_refresh: bool = False) -> Dict:
-    """Public entrypoint -- cached 30min, ~18 tickers + 1 FRED call per
-    refresh. Safe to call from any API route (api/market_pulse.py,
-    api/intelligence.py, a future dedicated endpoint) without worrying
-    about request-time cost -- worst case is a 30-minute-stale reading,
-    never a slow request."""
+    """Public entrypoint for a FULL (possibly slow -- ~18 tickers + 1 FRED
+    call) computation. This is ONLY ever called by refresh_capital_flow_
+    cache() below (the scheduled cron job in backend/main.py) or an admin
+    manual-trigger. It must NEVER be called from inside a live user
+    request (get_technical_analysis()/Confluence Engine reads the cache
+    directly via get_capital_flow_signal_for_confluence() instead) -- an
+    earlier version of this file did call this inline on cache-miss, which
+    meant the first chart-search/ai-analysis request after every 30min
+    cache expiry silently paid for an 18-ticker sequential scan on top of
+    its own single-ticker fetch. Confirmed in production: a live
+    /chart-search/AAPL request timed out (>180s) the first time this ran.
+    Fixed by fully decoupling computation (cron-only, this function) from
+    reads (cache-only, get_capital_flow_signal_for_confluence)."""
     global _cache, _cache_time, _computing
     now = time.time()
     if not force_refresh and _cache is not None and (now - _cache_time) < _CACHE_TTL_SECONDS:
         return {**_cache, "cached": True}
     if _computing:
-        # Reentrant call from inside our own basket scan -- see the
-        # _computing docstring above. Return whatever's cached (possibly
-        # None) instead of recursing.
+        # Reentrant call -- shouldn't happen now that the Confluence Engine
+        # only ever reads the cache (see get_capital_flow_signal_for_
+        # confluence), but kept as a defensive guard in case another
+        # caller is added later that isn't as careful.
         return {**_cache, "cached": True} if _cache else {"capital_flow_score": None, "cached": True}
     _computing = True
     try:
@@ -192,21 +201,25 @@ def get_capital_flow_snapshot(force_refresh: bool = False) -> Dict:
     return {**result, "cached": False}
 
 
+def refresh_capital_flow_cache():
+    """Scheduled-job entry point (backend/main.py, cron) -- the ONLY
+    routine call path that ever triggers the full 18-ticker + FRED scan.
+    Runs off the user request path entirely, same convention as market_
+    pulse.py's refresh_free_signals_and_notify()."""
+    get_capital_flow_snapshot(force_refresh=True)
+
+
 def get_capital_flow_signal_for_confluence() -> Optional[Dict]:
-    """Lightweight wrapper for technical_analysis_service.py's Confluence
-    Engine -- returns just {"score", "direction"} (or None if nothing is
-    available yet), read from the same 30min cache above so adding this
-    signal to every single chart/analysis call never triggers a fresh
-    18-ticker scan per request. Deliberately never raises -- a failure
-    here must degrade to "signal not counted", never break the caller's
-    analysis (same contract Gann/OBV/etc. already follow)."""
-    try:
-        snap = get_capital_flow_snapshot()
-    except Exception:
+    """Read-only, in-memory cache peek for technical_analysis_service.py's
+    Confluence Engine -- NEVER triggers a computation, NEVER makes a
+    network call, so adding this signal to every single chart/analysis
+    request costs nothing beyond a dict lookup. Returns None (signal not
+    counted, same as every other optional Confluence input) until the
+    scheduled job above has populated the cache at least once -- e.g. for
+    a few minutes right after a fresh deploy."""
+    if _cache is None or _cache.get("capital_flow_score") is None:
         return None
-    if snap.get("capital_flow_score") is None:
-        return None
-    return {"score": snap["capital_flow_score"], "direction": snap["capital_flow_direction"]}
+    return {"score": _cache["capital_flow_score"], "direction": _cache["capital_flow_direction"]}
 
 
 if __name__ == "__main__":
