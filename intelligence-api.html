@@ -40,8 +40,18 @@ nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid 
 .btn-ghost{background:transparent;color:var(--text-primary);border:1px solid var(--border-color);padding:12px 24px;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer;text-decoration:none;display:inline-block}
 
 .section{padding:36px 0}
-.section-title{font-size:1.4rem;font-weight:700;margin:0 0 6px;text-align:center}
-.section-sub{color:var(--text-muted);font-size:0.88rem;text-align:center;margin:0 0 28px}
+.section-title{font-size:1.4rem;font-weight:700;margin:0 auto 6px;text-align:center}
+/* 2026-08-24 fix (AJ: "API呢度字置中" -- section text not visually
+   centered): css/style.css's shared .section-sub rule (loaded before
+   this page's own <style> block) sets max-width:500px with no margin,
+   which this page's own rule below never overrode -- a block-level div
+   with a max-width and no auto side-margins sits flush against the LEFT
+   edge of its parent by default, so even though text-align:center makes
+   the TEXT centered *within that narrow box*, the box itself (and
+   everything in it) visibly hugs the left side of the page instead of
+   sitting in the middle. margin:0 auto forces the box itself to center,
+   regardless of whatever max-width some other stylesheet applies. */
+.section-sub{color:var(--text-muted);font-size:0.88rem;text-align:center;margin:0 auto 28px}
 
 .endpoints{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 @media (max-width:820px){.endpoints{grid-template-columns:1fr}}
