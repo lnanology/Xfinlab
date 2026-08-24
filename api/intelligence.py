@@ -441,7 +441,7 @@ def intelligence_self_serve_signup(body: FreeSignupRequest, request: Request):
     html = f"""
     <div style="font-family:Arial,sans-serif;padding:20px;background:#080c14;color:#e2e8f0">
         <h2 style="color:#00d4ff">Your XFINLAB Intelligence API key</h2>
-        <p>Free tier -- 100 weighted calls/day. Keep this key secret; it will not be shown again (re-run signup with the same email to rotate it if lost).</p>
+        <p>Free tier -- 200 weighted calls/day. Keep this key secret; it will not be shown again (re-run signup with the same email to rotate it if lost).</p>
         <p style="font-family:monospace;background:#111827;padding:12px;border-radius:8px;word-break:break-all">{result['key']}</p>
         <p>Docs: <a href="https://www.xfinlab.com/intelligence-api.html" style="color:#00d4ff">xfinlab.com/intelligence-api.html</a> &middot; Terms: <a href="https://www.xfinlab.com/api-terms.html" style="color:#00d4ff">api-terms.html</a></p>
     </div>

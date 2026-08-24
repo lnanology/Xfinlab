@@ -64,6 +64,23 @@ SITE_URL = os.getenv("SITE_URL", "https://www.xfinlab.com")
 VALID_ADDON_FEATURES = {"agent_debate", "advanced_engines_bundle"}
 ADDON_GRANT_DAYS = 35  # matches plan_grant_service's monthly-plan grant window
 
+# 2026-08-24 (AJ: "未落code嘅大嘢" -- Intelligence API self-serve Pro
+# checkout, the one big undelivered code item from this session's earlier
+# audit): a THIRD product line, sibling to the plan and addon checkouts
+# above, but selling a self-serve Intelligence API key (see
+# services/api_key_service.issue_self_serve_paid_key) instead of a
+# consumer plan or feature unlock. Deliberately public/unauthenticated --
+# unlike the two checkouts above, there's no JWT token here, because the
+# whole point of the Intelligence API self-serve flow (intelligence-api.html)
+# is that it never required a logged-in XFINLAB account (see
+# api/intelligence.py's /intelligence/v1/signup free-tier path, which this
+# mirrors). Identity is just the email address, same as the free tier.
+# Enterprise deliberately stays on the manual /intelligence/early-access
+# path -- out of scope here, per AJ's earlier scoping of that tier as
+# sales-negotiated.
+VALID_API_TIERS = {"pro"}
+API_KEY_GRANT_DAYS = 35  # matches ADDON_GRANT_DAYS -- one billing month's buffer
+
 
 def _price_id_for(plan: str, cycle: str) -> str:
     return os.getenv(f"STRIPE_PRICE_ID_{plan.upper()}_{cycle.upper()}", "")
@@ -71,6 +88,10 @@ def _price_id_for(plan: str, cycle: str) -> str:
 
 def _addon_price_id_for(feature: str) -> str:
     return os.getenv(f"STRIPE_PRICE_ID_ADDON_{feature.upper()}", "")
+
+
+def _api_price_id_for(tier: str) -> str:
+    return os.getenv(f"STRIPE_PRICE_ID_API_{tier.upper()}", "")
 
 
 def _stripe():
@@ -101,7 +122,12 @@ def stripe_status():
     # show a real, configured checkout, never a coming-soon dead button"
     # posture as the plan checkout above.
     live_addons = [f for f in VALID_ADDON_FEATURES if _addon_price_id_for(f)]
-    return {"enabled": True, "live_price_keys": live, "live_addon_keys": live_addons}
+    # 2026-08-24: lets intelligence-api.html's Pro plan card know whether to
+    # offer real Stripe checkout yet or fall back to the old manual
+    # "Request Early Access" path -- same dormant-safe posture as the plan
+    # and addon lists above.
+    live_api_tiers = [t for t in VALID_API_TIERS if _api_price_id_for(t)]
+    return {"enabled": True, "live_price_keys": live, "live_addon_keys": live_addons, "live_api_tiers": live_api_tiers}
 
 
 @router.post("/stripe/create-checkout-session")
@@ -216,6 +242,57 @@ async def create_addon_checkout_session(request: Request):
     return {"status": "ok", "checkout_url": session.url}
 
 
+@router.post("/stripe/create-api-checkout-session")
+async def create_api_checkout_session(request: Request):
+    """2026-08-24: Intelligence API self-serve Pro checkout -- see the
+    VALID_API_TIERS block above for why this is public/unauthenticated
+    (email-keyed, not JWT-keyed) unlike the two checkout endpoints above
+    it. Body: {"email": "...", "tier": "pro"}. On success the webhook
+    handler below issues a real API key and emails it -- this endpoint
+    itself never returns a key, same "never in a JSON response" posture as
+    every other key-issuance path in this codebase."""
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured yet")
+
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower()
+    tier = (body.get("tier") or "").strip().lower()
+
+    if "@" not in email or "." not in email.split("@")[-1] or len(email) < 5:
+        raise HTTPException(status_code=400, detail="Please provide a valid email address")
+    if tier not in VALID_API_TIERS:
+        raise HTTPException(status_code=400, detail=f"Unknown API tier {tier!r}")
+
+    from services.disposable_email_domains import is_disposable_email
+    if is_disposable_email(email):
+        raise HTTPException(status_code=400, detail="Please use a non-disposable email address")
+
+    price_id = _api_price_id_for(tier)
+    if not price_id:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Stripe price ID for API tier {tier!r} is not configured yet",
+        )
+
+    stripe = _stripe()
+    meta = {"xfinlab_api_email": email, "xfinlab_api_tier": tier}
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            customer_email=email,
+            subscription_data={"metadata": meta},
+            metadata=meta,
+            success_url=f"{SITE_URL}/intelligence-api.html?stripe=api_success",
+            cancel_url=f"{SITE_URL}/intelligence-api.html?stripe=api_cancelled",
+        )
+    except Exception as e:
+        logger.warning(f"[stripe_api_checkout] session creation failed for {email}/{tier}: {e}")
+        raise HTTPException(status_code=502, detail="Could not start Stripe checkout, please try again")
+
+    return {"status": "ok", "checkout_url": session.url}
+
+
 def _resolve_meta(data: dict) -> dict:
     metadata = data.get("metadata") or {}
     uid_raw = metadata.get("xfinlab_user_id") or data.get("client_reference_id")
@@ -226,6 +303,12 @@ def _resolve_meta(data: dict) -> dict:
     # the webhook handler below can tell the two kinds of purchase apart
     # from the same _resolve_meta() call rather than re-parsing metadata.
     addon_feature = (metadata.get("xfinlab_addon_feature") or "").strip().lower()
+    # 2026-08-24: Intelligence API self-serve checkout sets
+    # xfinlab_api_email/xfinlab_api_tier instead of a user_id (this flow is
+    # unauthenticated -- see create_api_checkout_session above), so it's
+    # surfaced as its own pair rather than forced into the user_id shape.
+    api_email = (metadata.get("xfinlab_api_email") or "").strip().lower()
+    api_tier = (metadata.get("xfinlab_api_tier") or "").strip().lower()
     try:
         user_id = int(uid_raw) if uid_raw is not None else None
     except (TypeError, ValueError):
@@ -235,7 +318,37 @@ def _resolve_meta(data: dict) -> dict:
         "plan": plan if plan in VALID_PLANS else None,
         "cycle": cycle,
         "addon_feature": addon_feature if addon_feature in VALID_ADDON_FEATURES else None,
+        "api_email": api_email if (api_email and api_tier in VALID_API_TIERS) else None,
+        "api_tier": api_tier if api_tier in VALID_API_TIERS else None,
     }
+
+
+def _grant_api_key_and_notify(email: str, tier: str, renewal: bool) -> dict:
+    """Shared by both webhook branches below -- issues/re-issues a paid
+    self-serve API key and emails it. Mirrors api/intelligence.py's
+    /intelligence/v1/signup email template and 'never in the JSON response'
+    posture. A send failure is logged, not raised -- unlike the synchronous
+    signup endpoint, there's no request to fail back to the customer here,
+    this runs from an async webhook."""
+    from services.api_key_service import issue_self_serve_paid_key
+    from services.email_service import EmailService
+
+    result = issue_self_serve_paid_key(email, tier, API_KEY_GRANT_DAYS)
+    verb = "renewed" if renewal else "issued"
+    html = f"""
+    <div style="font-family:Arial,sans-serif;padding:20px;background:#080c14;color:#e2e8f0">
+        <h2 style="color:#00d4ff">Your XFINLAB Intelligence API key ({tier.capitalize()} tier)</h2>
+        <p>Your Pro subscription is active. This key replaces any previous key on this email -- keep it secret; it will not be shown again.</p>
+        <p style="font-family:monospace;background:#111827;padding:12px;border-radius:8px;word-break:break-all">{result['key']}</p>
+        <p>Valid through: {result['expires_at']} (auto-renews with your subscription)</p>
+        <p>Docs: <a href="https://www.xfinlab.com/intelligence-api.html" style="color:#00d4ff">xfinlab.com/intelligence-api.html</a> &middot; Terms: <a href="https://www.xfinlab.com/api-terms.html" style="color:#00d4ff">api-terms.html</a></p>
+    </div>
+    """
+    try:
+        EmailService.send(email, f"[XFINLAB] Your Intelligence API key ({verb})", html)
+    except Exception as e:
+        logger.warning(f"[stripe_webhook] API key email failed for {email}: {e}")
+    return result
 
 
 @router.post("/webhooks/stripe")
@@ -271,6 +384,13 @@ async def stripe_webhook(request: Request):
 
     if event_type == "checkout.session.completed":
         meta = _resolve_meta(data)
+        if meta["api_email"] is not None and meta["api_tier"] is not None:
+            # 2026-08-24: Intelligence API self-serve purchase -- see
+            # create_api_checkout_session above. Checked first since this
+            # metadata shape has no user_id at all.
+            result = _grant_api_key_and_notify(meta["api_email"], meta["api_tier"], renewal=False)
+            logger.info(f"[stripe_webhook] checkout.session.completed: API key issued for {meta['api_email']} ({meta['api_tier']}) until {result['expires_at']}")
+            return {"status": "ok", "action": "api_key_issued", "tier": meta["api_tier"], "expires_at": result["expires_at"]}
         if meta["user_id"] is not None and meta["addon_feature"] is not None:
             # 2026-08-24: à la carte feature unlock, not a plan purchase --
             # see create_addon_checkout_session() above.
@@ -287,7 +407,7 @@ async def stripe_webhook(request: Request):
 
     if event_type == "invoice.paid" and data.get("billing_reason") == "subscription_cycle":
         sub_id = data.get("subscription")
-        meta = {"user_id": None, "plan": None, "cycle": "monthly", "addon_feature": None}
+        meta = {"user_id": None, "plan": None, "cycle": "monthly", "addon_feature": None, "api_email": None, "api_tier": None}
         if sub_id:
             try:
                 # Same stripe.Event .get()-blocking behavior applies to
@@ -297,6 +417,13 @@ async def stripe_webhook(request: Request):
                 meta = _resolve_meta({"metadata": sub.get("metadata") or {}})
             except Exception as e:
                 logger.warning(f"[stripe_webhook] invoice.paid: could not resolve subscription {sub_id}: {e}")
+        if meta["api_email"] is not None and meta["api_tier"] is not None:
+            # Intelligence API subscription renewal -- re-issue a fresh key
+            # with a new expires_at, same "no rotation nagging" posture
+            # documented on issue_self_serve_paid_key().
+            result = _grant_api_key_and_notify(meta["api_email"], meta["api_tier"], renewal=True)
+            logger.info(f"[stripe_webhook] invoice.paid renewal: API key renewed for {meta['api_email']} ({meta['api_tier']}) until {result['expires_at']}")
+            return {"status": "ok", "action": "api_key_renewed", "tier": meta["api_tier"], "expires_at": result["expires_at"]}
         if meta["user_id"] is not None and meta["addon_feature"] is not None:
             # Addon renewal -- extend by the same window as the initial
             # grant (see grant_addon()'s stacking behavior).

@@ -721,6 +721,21 @@ await client.sentiment('AAPL');</span></div>
 <script>
 const API = 'https://api.xfinlab.com/api';
 
+// 2026-08-24 (Intelligence API self-serve Pro checkout): mirrors the
+// _xflLiveAddonKeys pattern on ai-analysis.html -- fetch once on load so
+// the Pro branch of accessForm's submit handler below only ever offers a
+// real, configured Stripe checkout. Until AJ sets STRIPE_PRICE_ID_API_PRO
+// on Railway this stays empty and Pro silently keeps behaving exactly like
+// today (falls through to the manual /intelligence/early-access path).
+let _xflLiveApiTiers = [];
+(async function() {
+  try {
+    const r = await fetch(`${API}/stripe/status`);
+    const d = await r.json();
+    _xflLiveApiTiers = (d && d.live_api_tiers) || [];
+  } catch (e) { /* stays [] -- Pro falls back to early-access, same as before */ }
+})();
+
 // 2026-08-17 (task #3, "要加返多語言" -- full i18n pass): local t() helper,
 // same pattern used on chart-analysis.html etc. -- reads from the shared
 // I18N object (js/i18n.js) once its async init() has populated
@@ -996,6 +1011,25 @@ document.getElementById('accessForm').addEventListener('submit', async function(
         msgEl.className = 'ok';
         document.getElementById('accessForm').reset();
         document.getElementById('accessTier').value = 'pro';
+      } else {
+        msgEl.textContent = (data && data.detail) || t('ia_msg_err', 'Something went wrong — please try again.');
+        msgEl.className = 'err';
+      }
+    } else if (tier === 'pro' && _xflLiveApiTiers.includes('pro')) {
+      // 2026-08-24: real self-serve checkout -- only reachable once AJ has
+      // set STRIPE_PRICE_ID_API_PRO (see _xflLiveApiTiers above). Redirects
+      // to Stripe; the key itself is issued+emailed by the webhook after
+      // payment (api/webhooks_stripe.py), never returned here.
+      btn.textContent = t('ia_msg_redirecting', 'Redirecting to checkout...');
+      res = await fetch(`${API}/stripe/create-api-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, tier: 'pro' }),
+      });
+      data = await res.json();
+      if (res.ok && data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
       } else {
         msgEl.textContent = (data && data.detail) || t('ia_msg_err', 'Something went wrong — please try again.');
         msgEl.className = 'err';

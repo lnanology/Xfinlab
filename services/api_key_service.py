@@ -115,6 +115,20 @@ def verify_key(key: str) -> dict:
             "SELECT * FROM self_serve_api_keys WHERE key=? AND active=1", (key,)
         ).fetchone()
         if row2:
+            # 2026-08-24 (self-serve Pro API billing): paid self-serve keys
+            # carry an expires_at (subscription period end, refreshed by
+            # the Stripe webhook on renewal -- see issue_self_serve_paid_key
+            # below). Free-tier keys keep expires_at NULL and never hit
+            # this branch. An expired row is treated like no row at all --
+            # we don't flip active=0 here (a renewal can still land later
+            # and should just extend expires_at), just refuse to verify it.
+            if row2["expires_at"]:
+                try:
+                    expired = datetime.fromisoformat(row2["expires_at"]) < datetime.utcnow()
+                except Exception:
+                    expired = False
+                if expired:
+                    return {"valid": False}
             conn.execute(
                 "UPDATE self_serve_api_keys SET last_used_at=? WHERE id=?",
                 (datetime.utcnow().isoformat(), row2["id"]),
@@ -267,6 +281,15 @@ def _init_self_serve_tables():
             last_used_at TEXT
         )
     """)
+    # 2026-08-24 (self-serve Pro API billing): NULL for the Free tier (no
+    # expiry, same as before), set to a real timestamp for a paid tier --
+    # see issue_self_serve_paid_key() below. Guarded ALTER so this is a
+    # no-op on a DB that already has the column, same convention as every
+    # other incremental-column addition in this codebase.
+    try:
+        conn.execute("ALTER TABLE self_serve_api_keys ADD COLUMN expires_at TEXT")
+    except Exception:
+        pass
     conn.execute("""
         CREATE TABLE IF NOT EXISTS self_serve_signup_attempts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -343,5 +366,44 @@ def issue_self_serve_free_key(email: str) -> dict:
         )
         conn.commit()
         return {"key": key, "tier": "free", "email": email}
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-24: Self-serve PAID-tier issuance (Intelligence API Pro checkout).
+#
+# Mirrors issue_self_serve_free_key() above -- same table, same "one active
+# self-serve key per email" posture -- but carries an expires_at so the key
+# stops working if the Stripe subscription lapses. Called from the
+# checkout.session.completed / invoice.paid webhook branches in
+# api/webhooks_stripe.py, same as every other paid-grant path in that file.
+# On renewal (invoice.paid on an existing subscription), the webhook calls
+# this again with the same email/tier -- it re-issues a fresh key each time,
+# same as a Free re-signup would. That's a deliberate simplification (no key
+# rotation nagging for a renewal), not an oversight.
+# ---------------------------------------------------------------------------
+
+def issue_self_serve_paid_key(email: str, tier: str, days: int) -> dict:
+    """Public issuance for a Stripe-paid Intelligence API tier (currently
+    just 'pro'). Deactivates any prior self-serve key(s) for that email
+    first, exactly like issue_self_serve_free_key(), then issues a fresh
+    key with expires_at = now + days."""
+    email = (email or "").strip().lower()
+    conn = _get_db()
+    try:
+        conn.execute(
+            "UPDATE self_serve_api_keys SET active=0 WHERE email=? AND active=1",
+            (email,),
+        )
+        key = generate_key()
+        from datetime import timedelta
+        expires_at = (datetime.utcnow() + timedelta(days=days)).replace(microsecond=0).isoformat()
+        conn.execute(
+            "INSERT INTO self_serve_api_keys (email, key, tier, active, expires_at) VALUES (?, ?, ?, 1, ?)",
+            (email, key, tier, expires_at),
+        )
+        conn.commit()
+        return {"key": key, "tier": tier, "email": email, "expires_at": expires_at}
     finally:
         conn.close()
