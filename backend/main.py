@@ -387,6 +387,29 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+# 2026-08-24 (referral redesign, "5友付BASIC" 浮動式解鎖 -- full reasoning
+# in chat history): re-affirms services/referral_service.py's floating
+# Basic referral grant daily. Deliberately its own cron, not folded into
+# _run_prediction_ledger_grading_job above, so a failure in one never
+# blocks the other (same "each job wrapped in its own try/except,
+# tentative-then-committed scheduling" posture every job on this page
+# already follows).
+def _run_referral_floating_basic_job():
+    try:
+        from services.referral_service import run_floating_basic_grants
+        run_floating_basic_grants()
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_referral_floating_basic_job,
+    "cron",
+    hour=22,
+    minute=15,
+    id="referral_floating_basic",
+    replace_existing=True,
+)
+
 # 2026-08-10 (P2+P3 of the Quant Research Factory roadmap, task #792):
 # keeps services/formula_composer_service.py's and services/regime_
 # router_service.py's persisted leaderboards fresh WITHOUT requiring a

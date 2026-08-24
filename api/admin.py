@@ -593,6 +593,18 @@ def set_referral_config(key: str, value: int, token: str = None, request: Reques
         raise HTTPException(status_code=400, detail=result.get("message", "Invalid config key"))
     return result
 
+@router.post("/admin/referral/floating-basic/run")
+def run_floating_basic_grants_now(token: str, request: Request):
+    """2026-08-24 -- manual "Run Now" trigger for the floating-Basic
+    referral cron (backend/main.py's _run_referral_floating_basic_job,
+    normally 22:15 daily), same purpose as /admin/security-scan/run
+    above: lets AJ verify the mechanism works right after wiring a new
+    referrer/referred-payment scenario instead of waiting for the next
+    scheduled run."""
+    verify_admin(token, "run_floating_basic_grants", request)
+    from services.referral_service import run_floating_basic_grants
+    return run_floating_basic_grants()
+
 @router.get("/admin/video/status")
 def video_engine_status(token: str, request: Request):
     """Growth OS Phase 7 -- admin-panel status check: is GOOGLE_TTS_API_KEY

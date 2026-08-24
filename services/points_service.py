@@ -281,3 +281,53 @@ def grant_temp_upgrade(user_id: int, plan: str, days: int) -> str:
     conn.commit()
     conn.close()
     return expires_at
+
+
+def refresh_floating_grant(user_id: int, plan: str, days: int) -> str:
+    """2026-08-24 (AJ referral redesign: "5友付BASIC" 浮動式解鎖, buffer
+    數口見chat記錄 -- Stripe/Paddle失敗重試cycle約14日,呢度用16日俾少少
+    safety margin): a DELIBERATELY different write pattern from
+    grant_temp_upgrade() above. That one STACKS/extends -- built for
+    one-off reward events (a referral converts, an admin grants a year)
+    where a second event while the first is still active should add on
+    top. This one is for a daily cron (services/referral_service.py's
+    run_floating_basic_grants()) that re-affirms a STILL-qualifying grant
+    every day it's called: it always resets the expiry to exactly
+    now + `days`, never stacks. That's the whole mechanism -- if the
+    qualifying condition (>=5 currently-paying referred friends) stops
+    holding, the cron simply stops calling this, and the last-set expiry
+    rides out on its own via the SAME temp_upgrades expiry check every
+    other caller already uses (points_service.get_effective_plan()) --
+    no separate "revoke" code path needed, and it naturally gives exactly
+    the buffer window instead of an instant cliff-edge cutoff.
+
+    Never downgrades an existing higher-ranked active grant (e.g. a real
+    referral-earned annual Pro/Pro+ reward from mark_paid_conversion()) --
+    both mechanics share the single-row-per-user temp_upgrades table, so
+    this is a no-op (returns the existing higher grant's expiry
+    untouched) if that grant currently outranks `plan`."""
+    conn = get_db()
+    now = _now()
+    existing = conn.execute(
+        "SELECT plan, expires_at FROM temp_upgrades WHERE user_id=?", (user_id,)
+    ).fetchone()
+    if existing:
+        try:
+            still_active = _parse(existing["expires_at"]) > now
+            outranks = PLAN_RANK.get(existing["plan"], 0) > PLAN_RANK.get(plan, 0)
+            if still_active and outranks:
+                conn.close()
+                return existing["expires_at"]
+        except (ValueError, TypeError):
+            pass
+
+    expires_at = _fmt(now + datetime.timedelta(days=days))
+    conn.execute("""
+        INSERT INTO temp_upgrades (user_id, plan, expires_at, granted_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            plan = excluded.plan, expires_at = excluded.expires_at, granted_at = excluded.granted_at
+    """, (user_id, plan, expires_at, _fmt(now)))
+    conn.commit()
+    conn.close()
+    return expires_at

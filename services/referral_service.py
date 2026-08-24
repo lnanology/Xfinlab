@@ -54,6 +54,22 @@ REFERRAL_PROGRESS_TARGET = 5
 REFERRAL_PRO_GRANT_DAYS = 365
 REFERRAL_PROPLUS_THRESHOLD = 5
 
+# 2026-08-24 product decision (AJ: "5友付BASIC" 浮動式, 年付PRO維持一鎖 --
+# full reasoning in chat history): a SEPARATE, lower-friction referral
+# tier layered under the annual-Pro one above -- 5 friends on a real paid
+# Basic-or-above plan (any billing cycle, not just annual) keeps the
+# referrer's own Basic active for as long as that stays true, instead of
+# a one-time year-long grant. "Floating" because it's re-affirmed daily
+# by run_floating_basic_grants() below rather than granted once -- see
+# services/points_service.refresh_floating_grant()'s docstring for why a
+# friend's card failing (Stripe/Paddle retry cycle is ~14 days) doesn't
+# instantly cut the referrer off: REFERRAL_FLOATING_GRANT_DAYS is
+# deliberately longer than that retry window so the daily cron's last
+# grant naturally rides out any in-progress payment retry before really
+# lapsing, without a separate "grace period" table/column to maintain.
+REFERRAL_FLOATING_BASIC_THRESHOLD = 5
+REFERRAL_FLOATING_GRANT_DAYS = 16
+
 # Growth OS Phase 6 (2026-08-04): the 5 numbers above were previously
 # hardcoded module constants -- fine while there was one person deciding
 # the numbers, but the user's own Phase 6 brief asks for "toggle reward
@@ -72,6 +88,8 @@ _REFERRAL_CONFIG_DEFAULTS = {
     "referrer_quick_action_bonus": REFERRER_QUICK_ACTION_BONUS,
     "referral_pro_grant_days": REFERRAL_PRO_GRANT_DAYS,
     "referral_proplus_threshold": REFERRAL_PROPLUS_THRESHOLD,
+    "referral_floating_basic_threshold": REFERRAL_FLOATING_BASIC_THRESHOLD,
+    "referral_floating_grant_days": REFERRAL_FLOATING_GRANT_DAYS,
 }
 
 
@@ -490,3 +508,75 @@ class ReferralService:
             "top_referrers": top_referrers,
             "config": get_all_config(),
         }
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-24: floating BASIC referral tier -- see REFERRAL_FLOATING_BASIC_
+# THRESHOLD's docstring above. Module-level functions (not on ReferralService)
+# since these are cron-driven bulk operations, not a per-request action tied
+# to one referrer/new-user pair like the class methods above.
+# ---------------------------------------------------------------------------
+
+def _count_active_paid_referrals(referrer_id: int, min_plan: str = "basic") -> int:
+    """How many of this referrer's referred signups are CURRENTLY on a
+    real (actually paid, not points-boosted) plan at `min_plan` rank or
+    above. Deliberately reads users.plan/plan_expires_at directly via
+    quota_middleware.resolve_real_plan() rather than
+    points_service.get_effective_plan() -- a referred friend's own
+    temporary points-earned Basic boost should NOT count toward their
+    referrer's floating grant; only a real payment should."""
+    from services.points_service import PLAN_RANK
+    from services.quota_middleware import resolve_real_plan
+
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT u.plan AS plan, u.plan_expires_at AS plan_expires_at
+        FROM referral_uses ru
+        JOIN referrals r ON r.referral_code = ru.referral_code
+        JOIN users u ON u.id = ru.new_user_id
+        WHERE r.user_id = ?
+    """, (referrer_id,)).fetchall()
+    conn.close()
+
+    min_rank = PLAN_RANK.get(min_plan, 1)
+    count = 0
+    for row in rows:
+        try:
+            real_plan = resolve_real_plan(row)
+        except Exception:
+            continue
+        if PLAN_RANK.get(real_plan, 0) >= min_rank:
+            count += 1
+    return count
+
+
+def run_floating_basic_grants() -> dict:
+    """Daily cron entry point (see backend/main.py's
+    _run_referral_floating_basic_job) -- re-affirms the floating Basic
+    grant (services/points_service.refresh_floating_grant()) for every
+    referrer who currently has enough referred friends on a real paid
+    Basic-or-above plan. Referrers who no longer qualify are simply
+    skipped (not explicitly revoked) -- their last-granted window rides
+    out on its own, see REFERRAL_FLOATING_GRANT_DAYS's docstring."""
+    threshold = get_config("referral_floating_basic_threshold")
+    grant_days = get_config("referral_floating_grant_days")
+
+    conn = get_db()
+    referrers = conn.execute(
+        "SELECT user_id FROM referrals WHERE referred_count > 0"
+    ).fetchall()
+    conn.close()
+
+    from services.points_service import refresh_floating_grant
+    checked = 0
+    granted = 0
+    for row in referrers:
+        checked += 1
+        referrer_id = row["user_id"]
+        try:
+            if _count_active_paid_referrals(referrer_id, "basic") >= threshold:
+                refresh_floating_grant(referrer_id, "basic", grant_days)
+                granted += 1
+        except Exception:
+            continue
+    return {"checked": checked, "granted": granted}
