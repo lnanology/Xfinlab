@@ -305,6 +305,33 @@
   .q-counter-3 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 34s linear infinite; }
   @keyframes qspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes qspin-rev { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+  /* 2026-08-24 (AJ: "D粒子碎D再立體 engine細粒子帶細文字來移動" -- make the
+     orbit feel more 3D/stereoscopic with a finer particle field, some
+     carrying tiny data-token text, drifting behind the 9 main cards).
+     4 depth tiers (r=25/68/108/140, between/around the existing 3 card
+     rings at r=50/90/128): closer tiers are bigger/brighter/faster,
+     farther tiers smaller/dimmer/slower -- a cheap parallax-depth read.
+     Each particle counter-rotates (transform-box:fill-box, same trick as
+     q-counter-N) so its optional text token stays upright while orbiting.
+     Markup is rendered before the q-ring groups so the dust sits visually
+     BEHIND the 9 clickable cards, reinforcing the depth illusion. */
+  .q-dust { pointer-events: none; }
+  .q-dust-p { fill: var(--accent); }
+  .q-dust-txt { font-size: 5.5px; fill: var(--accent); font-family: inherit; }
+  .q-dust-r1 { transform-origin: 150px 150px; animation: qspin 9s linear infinite; }
+  .q-dust-r2 { transform-origin: 150px 150px; animation: qspin 14s linear infinite reverse; }
+  .q-dust-r3 { transform-origin: 150px 150px; animation: qspin 20s linear infinite; }
+  .q-dust-r4 { transform-origin: 150px 150px; animation: qspin 30s linear infinite reverse; }
+  .q-dust-c1 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 9s linear infinite; }
+  .q-dust-c2 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 14s linear infinite reverse; }
+  .q-dust-c3 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 20s linear infinite; }
+  .q-dust-c4 { transform-box: fill-box; transform-origin: 50% 50%; animation: qspin-rev 30s linear infinite reverse; }
+  .q-dust-t1 .q-dust-p { opacity: 0.6; }
+  .q-dust-t2 .q-dust-p { opacity: 0.46; }
+  .q-dust-t3 .q-dust-p { opacity: 0.34; }
+  .q-dust-t4 .q-dust-p { opacity: 0.2; }
+  .q-dust-t1 .q-dust-txt, .q-dust-t2 .q-dust-txt { opacity: 0.5; }
+  .q-dust-t3 .q-dust-txt, .q-dust-t4 .q-dust-txt { opacity: 0.32; }
   .live-step { cursor: pointer; opacity: 0.55; transition: opacity 0.4s, transform 0.25s; transform: scale(1); transform-box: fill-box; transform-origin: 50% 50%; }
   .live-step .q-dot { fill: var(--accent); transition: fill 0.25s; }
   .live-step .q-glyph { font-size: 10px; pointer-events: none; }
@@ -314,7 +341,8 @@
   .live-step:hover { opacity: 1; transform: scale(1.15); }
   @media (max-width: 640px) { .quantum-diagram { width: min(280px, 90vw); } }
   @media (prefers-reduced-motion: reduce) {
-    .q-ring-1, .q-ring-2, .q-ring-3, .q-counter-1, .q-counter-2, .q-counter-3, .q-core { animation: none; }
+    .q-ring-1, .q-ring-2, .q-ring-3, .q-counter-1, .q-counter-2, .q-counter-3, .q-core,
+    .q-dust-r1, .q-dust-r2, .q-dust-r3, .q-dust-r4, .q-dust-c1, .q-dust-c2, .q-dust-c3, .q-dust-c4 { animation: none; }
   }
 
   /* Decision Intelligence brand core */
@@ -981,6 +1009,29 @@
          above, so identity stays recognizable without text. -->
     <svg class="quantum-diagram" id="liveSteps" viewBox="0 0 300 300" role="img" aria-label="Live AI Result">
       <circle class="q-core" cx="150" cy="150" r="6" fill="var(--accent)"/>
+      <!-- fine background particle field (depth tiers r=25/68/108/140), see CSS comment above; drawn before the card rings so it sits behind them -->
+      <g class="q-dust">
+        <g class="q-dust-t1"><g class="q-dust-r1">
+          <g transform="rotate(0 150 150)"><g transform="translate(175 150)"><g class="q-dust-c1"><circle class="q-dust-p" r="1.7"/><text class="q-dust-txt" text-anchor="middle" dy="8">AI</text></g></g></g>
+          <g transform="rotate(120 150 150)"><g transform="translate(175 150)"><g class="q-dust-c1"><circle class="q-dust-p" r="1.4"/></g></g></g>
+          <g transform="rotate(240 150 150)"><g transform="translate(175 150)"><g class="q-dust-c1"><circle class="q-dust-p" r="1.5"/></g></g></g>
+        </g></g>
+        <g class="q-dust-t2"><g class="q-dust-r2">
+          <g transform="rotate(60 150 150)"><g transform="translate(218 150)"><g class="q-dust-c2"><circle class="q-dust-p" r="1.2"/><text class="q-dust-txt" text-anchor="middle" dy="8">%</text></g></g></g>
+          <g transform="rotate(180 150 150)"><g transform="translate(218 150)"><g class="q-dust-c2"><circle class="q-dust-p" r="1.1"/></g></g></g>
+          <g transform="rotate(300 150 150)"><g transform="translate(218 150)"><g class="q-dust-c2"><circle class="q-dust-p" r="1.3"/></g></g></g>
+        </g></g>
+        <g class="q-dust-t3"><g class="q-dust-r3">
+          <g transform="rotate(20 150 150)"><g transform="translate(258 150)"><g class="q-dust-c3"><circle class="q-dust-p" r="1"/><text class="q-dust-txt" text-anchor="middle" dy="7">Δ</text></g></g></g>
+          <g transform="rotate(140 150 150)"><g transform="translate(258 150)"><g class="q-dust-c3"><circle class="q-dust-p" r="0.9"/></g></g></g>
+          <g transform="rotate(260 150 150)"><g transform="translate(258 150)"><g class="q-dust-c3"><circle class="q-dust-p" r="1"/></g></g></g>
+        </g></g>
+        <g class="q-dust-t4"><g class="q-dust-r4">
+          <g transform="rotate(90 150 150)"><g transform="translate(290 150)"><g class="q-dust-c4"><circle class="q-dust-p" r="0.7"/><text class="q-dust-txt" text-anchor="middle" dy="6">β</text></g></g></g>
+          <g transform="rotate(210 150 150)"><g transform="translate(290 150)"><g class="q-dust-c4"><circle class="q-dust-p" r="0.6"/></g></g></g>
+          <g transform="rotate(330 150 150)"><g transform="translate(290 150)"><g class="q-dust-c4"><circle class="q-dust-p" r="0.7"/></g></g></g>
+        </g></g>
+      </g>
       <g class="q-ring q-ring-1">
         <g transform="rotate(0 150 150)"><g transform="translate(200 150)"><g class="q-counter-1"><g class="live-step live-step-clickable" id="liveStep1" onclick="homepagePreviewNavigate('news.html')"><title data-i18n="live_step1">Reading News...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">📰</text></g></g></g></g>
         <g transform="rotate(120 150 150)"><g transform="translate(200 150)"><g class="q-counter-1"><g class="live-step live-step-clickable" id="liveStep2" onclick="homepagePreviewNavigate('chart-analysis.html')"><title data-i18n="live_step2">Scanning Charts...</title><circle class="q-dot" r="10"/><text class="q-glyph" text-anchor="middle" dy="3.4">📈</text></g></g></g></g>
