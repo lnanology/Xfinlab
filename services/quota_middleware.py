@@ -198,31 +198,43 @@ def _resolve_effective_plan(token: str):
     return user_id, get_effective_plan(user_id, resolve_real_plan(user))
 
 
-def is_advanced_engine_plan(token: str) -> bool:
-    """Soft check (never raises) -- True only for real Pro/Pro+/Professional
-    (a temporary points-earned Basic boost does NOT count). Use this where a
-    locked/upgrade-teaser placeholder is preferable to a hard error, e.g.
-    redacting just the smart_beta/scenario/regime fields inside
-    api/ai_analysis.py's combined response instead of failing the whole
-    request for Basic users."""
-    _, effective_plan = _resolve_effective_plan(token)
-    return effective_plan in ADVANCED_ENGINE_PLANS
+def is_advanced_engine_plan(token: str, feature_key: str = None) -> bool:
+    """Soft check (never raises) -- True for real Pro/Pro+/Professional
+    (a temporary points-earned Basic boost does NOT count), OR -- if
+    `feature_key` is given -- for a user who bought a standalone à la
+    carte unlock for exactly that feature (2026-08-24, AJ: "AI辯論 唔使
+    升成個Pro+,一口價解鎖" -- see services/feature_addon_service.py).
+    Use this where a locked/upgrade-teaser placeholder is preferable to a
+    hard error, e.g. redacting just the smart_beta/scenario/regime fields
+    inside api/ai_analysis.py's combined response instead of failing the
+    whole request for Basic users."""
+    user_id, effective_plan = _resolve_effective_plan(token)
+    if effective_plan in ADVANCED_ENGINE_PLANS:
+        return True
+    if feature_key and user_id:
+        from services.feature_addon_service import has_active_addon
+        if has_active_addon(user_id, feature_key):
+            return True
+    return False
 
 
-def require_advanced_engine_plan(token: str):
+def require_advanced_engine_plan(token: str, feature_key: str = None):
     """Hard gate -- raises HTTPException(403) if the caller isn't on a
-    real Pro/Pro+/Professional plan. Use for standalone advanced-engine
-    endpoints (Agent Debate, Decision Journal) where there's no partial
-    response to fall back to. Same upgrade_url shape as
-    check_token_budget()'s 429 so the frontend can handle both with one
-    upgrade-prompt path."""
-    if not is_advanced_engine_plan(token):
-        raise HTTPException(
-            status_code=403,
-            detail={
-                "error": "plan_upgrade_required",
-                "message": "此功能需要 Pro 或以上方案",
-                "upgrade_url": "https://xfinlab.com/pricing.html",
-                "required_plan": "pro",
-            },
-        )
+    real Pro/Pro+/Professional plan AND doesn't hold an active à la carte
+    unlock for `feature_key` (see is_advanced_engine_plan() above). Use
+    for standalone advanced-engine endpoints (Agent Debate, Decision
+    Journal) where there's no partial response to fall back to. Same
+    upgrade_url shape as check_token_budget()'s 429 so the frontend can
+    handle both with one upgrade-prompt path; also carries `feature_key`
+    back out (when given) so the frontend knows which addon checkout to
+    offer instead of only a full-plan upgrade."""
+    if not is_advanced_engine_plan(token, feature_key):
+        detail = {
+            "error": "plan_upgrade_required",
+            "message": "此功能需要 Pro 或以上方案",
+            "upgrade_url": "https://xfinlab.com/pricing.html",
+            "required_plan": "pro",
+        }
+        if feature_key:
+            detail["feature_key"] = feature_key
+        raise HTTPException(status_code=403, detail=detail)

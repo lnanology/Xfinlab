@@ -33,7 +33,11 @@ def agent_debate(symbol: str, token: str = None, lang: str = None):
     from services.quota_middleware import check_token_budget, record_ai_token_usage, require_advanced_engine_plan
     # 2026-07-26: AI辯論 (Agent Debate) is a Pro-and-above "advanced engine"
     # feature -- gated before the (expensive, 4-call) debate ever runs.
-    require_advanced_engine_plan(token)
+    # 2026-08-24: feature_key="agent_debate" also lets a standalone à la
+    # carte unlock (services/feature_addon_service.py) satisfy this gate
+    # without requiring a full Pro+ plan -- see api/webhooks_stripe.py's
+    # addon checkout path.
+    require_advanced_engine_plan(token, feature_key="agent_debate")
     user_id = check_token_budget(token)
 
     symbol = symbol.upper()

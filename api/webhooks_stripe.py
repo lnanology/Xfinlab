@@ -52,9 +52,25 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 SITE_URL = os.getenv("SITE_URL", "https://www.xfinlab.com")
 
+# 2026-08-24 (AJ: "AI辯論 à la carte解鎖" -- Basic/Free用戶唔使跳去成個
+# Pro+,一口價/月費就解鎖單一個advanced engine): a SEPARATE, much smaller
+# monthly-recurring product line, sibling to the plan checkout above but
+# granting a single services/feature_addon_service.py feature instead of
+# an entire plan tier. Same "dormant until a real price ID env var
+# exists" posture as the plan prices -- only agent_debate is wired up so
+# far (api/agent_debate.py), more can be added here later (smart_beta,
+# scenario_lab, market_regime, multi_timeframe) without touching the
+# checkout/webhook plumbing below, just adding the key here.
+VALID_ADDON_FEATURES = {"agent_debate"}
+ADDON_GRANT_DAYS = 35  # matches plan_grant_service's monthly-plan grant window
+
 
 def _price_id_for(plan: str, cycle: str) -> str:
     return os.getenv(f"STRIPE_PRICE_ID_{plan.upper()}_{cycle.upper()}", "")
+
+
+def _addon_price_id_for(feature: str) -> str:
+    return os.getenv(f"STRIPE_PRICE_ID_ADDON_{feature.upper()}", "")
 
 
 def _stripe():
@@ -74,13 +90,18 @@ def stripe_status():
     only for tiers AJ has finished configuring, and fall back to the old
     'coming soon' message for the rest instead of a confusing 503."""
     if not STRIPE_SECRET_KEY:
-        return {"enabled": False, "live_price_keys": []}
+        return {"enabled": False, "live_price_keys": [], "live_addon_keys": []}
     live = []
     for plan in VALID_PLANS:
         for cycle in VALID_CYCLES:
             if _price_id_for(plan, cycle):
                 live.append(f"{plan}-{cycle}")
-    return {"enabled": True, "live_price_keys": live}
+    # 2026-08-24: lets ai-analysis.html's debate-locked state know whether
+    # to offer a standalone "unlock AI辯論" button at all -- same "only
+    # show a real, configured checkout, never a coming-soon dead button"
+    # posture as the plan checkout above.
+    live_addons = [f for f in VALID_ADDON_FEATURES if _addon_price_id_for(f)]
+    return {"enabled": True, "live_price_keys": live, "live_addon_keys": live_addons}
 
 
 @router.post("/stripe/create-checkout-session")
@@ -141,16 +162,80 @@ async def create_checkout_session(request: Request):
     return {"status": "ok", "checkout_url": session.url}
 
 
+@router.post("/stripe/create-addon-checkout-session")
+async def create_addon_checkout_session(request: Request):
+    """2026-08-24: sibling to create_checkout_session() above, but for a
+    single à la carte feature unlock (see services/feature_addon_service.py)
+    instead of a full plan. Deliberately its own endpoint rather than a
+    branch inside the plan one -- the two sell fundamentally different
+    things (a whole plan vs one feature) and mixing their request/response
+    shapes would make both harder to read."""
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured yet")
+
+    body = await request.json()
+    token = body.get("token", "")
+    feature = (body.get("feature") or "").strip().lower()
+
+    if feature not in VALID_ADDON_FEATURES:
+        raise HTTPException(status_code=400, detail=f"Unknown addon feature {feature!r}")
+
+    from backend.auth.jwt_handler import verify_token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id = payload.get("id")
+    email = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    price_id = _addon_price_id_for(feature)
+    if not price_id:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Stripe price ID for addon {feature!r} is not configured yet",
+        )
+
+    stripe = _stripe()
+    meta = {"xfinlab_user_id": str(user_id), "xfinlab_addon_feature": feature}
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            client_reference_id=str(user_id),
+            customer_email=email,
+            subscription_data={"metadata": meta},
+            metadata=meta,
+            success_url=f"{SITE_URL}/ai-analysis.html?stripe=addon_success&feature={feature}",
+            cancel_url=f"{SITE_URL}/ai-analysis.html?stripe=addon_cancelled",
+        )
+    except Exception as e:
+        logger.warning(f"[stripe_addon_checkout] session creation failed for user {user_id}/{feature}: {e}")
+        raise HTTPException(status_code=502, detail="Could not start Stripe checkout, please try again")
+
+    return {"status": "ok", "checkout_url": session.url}
+
+
 def _resolve_meta(data: dict) -> dict:
     metadata = data.get("metadata") or {}
     uid_raw = metadata.get("xfinlab_user_id") or data.get("client_reference_id")
     plan = (metadata.get("xfinlab_plan") or "").strip().lower()
     cycle = (metadata.get("xfinlab_cycle") or "monthly").strip().lower()
+    # 2026-08-24: addon checkouts (create_addon_checkout_session above) set
+    # xfinlab_addon_feature instead of xfinlab_plan -- surfaced here too so
+    # the webhook handler below can tell the two kinds of purchase apart
+    # from the same _resolve_meta() call rather than re-parsing metadata.
+    addon_feature = (metadata.get("xfinlab_addon_feature") or "").strip().lower()
     try:
         user_id = int(uid_raw) if uid_raw is not None else None
     except (TypeError, ValueError):
         user_id = None
-    return {"user_id": user_id, "plan": plan if plan in VALID_PLANS else None, "cycle": cycle}
+    return {
+        "user_id": user_id,
+        "plan": plan if plan in VALID_PLANS else None,
+        "cycle": cycle,
+        "addon_feature": addon_feature if addon_feature in VALID_ADDON_FEATURES else None,
+    }
 
 
 @router.post("/webhooks/stripe")
@@ -186,6 +271,13 @@ async def stripe_webhook(request: Request):
 
     if event_type == "checkout.session.completed":
         meta = _resolve_meta(data)
+        if meta["user_id"] is not None and meta["addon_feature"] is not None:
+            # 2026-08-24: à la carte feature unlock, not a plan purchase --
+            # see create_addon_checkout_session() above.
+            from services.feature_addon_service import grant_addon
+            expires_at = grant_addon(meta["user_id"], meta["addon_feature"], ADDON_GRANT_DAYS)
+            logger.info(f"[stripe_webhook] checkout.session.completed: addon {meta['addon_feature']} granted for user {meta['user_id']} until {expires_at}")
+            return {"status": "ok", "action": "addon_granted", "feature": meta["addon_feature"], "expires_at": expires_at}
         if meta["user_id"] is None or meta["plan"] is None:
             logger.warning(f"[stripe_webhook] checkout.session.completed: incomplete metadata {meta!r}, skipping")
             return {"status": "skipped", "reason": "missing xfinlab_user_id/xfinlab_plan"}
@@ -195,7 +287,7 @@ async def stripe_webhook(request: Request):
 
     if event_type == "invoice.paid" and data.get("billing_reason") == "subscription_cycle":
         sub_id = data.get("subscription")
-        meta = {"user_id": None, "plan": None, "cycle": "monthly"}
+        meta = {"user_id": None, "plan": None, "cycle": "monthly", "addon_feature": None}
         if sub_id:
             try:
                 # Same stripe.Event .get()-blocking behavior applies to
@@ -205,6 +297,13 @@ async def stripe_webhook(request: Request):
                 meta = _resolve_meta({"metadata": sub.get("metadata") or {}})
             except Exception as e:
                 logger.warning(f"[stripe_webhook] invoice.paid: could not resolve subscription {sub_id}: {e}")
+        if meta["user_id"] is not None and meta["addon_feature"] is not None:
+            # Addon renewal -- extend by the same window as the initial
+            # grant (see grant_addon()'s stacking behavior).
+            from services.feature_addon_service import grant_addon
+            expires_at = grant_addon(meta["user_id"], meta["addon_feature"], ADDON_GRANT_DAYS)
+            logger.info(f"[stripe_webhook] invoice.paid renewal: addon {meta['addon_feature']} extended for user {meta['user_id']} until {expires_at}")
+            return {"status": "ok", "action": "addon_renewed", "feature": meta["addon_feature"], "expires_at": expires_at}
         if meta["user_id"] is None or meta["plan"] is None:
             logger.warning("[stripe_webhook] invoice.paid renewal: no resolvable plan/user, skipping")
             return {"status": "skipped", "reason": "missing xfinlab_user_id/xfinlab_plan"}

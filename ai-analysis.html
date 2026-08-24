@@ -360,6 +360,19 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       <div class="xfl-accordion-body">
         <button type="button" id="debateRunBtn" class="primary-btn" style="height:38px;padding:0 14px" data-i18n="aa_debate_run_btn">Start Debate</button>
         <div id="debateBody" style="margin-top:0.8rem"></div>
+        <!-- 2026-08-24 (AJ: "AI辯論 唔使升成個Pro+,一口價解鎖"): shown
+             instead of debateBody's plan-upgrade-required fallback when
+             the caller isn't Pro+ AND a live Stripe addon price exists
+             (see /api/stripe/status's live_addon_keys -- never shown as a
+             dead button if the price isn't configured yet). Offers a
+             standalone monthly unlock for just this one feature via
+             /api/stripe/create-addon-checkout-session, no full-plan
+             upgrade required. -->
+        <div id="debateUnlockPrompt" class="ai-summary-box" style="display:none;margin-top:0.8rem;margin-bottom:0">
+          <div class="ai-summary-label" data-i18n="aa_debate_unlock_label">單獨解鎖呢個功能</div>
+          <p data-i18n="aa_debate_unlock_desc">唔使升級成個Pro+方案,單獨解鎖AI辯論就得。</p>
+          <button type="button" id="debateUnlockBtn" class="primary-btn" style="height:38px;padding:0 14px;margin-top:0.4rem" data-i18n="aa_debate_unlock_btn">🔓 解鎖 AI辯論</button>
+        </div>
       </div>
     </details>
 
@@ -1078,6 +1091,12 @@ async function runAnalysis(){
 // ---- Tier 3: Agent Society / AI辯論 -- gated feature, checked once ----
 let _xflDebateAvailable = false;
 let _xflLastAnalyzedSymbol = null;
+// 2026-08-24 (AJ: "AI辯論 à la carte解鎖"): whether Stripe actually has a
+// configured price for the agent_debate addon yet -- see
+// api/webhooks_stripe.py's /stripe/status live_addon_keys. Checked once
+// alongside checkDebateAvailability() so the unlock button only ever
+// appears once we know there's a real checkout behind it.
+let _xflDebateAddonLive = false;
 
 async function checkDebateAvailability() {
   try {
@@ -1087,7 +1106,49 @@ async function checkDebateAvailability() {
   } catch (e) {
     _xflDebateAvailable = false;
   }
+  try {
+    const res2 = await fetch(`${API_BASE}/api/stripe/status`);
+    const data2 = await res2.json();
+    _xflDebateAddonLive = !!(data2.enabled && Array.isArray(data2.live_addon_keys) && data2.live_addon_keys.includes('agent_debate'));
+  } catch (e) {
+    _xflDebateAddonLive = false;
+  }
 }
+
+// 2026-08-24: sends the user to a real Stripe checkout for a standalone
+// monthly unlock of just AI辯論 (services/feature_addon_service.py) --
+// sibling to pricing.html's handleUpgrade(), but for one feature instead
+// of a whole plan.
+async function unlockDebateAddon() {
+  const dbg = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+  const token = localStorage.getItem('xfinlab_token') || '';
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+  const btn = document.getElementById('debateUnlockBtn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = dbg('aa_debate_unlock_loading', 'Loading checkout…');
+  try {
+    const res = await fetch(`${API_BASE}/api/stripe/create-addon-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, feature: 'agent_debate' }),
+    });
+    const data = await res.json();
+    if (res.ok && data.checkout_url) {
+      window.location.href = data.checkout_url;
+      return;
+    }
+  } catch (e) {
+    /* falls through to the reset below */
+  }
+  btn.disabled = false;
+  btn.textContent = originalText;
+  alert(dbg('aa_debate_unlock_failed', 'Could not start checkout, please try again later.'));
+}
+document.getElementById('debateUnlockBtn').addEventListener('click', unlockDebateAddon);
 
 document.getElementById('debateRunBtn').addEventListener('click', async () => {
   if (!_xflLastAnalyzedSymbol) return;
@@ -1117,6 +1178,24 @@ document.getElementById('debateRunBtn').addEventListener('click', async () => {
     const debateLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
     const res = await fetch(`${API_BASE}/api/agent-debate/${encodeURIComponent(_xflLastAnalyzedSymbol)}?token=${encodeURIComponent(debateToken)}&lang=${encodeURIComponent(debateLang)}`);
     const d = await res.json();
+    const unlockPrompt = document.getElementById('debateUnlockPrompt');
+    // 2026-08-24: require_advanced_engine_plan() (services/quota_middleware.py)
+    // returns a 403 with detail.error=="plan_upgrade_required" -- this used
+    // to fall through to the `else` branch below and silently render an
+    // empty "Bull/Bear/Verdict" result (d.arguments/d.verdict are both
+    // undefined on a 403 body). Now shown as either the à la carte unlock
+    // offer (if Stripe has a real addon price configured) or a plain
+    // upgrade-to-Pro+ message, never a broken empty result.
+    if (res.status === 403 && d.detail && d.detail.error === 'plan_upgrade_required') {
+      body.innerHTML = '';
+      if (_xflDebateAddonLive) {
+        unlockPrompt.style.display = 'block';
+      } else {
+        body.innerHTML = `<div style="color:var(--text-muted)">${dbg('aa_debate_upgrade_required', 'This feature requires the Pro plan or above.')} <a href="pricing.html" style="color:var(--accent-blue)">${dbg('aa_debate_view_plans', 'View plans')}</a></div>`;
+      }
+      return;
+    }
+    unlockPrompt.style.display = 'none';
     if (!d.available) {
       body.innerHTML = `<div style="color:var(--text-muted)">${d.message || dbg('aa_debate_unavailable_fallback', 'AI Debate is currently unavailable.')}</div>`;
     } else if (d.error) {
