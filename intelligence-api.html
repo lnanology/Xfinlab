@@ -248,6 +248,7 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="technical" data-i18n="ia_ep5_name">Technical &amp; Market Structure</option>
           <option value="stress-test" data-i18n="ia_ep6_name">Monte Carlo Stress Test</option>
           <option value="regime-signal" data-i18n="ia_ep7_name">Regime-Aware Signal</option>
+          <option value="forecast" data-i18n="ia_ep8_name">Probabilistic Forecast</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -272,7 +273,7 @@ details.schema-details[open] summary::after{content:" ▴"}
   </div>
 
   <div class="section" id="endpoints">
-    <div class="section-title" data-i18n="ia_ep_title">Seven endpoints, one API key</div>
+    <div class="section-title" data-i18n="ia_ep_title">Eight endpoints, one API key</div>
     <div class="section-sub"><span data-i18n="ia_ep_sub">Every response is AI-structured JSON — never raw scraped article text.</span> <a href="https://api.xfinlab.com/api/intelligence/openapi.json" target="_blank" rel="noopener" data-i18n="ia_openapi_link">View OpenAPI spec →</a> <a href="https://api.xfinlab.com/api/intelligence/postman.json" target="_blank" rel="noopener" data-i18n="ia_postman_link">Download Postman collection →</a></div>
     <!-- 2026-08-17 (task #4 follow-up, upgrade #4): live, not historical --
          calls GET /intelligence/status on load and renders per-capability
@@ -451,6 +452,39 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field"><code>data.caveats</code> <span class="schema-type">array&lt;string&gt;</span> — present either way, different text</div>
             <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
           </div>
+        </details>
+      </div>
+      <!-- 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- flagship for
+           the v2 direction): packages services/probabilistic_forecast_
+           service.py. Deliberately never returns a fabricated fixed
+           bull/base/bear PROBABILITY split -- band_note explains what the
+           percentile band actually means (standard central-bank "fan
+           chart" convention, e.g. Bank of England GDP forecasts), and
+           ml_cross_check is a SEPARATE, independently backtest-gated
+           number rather than mathematically fused with the bootstrap
+           (no defensible fusion method exists that wouldn't manufacture
+           false precision). -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l5-9 4 5 4-11 5 8"/><path d="M3 20h18"/></svg></div>
+          <span class="ep-weight">4x</span>
+        </div>
+        <span class="ep-tag">GET /v1/forecast/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep8_name">Probabilistic Forecast</div>
+        <div class="ep-desc" data-i18n="ia_ep8_desc">A Bear/Base/Bull price-path fan chart — the 10th/50th/90th percentile of a real historical-return bootstrap, day by day, not just a final value — plus an independently-validated ML up-probability cross-check and a capital-flow/liquidity regime reading. Never a fabricated fixed probability split.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.available</code> <span class="schema-type">true</span></div>
+            <div class="schema-field"><code>data.symbol</code>, <code>data.horizon_days</code>, <code>data.last_close</code></div>
+            <div class="schema-field"><code>data.bear_path</code> / <code>base_path</code> / <code>bull_path</code> <span class="schema-type">number[]</span> — one value per horizon day, 10th/50th/90th percentile across simulations</div>
+            <div class="schema-field"><code>data.band_note</code> <span class="schema-type">string</span> — states what the percentiles mean (e.g. "80% of simulated outcomes fall between Bear and Bull") — always returned verbatim, never stripped</div>
+            <div class="schema-field"><code>data.ml_cross_check</code> <span class="schema-type">object|null</span> — {available, up_probability_pct, holdout_accuracy_pct, trained_at}; null when no validated model exists for this symbol yet</div>
+            <div class="schema-field"><code>data.capital_flow_context</code> <span class="schema-type">object|null</span> — {score, direction}; null until the background refresh job has populated it</div>
+            <div class="schema-field"><code>data.method</code>, <code>data.disclaimer</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>meta.ticker</code>, <code>meta.horizon_days</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_forecast">horizon_days accepts 1-60 (query param, default 5). This endpoint never fabricates a fixed bull/base/bear probability split — the returned band_note explains the honest statistical interpretation of the percentile band instead.</p>
         </details>
       </div>
     </div>
@@ -781,15 +815,22 @@ const TRY_ENDPOINTS = {
   'debate':          { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/debate?ticker=' + encodeURIComponent(tk); } },
   'intel':           { method: 'GET',  needsTicker: false, needsAmount: false, path: function(tk) { return tk ? '/intelligence/v1/intel/' + encodeURIComponent(tk) : '/intelligence/v1/intel/latest'; } },
   'technical':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/technical/' + encodeURIComponent(tk); } },
-  'stress-test':     { method: 'POST', needsTicker: true,  needsAmount: true,  path: function() { return '/intelligence/v1/stress-test'; } },
+  'stress-test':     { method: 'POST', needsTicker: true,  needsAmount: true,  needsHorizon: true, path: function() { return '/intelligence/v1/stress-test'; } },
   'regime-signal':   { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/regime-signal/' + encodeURIComponent(tk); } },
+  // 2026-08-24 (Capital Flow Engine roadmap, Layer 7): GET, not POST --
+  // unlike stress-test's dollar `amount`, this needs no amount at all
+  // (everything's expressed in the ticker's own price terms), just an
+  // optional horizon_days query param. needsHorizon reuses the SAME
+  // #tryHorizonRow input stress-test already has -- decoupled from
+  // needsAmount below so this can show the horizon field WITHOUT the
+  // amount field (previously the two were tied together).
+  'forecast':        { method: 'GET',  needsTicker: true,  needsAmount: false, needsHorizon: true, path: function(tk) { const h = parseInt((document.getElementById('tryHorizon')||{}).value, 10) || 5; return '/intelligence/v1/forecast/' + encodeURIComponent(tk) + '?horizon_days=' + h; } },
 };
 
 function tryUpdateFields() {
   const cfg = TRY_ENDPOINTS[document.getElementById('tryEndpoint').value];
-  const show = cfg.needsAmount ? 'block' : 'none';
-  document.getElementById('tryAmountRow').style.display = show;
-  document.getElementById('tryHorizonRow').style.display = show;
+  document.getElementById('tryAmountRow').style.display = cfg.needsAmount ? 'block' : 'none';
+  document.getElementById('tryHorizonRow').style.display = cfg.needsHorizon ? 'block' : 'none';
   tryUpdatePathPreview();
 }
 
