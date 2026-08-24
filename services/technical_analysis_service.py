@@ -173,6 +173,18 @@ class TechnicalAnalysisService:
         # docstring; needs atr14 for the fan's price-per-bar rate so this
         # sits after atr14 is computed.
         gann = self._gann(swing_highs, swing_lows, last_close, atr14)
+
+        # 2026-08-24 addition (AJ: "以資金流建預測不同資產K線走向ENGINE") --
+        # lazy import (services/capital_flow_engine.py calls back into
+        # get_technical_analysis() for its own basket scan, so a top-level
+        # import here would be circular) + fail-open try/except: this new
+        # signal must never break an existing analysis call if the Capital
+        # Flow Engine's cache hasn't warmed up or a component fetch fails.
+        try:
+            from services.capital_flow_engine import get_capital_flow_signal_for_confluence
+            capital_flow = get_capital_flow_signal_for_confluence()
+        except Exception:
+            capital_flow = None
         bb_upper, bb_mid, bb_lower = self._bollinger(closes, 20, 2)
         bb_last = (
             {
@@ -263,6 +275,7 @@ class TechnicalAnalysisService:
             "ichimoku": ichimoku_last,
             "donchian": donchian_last,
             "keltner": keltner_last,
+            "capital_flow": capital_flow,
         }
 
         confluence = self._confluence(
@@ -280,6 +293,7 @@ class TechnicalAnalysisService:
             donchian=donchian_last,
             keltner=keltner_last,
             gann=gann,
+            capital_flow=capital_flow,
         )
 
         decision_levels = self._decision_levels(
@@ -980,6 +994,13 @@ class TechnicalAnalysisService:
         # Nine levels are a mathematical construct rather than levels
         # price has actually touched before.
         "gann": 1.0,
+        # 2026-08-24 addition (AJ: "以資金流建預測不同資產K線走向ENGINE") --
+        # weighted lower than symbol-specific signals on purpose: this is a
+        # broad market/macro-context reading (global region + sector
+        # rotation + US liquidity), not something specific to the ticker
+        # being analyzed, so it should nudge the score rather than
+        # dominate it the way a support/resistance touch does.
+        "capital_flow": 0.7,
     }
 
     @classmethod
@@ -999,6 +1020,7 @@ class TechnicalAnalysisService:
         donchian: Optional[Dict] = None,
         keltner: Optional[Dict] = None,
         gann: Optional[Dict] = None,
+        capital_flow: Optional[Dict] = None,
         proximity_tolerance: float = 0.03,
     ) -> Dict:
         """
@@ -1115,6 +1137,20 @@ class TechnicalAnalysisService:
                 signals.append({"signal": "現價貼近江恩九宮格阻力位，回落風險", "bias": -1, "weight": w["gann"]})
             elif nearest_s is not None and abs(last_close - nearest_s) / last_close <= proximity_tolerance:
                 signals.append({"signal": "現價貼近江恩九宮格支撐位，反彈機會", "bias": 1, "weight": w["gann"]})
+
+        # 13. Capital Flow Engine reading (2026-08-24 addition) -- global
+        # region + sector rotation + US liquidity composite, see
+        # services/capital_flow_engine.py. A broad market-context vote,
+        # not ticker-specific -- same "skip if not available" honesty as
+        # every other optional signal here (None when the engine's cache
+        # hasn't warmed up yet or every component failed).
+        if capital_flow and capital_flow.get("direction"):
+            cf_dir = capital_flow["direction"]
+            if cf_dir.startswith("資金淨流入"):
+                signals.append({"signal": "資金流Engine：全球資金淨流入，風險偏好上升", "bias": 1, "weight": w["capital_flow"]})
+            elif cf_dir.startswith("資金淨流出"):
+                signals.append({"signal": "資金流Engine：全球資金淨流出，風險偏好下降", "bias": -1, "weight": w["capital_flow"]})
+            # 分歧/中性 (dispersed/neutral) is skipped, same as Ichimoku's 雲內.
 
         counted = len(signals)
         weight_total = sum(s["weight"] for s in signals)

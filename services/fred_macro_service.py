@@ -169,6 +169,87 @@ def get_us_snapshot() -> Dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# 2026-08-24 (AJ: "以資金流建預測不同資產K線走向ENGINE" -- Capital Flow Engine,
+# see services/capital_flow_engine.py): US-only macro LIQUIDITY series,
+# sibling to get_us_snapshot() above but a distinct concept -- rates/
+# inflation/unemployment describe the economy, these describe how much
+# cash is actually sloshing through the financial system, which is the
+# genuine upstream driver of "capital flow" (the pasted design doc's
+# Layer 2). Same dormant-until-FRED_API_KEY-set convention, same "." ->
+# dropped-not-fabricated honesty contract as _SERIES above.
+_LIQUIDITY_SERIES = {
+    "m2_money_supply": "M2SL",       # monthly, billions USD, seasonally adjusted
+    "fed_balance_sheet": "WALCL",    # weekly, millions USD, Fed total assets
+    "reverse_repo": "RRPONTSYD",     # daily, billions USD, ON RRP facility usage
+}
+
+
+def get_liquidity_snapshot() -> Dict:
+    """
+    Returns:
+        {"available": True, "as_of": "...", "attribution": "...",
+         "indicators": {
+            "m2_money_supply": {"date": "...", "value": ..., "mom_change_pct": ...},
+            "fed_balance_sheet": {"date": "...", "value": ..., "mom_change_pct": ...},
+            "reverse_repo": {"date": "...", "value": ..., "mom_change_pct": ...},
+         },
+         "liquidity_score": -100..100, "liquidity_direction": "擴張"/"收縮"/"持平"}
+        {"available": False, "message": "..."}
+
+    liquidity_score is a simple directional composite, NOT a statistical
+    z-score (no long-run baseline maintained here) -- each series
+    contributes +1/-1/0 based on whether it's expanding or contracting
+    over its last ~30 observations, averaged and scaled to -100..100.
+    Reverse repo is inverted before combining: rising RRP means cash is
+    parked AT the Fed instead of flowing into markets, so a RISING RRP
+    is a CONTRACTIONARY signal for risk assets, the opposite of M2/Fed
+    balance sheet expanding.
+    """
+    if not is_available():
+        return {"available": False, "message": f"{FRED_API_KEY_ENV} 未設定，FRED流動性數據暫時未開放。"}
+
+    indicators: Dict[str, Optional[Dict]] = {}
+    directional_votes = []
+
+    for key, series_id in _LIQUIDITY_SERIES.items():
+        obs = _fetch_series(series_id, n_obs=30)
+        if not obs or len(obs) < 2:
+            indicators[key] = None
+            continue
+        latest, earliest = obs[-1], obs[0]
+        change_pct = None
+        if earliest["value"]:
+            change_pct = round((latest["value"] - earliest["value"]) / abs(earliest["value"]) * 100, 3)
+        indicators[key] = {"date": latest["date"], "value": latest["value"], "period_change_pct": change_pct}
+        if change_pct is not None and abs(change_pct) > 0.05:  # ignore noise-level moves
+            vote = 1 if change_pct > 0 else -1
+            if key == "reverse_repo":
+                vote = -vote  # rising RRP = contractionary, see docstring
+            directional_votes.append(vote)
+
+    if all(v is None for v in indicators.values()):
+        return {"available": False, "message": "FRED暫時未能回應（可能係短暫故障）。"}
+
+    liquidity_score = round((sum(directional_votes) / len(directional_votes)) * 100, 1) if directional_votes else 0.0
+    if liquidity_score >= 25:
+        liquidity_direction = "擴張"
+    elif liquidity_score <= -25:
+        liquidity_direction = "收縮"
+    else:
+        liquidity_direction = "持平"
+
+    return {
+        "available": True,
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "attribution": ATTRIBUTION,
+        "indicators": indicators,
+        "liquidity_score": liquidity_score,
+        "liquidity_direction": liquidity_direction,
+    }
+
+
 if __name__ == "__main__":
     import json
     print(json.dumps(get_us_snapshot(), indent=2, ensure_ascii=False))
+    print(json.dumps(get_liquidity_snapshot(), indent=2, ensure_ascii=False))
