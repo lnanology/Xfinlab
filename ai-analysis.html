@@ -279,6 +279,16 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
     <details class="xfl-accordion" id="smartBetaAccordion" style="display:none">
       <summary data-i18n="sb_title">▶ Smart Beta Multi-Factor Analysis</summary>
       <div class="xfl-accordion-body">
+        <!-- 2026-08-24 (AJ: 擴展à la carte解鎖去Smart Beta): shown instead
+             of the factor breakdown below when this bundle (Smart Beta +
+             Scenario Lab + Market Regime -- see api/ai_analysis.py's
+             is_pro_plan gate) is locked AND a live Stripe addon price
+             exists. Same pattern as debateUnlockPrompt above. -->
+        <div id="sbUnlockPrompt" class="ai-summary-box" style="display:none;margin-bottom:0.8rem">
+          <div class="ai-summary-label" data-i18n="aa_bundle_unlock_label">單獨解鎖呢個功能</div>
+          <p data-i18n="aa_bundle_unlock_desc">Smart Beta、情境分析、市況機率一齊解鎖,唔使升級成個Pro+方案。</p>
+          <button type="button" id="sbUnlockBtn" class="primary-btn" style="height:38px;padding:0 14px;margin-top:0.4rem" data-i18n="aa_bundle_unlock_btn">🔓 解鎖進階分析</button>
+        </div>
         <div id="sbFactorsBody"></div>
         <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center">
           <span data-i18n="sb_blended_label" style="font-weight:600">Blended Factor Score</span>
@@ -463,6 +473,26 @@ window.XFL_RELATED_MAP = {
 function renderSmartBeta(sb){
   const acc = document.getElementById('smartBetaAccordion');
   if (!acc) return;
+  const unlockPrompt = document.getElementById('sbUnlockPrompt');
+  // 2026-08-24 (AJ: 擴展à la carte解鎖去Smart Beta): api/ai_analysis.py
+  // sends {locked:true,...} (no .factors) for Basic/Free -- this used to
+  // just hide the whole accordion (same silent-gap gap AI辯論 had before
+  // its own unlock button), so Basic/Free users never even knew Smart
+  // Beta existed. Now shows the accordion WITH the unlock offer (if a
+  // live Stripe addon price exists) instead of hiding it outright.
+  if (sb && sb.locked) {
+    if (_xflLiveAddonKeys.includes('advanced_engines_bundle')) {
+      acc.style.display = '';
+      unlockPrompt.style.display = 'block';
+      document.getElementById('sbFactorsBody').innerHTML = '';
+      document.getElementById('sbBlendedScore').textContent = '-';
+      document.getElementById('sbRegimeLine').textContent = '-';
+    } else {
+      acc.style.display = 'none';
+    }
+    return;
+  }
+  if (unlockPrompt) unlockPrompt.style.display = 'none';
   if (!sb || !sb.factors || !Object.keys(sb.factors).length) {
     acc.style.display = 'none';
     return;
@@ -1091,12 +1121,13 @@ async function runAnalysis(){
 // ---- Tier 3: Agent Society / AI辯論 -- gated feature, checked once ----
 let _xflDebateAvailable = false;
 let _xflLastAnalyzedSymbol = null;
-// 2026-08-24 (AJ: "AI辯論 à la carte解鎖"): whether Stripe actually has a
-// configured price for the agent_debate addon yet -- see
-// api/webhooks_stripe.py's /stripe/status live_addon_keys. Checked once
-// alongside checkDebateAvailability() so the unlock button only ever
-// appears once we know there's a real checkout behind it.
-let _xflDebateAddonLive = false;
+// 2026-08-24 (AJ: "AI辯論 à la carte解鎖", later extended to Smart Beta/
+// Scenario/Regime as "advanced_engines_bundle"): which addon feature keys
+// Stripe actually has a configured price for yet -- see api/webhooks_
+// stripe.py's /stripe/status live_addon_keys. Checked once so every
+// unlock button on this page only ever appears once we know there's a
+// real checkout behind it (never a dead button).
+let _xflLiveAddonKeys = [];
 
 async function checkDebateAvailability() {
   try {
@@ -1109,24 +1140,26 @@ async function checkDebateAvailability() {
   try {
     const res2 = await fetch(`${API_BASE}/api/stripe/status`);
     const data2 = await res2.json();
-    _xflDebateAddonLive = !!(data2.enabled && Array.isArray(data2.live_addon_keys) && data2.live_addon_keys.includes('agent_debate'));
+    _xflLiveAddonKeys = (data2.enabled && Array.isArray(data2.live_addon_keys)) ? data2.live_addon_keys : [];
   } catch (e) {
-    _xflDebateAddonLive = false;
+    _xflLiveAddonKeys = [];
   }
 }
 
 // 2026-08-24: sends the user to a real Stripe checkout for a standalone
-// monthly unlock of just AI辯論 (services/feature_addon_service.py) --
-// sibling to pricing.html's handleUpgrade(), but for one feature instead
-// of a whole plan.
-async function unlockDebateAddon() {
+// monthly unlock of one addon feature (services/feature_addon_service.py)
+// -- sibling to pricing.html's handleUpgrade(), but for one feature
+// instead of a whole plan. Generic over `featureKey`/`btnId` so both the
+// AI辯論 button and the Smart Beta bundle button below share this one
+// implementation instead of two near-identical copies.
+async function unlockFeatureAddon(featureKey, btnId) {
   const dbg = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
   const token = localStorage.getItem('xfinlab_token') || '';
   if (!token) {
     window.location.href = 'login.html';
     return;
   }
-  const btn = document.getElementById('debateUnlockBtn');
+  const btn = document.getElementById(btnId);
   const originalText = btn.textContent;
   btn.disabled = true;
   btn.textContent = dbg('aa_debate_unlock_loading', 'Loading checkout…');
@@ -1134,7 +1167,7 @@ async function unlockDebateAddon() {
     const res = await fetch(`${API_BASE}/api/stripe/create-addon-checkout-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, feature: 'agent_debate' }),
+      body: JSON.stringify({ token, feature: featureKey }),
     });
     const data = await res.json();
     if (res.ok && data.checkout_url) {
@@ -1148,7 +1181,8 @@ async function unlockDebateAddon() {
   btn.textContent = originalText;
   alert(dbg('aa_debate_unlock_failed', 'Could not start checkout, please try again later.'));
 }
-document.getElementById('debateUnlockBtn').addEventListener('click', unlockDebateAddon);
+document.getElementById('debateUnlockBtn').addEventListener('click', () => unlockFeatureAddon('agent_debate', 'debateUnlockBtn'));
+document.getElementById('sbUnlockBtn').addEventListener('click', () => unlockFeatureAddon('advanced_engines_bundle', 'sbUnlockBtn'));
 
 document.getElementById('debateRunBtn').addEventListener('click', async () => {
   if (!_xflLastAnalyzedSymbol) return;
@@ -1188,7 +1222,7 @@ document.getElementById('debateRunBtn').addEventListener('click', async () => {
     // upgrade-to-Pro+ message, never a broken empty result.
     if (res.status === 403 && d.detail && d.detail.error === 'plan_upgrade_required') {
       body.innerHTML = '';
-      if (_xflDebateAddonLive) {
+      if (_xflLiveAddonKeys.includes('agent_debate')) {
         unlockPrompt.style.display = 'block';
       } else {
         body.innerHTML = `<div style="color:var(--text-muted)">${dbg('aa_debate_upgrade_required', 'This feature requires the Pro plan or above.')} <a href="pricing.html" style="color:var(--accent-blue)">${dbg('aa_debate_view_plans', 'View plans')}</a></div>`;

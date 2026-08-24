@@ -50,7 +50,13 @@ async def ai_analysis(body: dict):
     # returned -- Free/Basic users still get the full core analysis
     # (dashboard/hero/fundamentals/etc.), only these 3 fields are redacted.
     from services.quota_middleware import is_advanced_engine_plan
-    is_pro_plan = is_advanced_engine_plan(token)
+    # 2026-08-24 (AJ: 擴展à la carte解鎖去Smart Beta/Scenario Lab): these
+    # 3 fields (regime/scenario/smart_beta below) were always sold as one
+    # bundle even on the real Pro plan, so the addon unlock mirrors that
+    # -- one "advanced_engines_bundle" purchase, not 3 separate SKUs. See
+    # services/feature_addon_service.py / api/webhooks_stripe.py's
+    # VALID_ADDON_FEATURES.
+    is_pro_plan = is_advanced_engine_plan(token, feature_key="advanced_engines_bundle")
     _locked_advanced_engine = {
         "locked": True,
         "required_plan": "pro",

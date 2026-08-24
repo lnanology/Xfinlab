@@ -61,7 +61,7 @@ SITE_URL = os.getenv("SITE_URL", "https://www.xfinlab.com")
 # far (api/agent_debate.py), more can be added here later (smart_beta,
 # scenario_lab, market_regime, multi_timeframe) without touching the
 # checkout/webhook plumbing below, just adding the key here.
-VALID_ADDON_FEATURES = {"agent_debate"}
+VALID_ADDON_FEATURES = {"agent_debate", "advanced_engines_bundle"}
 ADDON_GRANT_DAYS = 35  # matches plan_grant_service's monthly-plan grant window
 
 
