@@ -1581,7 +1581,15 @@ async function submitFeedback() {
      so #chatArea gets effectively the whole viewport; click to expand
      and see the ad slot + full legal links without losing them from the
      page (compliance links stay reachable, just not eating chat space
-     by default). -->
+     by default).
+
+     2026-08-24 CONFIRMED by AJ after deploy ("AICHAT正常，呢個SIZE岩啦"):
+     full-viewport sizing verified correct on the live site -- this is
+     the confirmed-good baseline. Don't "fix" this layout again without
+     a real reported issue; if the welcome/input block ever looks
+     shrunk again, suspect a NEW regression (e.g. something else added
+     back into body's flex flow without flex-shrink:0/collapsed), not
+     this block. -->
 <div id="legalBar" style="flex-shrink:0;border-top:1px solid var(--border-color);background:var(--bg-card)">
   <button onclick="const b=document.getElementById('legalBarBody');const open=b.style.display!=='none';b.style.display=open?'none':'block';document.getElementById('legalBarToggle').textContent=open?'▲':'▼';" id="legalBarToggleBtn" style="width:100%;background:transparent;border:none;color:var(--text-muted);font-size:0.72rem;padding:6px 1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
     <span data-i18n="chat_legal_toggle">Legal &amp; Disclosures</span><span id="legalBarToggle">▼</span>
