@@ -299,6 +299,30 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </details>
 
+    <!-- 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer
+         surface for services/probabilistic_forecast_service.py, the same
+         engine just shipped on the Intelligence API as GET /v1/forecast/
+         {ticker}): Bear/Base/Bull real-return-bootstrap fan chart + an
+         independently-validated ML cross-check, bundled into the same
+         "advanced_engines_bundle" addon as Smart Beta/Scenario/Regime
+         above -- one product family, not a 4th separate SKU. Hidden
+         until data.capital_flow_forecast is real (never shows a
+         fabricated path when the symbol doesn't have enough real
+         history). -->
+    <details class="xfl-accordion" id="capitalFlowForecastAccordion" style="display:none">
+      <summary data-i18n="cff_title">▶ Capital Flow Forecast — Bear/Base/Bull</summary>
+      <div class="xfl-accordion-body">
+        <div id="cffUnlockPrompt" class="ai-summary-box" style="display:none;margin-bottom:0.8rem">
+          <div class="ai-summary-label" data-i18n="aa_bundle_unlock_label">單獨解鎖呢個功能</div>
+          <p data-i18n="aa_bundle_unlock_desc">Smart Beta、情境分析、市況機率一齊解鎖,唔使升級成個Pro+方案。</p>
+          <button type="button" id="cffUnlockBtn" class="primary-btn" style="height:38px;padding:0 14px;margin-top:0.4rem" data-i18n="aa_bundle_unlock_btn">🔓 解鎖進階分析</button>
+        </div>
+        <div id="cffBody"></div>
+        <div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color);font-size:0.8rem;color:var(--text-muted)" id="cffMlCrossCheck">-</div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" id="cffNote">-</div>
+      </div>
+    </details>
+
     <!-- Stage 3 roadmap (2026-07-20): real market-based shipping/supply-
          chain proxy (BDRY/BOAT ETF prices) -- see services/
          shipping_proxy_service.py. Market-wide, not symbol-specific.
@@ -532,6 +556,73 @@ function renderSmartBeta(sb){
   }
 }
 
+// 2026-08-24 (Capital Flow Engine roadmap, Layer 7): renders the Bear/
+// Base/Bull fan chart inside #capitalFlowForecastAccordion -- see
+// services/probabilistic_forecast_service.py for the exact shape of
+// `cff` (and its honesty contract: these are the 10th/50th/90th
+// percentile of a real historical-return bootstrap, NEVER a fabricated
+// fixed probability split). Simple text/bar rendering, not a full chart
+// library -- consistent with this page's other accordions (Smart Beta/
+// Shipping Proxy) which also render as rows, not canvas charts.
+function renderCapitalFlowForecast(cff){
+  const acc = document.getElementById('capitalFlowForecastAccordion');
+  if (!acc) return;
+  const unlockPrompt = document.getElementById('cffUnlockPrompt');
+  const tr = (key, fallback) => (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+
+  // Same "show the accordion WITH an unlock offer instead of hiding it"
+  // fix as renderSmartBeta() above -- api/ai_analysis.py sends
+  // {locked:true,...} for Basic/Free.
+  if (cff && cff.locked) {
+    if (_xflLiveAddonKeys.includes('advanced_engines_bundle')) {
+      acc.style.display = '';
+      unlockPrompt.style.display = 'block';
+      document.getElementById('cffBody').innerHTML = '';
+      document.getElementById('cffMlCrossCheck').textContent = '-';
+      document.getElementById('cffNote').textContent = '-';
+    } else {
+      acc.style.display = 'none';
+    }
+    return;
+  }
+  if (unlockPrompt) unlockPrompt.style.display = 'none';
+  if (!cff || !cff.bear_path || !cff.base_path || !cff.bull_path) {
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+
+  const last = (arr) => arr[arr.length - 1];
+  const horizonLabel = tr('cff_horizon_label', '{n}-day path').replace('{n}', cff.horizon_days);
+  const fmt = (v) => (v != null ? v.toLocaleString(undefined, {maximumFractionDigits: 2}) : '-');
+  document.getElementById('cffBody').innerHTML = `
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.5rem">${horizonLabel} · ${tr('cff_last_close_label','Last close')}: ${fmt(cff.last_close)}</div>
+    <div class="prob-section" style="margin-bottom:0.5rem">
+      <div class="prob-label" style="color:var(--accent-green,#10b981)">Bull (P90)</div>
+      <div style="width:100px;text-align:right;font-weight:700;color:var(--accent-green,#10b981)">${fmt(last(cff.bull_path))}</div>
+    </div>
+    <div class="prob-section" style="margin-bottom:0.5rem">
+      <div class="prob-label">Base (P50)</div>
+      <div style="width:100px;text-align:right;font-weight:700">${fmt(last(cff.base_path))}</div>
+    </div>
+    <div class="prob-section" style="margin-bottom:0.5rem">
+      <div class="prob-label" style="color:var(--accent-red,#ef4444)">Bear (P10)</div>
+      <div style="width:100px;text-align:right;font-weight:700;color:var(--accent-red,#ef4444)">${fmt(last(cff.bear_path))}</div>
+    </div>
+  `;
+
+  const ml = cff.ml_cross_check;
+  const mlEl = document.getElementById('cffMlCrossCheck');
+  if (ml && ml.available) {
+    const mlTmpl = tr('cff_ml_cross_check', 'Independent ML cross-check: {pct}% probability of a higher close (backtested accuracy {acc}%)');
+    mlEl.textContent = mlTmpl.replace('{pct}', ml.up_probability_pct).replace('{acc}', ml.holdout_accuracy_pct);
+  } else {
+    mlEl.textContent = tr('cff_ml_unavailable', 'No independently-validated ML model available for this symbol yet.');
+  }
+
+  document.getElementById('cffNote').textContent = cff.band_note || cff.disclaimer || '';
+}
+
 // Stage 3 roadmap: renders the real shipping-sector-ETF proxy (BDRY/BOAT)
 // inside #shippingProxyAccordion (see services/shipping_proxy_service.py
 // for the exact shape of `sp`). Market-wide, not symbol-specific -- hidden
@@ -752,6 +843,7 @@ async function runAnalysis(){
     // ---- Stage 1 roadmap: Smart Beta multi-factor + Bayesian regime
     // probability (see services/smart_beta_service.py) ----
     renderSmartBeta(data.smart_beta);
+    renderCapitalFlowForecast(data.capital_flow_forecast);
     renderShippingProxy(data.shipping_proxy);
 
     // ---- Layer 4: reasons accordion ----
@@ -1183,6 +1275,7 @@ async function unlockFeatureAddon(featureKey, btnId) {
 }
 document.getElementById('debateUnlockBtn').addEventListener('click', () => unlockFeatureAddon('agent_debate', 'debateUnlockBtn'));
 document.getElementById('sbUnlockBtn').addEventListener('click', () => unlockFeatureAddon('advanced_engines_bundle', 'sbUnlockBtn'));
+document.getElementById('cffUnlockBtn').addEventListener('click', () => unlockFeatureAddon('advanced_engines_bundle', 'cffUnlockBtn'));
 
 document.getElementById('debateRunBtn').addEventListener('click', async () => {
   if (!_xflLastAnalyzedSymbol) return;

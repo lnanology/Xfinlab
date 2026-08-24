@@ -529,6 +529,23 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         shipping_proxy = None
 
+    # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer surface
+    # for the same Probabilistic K-Line engine just shipped on the
+    # Intelligence API as GET /v1/forecast/{ticker}): bundled into the
+    # existing "advanced_engines_bundle" addon rather than a 4th separate
+    # SKU -- regime/scenario/smart_beta were already sold as one bundle,
+    # this is the same product family (probabilistic/quant engines vs
+    # core technical analysis). Independently try/except'd, same
+    # convention as every other engine call above -- a bootstrap/model
+    # failure for this symbol must never break the rest of the analysis.
+    try:
+        from services.probabilistic_forecast_service import get_probabilistic_forecast
+        capital_flow_forecast = get_probabilistic_forecast(symbol, horizon_days=5)
+        if not capital_flow_forecast.get("available"):
+            capital_flow_forecast = None
+    except Exception:
+        capital_flow_forecast = None
+
     return {
         "data": {
             "scores": {
@@ -571,5 +588,6 @@ async def ai_analysis(request: Request, body: dict):
             "smart_beta": smart_beta if is_pro_plan else _locked_advanced_engine,
             "direction_probability": direction_probability,
             "shipping_proxy": shipping_proxy,
+            "capital_flow_forecast": capital_flow_forecast if is_pro_plan else _locked_advanced_engine,
         }
     }
