@@ -285,6 +285,85 @@ def increment_endpoint(api_key: str, endpoint: str):
     conn.close()
 
 
+# ---------------------------------------------------------------------------
+# 2026-08-25 (AJ: "最吸引嗰兩個功能要小心佢係咁開EMAIL攞KEY,跟IP定有其他
+# 策略?"): the per-key sub-cap above is trivially defeated by re-signing-up
+# with a fresh email -- every new free signup gets a brand new key with a
+# fresh 15/day debate/intel allowance (see backend/auth/auth.py's
+# _on_user_registered_issue_free_api_key and api/intelligence.py's
+# /intelligence/v1/signup). A second, independent cap keyed by the
+# CALLING IP (not the signup IP -- the IP that actually made the debate/
+# intel request) closes that loop: even if someone mints 10 fresh keys,
+# every call from those keys still shares one combined 15/day ceiling per
+# IP, as long as they're calling from the same network. This is the
+# standard layered defense every comparable API (Alpha Vantage, Polygon,
+# etc.) uses -- per-key AND per-IP, whichever is hit first wins. It is NOT
+# bulletproof against someone rotating IPs/VPNs on top of rotating emails,
+# but it raises the real cost of abuse well past "just re-register" with
+# essentially zero legitimate-user friction (one office/NAT sharing one IP
+# would need >15 debate calls/day combined to ever notice this exists).
+# Separate table from the per-key one since these are two independent
+# dimensions being checked, not a shared counter.
+# ---------------------------------------------------------------------------
+
+def _init_endpoint_ip_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS intelligence_api_endpoint_usage_by_ip (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip TEXT NOT NULL,
+            endpoint TEXT NOT NULL,
+            date TEXT NOT NULL,
+            count INTEGER DEFAULT 0,
+            UNIQUE(ip, endpoint, date)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_endpoint_ip_table()
+
+
+def check_endpoint_cap_by_ip(ip: "str | None", endpoint: str) -> dict:
+    """Same shape/semantics as check_endpoint_cap() but keyed by calling IP
+    instead of API key, and NOT tier-gated (an IP has no single tier if
+    multiple keys share it) -- only fires for endpoints that appear in
+    FREE_TIER_ENDPOINT_DAILY_CAP at all. {"capped": False} for a missing/
+    unknown IP or a non-capped endpoint, same "only enforce when capped=True
+    and allowed=False" contract as the per-key version."""
+    if not ip or ip == "unknown":
+        return {"capped": False, "allowed": True}
+    cap = FREE_TIER_ENDPOINT_DAILY_CAP.get(endpoint)
+    if cap is None:
+        return {"capped": False, "allowed": True}
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    row = conn.execute(
+        "SELECT count FROM intelligence_api_endpoint_usage_by_ip WHERE ip=? AND endpoint=? AND date=?",
+        (ip, endpoint, today),
+    ).fetchone()
+    conn.close()
+    used = row["count"] if row else 0
+    return {"capped": True, "allowed": used < cap, "used": used, "limit": cap}
+
+
+def increment_endpoint_by_ip(ip: str, endpoint: str):
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    conn.execute(
+        """
+        INSERT INTO intelligence_api_endpoint_usage_by_ip (ip, endpoint, date, count)
+        VALUES (?, ?, ?, 1)
+        ON CONFLICT(ip, endpoint, date) DO UPDATE SET count = count + 1
+        """,
+        (ip, endpoint, today),
+    )
+    conn.commit()
+    conn.close()
+
+
 def _init_endpoint_nudge_table():
     conn = _get_db()
     conn.execute("""

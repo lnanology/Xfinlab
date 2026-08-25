@@ -33,6 +33,7 @@ from fastapi.openapi.utils import get_openapi
 
 from services import api_key_service, intelligence_quota_service
 from services import rss_news_service
+from services.request_ip import get_client_ip
 from services.finbert_sentiment_service import is_available as finbert_available, analyze_batch
 from services.agent_debate_service import is_available as debate_available, run_debate
 from services.intelligence_pipeline_service import build_intelligence_feed
@@ -130,7 +131,13 @@ def _maybe_send_endpoint_upgrade_nudge(api_key: str, endpoint: str, cap: int) ->
 
 
 def _check_and_spend_quota(
-    api_key: str, tier: str, endpoint: str, response: Response, multiplier: int = 1, ticker: Optional[str] = None
+    api_key: str,
+    tier: str,
+    endpoint: str,
+    response: Response,
+    multiplier: int = 1,
+    ticker: Optional[str] = None,
+    client_ip: Optional[str] = None,
 ) -> dict:
     """2026-08-17 (roadmap item #1, "重有咩可以做" round 2): also stamps
     X-RateLimit-Limit / X-RateLimit-Remaining on `response` so a client can
@@ -146,7 +153,15 @@ def _check_and_spend_quota(
     endpoint weight for batch/multi-ticker requests (Events/Sentiment) --
     a 3-ticker Sentiment call does roughly 3x the downstream work of a
     single-ticker one, so it should cost roughly 3x the quota, not the
-    same flat weight regardless of how many tickers were requested."""
+    same flat weight regardless of how many tickers were requested.
+
+    2026-08-25 (AJ: "跟IP定有其他策略?"): `client_ip` layers a second,
+    IP-keyed sub-cap on top of the per-key one below, only for free tier +
+    the capped endpoints -- closes the "just re-register for a fresh key"
+    loophole (see check_endpoint_cap_by_ip's docstring in
+    intelligence_quota_service.py). Only debate/intel's call sites pass
+    this; every other endpoint passes None and this whole block is a
+    no-op for them."""
     # 2026-08-25: free-tier per-endpoint sub-cap (debate/intel), checked
     # BEFORE the overall weighted-pool check below -- see
     # FREE_TIER_ENDPOINT_DAILY_CAP's docstring in intelligence_quota_
@@ -154,17 +169,27 @@ def _check_and_spend_quota(
     # translate into unlimited exposure on the two LLM/shared-rate-limit
     # endpoints) and how it doubles as the free->paid conversion trigger.
     cap_status = intelligence_quota_service.check_endpoint_cap(api_key, tier, endpoint)
+    ip_cap_status = (
+        intelligence_quota_service.check_endpoint_cap_by_ip(client_ip, endpoint)
+        if tier == "free" and client_ip
+        else {"capped": False, "allowed": True}
+    )
+    blocked = None
     if cap_status["capped"] and not cap_status["allowed"]:
-        _maybe_send_endpoint_upgrade_nudge(api_key, endpoint, cap_status["limit"])
+        blocked = cap_status
+    elif ip_cap_status["capped"] and not ip_cap_status["allowed"]:
+        blocked = ip_cap_status
+    if blocked:
+        _maybe_send_endpoint_upgrade_nudge(api_key, endpoint, blocked["limit"])
         raise HTTPException(
             status_code=429,
             detail=(
                 f"Free-tier daily cap reached for '{endpoint}' "
-                f"({cap_status['used']}/{cap_status['limit']} calls used today) -- "
+                f"({blocked['used']}/{blocked['limit']} calls used today) -- "
                 f"resets at midnight UTC, or upgrade to Pro to remove this cap."
             ),
             headers={
-                "X-RateLimit-Endpoint-Limit": str(cap_status["limit"]),
+                "X-RateLimit-Endpoint-Limit": str(blocked["limit"]),
                 "X-RateLimit-Endpoint-Remaining": "0",
             },
         )
@@ -184,6 +209,8 @@ def _check_and_spend_quota(
     intelligence_quota_service.increment(api_key, weight=weight)
     if cap_status["capped"]:
         intelligence_quota_service.increment_endpoint(api_key, endpoint)
+    if ip_cap_status["capped"]:
+        intelligence_quota_service.increment_endpoint_by_ip(client_ip, endpoint)
     # 2026-08-25 (AJ: "咁FREE KEY比人用，我接到數據訓ENGINE或儲存之類嗎"):
     # aggregate-only product signal, never the response payload -- see
     # log_query()'s docstring. Best-effort, always logged regardless of
@@ -485,7 +512,15 @@ def intelligence_self_serve_signup(body: FreeSignupRequest, request: Request):
     if is_disposable_email(body.email):
         raise HTTPException(status_code=400, detail="Please use a non-disposable email address")
 
-    ip = request.client.host if request and request.client else "unknown"
+    # 2026-08-25 fix (found while answering AJ's "跟IP定有其他策略?"): this
+    # used to read request.client.host directly, which on Railway is the
+    # platform's own internal proxy address -- THE SAME for every visitor
+    # (see services/request_ip.py's module docstring for the full
+    # explanation) -- so the "5 signups/IP/day" limit below was actually
+    # one shared global counter across every real signer-upper, not a
+    # per-visitor limit. get_client_ip() reads X-Forwarded-For (which
+    # Railway's edge sets correctly) instead.
+    ip = get_client_ip(request)
     if not api_key_service.check_self_serve_signup_rate(ip):
         raise HTTPException(
             status_code=429,
@@ -693,6 +728,7 @@ def intelligence_sentiment(
 
 @router.get("/intelligence/v1/debate")
 def intelligence_debate(
+    request: Request,
     response: Response,
     ticker: str,
     x_api_key: str = Header(None, alias="X-API-Key"),
@@ -702,7 +738,9 @@ def intelligence_debate(
     services/agent_debate_service.py) -- weighted 5x in the quota counter,
     same reasoning api/agent_debate.py already applies to logged-in users."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "debate", response, ticker=ticker.upper())
+    _check_and_spend_quota(
+        x_api_key, auth["tier"], "debate", response, ticker=ticker.upper(), client_ip=get_client_ip(request)
+    )
 
     if not debate_available():
         raise HTTPException(status_code=503, detail="Debate engine temporarily unavailable")
@@ -745,13 +783,14 @@ def intelligence_debate(
 
 @router.get("/intelligence/v1/intel/latest")
 def intelligence_latest(
+    request: Request,
     response: Response,
     limit: int = 5,
     lang: str = "zh-HK",
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "intel", response)
+    _check_and_spend_quota(x_api_key, auth["tier"], "intel", response, client_ip=get_client_ip(request))
 
     # Caps how many event-clusters get the full (up to 2-AI-call +
     # per-ticker quant lookup) treatment per request -- see
@@ -768,6 +807,7 @@ def intelligence_latest(
 
 @router.get("/intelligence/v1/intel/{ticker}")
 def intelligence_ticker(
+    request: Request,
     response: Response,
     ticker: str,
     limit: int = 5,
@@ -775,7 +815,9 @@ def intelligence_ticker(
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "intel", response, ticker=ticker.upper())
+    _check_and_spend_quota(
+        x_api_key, auth["tier"], "intel", response, ticker=ticker.upper(), client_ip=get_client_ip(request)
+    )
 
     limit = max(1, min(limit, 10))
     ticker = ticker.upper()
