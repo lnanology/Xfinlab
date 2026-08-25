@@ -486,6 +486,23 @@ def _notify_free_signals_ready(today: str, cache: Dict):
     except Exception:
         pass
 
+    # 2026-08-25: daily research-card image post (AJ: one ticker's AI
+    # research "screenshot" + a short take, sent alongside the text push
+    # above, not instead of it). Own idempotency key + own try/except so a
+    # Pillow/render failure can never block (or be blocked by) the text
+    # push, web push, content variants, or email digest around it.
+    try:
+        from services.push_service import already_sent_today, mark_sent_today
+        from services.telegram_push_service import push_daily_research_card_to_telegram
+
+        tg_card_key = "telegram_daily_research_card"
+        if already_sent_today(tg_card_key, today):
+            return
+        push_daily_research_card_to_telegram(cache, today)
+        mark_sent_today(tg_card_key, today)
+    except Exception:
+        pass
+
     # 2026-07-27 "Level 1 content leverage" growth batch: generate (and
     # persist) ready-to-copy-paste post text for X/Threads/LinkedIn/
     # Facebook/email/push from the SAME real signals data used above --

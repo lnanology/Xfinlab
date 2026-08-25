@@ -18,6 +18,8 @@ Telegram outage/misconfiguration never breaks the free-signals cache
 refresh it piggybacks on (same philosophy as services/push_service.py).
 """
 import os
+from typing import Optional
+
 import requests
 
 from services.i18n import get_translations
@@ -189,6 +191,201 @@ def _build_message(cache: dict, lang: str) -> str:
     return header + "\n\n".join(sections) + footer
 
 
+# 2026-08-25: daily research-card auto-post. AJ asked for a daily TG post
+# = "one ticker's AI research screenshot + your take". Two ways to make
+# the "screenshot" were on the table: a real headless-browser screenshot
+# of ai-analysis.html (would need Chromium added to the Railway build --
+# bigger image, slower/flakier deploys, real RAM risk since this is a
+# single-process app where a browser crash could take the whole API down
+# with it, and this exact approach already failed in the dev sandbox from
+# missing system libs) vs. a Pillow-drawn research card using the same
+# real numbers (server-side, no new dependency, no Railway config change,
+# near-zero resource cost, can't crash anything else). AJ picked the
+# Pillow card. Reuses the SAME top-signal selection _build_message()
+# above already does (max confluence_confidence_pct) so "today's Top
+# Opportunity" can't drift between the text push and the card, and reuses
+# services/video_engine_service.py's font/logo helpers (_get_font,
+# _get_logo, _text_width) instead of a second font-discovery
+# implementation -- same "one source of truth" posture as the _tr()
+# label/direction lookups above.
+_CARD_SIZE = (1200, 630)
+_CARD_BG = (8, 12, 20)
+_CARD_PANEL = (13, 21, 37)
+_CARD_ACCENT = (249, 115, 22)
+_CARD_TEXT = (226, 232, 240)
+_CARD_MUTED = (100, 116, 139)
+_CARD_BULL = (34, 197, 94)
+_CARD_BEAR = (239, 68, 68)
+_CARD_NEUTRAL = (100, 116, 139)
+
+_CARD_HEADER_LABEL = {
+    "en": "XFINLAB Daily Market Intelligence",
+    "zh": "XFINLAB 每日市場情報",
+    "es": "Inteligencia de Mercado Diaria XFINLAB",
+}
+_CARD_SCORE_LABEL = {"en": "Research Score", "zh": "研究評分", "es": "Puntuación de Investigación"}
+_CARD_METHOD_LINE = {
+    "en": "Multi-factor confluence model -- trend + risk + news sentiment",
+    "zh": "多因子綜合模型 —— 趨勢 + 風險 + 新聞情緒",
+    "es": "Modelo multifactorial -- tendencia + riesgo + sentimiento de noticias",
+}
+_CARD_DIRECTION_WORD = {
+    "偏多": {"en": "Bullish", "zh": "偏多", "es": "Alcista"},
+    "偏空": {"en": "Bearish", "zh": "偏空", "es": "Bajista"},
+    "訊號分歧，中性": {"en": "Neutral", "zh": "中性", "es": "Neutral"},
+    "數據不足": {"en": "Insufficient data", "zh": "數據不足", "es": "Datos insuficientes"},
+}
+_CARD_DISCLAIMER_SHORT = {
+    "en": "Research information only. Not investment advice.",
+    "zh": "僅供研究參考，不構成投資建議。",
+    "es": "Solo información de investigación. No es asesoría de inversión.",
+}
+
+
+def _pick_top_signal(cache: dict) -> Optional[dict]:
+    """Same selection _build_message() above uses for its insight line:
+    the highest-confidence signal in today's cache. Factored out so the
+    card generator and the text push can never pick two different
+    tickers for the same day."""
+    signals = cache.get("signals") or []
+    if not signals:
+        return None
+    return max(signals, key=lambda s: s.get("confluence_confidence_pct") or 0)
+
+
+def generate_research_card(sig: dict, lang: str, date_str: str) -> Optional[bytes]:
+    """Renders one 1200x630 PNG research card for a single signal --
+    ticker, direction, confidence/research score, methodology line, date,
+    disclaimer -- all real values already computed by the confluence
+    engine (same data _fmt_signal_line()/_INSIGHT_TEMPLATE above already
+    show in the text push), nothing fabricated for the image. Returns
+    None on any rendering failure (missing Pillow, missing font, bad
+    input) rather than raising -- callers treat a missing card as
+    "skip the photo send, text push already went out" not a hard error."""
+    try:
+        from PIL import Image, ImageDraw
+        from services.video_engine_service import _get_font, _get_logo, _text_width
+    except Exception:
+        return None
+
+    try:
+        ticker = sig.get("ticker", "?")
+        raw_label = sig.get("label") or sig.get("asset_class_label") or ""
+        raw_direction = sig.get("confluence_direction", "")
+        label = _tr(raw_label, _LABEL_KEYS, lang)
+        direction_word = _CARD_DIRECTION_WORD.get(raw_direction, {}).get(lang, raw_direction or "--")
+        dir_color = _CARD_BULL if raw_direction == "偏多" else (_CARD_BEAR if raw_direction == "偏空" else _CARD_NEUTRAL)
+        conf = sig.get("confluence_confidence_pct")
+        conf_str = f"{conf}%" if conf is not None else "N/A"
+
+        w, h = _CARD_SIZE
+        img = Image.new("RGB", (w, h), _CARD_BG)
+        draw = ImageDraw.Draw(img)
+
+        pad = 56
+        draw.rounded_rectangle([pad, pad, w - pad, h - pad], radius=24, fill=_CARD_PANEL, outline=(30, 41, 59), width=2)
+
+        # Header: logo + wordmark (left), date (right)
+        logo = _get_logo(48)
+        header_y = pad + 32
+        text_x = pad + 32
+        if logo is not None:
+            img.paste(logo, (pad + 32, header_y), logo)
+            text_x = pad + 32 + 48 + 16
+        f_word = _get_font(30, lang)
+        draw.text((text_x, header_y + 6), "XFINLAB", font=f_word, fill=_CARD_TEXT)
+        f_small = _get_font(20, lang)
+        header_label = _CARD_HEADER_LABEL.get(lang, _CARD_HEADER_LABEL["en"])
+        draw.text((text_x, header_y + 42), header_label, font=f_small, fill=_CARD_MUTED)
+        date_w = _text_width(draw, date_str, f_small, 11)
+        draw.text((w - pad - 32 - date_w, header_y + 12), date_str, font=f_small, fill=_CARD_MUTED)
+
+        # Divider
+        line_y = header_y + 88
+        draw.line([(pad + 32, line_y), (w - pad - 32, line_y)], fill=(30, 41, 59), width=2)
+
+        # Ticker + label (left column)
+        f_ticker = _get_font(96, lang)
+        ticker_y = line_y + 48
+        draw.text((pad + 32, ticker_y), ticker, font=f_ticker, fill=_CARD_TEXT)
+        f_label = _get_font(26, lang)
+        draw.text((pad + 32, ticker_y + 108), label, font=f_label, fill=_CARD_MUTED)
+
+        # Direction pill
+        pill_y = ticker_y + 156
+        f_pill = _get_font(24, lang)
+        pill_text_w = _text_width(draw, direction_word, f_pill, 14)
+        pill_w = pill_text_w + 48
+        draw.rounded_rectangle([pad + 32, pill_y, pad + 32 + pill_w, pill_y + 48], radius=24,
+                                fill=(dir_color[0], dir_color[1], dir_color[2]))
+        draw.text((pad + 32 + 24, pill_y + 10), direction_word, font=f_pill, fill=(8, 12, 20))
+
+        # Confidence / research score (right column)
+        f_score = _get_font(110, lang)
+        f_score_label = _get_font(24, lang)
+        score_w = _text_width(draw, conf_str, f_score, 60)
+        score_x = w - pad - 32 - max(score_w, 220)
+        draw.text((score_x, ticker_y - 6), conf_str, font=f_score, fill=_CARD_ACCENT)
+        score_label = _CARD_SCORE_LABEL.get(lang, _CARD_SCORE_LABEL["en"])
+        label_w = _text_width(draw, score_label, f_score_label, 13)
+        draw.text((w - pad - 32 - label_w, ticker_y + 118), score_label, font=f_score_label, fill=_CARD_MUTED)
+
+        # Methodology line + disclaimer (bottom)
+        f_method = _get_font(20, lang)
+        method_y = h - pad - 88
+        draw.line([(pad + 32, method_y - 16), (w - pad - 32, method_y - 16)], fill=(30, 41, 59), width=2)
+        draw.text((pad + 32, method_y), _CARD_METHOD_LINE.get(lang, _CARD_METHOD_LINE["en"]), font=f_method, fill=_CARD_MUTED)
+        f_disclaimer = _get_font(18, lang)
+        draw.text((pad + 32, method_y + 32), _CARD_DISCLAIMER_SHORT.get(lang, _CARD_DISCLAIMER_SHORT["en"]),
+                   font=f_disclaimer, fill=_CARD_MUTED)
+
+        import io
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception:
+        return None
+
+
+def push_daily_research_card_to_telegram(cache: dict, date_str: str = ""):
+    """Best-effort fan-out of today's Top Opportunity research card (image
+    + localized "take" caption) to all 3 configured Telegram channels.
+    Mirrors push_daily_signals_to_telegram's per-channel independence --
+    one channel/lang failing (missing chat_id, render failure, network
+    error) never blocks the others."""
+    try:
+        top = _pick_top_signal(cache)
+        if not top:
+            return
+        date_str = date_str or cache.get("date", "")
+        channels = {
+            "en": os.getenv("TELEGRAM_CHANNEL_ID", ""),
+            "zh": os.getenv("TELEGRAM_ZH_CHANNEL_ID", ""),
+            "es": os.getenv("TELEGRAM_ES_CHANNEL_ID", ""),
+        }
+        for lang, chat_id in channels.items():
+            if not chat_id:
+                continue
+            image_bytes = generate_research_card(top, lang, date_str)
+            if not image_bytes:
+                continue
+            top_label = _tr(top.get("label") or top.get("asset_class_label") or "", _LABEL_KEYS, lang)
+            top_conf = top.get("confluence_confidence_pct")
+            caption = ""
+            if top_conf is not None:
+                caption = _INSIGHT_TEMPLATE.get(lang, _INSIGHT_TEMPLATE["en"]).format(
+                    ticker=top.get("ticker", "?"), label=top_label, conf=top_conf
+                )
+            full_research = _FULL_RESEARCH_LABEL.get(lang, _FULL_RESEARCH_LABEL["en"])
+            caption = (
+                f"{caption}\n\n{full_research}: https://www.xfinlab.com/ai-analysis.html?ticker={top.get('ticker', '')}"
+                f"\n{_DISCLAIMER.get(lang, _DISCLAIMER['en'])}"
+            ).strip()
+            send_telegram_photo(chat_id, image_bytes, caption)
+    except Exception:
+        pass
+
+
 def push_daily_signals_to_telegram(cache: dict):
     """Best-effort fan-out of today's top signals to the 3 configured
     Telegram channels (en/zh/es). Safe to call even if some/all channel
@@ -207,6 +404,28 @@ def push_daily_signals_to_telegram(cache: dict):
             send_telegram_message(chat_id, message)
     except Exception:
         pass
+
+
+def send_telegram_photo(chat_id: str, image_bytes: bytes, caption: str = "") -> bool:
+    """2026-08-25: daily research-card auto-post (AJ: "一個 ticker 嘅 AI
+    research 截圖 + 你嘅睇法"). Uploads an in-memory PNG (no temp file --
+    Railway's disk is ephemeral anyway, and this keeps the card generator
+    side-effect-free) via the Bot API's sendPhoto multipart upload. Same
+    best-effort posture as send_telegram_video: returns True/False, never
+    raises, missing token/chat_id/bytes just short-circuits to False."""
+    token = _bot_token()
+    if not token or not chat_id or not image_bytes:
+        return False
+    try:
+        res = requests.post(
+            f"{TELEGRAM_API_BASE}/bot{token}/sendPhoto",
+            data={"chat_id": chat_id, "caption": caption[:1024], "parse_mode": "Markdown"},
+            files={"photo": ("research-card.png", image_bytes, "image/png")},
+            timeout=30,
+        )
+        return res.status_code == 200
+    except Exception:
+        return False
 
 
 def send_telegram_video(chat_id: str, file_path: str, caption: str = "") -> bool:

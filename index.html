@@ -297,12 +297,33 @@
   .live-hero-pulse::before, .live-hero-pulse::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: live-ring 2.4s ease-out infinite; }
   .live-hero-pulse::after { animation-delay: 1.2s; }
   .live-hero-glyph { font-size: 1.9rem; }
+  /* 2026-08-25: replaced the static microscope emoji with a fine-particle
+     drift diagram -- AJ asked for "個顯微鏡改成粒子移動圖" (turn the
+     microscope into a moving-particle diagram). Pure SVG + CSS, no JS, so
+     it's cheap and consistent with the rest of this section (no new perf
+     cost). Each dot has its own drift keyframe + timing offset so the
+     cluster reads as organic motion, not one repeating loop; a few dots
+     carry a slight blur to fake depth without a real z-axis. */
+  .live-particle-svg { width: 52px; height: 52px; position: relative; z-index: 1; }
+  .live-particle { transform-origin: center; }
+  .live-particle:nth-child(1) { animation: live-drift-a 3.2s ease-in-out infinite; }
+  .live-particle:nth-child(2) { animation: live-drift-b 4.1s ease-in-out infinite; animation-delay: -0.6s; filter: blur(0.4px); opacity: 0.55; }
+  .live-particle:nth-child(3) { animation: live-drift-c 3.7s ease-in-out infinite; animation-delay: -1.4s; }
+  .live-particle:nth-child(4) { animation: live-drift-a 4.4s ease-in-out infinite; animation-delay: -2.1s; filter: blur(0.5px); opacity: 0.5; }
+  .live-particle:nth-child(5) { animation: live-drift-b 3.4s ease-in-out infinite; animation-delay: -0.3s; }
+  .live-particle:nth-child(6) { animation: live-drift-c 4.8s ease-in-out infinite; animation-delay: -3.2s; filter: blur(0.6px); opacity: 0.45; }
+  .live-particle:nth-child(7) { animation: live-drift-a 3.9s ease-in-out infinite; animation-delay: -1.7s; }
+  .live-particle:nth-child(8) { animation: live-drift-b 4.6s ease-in-out infinite; animation-delay: -2.6s; filter: blur(0.4px); opacity: 0.5; }
+  @keyframes live-drift-a { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.9; } 50% { transform: translate(3px, -4px) scale(1.25); opacity: 0.45; } }
+  @keyframes live-drift-b { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; } 50% { transform: translate(-4px, 3px) scale(0.8); opacity: 0.35; } }
+  @keyframes live-drift-c { 0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; } 50% { transform: translate(2px, 4px) scale(1.15); opacity: 0.3; } }
   @keyframes live-core-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   @keyframes live-ring { 0% { transform: scale(0.75); opacity: 0.55; } 100% { transform: scale(1.7); opacity: 0; } }
   .live-see-all { display: block; text-align: center; margin-top: 16px; font-size: 0.82rem; color: var(--muted); text-decoration: none; }
   .live-see-all:hover { color: var(--accent); }
   @media (prefers-reduced-motion: reduce) {
-    .live-hero-pulse, .live-hero-pulse::before, .live-hero-pulse::after { animation: none; }
+    .live-hero-pulse, .live-hero-pulse::before, .live-hero-pulse::after,
+    .live-particle { animation: none !important; }
   }
 
   /* Decision Intelligence brand core */
@@ -973,7 +994,18 @@
     <div class="section-title" style="margin-bottom:4px;font-size:1.4rem" data-i18n="live_title">AI 正在分析緊真實市場數據</div>
     <p style="color:var(--muted);font-size:0.88rem;max-width:520px;margin:0 auto 4px;text-align:center" data-i18n="live_subtitle">Real backtested signals, honest confidence scores, sources you can check yourself -- not a black box.</p>
     <div class="live-hero-visual" aria-hidden="true">
-      <div class="live-hero-pulse"><span class="live-hero-glyph">🔬</span></div>
+      <div class="live-hero-pulse">
+        <svg class="live-particle-svg" viewBox="0 0 52 52" fill="none">
+          <circle class="live-particle" cx="26" cy="14" r="2.6" fill="var(--accent)"/>
+          <circle class="live-particle" cx="36" cy="20" r="1.8" fill="var(--accent)"/>
+          <circle class="live-particle" cx="18" cy="22" r="2.2" fill="var(--accent)"/>
+          <circle class="live-particle" cx="30" cy="30" r="1.5" fill="var(--accent)"/>
+          <circle class="live-particle" cx="20" cy="32" r="2.4" fill="var(--accent)"/>
+          <circle class="live-particle" cx="26" cy="38" r="1.7" fill="var(--accent)"/>
+          <circle class="live-particle" cx="14" cy="28" r="1.4" fill="var(--accent)"/>
+          <circle class="live-particle" cx="34" cy="34" r="1.3" fill="var(--accent)"/>
+        </svg>
+      </div>
     </div>
     <div class="hero-btns" style="justify-content:center;margin-top:4px">
       <a href="ai-analysis.html" class="btn-primary" data-i18n="live_cta">Try AI Research Now →</a>
