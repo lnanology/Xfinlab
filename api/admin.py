@@ -895,6 +895,25 @@ def get_stripe_account_status(token: str, request: Request):
     return get_account_status()
 
 
+@router.get("/admin/api-trending-tickers")
+def get_api_trending_tickers(token: str, request: Request, days: int = 7, limit: int = 20):
+    """
+    2026-08-25 (AJ: "咁FREE KEY比人用，我接到數據訓ENGINE或儲存之類嗎"): the
+    honest answer at the time was "no signal at all" -- intelligence_api_
+    usage only ever counted raw call volume. services/intelligence_quota_
+    service.py's log_query()/get_trending_tickers() close that gap with a
+    lightweight, aggregate-only query log (endpoint+ticker+timestamp, never
+    the response payload) -- this is the admin-facing read of it. Answers
+    "what are developers actually asking the API about" (a product signal
+    on which tickers/features to prioritize), not "was the model right"
+    (that requires the Prediction Ledger's own internal grading loop, a
+    different question this endpoint deliberately doesn't claim to answer).
+    """
+    verify_admin(token, "get_api_trending_tickers", request)
+    from services.intelligence_quota_service import get_trending_tickers
+    return {"days": days, "trending": get_trending_tickers(days=days, limit=limit)}
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """

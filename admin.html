@@ -199,6 +199,7 @@
     <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> Audit Log</div>
     <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> Security Scan</div>
     <div class="nav-item" onclick="showPage('stripeaccount')"><span class="icon">💳</span> Stripe Account</div>
+    <div class="nav-item" onclick="showPage('apitrending')"><span class="icon">📈</span> API Trending Tickers</div>
     <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> Prediction Ledger</div>
     <div class="nav-item" onclick="showPage('composer')"><span class="icon">🧩</span> Formula Composer</div>
     <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> Feedback</div>
@@ -793,6 +794,20 @@
       </div>
     </div>
 
+    <!-- API Trending Tickers (2026-08-25, AJ: "咁FREE KEY比人用，我接到數據訓ENGINE或儲存之類嗎") -->
+    <div class="page" id="page-apitrending">
+      <div class="page-title">API Trending Tickers</div>
+      <div class="page-sub">Aggregate-only signal: which tickers/endpoints Intelligence API consumers actually query, across all keys/tiers. Endpoint+ticker+timestamp only -- never the response payload, and never which specific key queried what. This is what "letting people use a free key" actually gets you back: a product signal (what developers care about), not engine training data or graded accuracy (that's the separate Prediction Ledger, which only grades this site's OWN internal predictions).</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Most-Queried Tickers</span>
+          <span id="apiTrendMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="apiTrendSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadApiTrendingTickers()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
     <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
     <div class="page" id="page-predledger">
       <div class="page-title">Prediction Ledger</div>
@@ -1243,6 +1258,7 @@ function showPage(name) {
   if (name === 'auditlog') loadAuditLog();
   if (name === 'security') loadSecurityScan();
   if (name === 'stripeaccount') loadStripeAccountStatus();
+  if (name === 'apitrending') loadApiTrendingTickers();
   if (name === 'content') loadContentVariants();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
@@ -1817,6 +1833,40 @@ function renderSecurityScan(data) {
 // pills plus a plain list of anything Stripe is still waiting on
 // (requirements.currently_due) so AJ knows exactly what to go fix on the
 // Dashboard if either is false.
+async function loadApiTrendingTickers() {
+  document.getElementById('apiTrendSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('apiTrendMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/api-trending-tickers?token=${adminToken}&days=7&limit=20`);
+    const data = await res.json();
+    renderApiTrendingTickers(data);
+  } catch (e) {
+    document.getElementById('apiTrendSummary').innerHTML = '<div class="empty">Failed to load API trending tickers</div>';
+  }
+}
+
+function renderApiTrendingTickers(data) {
+  const el = document.getElementById('apiTrendSummary');
+  const rows = (data && data.trending) || [];
+  document.getElementById('apiTrendMeta').textContent = `Last ${data && data.days || 7} days`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No API queries logged yet in this window.</div>`;
+    return;
+  }
+  const maxN = Math.max(...rows.map(r => r.count));
+  el.innerHTML = rows.map(r => `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px;flex:1">
+        <span style="font-weight:600;font-family:monospace">${escapeHtml(r.ticker)}</span>
+        <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;max-width:160px">
+          <div style="height:100%;width:${Math.max(4, Math.round(r.count / maxN * 100))}%;background:var(--accent, #00d4ff)"></div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;font-weight:600">${r.count}</div>
+    </div>
+  `).join('');
+}
+
 async function loadStripeAccountStatus() {
   document.getElementById('stripeAcctSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
   document.getElementById('stripeAcctMeta').textContent = '';

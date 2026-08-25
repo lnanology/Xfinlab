@@ -29,9 +29,37 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinla
 # convention for pro/starter. This is a recommendation, not a unilateral
 # final decision -- see this module's docstring.
 TIER_LIMITS = {
-    "free": 100,
+    "free": 300,
     "pro": 5000,
     "enterprise": -1,
+}
+
+# 2026-08-25 (AJ growth batch: free-tier quota raised 100->300 to match/
+# beat comparable free tiers -- FMP 250/day, Twelve Data 800/day, Alpha
+# Vantage 25/day -- researched live via web search rather than guessed).
+# The 6 non-LLM endpoints (events/sentiment/technical/stress_test/regime/
+# forecast) cost ~$0 marginal (free market data + this server's own CPU),
+# so a 3x pool raise is free there. debate/intel are the two that actually
+# touch a paid/shared-limited LLM path (debate is forced onto DeepSeek V4
+# Flash via DeepInfra -- real $ but ~$0.0005/call; intel defaults to Groq's
+# FREE tier via ai/ai_router.py's AI_PROVIDER default, whose real risk
+# isn't $ but its request-rate limit being SHARED across this whole site,
+# including paying customers' chat/analysis features elsewhere). Rather
+# than let a generous 300-call pool translate into unlimited debate/intel
+# exposure, these two get their own separate, much lower daily ceiling
+# regardless of how much of the 300 pool is left -- checked in api/
+# intelligence.py's _check_and_spend_quota BEFORE the pool check. This is
+# also the intended free->paid conversion lever AJ asked about ("FREEKEY
+# 點樣延續人付費"): a developer hits this cap on the two most compelling
+# features (AI debate, AI intelligence feed) long before they'd ever
+# exhaust the 300-call pool on the cheap endpoints, and that's the exact
+# moment _maybe_send_endpoint_upgrade_nudge() in api/intelligence.py fires
+# an upgrade email -- same "highest-intent moment" reasoning as the
+# existing pool-exhaustion nudge, just triggered by a more realistic,
+# earlier event now that the pool itself is generous.
+FREE_TIER_ENDPOINT_DAILY_CAP = {
+    "debate": 15,
+    "intel": 15,
 }
 
 # Debate is 4 sequential LLM calls per run (see services/agent_debate_service.py)
@@ -189,6 +217,190 @@ def _init_nudge_table():
 
 
 _init_nudge_table()
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-25: per-endpoint daily sub-cap (free tier only -- see
+# FREE_TIER_ENDPOINT_DAILY_CAP above). Separate table from
+# intelligence_api_usage (which tracks the overall weighted pool) since
+# this tracks a completely different thing: raw call COUNT on one specific
+# endpoint, independent of weight/multiplier. Same UNIQUE(...)+INSERT...ON
+# CONFLICT idiom as every other counter in this file.
+# ---------------------------------------------------------------------------
+
+def _init_endpoint_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS intelligence_api_endpoint_usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            api_key TEXT NOT NULL,
+            endpoint TEXT NOT NULL,
+            date TEXT NOT NULL,
+            count INTEGER DEFAULT 0,
+            UNIQUE(api_key, endpoint, date)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_endpoint_table()
+
+
+def check_endpoint_cap(api_key: str, tier: str, endpoint: str) -> dict:
+    """Read-only, does NOT increment (same check-then-increment split as
+    check() above). {"capped": False} for any tier/endpoint combination
+    that has no sub-cap (paid tiers, or a free-tier endpoint not in
+    FREE_TIER_ENDPOINT_DAILY_CAP) -- callers should only enforce a 429 when
+    both capped=True and allowed=False."""
+    if tier != "free":
+        return {"capped": False, "allowed": True}
+    cap = FREE_TIER_ENDPOINT_DAILY_CAP.get(endpoint)
+    if cap is None:
+        return {"capped": False, "allowed": True}
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    row = conn.execute(
+        "SELECT count FROM intelligence_api_endpoint_usage WHERE api_key=? AND endpoint=? AND date=?",
+        (api_key, endpoint, today),
+    ).fetchone()
+    conn.close()
+    used = row["count"] if row else 0
+    return {"capped": True, "allowed": used < cap, "used": used, "limit": cap}
+
+
+def increment_endpoint(api_key: str, endpoint: str):
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    conn.execute(
+        """
+        INSERT INTO intelligence_api_endpoint_usage (api_key, endpoint, date, count)
+        VALUES (?, ?, ?, 1)
+        ON CONFLICT(api_key, endpoint, date) DO UPDATE SET count = count + 1
+        """,
+        (api_key, endpoint, today),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _init_endpoint_nudge_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS intelligence_endpoint_nudges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            api_key TEXT NOT NULL,
+            endpoint TEXT NOT NULL,
+            date TEXT NOT NULL,
+            UNIQUE(api_key, endpoint, date)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_endpoint_nudge_table()
+
+
+def should_send_endpoint_nudge(api_key: str, endpoint: str) -> bool:
+    """Same one-per-key-per-day dedup as should_send_upgrade_nudge() below,
+    but keyed by (api_key, endpoint) so hitting the debate cap and the
+    intel cap on the same day can each still send their own nudge once."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM intelligence_endpoint_nudges WHERE api_key=? AND endpoint=? AND date=?",
+            (api_key, endpoint, today),
+        ).fetchone()
+        return row is None
+    finally:
+        conn.close()
+
+
+def record_endpoint_nudge_sent(api_key: str, endpoint: str):
+    today = datetime.now().strftime("%Y-%m-%d")
+    conn = _get_db()
+    conn.execute(
+        "INSERT INTO intelligence_endpoint_nudges (api_key, endpoint, date) VALUES (?, ?, ?) "
+        "ON CONFLICT(api_key, endpoint, date) DO NOTHING",
+        (api_key, endpoint, today),
+    )
+    conn.commit()
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-25 (AJ: "咁FREE KEY比人用，我接到數據訓ENGINE或儲存之類嗎" --
+# does giving away free keys get me any data back?). Honest answer at the
+# time was NO: intelligence_api_usage above only ever counted raw call
+# volume, never WHAT was queried. This is a deliberately lightweight fix --
+# logs endpoint + ticker + timestamp only, never the response body/payload
+# (no engine training signal here, just product-usage signal: which
+# tickers/endpoints developers actually care about). Disclosed in
+# api-terms.html's Data section for transparency, matching this site's
+# standing "developers trust transparency, not marketing" posture. Every
+# call site funnels through api/intelligence.py's single
+# _check_and_spend_quota() choke point, so this is one integration point,
+# not nine.
+# ---------------------------------------------------------------------------
+
+def _init_query_log_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS intelligence_api_query_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            api_key TEXT NOT NULL,
+            endpoint TEXT NOT NULL,
+            ticker TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_query_log_table()
+
+
+def log_query(api_key: str, endpoint: str, ticker: "str | None" = None):
+    """Best-effort, never raises -- a logging failure must never turn a
+    real API call into a 500. Called unconditionally (every tier, not just
+    free) so trending-ticker signal reflects real usage across the board."""
+    try:
+        conn = _get_db()
+        conn.execute(
+            "INSERT INTO intelligence_api_query_log (api_key, endpoint, ticker) VALUES (?, ?, ?)",
+            (api_key, endpoint, (ticker or None)),
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def get_trending_tickers(days: int = 7, limit: int = 20) -> list:
+    """Aggregate-only product signal for the admin panel -- which tickers
+    API consumers actually query most, across all keys/tiers. Never
+    exposes which key queried what (no api_key in the returned rows)."""
+    conn = _get_db()
+    try:
+        rows = conn.execute(
+            """
+            SELECT ticker, COUNT(*) AS n
+            FROM intelligence_api_query_log
+            WHERE ticker IS NOT NULL AND ticker != ''
+              AND created_at >= datetime('now', ?)
+            GROUP BY ticker
+            ORDER BY n DESC
+            LIMIT ?
+            """,
+            (f"-{max(1, days)} days", max(1, limit)),
+        ).fetchall()
+        return [{"ticker": r["ticker"], "count": r["n"]} for r in rows]
+    finally:
+        conn.close()
 
 
 def should_send_upgrade_nudge(api_key: str) -> bool:

@@ -109,6 +109,36 @@ class EmailService:
         return EmailService.send(to_email, "XFINLAB Intelligence API -- daily free-tier limit reached", html)
 
     @staticmethod
+    def send_intelligence_api_endpoint_cap_reached(to_email: str, endpoint: str, cap: int) -> bool:
+        """2026-08-25 (AJ: "FREEKEY 點樣延續人付費" -- how does the free key
+        lead into a paid conversion): distinct from send_intelligence_api_
+        quota_exceeded above on purpose. That one fires when the whole
+        300-call/day pool is exhausted -- a rare event now that the pool is
+        generous. This one fires when the free tier's separate, much lower
+        daily cap on ONE specific high-value endpoint (debate or intel --
+        see FREE_TIER_ENDPOINT_DAILY_CAP in intelligence_quota_service.py)
+        is hit, which will happen far sooner for anyone actually using the
+        feature that best demonstrates the product. That's the real
+        highest-intent moment: they've proven they want exactly the thing
+        Pro removes the cap on, not just "ran out of calls" in the
+        abstract. Same honest, no-fake-urgency framing as the pool email."""
+        endpoint_label = {"debate": "AI Debate", "intel": "AI Intelligence Feed"}.get(endpoint, endpoint)
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#080c14;color:#e2e8f0;padding:40px;border-radius:12px;">
+            <h1 style="color:#00d4ff;font-size:1.3rem;">You've hit today's {endpoint_label} cap</h1>
+            <p>Your XFINLAB Intelligence API key (free tier) has used its {cap} {endpoint_label} calls for today. Your other endpoints (technical, forecast, events, sentiment, etc.) are unaffected -- this cap is specific to {endpoint_label}.</p>
+            <p>Two options:</p>
+            <ul style="padding-left:20px;">
+                <li>Nothing to do -- this cap resets automatically at midnight UTC.</li>
+                <li>Or upgrade to Pro: 5,000 calls/day, no per-endpoint cap, for $49/month.</li>
+            </ul>
+            <a href="https://www.xfinlab.com/intelligence-api.html#access" style="background:#00d4ff;color:#000;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0;">Request Pro access</a>
+            <p style="color:#64748b;font-size:0.82rem;">You're getting this because your API key just returned a 429 on {endpoint_label} specifically. This is a one-time note for today -- you won't get another one until you hit this same cap again on a different day.</p>
+        </div>
+        """
+        return EmailService.send(to_email, f"XFINLAB Intelligence API -- daily {endpoint_label} cap reached", html)
+
+    @staticmethod
     def send_price_alert(to_email: str, name: str, ticker: str, price: float, change: str) -> bool:
         """Send price alert email"""
         html = f"""

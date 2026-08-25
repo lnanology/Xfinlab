@@ -110,7 +110,28 @@ def _split_tickers(raw: Optional[str]) -> list:
     return out[:_MAX_BATCH_TICKERS]
 
 
-def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Response, multiplier: int = 1) -> dict:
+def _maybe_send_endpoint_upgrade_nudge(api_key: str, endpoint: str, cap: int) -> None:
+    """2026-08-25: mirrors _maybe_send_upgrade_nudge above, but for the new
+    free-tier-only per-endpoint sub-cap (debate/intel -- see
+    FREE_TIER_ENDPOINT_DAILY_CAP). Same best-effort posture: a DB hiccup,
+    missing email, or SMTP failure can never turn a normal 429 into a 500."""
+    try:
+        if not intelligence_quota_service.should_send_endpoint_nudge(api_key, endpoint):
+            return
+        email = api_key_service.get_email_for_key(api_key)
+        if not email:
+            return
+        from services.email_service import EmailService
+        sent = EmailService.send_intelligence_api_endpoint_cap_reached(email, endpoint, cap)
+        if sent:
+            intelligence_quota_service.record_endpoint_nudge_sent(api_key, endpoint)
+    except Exception:
+        pass
+
+
+def _check_and_spend_quota(
+    api_key: str, tier: str, endpoint: str, response: Response, multiplier: int = 1, ticker: Optional[str] = None
+) -> dict:
     """2026-08-17 (roadmap item #1, "重有咩可以做" round 2): also stamps
     X-RateLimit-Limit / X-RateLimit-Remaining on `response` so a client can
     pace its own requests instead of discovering the ceiling by hitting a
@@ -126,6 +147,28 @@ def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Res
     a 3-ticker Sentiment call does roughly 3x the downstream work of a
     single-ticker one, so it should cost roughly 3x the quota, not the
     same flat weight regardless of how many tickers were requested."""
+    # 2026-08-25: free-tier per-endpoint sub-cap (debate/intel), checked
+    # BEFORE the overall weighted-pool check below -- see
+    # FREE_TIER_ENDPOINT_DAILY_CAP's docstring in intelligence_quota_
+    # service.py for why this exists (raising the pool to 300 shouldn't
+    # translate into unlimited exposure on the two LLM/shared-rate-limit
+    # endpoints) and how it doubles as the free->paid conversion trigger.
+    cap_status = intelligence_quota_service.check_endpoint_cap(api_key, tier, endpoint)
+    if cap_status["capped"] and not cap_status["allowed"]:
+        _maybe_send_endpoint_upgrade_nudge(api_key, endpoint, cap_status["limit"])
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"Free-tier daily cap reached for '{endpoint}' "
+                f"({cap_status['used']}/{cap_status['limit']} calls used today) -- "
+                f"resets at midnight UTC, or upgrade to Pro to remove this cap."
+            ),
+            headers={
+                "X-RateLimit-Endpoint-Limit": str(cap_status["limit"]),
+                "X-RateLimit-Endpoint-Remaining": "0",
+            },
+        )
+
     weight = intelligence_quota_service.weight_for(endpoint) * max(1, multiplier)
     quota = intelligence_quota_service.check(api_key, tier)
     if not quota["allowed"]:
@@ -139,6 +182,13 @@ def _check_and_spend_quota(api_key: str, tier: str, endpoint: str, response: Res
             },
         )
     intelligence_quota_service.increment(api_key, weight=weight)
+    if cap_status["capped"]:
+        intelligence_quota_service.increment_endpoint(api_key, endpoint)
+    # 2026-08-25 (AJ: "咁FREE KEY比人用，我接到數據訓ENGINE或儲存之類嗎"):
+    # aggregate-only product signal, never the response payload -- see
+    # log_query()'s docstring. Best-effort, always logged regardless of
+    # tier so trending-ticker signal reflects real usage across the board.
+    intelligence_quota_service.log_query(api_key, endpoint, ticker)
     if quota["limit"] == -1:
         response.headers["X-RateLimit-Limit"] = "unlimited"
         response.headers["X-RateLimit-Remaining"] = "unlimited"
@@ -481,7 +531,7 @@ def intelligence_events(
     requested symbols and adds a `tickers` field to each event."""
     auth = _require_api_key(x_api_key)
     tickers = _split_tickers(ticker)
-    _check_and_spend_quota(x_api_key, auth["tier"], "events", response, multiplier=max(1, len(tickers)))
+    _check_and_spend_quota(x_api_key, auth["tier"], "events", response, multiplier=max(1, len(tickers)), ticker=(",".join(tickers) if tickers else None))
 
     limit = max(1, min(limit, 100))
 
@@ -558,7 +608,7 @@ def intelligence_sentiment(
     tickers = _split_tickers(ticker)
     if not tickers:
         raise HTTPException(status_code=422, detail="ticker is required")
-    _check_and_spend_quota(x_api_key, auth["tier"], "sentiment", response, multiplier=len(tickers))
+    _check_and_spend_quota(x_api_key, auth["tier"], "sentiment", response, multiplier=len(tickers), ticker=",".join(tickers))
 
     if not finbert_available():
         raise HTTPException(status_code=503, detail="Sentiment engine temporarily unavailable")
@@ -652,7 +702,7 @@ def intelligence_debate(
     services/agent_debate_service.py) -- weighted 5x in the quota counter,
     same reasoning api/agent_debate.py already applies to logged-in users."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "debate", response)
+    _check_and_spend_quota(x_api_key, auth["tier"], "debate", response, ticker=ticker.upper())
 
     if not debate_available():
         raise HTTPException(status_code=503, detail="Debate engine temporarily unavailable")
@@ -725,7 +775,7 @@ def intelligence_ticker(
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "intel", response)
+    _check_and_spend_quota(x_api_key, auth["tier"], "intel", response, ticker=ticker.upper())
 
     limit = max(1, min(limit, 10))
     ticker = ticker.upper()
@@ -766,7 +816,7 @@ def intelligence_technical(
     function already does for the website (task #592's fix), so API
     consumers get real localized labels too, not just en/zh."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "technical", response)
+    _check_and_spend_quota(x_api_key, auth["tier"], "technical", response, ticker=ticker.upper())
 
     from services.technical_analysis_service import get_technical_analysis
 
@@ -817,7 +867,7 @@ def intelligence_stress_test(
     caps stress-lab.html's own callers get; POST (not GET) since this is
     the heaviest-compute endpoint in this router after `debate`/`intel`."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "stress_test", response)
+    _check_and_spend_quota(x_api_key, auth["tier"], "stress_test", response, ticker=body.symbol.upper())
 
     from services.monte_carlo_service import simulate, DEFAULT_N_SIMULATIONS
 
@@ -858,7 +908,7 @@ def intelligence_forecast(
     bull/base/bear PROBABILITY split -- the returned band_note explains
     what the percentiles actually mean."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "forecast", response)
+    _check_and_spend_quota(x_api_key, auth["tier"], "forecast", response, ticker=ticker.upper())
 
     from services.probabilistic_forecast_service import get_probabilistic_forecast, MAX_HORIZON_DAYS
 
@@ -900,7 +950,7 @@ def intelligence_regime_signal(
     `regime` is omitted, the current regime is computed first and used
     for the lookup -- the actual "what should I use right now" answer."""
     auth = _require_api_key(x_api_key)
-    _check_and_spend_quota(x_api_key, auth["tier"], "regime", response)
+    _check_and_spend_quota(x_api_key, auth["tier"], "regime", response, ticker=ticker.upper())
 
     from services.regime_router_service import get_best_for_regime, get_current_regime
 
