@@ -8,109 +8,133 @@
 <link rel="shortcut icon" href="/img/favicon.ico">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Free Investing Calculators 2026 - XFINLAB</title>
+<title>AI Research Tools - 12 Free Engines - XFINLAB</title>
 <link rel="canonical" href="https://www.xfinlab.com/tools.html">
 <meta name="robots" content="index, follow">
-<meta name="description" content="Free investing calculators: P/E ratio, DCF valuation, position size and risk/reward ratio -- all instant, in your browser, no signup required.">
-<meta name="keywords" content="free investing calculators, PE calculator, DCF calculator, position size calculator, risk reward calculator, XFINLAB">
-<meta property="og:title" content="Free Investing Calculators - XFINLAB">
-<meta property="og:description" content="P/E ratio, DCF valuation, position size and risk/reward ratio calculators -- free, instant, no signup.">
+<meta name="description" content="Every AI research tool XFINLAB runs, in one place: ticker analysis, chat, screener, chart analysis, company compare, stress testing, anomaly detection, portfolio, news denoise, probability scan, pairs scan, and daily market brief. Free to start.">
+<meta property="og:title" content="AI Research Tools - XFINLAB">
+<meta property="og:description" content="12 real AI research engines, real data, free to start.">
 <meta property="og:url" content="https://www.xfinlab.com/tools.html">
+<!-- 2026-08-25 (AJ: "收埋 11 個 Engine 嘅並列展示 -- 首頁只 highlight 1 個
+     hero use case...其餘 engine 收入 sub-page"): this page is that
+     sub-page. It also happens to fix a pre-existing dead link -- dozens
+     of pages across this site (formula-engine.html's nav/footer,
+     pricing.html footer, every SEO stock-comparison page like sbux.html/
+     gs-vs-ms.html/spy-vs-qqq.html, etc.) already link to tools.html, but
+     the file never existed until now. Same 12 cards as index.html's 功能
+     flyout (#idxNavFeatPanel) -- same real SVG mini-mockup thumbnails,
+     copied rather than re-invented, so this page and the flyout never
+     visually disagree about what each tool looks like. -->
 <style>
-body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
-nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
-.brand{color:#F97316;font-weight:700;font-size:1.1rem;text-decoration:none}
-.nav-link{color:#94a3b8;text-decoration:none;font-size:0.85rem;margin-left:16px}
-main{max-width:900px;margin:0 auto;padding:40px 24px}
-h1{font-size:2rem;color:#fff;margin-bottom:8px}
-.subtitle{color:#64748b;margin-bottom:32px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
-.card{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;text-decoration:none;display:block;transition:border-color .2s}
-.card:hover{border-color:#F97316}
-.card h2{color:#fff;font-size:1.15rem;margin:0 0 8px}
-.card p{color:#94a3b8;font-size:0.85rem;line-height:1.6;margin:0}
-.badge{display:inline-block;background:#131c2e;color:#F97316;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;padding:3px 10px;border-radius:99px;margin-bottom:12px}
-footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
-footer a{color:#64748b;margin:0 6px;text-decoration:none}
+:root{--bg:#FFFFFF;--surface:#F8FAFC;--border:#E2E8F0;--text:#000000;--muted:#64748B;--accent:#F97316;--accent-rgb:249,115,22;--code-bg:#0d1525;--code-text:#e2e8f0;--accent-green:#22c55e;--accent-red:#ef4444;--accent-blue:#2563eb;--amber:#f59e0b}
+[data-theme="dark"]{--bg:#080c14;--surface:#0d1525;--border:#1e2d45;--text:#e2e8f0;--muted:#94a3b8;--accent:#F97316;--code-bg:#000;--code-text:#e2e8f0}
+*{box-sizing:border-box}
+body{font-family:'Inter',Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}
+nav{background:var(--surface);padding:16px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.brand{color:var(--accent);font-weight:700;font-size:1.1rem;text-decoration:none;display:flex;align-items:center}
+.nav-link{color:var(--muted);text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:1080px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;color:var(--text);margin-bottom:8px}
+.subtitle{color:var(--muted);margin-bottom:32px;line-height:1.6;max-width:640px}
+.tools-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:860px){.tools-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.tools-grid{grid-template-columns:1fr}}
+.tool-card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-decoration:none;color:var(--text);transition:border-color .2s,transform .15s}
+.tool-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.tool-card.featured{border-color:var(--accent);border-width:2px;background:rgba(var(--accent-rgb),0.05)}
+.tool-featured-tag{display:inline-block;font-size:0.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:rgba(var(--accent-rgb),0.12);border-radius:999px;padding:2px 8px;margin-bottom:8px}
+.tool-thumb{display:block;width:100%;aspect-ratio:80/54;border-radius:8px;border:1px solid var(--border);overflow:hidden;margin-bottom:10px}
+.tool-thumb svg{display:block;width:100%;height:100%}
+.tool-title{font-weight:700;font-size:0.95rem;margin-bottom:4px}
+.tool-desc{font-size:0.78rem;color:var(--muted);line-height:1.5;margin:0}
+footer{text-align:center;padding:32px;color:var(--muted);font-size:0.8rem;border-top:1px solid var(--border);margin-top:40px}
+footer a{color:var(--muted);margin:0 6px;text-decoration:none}
 </style>
+<script src="js/theme-toggle.js"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
 </head>
 <body>
 <nav>
   <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
-  <span><a href="login.html" class="nav-link" data-i18n="nav_login">Sign In</a></span>
+  <span>
+    <a href="intelligence-api.html" class="nav-link">API</a>
+    <a href="formula-engine.html" class="nav-link">Formulas</a>
+    <a href="login.html" class="nav-link">Sign In</a>
+  </span>
 </nav>
 <main>
-<h1 data-i18n="tools_h1">Free Investing Calculators</h1>
-<p class="subtitle" data-i18n="tools_subtitle">Four calculators used every day by XFINLAB's own AI analysis engine -- free to use directly, no account needed.</p>
-
-<div class="grid">
-  <a href="pe-calculator.html" class="card">
-    <span class="badge" data-i18n="tools_badge_valuation">Valuation</span>
-    <h2 data-i18n="tools_pe_title">P/E Ratio Calculator</h2>
-    <p data-i18n="tools_pe_desc">Work out a stock's price-to-earnings ratio, or its fair price from a target P/E.</p>
-  </a>
-  <a href="dcf-calculator.html" class="card">
-    <span class="badge" data-i18n="tools_badge_valuation">Valuation</span>
-    <h2 data-i18n="tools_dcf_title">DCF Calculator</h2>
-    <p data-i18n="tools_dcf_desc">Estimate a stock's intrinsic value per share with a standard 2-stage discounted cash flow model.</p>
-  </a>
-  <a href="position-size-calculator.html" class="card">
-    <span class="badge" data-i18n="tools_badge_risk">Risk Management</span>
-    <h2 data-i18n="tools_possize_title">Position Size Calculator</h2>
-    <p data-i18n="tools_possize_desc">Work out how many shares to buy so a stopped-out trade only costs the % of your account you choose.</p>
-  </a>
-  <a href="risk-reward-calculator.html" class="card">
-    <span class="badge" data-i18n="tools_badge_risk">Risk Management</span>
-    <h2 data-i18n="tools_rr_title">Risk/Reward Ratio Calculator</h2>
-    <p data-i18n="tools_rr_desc">See your R:R ratio and the win rate you'd need just to break even, from entry, stop and target.</p>
-  </a>
-  <a href="widgets.html" class="card">
-    <span class="badge">Embeddable</span>
-    <h2>Free Market Widgets</h2>
-    <p>Add a live Sentiment Index or Signal Heatmap to your own website with one script tag.</p>
-  </a>
-  <a href="formula-engine.html" class="card">
-    <span class="badge">API</span>
-    <h2>Formula Engine</h2>
-    <p>Browse 70+ finance, statistics and options-pricing formulas -- each callable directly via the XFINLAB API.</p>
-  </a>
-</div>
-
-<h2 style="font-size:1.3rem;margin-top:48px;color:#fff;text-transform:none;letter-spacing:normal" data-i18n="tools_compare_h2">Stock Comparisons</h2>
-<p class="subtitle" data-i18n="tools_compare_subtitle">Live side-by-side price comparisons, with a link to run the full AI Compare Engine.</p>
-<div class="grid">
-  <a href="aapl-vs-msft.html" class="card"><h2>AAPL vs MSFT</h2><p>Apple vs Microsoft — live price &amp; AI comparison.</p></a>
-  <a href="nvda-vs-amd.html" class="card"><h2>NVDA vs AMD</h2><p>NVIDIA vs AMD — live price &amp; AI comparison.</p></a>
-  <a href="googl-vs-meta.html" class="card"><h2>GOOGL vs META</h2><p>Alphabet vs Meta — live price &amp; AI comparison.</p></a>
-  <a href="btc-vs-eth.html" class="card"><h2>BTC vs ETH</h2><p>Bitcoin vs Ethereum — live price &amp; AI comparison.</p></a>
-  <a href="ko-vs-pep.html" class="card"><h2>KO vs PEP</h2><p>Coca-Cola vs PepsiCo — live price &amp; AI comparison.</p></a>
-  <a href="v-vs-ma.html" class="card"><h2>V vs MA</h2><p>Visa vs Mastercard — live price &amp; AI comparison.</p></a>
-  <a href="jpm-vs-bac.html" class="card"><h2>JPM vs BAC</h2><p>JPMorgan Chase vs Bank of America — live price &amp; AI comparison.</p></a>
-  <a href="spy-vs-qqq.html" class="card"><h2>SPY vs QQQ</h2><p>S&amp;P 500 ETF vs Nasdaq-100 ETF — live price &amp; AI comparison.</p></a>
-  <a href="gs-vs-ms.html" class="card"><h2>GS vs MS</h2><p>Goldman Sachs vs Morgan Stanley — live price &amp; AI comparison.</p></a>
-  <a href="uber-vs-abnb.html" class="card"><h2>UBER vs ABNB</h2><p>Uber vs Airbnb — live price &amp; AI comparison.</p></a>
-</div>
+  <h1>AI Research Tools</h1>
+  <p class="subtitle">Every engine XFINLAB runs, in one place. Real backtested data, honest confidence scores -- start with the flagship ticker analyzer below, or jump straight to whichever tool matches what you're trying to answer.</p>
+  <div class="tools-grid">
+    <a href="ai-analysis.html" class="tool-card featured">
+      <span class="tool-featured-tag">Featured</span>
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><rect x="6" y="16" width="68" height="6" rx="3" fill="var(--border,#e2e8f0)"/><rect x="6" y="16" width="40" height="6" rx="3" fill="var(--accent-green,#22c55e)"/><rect x="6" y="28" width="50" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><rect x="6" y="34" width="34" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><rect x="6" y="42" width="22" height="6" rx="3" fill="var(--accent,#D35400)"/></svg></span>
+      <div class="tool-title">AI Market Analysis</div>
+      <p class="tool-desc">Paste a ticker, get a transparent research report -- score, direction, confidence, sources.</p>
+    </a>
+    <a href="chat.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><rect x="6" y="16" width="34" height="9" rx="4" fill="var(--border,#e2e8f0)"/><rect x="40" y="28" width="34" height="9" rx="4" fill="var(--accent,#D35400)" opacity="0.85"/><rect x="6" y="40" width="24" height="9" rx="4" fill="var(--border,#e2e8f0)"/></svg></span>
+      <div class="tool-title">AI Chat</div>
+      <p class="tool-desc">Ask any market question in plain language, backed by the same real data pipeline.</p>
+    </a>
+    <a href="screener.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><rect x="6" y="16" width="68" height="5" rx="1" fill="var(--accent,#D35400)" opacity="0.6"/><rect x="6" y="24" width="68" height="4" rx="1" fill="var(--border,#e2e8f0)"/><rect x="6" y="31" width="68" height="4" rx="1" fill="var(--border,#e2e8f0)"/><rect x="6" y="38" width="68" height="4" rx="1" fill="var(--border,#e2e8f0)"/><rect x="6" y="45" width="68" height="4" rx="1" fill="var(--border,#e2e8f0)"/></svg></span>
+      <div class="tool-title">Screener</div>
+      <p class="tool-desc">Filter the market by real technical/fundamental criteria, not a curated "top picks" list.</p>
+    </a>
+    <a href="chart-analysis.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><line x1="10" y1="16" x2="10" y2="46" stroke="var(--border,#e2e8f0)"/><rect x="7" y="24" width="6" height="12" fill="var(--accent-green,#22c55e)"/><line x1="21" y1="18" x2="21" y2="44" stroke="var(--border,#e2e8f0)"/><rect x="18" y="20" width="6" height="16" fill="var(--accent-red,#ef4444)"/><line x1="32" y1="20" x2="32" y2="42" stroke="var(--border,#e2e8f0)"/><rect x="29" y="26" width="6" height="10" fill="var(--accent-green,#22c55e)"/><line x1="43" y1="14" x2="43" y2="40" stroke="var(--border,#e2e8f0)"/><rect x="40" y="18" width="6" height="14" fill="var(--accent-green,#22c55e)"/><line x1="54" y1="22" x2="54" y2="46" stroke="var(--border,#e2e8f0)"/><rect x="51" y="28" width="6" height="12" fill="var(--accent-red,#ef4444)"/><line x1="65" y1="16" x2="65" y2="38" stroke="var(--border,#e2e8f0)"/><rect x="62" y="20" width="6" height="12" fill="var(--accent-green,#22c55e)"/></svg></span>
+      <div class="tool-title">Chart Analysis</div>
+      <p class="tool-desc">Candlestick pattern detection with real historical hit-rate context, not just a label.</p>
+    </a>
+    <a href="company-compare.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><line x1="40" y1="14" x2="40" y2="48" stroke="var(--border,#e2e8f0)"/><rect x="8" y="16" width="26" height="6" rx="2" fill="var(--accent,#D35400)" opacity="0.6"/><rect x="46" y="16" width="26" height="6" rx="2" fill="var(--accent-blue,#2563eb)" opacity="0.6"/><rect x="8" y="26" width="26" height="3" rx="1" fill="var(--border,#e2e8f0)"/><rect x="46" y="26" width="26" height="3" rx="1" fill="var(--border,#e2e8f0)"/><rect x="8" y="40" width="26" height="6" rx="2" fill="var(--border,#e2e8f0)"/><rect x="46" y="40" width="26" height="6" rx="2" fill="var(--border,#e2e8f0)"/></svg></span>
+      <div class="tool-title">Company Compare</div>
+      <p class="tool-desc">Two tickers, side by side -- fundamentals, technicals, and AI read on both.</p>
+    </a>
+    <a href="stress-lab.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><polyline points="6,20 20,26 32,24 46,38 60,34 74,46" fill="none" stroke="var(--accent-red,#ef4444)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M64 14 L71 26 L57 26 Z" fill="none" stroke="var(--amber,#f59e0b)" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+      <div class="tool-title">Stress Lab</div>
+      <p class="tool-desc">Monte Carlo stress-tests a position against real historical shock scenarios.</p>
+    </a>
+    <a href="anomaly.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><circle cx="12" cy="34" r="2" fill="var(--border,#94a3b8)"/><circle cx="22" cy="28" r="2" fill="var(--border,#94a3b8)"/><circle cx="30" cy="38" r="2" fill="var(--border,#94a3b8)"/><circle cx="40" cy="24" r="2" fill="var(--border,#94a3b8)"/><circle cx="50" cy="32" r="2" fill="var(--border,#94a3b8)"/><circle cx="60" cy="18" r="3.4" fill="var(--accent-red,#ef4444)"/><circle cx="66" cy="40" r="2" fill="var(--border,#94a3b8)"/></svg></span>
+      <div class="tool-title">Anomaly Detection</div>
+      <p class="tool-desc">Flags statistically unusual price/volume behavior worth a second look.</p>
+    </a>
+    <a href="portfolio.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><circle cx="24" cy="30" r="14" fill="none" stroke="var(--border,#e2e8f0)" stroke-width="7"/><circle cx="24" cy="30" r="14" fill="none" stroke="var(--accent,#D35400)" stroke-width="7" stroke-dasharray="44 88" transform="rotate(-90 24 30)"/><circle cx="24" cy="30" r="14" fill="none" stroke="var(--accent-green,#22c55e)" stroke-width="7" stroke-dasharray="22 88" stroke-dashoffset="-44" transform="rotate(-90 24 30)"/><rect x="46" y="20" width="24" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><rect x="46" y="28" width="20" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><rect x="46" y="36" width="16" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/></svg></span>
+      <div class="tool-title">Portfolio</div>
+      <p class="tool-desc">Allocation, risk, and rebalancing suggestions across your real holdings.</p>
+    </a>
+    <a href="news-denoise.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><rect x="6" y="14" width="60" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><rect x="6" y="21" width="50" height="3" rx="1.5" fill="var(--border,#e2e8f0)" opacity="0.4"/><line x1="6" y1="22.5" x2="56" y2="22.5" stroke="var(--accent-red,#ef4444)" stroke-width="1"/><rect x="6" y="28" width="55" height="3" rx="1.5" fill="var(--accent,#D35400)"/><rect x="6" y="35" width="45" height="3" rx="1.5" fill="var(--border,#e2e8f0)" opacity="0.4"/><line x1="6" y1="36.5" x2="51" y2="36.5" stroke="var(--accent-red,#ef4444)" stroke-width="1"/><rect x="6" y="42" width="58" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/></svg></span>
+      <div class="tool-title">News Denoise</div>
+      <p class="tool-desc">Strips filler/repetition from headlines, keeps only what's actually price-relevant.</p>
+    </a>
+    <a href="probability-scan.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><path d="M6 46 Q 20 46 26 26 Q 32 12 40 12 Q 48 12 54 26 Q 60 46 74 46" fill="none" stroke="var(--accent-blue,#2563eb)" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="46" x2="74" y2="46" stroke="var(--border,#e2e8f0)"/></svg></span>
+      <div class="tool-title">Probability Scan</div>
+      <p class="tool-desc">Backtest-gated up/down probability bands -- Bear/Base/Bull, never a fabricated single number.</p>
+    </a>
+    <a href="pairs-scan.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><polyline points="6,20 20,24 34,18 48,26 62,20 74,24" fill="none" stroke="var(--accent,#D35400)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="6,36 20,32 34,38 48,30 62,36 74,32" fill="none" stroke="var(--accent-blue,#2563eb)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="tool-title">Pairs Scan</div>
+      <p class="tool-desc">Statistical-arbitrage pair candidates, ranked by real historical correlation/spread.</p>
+    </a>
+    <a href="market-brief.html" class="tool-card">
+      <span class="tool-thumb"><svg viewBox="0 0 80 54" preserveAspectRatio="xMidYMid meet"><rect x="0.5" y="0.5" width="79" height="53" rx="6" fill="var(--bg,#F8FAFC)" stroke="var(--border,#e2e8f0)"/><circle cx="10" cy="18" r="2.4" fill="var(--amber,#f59e0b)"/><rect x="16" y="16" width="50" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><circle cx="10" cy="28" r="2.4" fill="var(--border,#e2e8f0)"/><rect x="16" y="26" width="42" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><circle cx="10" cy="38" r="2.4" fill="var(--border,#e2e8f0)"/><rect x="16" y="36" width="46" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/><circle cx="10" cy="46" r="2.4" fill="var(--border,#e2e8f0)"/><rect x="16" y="44" width="38" height="3" rx="1.5" fill="var(--border,#e2e8f0)"/></svg></span>
+      <div class="tool-title">Daily Market Brief</div>
+      <p class="tool-desc">A free, auto-generated signal digest sent daily -- no login required to try.</p>
+    </a>
+  </div>
 </main>
-<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
 <footer>
-  <span data-i18n="pricing_footer">© 2026 XFINLAB — AI Investment Intelligence Platform</span><br><br>
-  <a href="ai-analysis.html" data-i18n="nav_analysis">AI Analysis</a>
-  <a href="pricing.html" data-i18n="nav_pricing">Pricing</a>
-  <a href="terms.html" data-i18n="pricing_footer_terms">Terms</a>
-  <a href="privacy.html" data-i18n="pricing_footer_privacy">Privacy</a>
-  <a href="risk-warning.html">Risk Warning</a>
-  <a href="ai-disclaimer.html">AI Disclaimer</a>
-  <a href="methodology.html">Methodology</a>
-  <a href="model-limitations.html">Model Limitations</a>
-  <a href="affiliate-disclosure.html">Affiliate Disclosure</a>
-  <a href="cookie-policy.html">Cookie Policy</a>
+  <span>© 2026 XFINLAB — AI Investment Intelligence Platform</span><br><br>
+  <a href="intelligence-api.html">API</a>
+  <a href="formula-engine.html">Free Formulas</a>
+  <a href="how-it-works.html">How It Works</a>
+  <a href="pricing.html">Pricing</a>
 </footer>
-<script src="js/i18n.js"></script>
-<script src="js/cookie-consent.js"></script>
-<script src="js/anti-scrape.js"></script>
-<script src="js/ads.js"></script>
-<script src="js/support-widget.js"></script>
-<script src="js/quick-ask-bubble.js"></script>
 </body>
 </html>

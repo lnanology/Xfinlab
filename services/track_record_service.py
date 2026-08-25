@@ -47,6 +47,22 @@ def _compute() -> Dict:
     per_symbol: List[Dict] = []
     total_trades = 0
     weighted_win_sum = 0.0
+    # 2026-08-25 (AJ: "移除首頁 38.9% Win Rate -- 或者改成 Sharpe / max
+    # drawdown / hit rate by regime，畀context。裸露一個38.9%只會趕客"):
+    # a bare win-rate number with nothing else next to it reads as either
+    # cherry-picked or naive to anyone who actually trades (win rate alone
+    # says nothing about payoff asymmetry or tail risk). Both
+    # sharpe_like and max_drawdown_pct were already computed per-symbol
+    # by BacktestService.run() and simply never aggregated/surfaced --
+    # added here rather than inventing a new metric. Regime-conditioned
+    # hit rate is NOT included: doing that honestly would need a
+    # historical (not just live-belief) regime classifier per trade
+    # date, which services/regime_belief_service.py doesn't provide --
+    # rather than fake that breakdown, this ships with the two real
+    # numbers that were already sitting there unused.
+    weighted_sharpe_sum = 0.0
+    sharpe_weight = 0
+    worst_max_drawdown_pct = None
 
     for symbol in _BASKET:
         try:
@@ -58,18 +74,31 @@ def _compute() -> Dict:
         stats = result.get("stats") or {}
         n = stats.get("trade_count") or 0
         wr = stats.get("win_rate_pct")
+        sh = stats.get("sharpe_like")
+        dd = stats.get("max_drawdown_pct")
         per_symbol.append({
             "symbol": symbol,
             "win_rate_pct": wr,
             "trade_count": n,
             "avg_return_pct": stats.get("avg_return_pct"),
-            "sharpe_like": stats.get("sharpe_like"),
+            "sharpe_like": sh,
+            "max_drawdown_pct": dd,
         })
         if n and wr is not None:
             total_trades += n
             weighted_win_sum += wr * n
+        if n and sh is not None:
+            weighted_sharpe_sum += sh * n
+            sharpe_weight += n
+        if dd is not None:
+            # Worst (deepest) observed drawdown across the basket -- NOT
+            # averaged. Averaging away the worst symbol's drawdown would
+            # understate real tail risk; a homepage risk-context number
+            # should be conservative, not flattering.
+            worst_max_drawdown_pct = dd if worst_max_drawdown_pct is None else max(worst_max_drawdown_pct, dd)
 
     overall_win_rate = round(weighted_win_sum / total_trades, 1) if total_trades > 0 else None
+    overall_sharpe_like = round(weighted_sharpe_sum / sharpe_weight, 2) if sharpe_weight > 0 else None
     per_symbol.sort(key=lambda r: (r["win_rate_pct"] if r["win_rate_pct"] is not None else -1), reverse=True)
 
     return {
@@ -77,6 +106,8 @@ def _compute() -> Dict:
         "period": _PERIOD,
         "basket": _BASKET,
         "overall_win_rate_pct": overall_win_rate,
+        "overall_sharpe_like": overall_sharpe_like,
+        "worst_max_drawdown_pct": round(worst_max_drawdown_pct, 2) if worst_max_drawdown_pct is not None else None,
         "total_trades": total_trades,
         "symbols_tested": len(per_symbol),
         "per_symbol": per_symbol,
@@ -86,6 +117,9 @@ def _compute() -> Dict:
             "avg_return_pct 係net-of-cost數字，並非未計成本嘅樂觀估算。",
             "樣本基於固定8個大盤/板塊指數（同首頁Market Pulse用緊嘅同一組），並非度身挑選表現最好嘅資產。",
             "細樣本嘅勝率統計學上參考價值有限，請留意 total_trades。",
+            "sharpe_like 係逐單交易嘅回報/標準差，唔係年化Sharpe（嗰個需要逐日帳戶回報，呢個模擬未有），"
+            "刻意用呢個名避免同真正嘅Sharpe混淆。max_drawdown_pct 係basket入面表現最差果隻嘅最大回撤，"
+            "唔係平均數，故意保守。",
         ],
     }
 
