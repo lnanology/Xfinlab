@@ -341,6 +341,35 @@ def record_self_serve_signup_attempt(ip: str):
     conn.close()
 
 
+# 2026-08-25: shared email template for "here is your raw API key" --
+# factored out of api/intelligence.py's /intelligence/v1/signup endpoint
+# (which had this HTML inline) so backend/auth/auth.py's new
+# "every free signup gets a key" registration hook (see
+# _on_user_registered_issue_free_api_key in backend/auth/auth.py) can send
+# the exact same email instead of a second, driftable copy. Also fixes a
+# pre-existing mismatch this extraction surfaced: the old inline template
+# said "200 weighted calls/day" but services/intelligence_quota_service.py's
+# TIER_LIMITS["free"] is actually 100 -- corrected to read the real number
+# from that module instead of a hardcoded (and wrong) string.
+def send_api_key_email(email: str, key: str) -> bool:
+    from services.email_service import EmailService
+    from services.intelligence_quota_service import TIER_LIMITS
+
+    limit = TIER_LIMITS.get("free", 100)
+    html = f"""
+    <div style="font-family:Arial,sans-serif;padding:20px;background:#080c14;color:#e2e8f0">
+        <h2 style="color:#00d4ff">Your XFINLAB Intelligence API key</h2>
+        <p>Free tier -- {limit} weighted calls/day. Keep this key secret; it will not be shown again (regenerate from your dashboard, or re-run self-serve signup with the same email, if lost).</p>
+        <p style="font-family:monospace;background:#111827;padding:12px;border-radius:8px;word-break:break-all">{key}</p>
+        <p>Docs: <a href="https://www.xfinlab.com/intelligence-api.html" style="color:#00d4ff">xfinlab.com/intelligence-api.html</a> &middot; Terms: <a href="https://www.xfinlab.com/api-terms.html" style="color:#00d4ff">api-terms.html</a></p>
+    </div>
+    """
+    try:
+        return EmailService.send(email, "[XFINLAB] Your Intelligence API key", html)
+    except Exception:
+        return False
+
+
 def issue_self_serve_free_key(email: str) -> dict:
     """Public, unauthenticated free-tier issuance -- does NOT require a
     pre-existing `users` row (unlike issue_key() above, which is for

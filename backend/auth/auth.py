@@ -49,9 +49,33 @@ def _on_user_registered_audit_log(data):
     log_action(data["user_id"], "register", data.get("ip"))
 
 
+# 2026-08-25 (AJ: "Free tier 加鈎: 送 API key(low quota)畀所有免費用戶 —
+# 開發者一裝就唔走"): every new signup now gets a working Intelligence API
+# key immediately, not just users who separately find intelligence-
+# api.html's self-serve signup form. Uses api_key_service.issue_key() --
+# the SAME api_keys table dashboard.html's "Intelligence API 金鑰" panel
+# already reads via get_my_key_status() (task #724) -- rather than
+# issue_self_serve_free_key()'s separate self_serve_api_keys table, so the
+# key shows up in the dashboard with zero frontend changes. tier="free"
+# maps to the same 100 calls/day quota (services/intelligence_quota_
+# service.py's TIER_LIMITS) every other free-tier key gets. Reuses the
+# same email template api/intelligence.py's self-serve endpoint sends
+# (services.api_key_service.send_api_key_email) so a developer who signs
+# up via the consumer site sees identical, consistent messaging to one who
+# signs up via the API page directly. Best-effort like every other
+# subscriber here -- EventBus.publish() isolates this from the other three
+# and from registration succeeding at all.
+def _on_user_registered_issue_free_api_key(data):
+    from services.api_key_service import issue_key, send_api_key_email
+    result = issue_key(data["email"], tier="free")
+    if "key" in result:
+        send_api_key_email(data["email"], result["key"])
+
+
 EventBus.subscribe("user_registered", _on_user_registered_send_welcome_email)
 EventBus.subscribe("user_registered", _on_user_registered_send_verification_email)
 EventBus.subscribe("user_registered", _on_user_registered_audit_log)
+EventBus.subscribe("user_registered", _on_user_registered_issue_free_api_key)
 # NOTE: this file lives at backend/auth/auth.py, so it needs to go up TWO
 # levels (auth/ -> backend/ -> repo root) to reach the canonical, Litestream
 # -backed xfinlab.db that every other service reads/writes. A previous

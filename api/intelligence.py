@@ -431,7 +431,6 @@ def intelligence_self_serve_signup(body: FreeSignupRequest, request: Request):
     (services/api_key_service.check_self_serve_signup_rate) so this can't
     be scripted into unlimited free-key generation."""
     from services.disposable_email_domains import is_disposable_email
-    from services.email_service import EmailService
 
     if is_disposable_email(body.email):
         raise HTTPException(status_code=400, detail="Please use a non-disposable email address")
@@ -446,19 +445,12 @@ def intelligence_self_serve_signup(body: FreeSignupRequest, request: Request):
 
     result = api_key_service.issue_self_serve_free_key(body.email)
 
-    html = f"""
-    <div style="font-family:Arial,sans-serif;padding:20px;background:#080c14;color:#e2e8f0">
-        <h2 style="color:#00d4ff">Your XFINLAB Intelligence API key</h2>
-        <p>Free tier -- 200 weighted calls/day. Keep this key secret; it will not be shown again (re-run signup with the same email to rotate it if lost).</p>
-        <p style="font-family:monospace;background:#111827;padding:12px;border-radius:8px;word-break:break-all">{result['key']}</p>
-        <p>Docs: <a href="https://www.xfinlab.com/intelligence-api.html" style="color:#00d4ff">xfinlab.com/intelligence-api.html</a> &middot; Terms: <a href="https://www.xfinlab.com/api-terms.html" style="color:#00d4ff">api-terms.html</a></p>
-    </div>
-    """
-    sent = False
-    try:
-        sent = EmailService.send(result["email"], "[XFINLAB] Your Intelligence API key", html)
-    except Exception:
-        sent = False
+    # 2026-08-25: template factored out to api_key_service.send_api_key_email
+    # so backend/auth/auth.py's new "every free signup gets a key" hook can
+    # send the identical email instead of a second, driftable copy -- also
+    # fixes this template's stale "200 weighted calls/day" (the real
+    # TIER_LIMITS["free"] is 100; see that function's docstring).
+    sent = api_key_service.send_api_key_email(result["email"], result["key"])
 
     if not sent:
         # The key already exists in self_serve_api_keys at this point, but
