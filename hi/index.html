@@ -580,11 +580,7 @@
 <p data-i18n="trackrecord_subtitle" style="color:var(--muted);font-size:0.9rem;max-width:640px;margin:0 auto 20px;text-align:center">हमारे Confluence Engine का ऐतिहासिक डेटा पर वास्तविक बैकटेस्ट प्रदर्शन — यह सिमुलेशन नहीं, और न ही वास्तविक ट्रेडिंग रिकॉर्ड है।</p>
 <div class="stats" id="trackRecordStats">
 <div class="stat">
-<div class="stat-num" data-i18n="trackrecord_loading" id="trStatWinRate" style="font-size:1rem">असली बैकटेस्ट डेटा प्रोसेस हो रहा है...</div>
-<div class="stat-label" data-i18n="trackrecord_winrate_label">कुल बैकटेस्ट जीत दर</div>
-</div>
-<div class="stat">
-<div class="stat-num" id="trStatTrades">—</div>
+<div class="stat-num" data-i18n="trackrecord_loading" id="trStatTrades" style="font-size:1rem">असली बैकटेस्ट डेटा प्रोसेस हो रहा है...</div>
 <div class="stat-label" data-i18n="trackrecord_trades_label">परीक्षित ट्रेड्स</div>
 </div>
 <div class="stat">
@@ -1404,37 +1400,29 @@ setInterval(loadMarketPulse, 90000);
 // polling interval: the backend itself caches for 24h, no reason to
 // re-hit it every 90s like the live Market Pulse widget above.
 async function loadTrackRecord() {
-  const winEl = document.getElementById('trStatWinRate');
   const tradesEl = document.getElementById('trStatTrades');
   const basketEl = document.getElementById('trStatBasket');
   const sharpeEl = document.getElementById('trStatSharpe');
   const ddEl = document.getElementById('trStatDrawdown');
-  if (!winEl) return;
+  if (!tradesEl) return;
   try {
     const res = await fetch(`${API}/track-record`);
     const json = await res.json();
     const data = json && json.data;
     if (!data || !data.symbols_tested) {
-      winEl.textContent = '--';
       tradesEl.textContent = '--';
       basketEl.textContent = '--';
       if (sharpeEl) sharpeEl.textContent = '--';
       if (ddEl) ddEl.textContent = '--';
       return;
     }
-    winEl.textContent = (data.overall_win_rate_pct != null) ? `${data.overall_win_rate_pct}%` : '--';
-    winEl.style.fontSize = '';
-    // Same fix as loadMarketPulse()'s pulseOverall element above: drop the
-    // data-i18n attribute once real data has replaced the loading
-    // placeholder, so a later-resolving I18N.apply() call can't stomp it
-    // back to the translated "loading..." text.
-    winEl.removeAttribute('data-i18n');
     tradesEl.textContent = (data.total_trades != null) ? data.total_trades : '--';
+    tradesEl.style.fontSize = '';
+    tradesEl.removeAttribute('data-i18n');
     basketEl.textContent = Array.isArray(data.basket) ? data.basket.length : '--';
     if (sharpeEl) sharpeEl.textContent = (data.overall_sharpe_like != null) ? String(data.overall_sharpe_like) : '--';
     if (ddEl) ddEl.textContent = (data.worst_max_drawdown_pct != null) ? `-${data.worst_max_drawdown_pct}%` : '--';
   } catch (e) {
-    winEl.textContent = '--';
     if (tradesEl) tradesEl.textContent = '--';
     if (basketEl) basketEl.textContent = '--';
     if (sharpeEl) sharpeEl.textContent = '--';
