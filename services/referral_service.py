@@ -90,6 +90,14 @@ _REFERRAL_CONFIG_DEFAULTS = {
     "referral_proplus_threshold": REFERRAL_PROPLUS_THRESHOLD,
     "referral_floating_basic_threshold": REFERRAL_FLOATING_BASIC_THRESHOLD,
     "referral_floating_grant_days": REFERRAL_FLOATING_GRANT_DAYS,
+    # 2026-08-25 (AJ: "referral雙方加quota"): dual-sided Intelligence API
+    # quota bonus, same "both sides get something the instant the code is
+    # used" instant-reward posture as the points grant above -- separate
+    # from it (this bumps a key's daily API call ceiling, points bump the
+    # temp-upgrade-eligibility counter) so an admin can tune each
+    # independently. Capped per-key regardless of referral count -- see
+    # intelligence_quota_service.MAX_QUOTA_BONUS.
+    "referral_api_quota_bonus": 50,
 }
 
 
@@ -312,6 +320,26 @@ class ReferralService:
         referrer_bonus = base_bonus + (quick_bonus if quick_action else 0)
         add_bonus_points(referrer_id, referrer_bonus)
         add_bonus_points(new_user_id, welcome_bonus)
+
+        # 2026-08-25 (AJ: "referral雙方加quota"): dual-sided Intelligence
+        # API quota bonus, alongside the points grants above. Best-effort
+        # and entirely independent -- a missing key (e.g. a pre-existing
+        # user who registered before free-tier auto-issuance shipped) or
+        # any lookup/DB error here must never fail the referral itself,
+        # which has already succeeded and committed above.
+        try:
+            from services.api_key_service import get_active_key_for_user
+            from services.intelligence_quota_service import add_quota_bonus
+
+            api_quota_bonus = get_config("referral_api_quota_bonus")
+            referrer_key = get_active_key_for_user(referrer_id)
+            if referrer_key:
+                add_quota_bonus(referrer_key, api_quota_bonus)
+            new_user_key = get_active_key_for_user(new_user_id)
+            if new_user_key:
+                add_quota_bonus(new_user_key, api_quota_bonus)
+        except Exception:
+            pass
 
         return {
             "success": True,

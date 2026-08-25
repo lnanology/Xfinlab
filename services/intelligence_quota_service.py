@@ -145,14 +145,84 @@ def _init_table():
 _init_table()
 
 
+# ---------------------------------------------------------------------------
+# 2026-08-25 (AJ: "referral雙方加quota"): a per-API-key BONUS added on top
+# of TIER_LIMITS, earned by successful referrals (see services/referral_
+# service.py's use_code(), which calls add_quota_bonus() for both the
+# referrer's and the new user's own key). Mirrors services/quota_service.py
+#'s existing quota_bonus table/grant_bonus() pattern (a different, older
+# per-user/per-feature system for logged-in AI features, not API keys) --
+# same additive ON CONFLICT idiom, same "separate table, never touches
+# TIER_LIMITS itself" posture, applied here to keys instead. Capped so
+# repeated referrals can't inflate a key's quota without bound.
+# ---------------------------------------------------------------------------
+MAX_QUOTA_BONUS = 500  # 10 referrals' worth at the default 50/referral
+
+
+def _init_bonus_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS api_key_quota_bonus (
+            api_key TEXT PRIMARY KEY,
+            bonus INTEGER DEFAULT 0
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_bonus_table()
+
+
+def get_quota_bonus(api_key: str) -> int:
+    conn = _get_db()
+    try:
+        row = conn.execute(
+            "SELECT bonus FROM api_key_quota_bonus WHERE api_key=?", (api_key,)
+        ).fetchone()
+        return row["bonus"] if row else 0
+    finally:
+        conn.close()
+
+
+def add_quota_bonus(api_key: str, amount: int):
+    """Best-effort additive grant, capped at MAX_QUOTA_BONUS regardless of
+    how many times this is called for the same key. Never raises -- called
+    from referral_service.py's use_code(), which must never fail a
+    registration/referral over a quota-bonus hiccup."""
+    if not api_key or amount <= 0:
+        return
+    try:
+        conn = _get_db()
+        conn.execute(
+            """
+            INSERT INTO api_key_quota_bonus (api_key, bonus) VALUES (?, ?)
+            ON CONFLICT(api_key) DO UPDATE SET bonus = MIN(?, bonus + excluded.bonus)
+            """,
+            (api_key, min(amount, MAX_QUOTA_BONUS), MAX_QUOTA_BONUS),
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
 def check(api_key: str, tier: str) -> dict:
     """Read-only check -- does NOT increment. Call increment() separately
     after the request actually succeeds, mirroring quota_service.py's
     check()-then-increment() split (so a failed upstream call doesn't burn
-    the caller's quota)."""
-    limit = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
-    if limit == -1:
-        return {"allowed": True, "used": 0, "limit": -1, "remaining": -1, "tier": tier}
+    the caller's quota).
+
+    2026-08-25: `limit` now includes any referral-earned bonus (see
+    add_quota_bonus() above) on top of the flat TIER_LIMITS number --
+    unlimited tiers (limit==-1) are returned untouched, a bonus is
+    meaningless there."""
+    base_limit = TIER_LIMITS.get(tier, TIER_LIMITS["free"])
+    if base_limit == -1:
+        return {"allowed": True, "used": 0, "limit": -1, "remaining": -1, "tier": tier, "bonus": 0}
+
+    bonus = get_quota_bonus(api_key)
+    limit = base_limit + bonus
 
     today = datetime.now().strftime("%Y-%m-%d")
     conn = _get_db()
@@ -169,6 +239,7 @@ def check(api_key: str, tier: str) -> dict:
         "limit": limit,
         "remaining": max(0, limit - used),
         "tier": tier,
+        "bonus": bonus,
     }
 
 

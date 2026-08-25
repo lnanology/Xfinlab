@@ -728,6 +728,25 @@
   </div>
 </div>
 
+<!-- Onboarding Modal (2026-08-25, AJ: "新用戶第一次登入 → 強制走一次
+     『輸入 AAPL → 睇到 report』嘅 30 秒流程") -- shown once, right after a
+     brand-new registration (see login.html's handleRegister() setting the
+     xfinlab_needs_onboarding flag), never again after it's completed or
+     skipped. Reuses the EXISTING #ticker input + runFullAnalysis() below
+     rather than a separate flow/page -- this modal's "See My Report"
+     button just fills that real input and calls that real function, so
+     there's no second, parallel analysis path to keep in sync. -->
+<div id="onboardingModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1100;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:90%;max-width:440px;text-align:center">
+    <div style="font-size:2rem;margin-bottom:8px">👋</div>
+    <div style="font-weight:700;font-size:1.15rem;margin-bottom:8px" data-i18n="dash_onboard_title">Welcome to XFINLAB</div>
+    <p style="color:var(--muted);font-size:0.86rem;line-height:1.6;margin-bottom:20px" data-i18n="dash_onboard_subtitle">Paste a ticker and see a real, transparent AI research report in about 30 seconds -- this is the core of what XFINLAB does.</p>
+    <input id="onboardTicker" value="AAPL" maxlength="6" style="width:100%;box-sizing:border-box;text-align:center;text-transform:uppercase;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;font-size:1rem;font-weight:600;margin-bottom:14px">
+    <button class="btn-primary" style="width:100%;padding:12px" onclick="completeOnboarding()" data-i18n="dash_onboard_cta">See My AI Report →</button>
+    <a href="#" onclick="skipOnboarding();return false" style="display:block;margin-top:14px;font-size:0.76rem;color:var(--muted)" data-i18n="dash_onboard_skip">Skip for now</a>
+  </div>
+</div>
+
 <main>
 
   <!-- SEARCH -->
@@ -1381,6 +1400,30 @@ async function removeFromWatchlist(ticker) {
 
 loadWatchlist();
 
+// ---- Onboarding modal (2026-08-25) ----
+// Checked once at page load, before anything else the user might click.
+// Only ever true right after login.html's handleRegister() sets it (see
+// that file's comment) -- a normal login never sets this flag, so
+// returning users never see this again.
+function maybeShowOnboarding() {
+  if (localStorage.getItem('xfinlab_needs_onboarding') === '1') {
+    document.getElementById('onboardingModal').style.display = 'flex';
+  }
+}
+function completeOnboarding() {
+  const raw = (document.getElementById('onboardTicker').value || 'AAPL').trim().toUpperCase();
+  localStorage.removeItem('xfinlab_needs_onboarding');
+  document.getElementById('onboardingModal').style.display = 'none';
+  document.getElementById('ticker').value = raw || 'AAPL';
+  document.getElementById('heroGrid').scrollIntoView({behavior: 'smooth', block: 'start'});
+  runFullAnalysis();
+}
+function skipOnboarding() {
+  localStorage.removeItem('xfinlab_needs_onboarding');
+  document.getElementById('onboardingModal').style.display = 'none';
+}
+maybeShowOnboarding();
+
 // ---- API Key panel (task #724, AJ "全做" batch, 2026-08-09) ----
 // Same fetch/render pattern as loadWatchlist() above. GET never returns a
 // raw key -- masked preview only (backend: api_key_service.get_my_key_status,
@@ -1418,6 +1461,7 @@ async function loadApiKeyStatus() {
         <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase">${data.tier}</span>
       </div>
       <div style="font-size:0.74rem;color:var(--muted);margin-bottom:12px">${t('dash_apikey_created_label','建立於')} ${(data.created_at||'').slice(0,10)}${data.last_used_at ? ' · ' + t('dash_apikey_last_used_label','最後使用') + ' ' + data.last_used_at.slice(0,10) : ''}</div>
+      ${data.quota_bonus > 0 ? `<div style="font-size:0.74rem;color:var(--accent);margin-bottom:12px">🎁 +${data.quota_bonus} ${t('dash_apikey_referral_bonus_label','推薦獎勵額度')}</div>` : ''}
       <button onclick="regenerateApiKey()" id="apiKeyGenBtn" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">${t('dash_apikey_regenerate_btn','重新產生金鑰')}</button>`;
   } catch(e) {
     box.innerHTML = `<div class="empty">${t('dash_watchlist_load_error','載入失敗')}</div>`;

@@ -219,6 +219,26 @@ def revoke_key(key_id: int) -> bool:
 # rows, unlike the admin endpoints which take an arbitrary email).
 # ---------------------------------------------------------------------------
 
+# 2026-08-25 (AJ: "referral雙方加quota"): resolves a user_id straight to
+# their raw active key -- referral_service.py's use_code() only has
+# user_id for both the referrer and the new user (not their email), and
+# needs the raw key string to call intelligence_quota_service.
+# add_quota_bonus(). Returns the most-recently-issued active key, or None
+# if this user has no key yet (a pre-existing user who registered before
+# the auto-issuance batch shipped) -- callers treat None as "nothing to
+# bonus, skip silently", never an error.
+def get_active_key_for_user(user_id: int) -> "str | None":
+    conn = _get_db()
+    try:
+        row = conn.execute(
+            "SELECT key FROM api_keys WHERE user_id=? AND active=1 ORDER BY created_at DESC LIMIT 1",
+            (user_id,),
+        ).fetchone()
+        return row["key"] if row else None
+    finally:
+        conn.close()
+
+
 def get_my_key_status(email: str) -> dict:
     """For the dashboard account panel: never returns a raw key (none of
     the existing rows have it retained -- see issue_key()'s docstring), just
@@ -228,12 +248,32 @@ def get_my_key_status(email: str) -> dict:
     if not active:
         return {"has_key": False}
     k = active[0]
+    # 2026-08-25 (AJ: "referral雙方加quota"): surfaces the referral-earned
+    # bonus (services/intelligence_quota_service.add_quota_bonus) so the
+    # dashboard panel can show "+50 from referrals" rather than a user
+    # wondering why their limit is higher than the advertised 300. Looks
+    # the raw key up separately (list_keys_for_email intentionally never
+    # returns it) purely to read the bonus table -- still never included
+    # in this function's own return value.
+    quota_bonus = 0
+    try:
+        conn = _get_db()
+        user = conn.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+        conn.close()
+        if user:
+            raw_key = get_active_key_for_user(user["id"])
+            if raw_key:
+                from services.intelligence_quota_service import get_quota_bonus
+                quota_bonus = get_quota_bonus(raw_key)
+    except Exception:
+        quota_bonus = 0
     return {
         "has_key": True,
         "key_preview": k["key_preview"],
         "tier": k["tier"],
         "created_at": k["created_at"],
         "last_used_at": k["last_used_at"],
+        "quota_bonus": quota_bonus,
     }
 
 

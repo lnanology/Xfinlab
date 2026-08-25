@@ -327,6 +327,13 @@ async function handleRegister() {
 
     localStorage.setItem('xfinlab_token', data.token);
     localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan, avatar_gender: data.avatar_gender, oauth_provider: data.oauth_provider, name_is_custom: data.name_is_custom}));
+    // 2026-08-25 (AJ: "新用戶第一次登入 → 強制走一次30秒流程"): UserResponse
+    // carries no created_at/is_new_user field for dashboard.html to detect
+    // "this is genuinely their first visit" server-side, so this is set
+    // client-side at the one moment we know for certain -- right after a
+    // brand-new account is created (never set on the login() path below,
+    // only here). dashboard.html checks + clears this on its first load.
+    localStorage.setItem('xfinlab_needs_onboarding', '1');
     showSuccess(t('login_success_register','Account created! Redirecting...'));
     setTimeout(() => window.location.href = 'dashboard.html', 1000);
   } catch(e) {
