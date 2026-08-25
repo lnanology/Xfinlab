@@ -183,6 +183,21 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </div>
 
+    <!-- 2026-08-25 (AJ growth batch: "Copy as code" 一click copy 成
+         Python/curl -- 呢個係 viral hook). Real, runnable snippet against
+         the live Intelligence API's /intelligence/v1/technical/{ticker}
+         endpoint (same confluence direction/confidence this page's own
+         Layer 1 hero card already shows -- see api/intelligence.py),
+         not a fabricated example. Placeholder API key text links out to
+         intelligence-api.html's free self-serve signup. Hidden until the
+         first real result comes back, same show/hide pattern as
+         heroCard above. -->
+    <div id="copyCodeRow" style="display:none;gap:8px;margin:-6px 0 18px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:0.76rem;color:var(--muted)" data-i18n="aa_copy_code_label">Copy as code</span>
+      <button onclick="copyApiSnippet('python', this)" style="background:none;border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:0.76rem;cursor:pointer" data-i18n="aa_copy_python_btn">Copy Python</button>
+      <button onclick="copyApiSnippet('curl', this)" style="background:none;border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:0.76rem;cursor:pointer" data-i18n="aa_copy_curl_btn">Copy curl</button>
+    </div>
+
     <!-- Layer 2: Dashboard grid (30-second read) -->
     <div class="dash-grid" id="dashGrid" style="display:none">
       <div class="dash-cell"><div class="dash-cell-label">Trend</div><div class="dash-cell-value" id="dashTrend">-</div></div>
@@ -749,6 +764,36 @@ function renderKlineChart(ohlc, decisionLevels) {
   klineChart.timeScale().fitContent();
 }
 
+// 2026-08-25 (AJ growth batch, "Copy as code" viral hook): generates a
+// real, runnable snippet against the live Intelligence API for whichever
+// ticker is actually on screen -- same /intelligence/v1/technical/{ticker}
+// endpoint documented on intelligence-api.html and used by sdk/examples/
+// python_quickstart.py, so this can't drift from what actually works.
+// XFINLAB_API_KEY is a placeholder on purpose: every free signup (site
+// registration or intelligence-api.html's self-serve form) now gets a
+// real key automatically (see backend/auth/auth.py's
+// _on_user_registered_issue_free_api_key), so there's always something
+// real for a developer to drop in here within seconds.
+function buildApiSnippet(ticker, lang) {
+  const base = 'https://www.xfinlab.com';
+  if (lang === 'curl') {
+    return `curl -s "${base}/intelligence/v1/technical/${ticker}?period=6mo" \\\n  -H "X-API-Key: YOUR_XFINLAB_API_KEY"`;
+  }
+  return `import requests\n\nresp = requests.get(\n    "${base}/intelligence/v1/technical/${ticker}",\n    params={"period": "6mo"},\n    headers={"X-API-Key": "YOUR_XFINLAB_API_KEY"},\n)\ndata = resp.json()\nconfluence = data.get("confluence", {})\nprint(confluence.get("direction"), confluence.get("confidence"), "%")\n\n# Free key (issued instantly): https://www.xfinlab.com/intelligence-api.html`;
+}
+
+function copyApiSnippet(lang, btn) {
+  const input = document.getElementById('symbolInput');
+  const fallback = input ? (input.value || '').split(',')[0].trim().toUpperCase() : '';
+  const ticker = window.__aaLastTicker || fallback || 'AAPL';
+  const code = buildApiSnippet(ticker, lang);
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['aa_copy_code_copied']) || 'Copied ✓';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {});
+}
+
 async function runAnalysis(){
   const input=document.getElementById('symbolInput').value.trim();
   if(!input){alert((typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_alert_no_symbol'])||'請輸入至少一個代號');return}
@@ -794,6 +839,13 @@ async function runAnalysis(){
     const heroCard = document.getElementById('heroCard');
     if (hero.rating) {
       heroCard.style.display = 'flex';
+      // 2026-08-25: remembers the actually-analyzed ticker (not just
+      // whatever's currently sitting in the input box, which the user may
+      // have started editing again) so copyApiSnippet() below always
+      // generates code for the result actually on screen.
+      window.__aaLastTicker = symbols[0] || data.symbol || null;
+      const copyRow = document.getElementById('copyCodeRow');
+      if (copyRow) copyRow.style.display = 'flex';
       document.getElementById('heroSymbol').textContent = symbols[0] || data.symbol || '-';
       document.getElementById('heroStars').textContent = '★'.repeat(hero.stars || 0) + '☆'.repeat(5 - (hero.stars || 0));
       const ratingEl = document.getElementById('heroRating');
