@@ -591,8 +591,16 @@
 <div class="stat-num" id="trStatBasket">—</div>
 <div class="stat-label" data-i18n="trackrecord_basket_label">테스트 자산</div>
 </div>
+<div class="stat">
+<div class="stat-num" id="trStatSharpe">—</div>
+<div class="stat-label" data-i18n="trackrecord_sharpe_label">Trade-Level Sharpe (not annualized)</div>
 </div>
-<p data-i18n="trackrecord_disclaimer" id="trackRecordDisclaimer" style="color:var(--muted);font-size:0.72rem;max-width:680px;margin:14px auto 0;text-align:center;line-height:1.5">수치는 SPY, QQQ, DIA 등 8개 주요 시장/섹터 지수의 과거 데이터 백테스트에서 산출되었습니다. 수수료/슬리피지는 포함되지 않았습니다. 과거 성과가 미래 결과를 보장하지 않으며, 투자 조언이 아닙니다.</p>
+<div class="stat">
+<div class="stat-num" id="trStatDrawdown">—</div>
+<div class="stat-label" data-i18n="trackrecord_drawdown_label">Worst Max Drawdown</div>
+</div>
+</div>
+<p data-i18n="trackrecord_disclaimer" id="trackRecordDisclaimer" style="color:var(--muted);font-size:0.72rem;max-width:680px;margin:14px auto 0;text-align:center;line-height:1.5">수치는 SPY, QQQ, DIA 등 8개 주요 시장/섹터 지수의 과거 데이터 백테스트에서 산출되었습니다. 수수료/슬리피지는 이미 차감되었습니다(보수적 가정). 과거 성과가 미래 결과를 보장하지 않으며, 투자 조언이 아닙니다.</p>
 </div>
 <!-- Live AI Result -- "AI is working" showcase -->
 <div class="live-section">
@@ -1399,6 +1407,8 @@ async function loadTrackRecord() {
   const winEl = document.getElementById('trStatWinRate');
   const tradesEl = document.getElementById('trStatTrades');
   const basketEl = document.getElementById('trStatBasket');
+  const sharpeEl = document.getElementById('trStatSharpe');
+  const ddEl = document.getElementById('trStatDrawdown');
   if (!winEl) return;
   try {
     const res = await fetch(`${API}/track-record`);
@@ -1408,6 +1418,8 @@ async function loadTrackRecord() {
       winEl.textContent = '--';
       tradesEl.textContent = '--';
       basketEl.textContent = '--';
+      if (sharpeEl) sharpeEl.textContent = '--';
+      if (ddEl) ddEl.textContent = '--';
       return;
     }
     winEl.textContent = (data.overall_win_rate_pct != null) ? `${data.overall_win_rate_pct}%` : '--';
@@ -1419,10 +1431,14 @@ async function loadTrackRecord() {
     winEl.removeAttribute('data-i18n');
     tradesEl.textContent = (data.total_trades != null) ? data.total_trades : '--';
     basketEl.textContent = Array.isArray(data.basket) ? data.basket.length : '--';
+    if (sharpeEl) sharpeEl.textContent = (data.overall_sharpe_like != null) ? String(data.overall_sharpe_like) : '--';
+    if (ddEl) ddEl.textContent = (data.worst_max_drawdown_pct != null) ? `-${data.worst_max_drawdown_pct}%` : '--';
   } catch (e) {
     winEl.textContent = '--';
     if (tradesEl) tradesEl.textContent = '--';
     if (basketEl) basketEl.textContent = '--';
+    if (sharpeEl) sharpeEl.textContent = '--';
+    if (ddEl) ddEl.textContent = '--';
   }
 }
 loadTrackRecord();
