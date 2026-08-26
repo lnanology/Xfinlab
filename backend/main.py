@@ -480,6 +480,81 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+# 2026-08-26 (Data Factory Step 5, AJ: "自動排程" -- all 3 collectors built
+# this batch (FRED macro persistence migration, CFTC COT, SEC 13F
+# ownership) were previously only ever refreshed on-demand: FRED/CFTC via
+# lazy in-memory-cache-miss on whatever request happened to ask, SEC 13F
+# only via the admin panel's manual "Fetch Latest 13F Now" button. That
+# meant xfinlab.db's persisted history (the entire point of the Step 2
+# migration -- surviving a Railway restart) could go stale indefinitely
+# if nothing happened to trigger a live fetch. Same in-process
+# BackgroundScheduler + try/except-per-job posture as every job above;
+# each collector's own is_source_enabled()/record_run_* bookkeeping
+# (services/data_source_registry.py) still applies whether the fetch was
+# triggered by this cron or by a live request, so the Data Factory admin
+# panel's run/error counts capture both equally.
+def _run_fred_macro_refresh_job():
+    try:
+        from services import fred_macro_service
+        if fred_macro_service.is_available():
+            fred_macro_service.get_us_snapshot()
+            fred_macro_service.get_liquidity_snapshot()
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_fred_macro_refresh_job,
+    "cron",
+    hour=3,
+    minute=0,
+    id="fred_macro_refresh",
+    replace_existing=True,
+)
+
+
+def _run_cftc_cot_refresh_job():
+    try:
+        from services.cftc_cot_service import get_snapshot
+        get_snapshot()
+    except Exception:
+        pass
+
+# CFTC publishes COT every Friday ~3:30pm ET (~4:30am Sat in Asia/Hong_Kong
+# during EDT, ~3:30am during EST) -- Saturday morning gives a safe buffer
+# past either case instead of chasing the exact DST-dependent minute.
+_push_scheduler.add_job(
+    _run_cftc_cot_refresh_job,
+    "cron",
+    day_of_week="sat",
+    hour=10,
+    minute=0,
+    id="cftc_cot_refresh",
+    replace_existing=True,
+)
+
+
+def _run_sec_13f_refresh_job():
+    try:
+        from services.sec_ownership_service import refresh_all
+        refresh_all()
+    except Exception:
+        pass
+
+# 13F-HR is filed quarterly (within 45 days of quarter-end) -- monthly is
+# deliberately more frequent than strictly necessary rather than trying
+# to predict each filer's exact filing date; refresh_filer's upsert on
+# (filer_cik, period_of_report, cusip) makes an unchanged re-fetch a
+# harmless no-op, so the extra runs cost a few HTTP calls, nothing else.
+_push_scheduler.add_job(
+    _run_sec_13f_refresh_job,
+    "cron",
+    day=1,
+    hour=4,
+    minute=0,
+    id="sec_13f_refresh",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 
