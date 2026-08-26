@@ -200,6 +200,7 @@
     <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> Security Scan</div>
     <div class="nav-item" onclick="showPage('stripeaccount')"><span class="icon">💳</span> Stripe Account</div>
     <div class="nav-item" onclick="showPage('apitrending')"><span class="icon">📈</span> API Trending Tickers</div>
+    <div class="nav-item" onclick="showPage('datafactory')"><span class="icon">🏭</span> Data Factory</div>
     <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> Prediction Ledger</div>
     <div class="nav-item" onclick="showPage('composer')"><span class="icon">🧩</span> Formula Composer</div>
     <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> Feedback</div>
@@ -808,6 +809,20 @@
       </div>
     </div>
 
+    <!-- Data Factory (2026-08-26, AJ's "Data Factory" batch: "起啦") -->
+    <div class="page" id="page-datafactory">
+      <div class="page-title">Data Factory</div>
+      <div class="page-sub">Foundation layer for auto-extensible external data collectors (FRED, SEC EDGAR, CFTC COT, crypto exchanges, etc.). Each collector self-registers the moment its module is imported -- no code change needed here to see a new one appear. Toggle a source off if it's failing or you want to pause it; failures also email you directly (deduped to once per 6h per source).</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Registered Sources</span>
+          <span id="dataSourcesMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="dataSourcesList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadDataSources()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
     <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
     <div class="page" id="page-predledger">
       <div class="page-title">Prediction Ledger</div>
@@ -1259,6 +1274,7 @@ function showPage(name) {
   if (name === 'security') loadSecurityScan();
   if (name === 'stripeaccount') loadStripeAccountStatus();
   if (name === 'apitrending') loadApiTrendingTickers();
+  if (name === 'datafactory') loadDataSources();
   if (name === 'content') loadContentVariants();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
@@ -1865,6 +1881,55 @@ function renderApiTrendingTickers(data) {
       <div style="font-size:0.8rem;font-weight:600">${r.count}</div>
     </div>
   `).join('');
+}
+
+async function loadDataSources() {
+  document.getElementById('dataSourcesList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('dataSourcesMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/data-sources?token=${adminToken}`);
+    const data = await res.json();
+    renderDataSources(data);
+  } catch (e) {
+    document.getElementById('dataSourcesList').innerHTML = '<div class="empty">Failed to load data sources</div>';
+  }
+}
+
+function renderDataSources(data) {
+  const el = document.getElementById('dataSourcesList');
+  const rows = (data && data.sources) || [];
+  document.getElementById('dataSourcesMeta').textContent = `${rows.length} registered`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No collectors have registered yet. Sources appear here automatically once a collector module is imported.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(r => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600">${escapeHtml(r.label)}</span>
+          <span style="font-size:0.68rem;color:var(--muted);font-family:monospace">${escapeHtml(r.source_key)}</span>
+          <span style="font-size:0.68rem;color:var(--muted)">${escapeHtml(r.category)}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted)">
+          runs: ${r.run_count} · errors: ${r.error_count} · last success: ${r.last_success_at || '—'}
+          ${r.last_error ? ` · <span style="color:#ef4444">last error: ${escapeHtml(r.last_error).slice(0,80)}</span>` : ''}
+        </div>
+      </div>
+      <button class="btn btn-sm ${r.enabled ? 'btn-purple' : ''}" onclick="toggleDataSource('${r.source_key}', ${r.enabled ? 'false' : 'true'})">
+        ${r.enabled ? '✅ Enabled' : '⏸ Disabled'}
+      </button>
+    </div>
+  `).join('');
+}
+
+async function toggleDataSource(sourceKey, enabled) {
+  try {
+    await fetch(`${API}/admin/data-sources/${encodeURIComponent(sourceKey)}/toggle?token=${adminToken}&enabled=${enabled}`, { method: 'POST' });
+    loadDataSources();
+  } catch (e) {
+    alert('Failed to toggle data source');
+  }
 }
 
 async function loadStripeAccountStatus() {

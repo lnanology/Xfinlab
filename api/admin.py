@@ -914,6 +914,34 @@ def get_api_trending_tickers(token: str, request: Request, days: int = 7, limit:
     return {"days": days, "trending": get_trending_tickers(days=days, limit=limit)}
 
 
+@router.get("/admin/data-sources")
+def get_data_sources(token: str, request: Request):
+    """
+    2026-08-26 (AJ's "Data Factory" batch, "起啦"): foundation layer for
+    an auto-extensible set of external data collectors (FRED, SEC EDGAR
+    ownership, CFTC COT, crypto exchanges, etc.). Unlike /admin/feature-
+    flags (which needs every key hardcoded into _DEFAULT_FLAGS before it
+    can be toggled), each collector self-registers via
+    services.data_source_registry.register_source() the moment its module
+    is imported -- this endpoint just reads whatever has registered so
+    far, so a brand-new collector shows up here automatically with no
+    admin.py edit required.
+    """
+    verify_admin(token, "get_data_sources", request)
+    from services.data_source_registry import list_sources
+    return {"sources": list_sources()}
+
+
+@router.post("/admin/data-sources/{source_key}/toggle")
+def toggle_data_source(source_key: str, token: str, request: Request, enabled: bool = True):
+    verify_admin(token, f"toggle_data_source:{source_key}", request)
+    from services.data_source_registry import set_source_enabled
+    ok = set_source_enabled(source_key, enabled)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Unknown source_key")
+    return {"success": True, "source_key": source_key, "enabled": enabled}
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """
