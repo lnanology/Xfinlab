@@ -957,6 +957,35 @@ def get_cftc_cot_snapshot(token: str, request: Request):
     return get_snapshot()
 
 
+@router.get("/admin/sec-13f-holdings")
+def get_sec_13f_holdings(token: str, request: Request, cik: int = None):
+    """
+    2026-08-26 (Data Factory Step 4): visibility endpoint for
+    services/sec_ownership_service.py. Without a cik param, lists the
+    watched-filer roster; with one, returns that filer's latest parsed
+    13F holdings.
+    """
+    verify_admin(token, "get_sec_13f_holdings", request)
+    from services.sec_ownership_service import list_watched_filers, get_latest_holdings
+    if cik:
+        return {"cik": cik, "holdings": get_latest_holdings(cik)}
+    return {"watched_filers": list_watched_filers()}
+
+
+@router.post("/admin/sec-13f-refresh")
+def refresh_sec_13f(token: str, request: Request):
+    """Manual trigger -- 13F filings only update quarterly so there's no
+    scheduled job for this yet (see sec_ownership_service.refresh_all's
+    docstring); this lets AJ kick off a real run and immediately check
+    the Data Factory panel's run/error/last_success fields for
+    'sec_13f_ownership' to confirm the live SEC round trip actually
+    works from Railway (the one thing not verifiable from the sandboxed
+    dev environment this was built in)."""
+    verify_admin(token, "refresh_sec_13f", request)
+    from services.sec_ownership_service import refresh_all
+    return {"results": refresh_all()}
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """

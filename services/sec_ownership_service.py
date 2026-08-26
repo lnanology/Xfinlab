@@ -1,0 +1,342 @@
+"""
+SEC EDGAR 13F Institutional Ownership Service -- 2026-08-26, Data
+Factory Step 4 (AJ: "混合" FRED + CFTC + SEC EDGAR ownership; addresses
+the "Ownership" node type from AJ's pasted Corporate Control Graph
+documents).
+
+What this is: institutional investment managers with >$100M AUM must
+file Form 13F quarterly, listing every US equity position they hold
+(issuer, CUSIP, shares, market value). This is the raw "who owns what"
+data the earlier pasted design docs' Control Score concept depends on --
+Control Score itself is explicitly OUT of scope for this step (deferred
+to a future step once there's enough persisted history to compute
+trends from, and once services/asset_master_service.py's CUSIP->ticker
+resolution is populated). This step is just: get real 13F holdings into
+xfinlab.db, honestly, for a starter set of managers.
+
+Scope decision (why NOT BlackRock/Vanguard/State Street): the largest
+index managers file 13F's with tens of thousands of line items each
+(BlackRock's is documented at ~50,000 holdings in a single filing) --
+parsing/storing that is a different order of engineering problem (needs
+streaming XML parsing, heavy storage, and is mostly index-fund noise
+that doesn't actually signal a view). This MVP instead tracks
+CONCENTRATED stock-picking managers, where a position actually reflects
+a considered bet -- the same "smart money" cohort trackers like
+WhaleWisdom/Dataroma focus on. Starting list (CIKs confirmed via direct
+search against SEC's own filing index, not guessed):
+  - Berkshire Hathaway Inc, CIK 1067983
+  - Pershing Square Capital Management LP, CIK 1336528
+  - Scion Asset Management LLC (Michael Burry), CIK 1649339
+
+Auto-extensible per AJ's ask: the watched-filer list lives in a DB table
+(sec_13f_watched_filers), not a hardcoded Python list -- add_watched_
+filer() lets an admin (or a future admin.html panel) track a new CIK
+without a code change, same self-registration spirit as
+data_source_registry.py.
+
+Honesty note on verification: this module's HTTP-fetch and XML-parsing
+logic is built strictly from SEC's own published, stable specs (the
+EDGAR Form 13F XML Technical Specification's infoTable schema:
+nameOfIssuer/cusip/value/shrsOrPrnAmt.sshPrnamt; the standard data.sec.gov
+/submissions/CIK##########.json filing-list shape; the standard EDGAR
+Archives per-filing index.json). Every one of those shapes was verified
+against real SEC documentation/filings before writing this code. What
+could NOT be verified from this sandbox is a live end-to-end HTTP round
+trip against sec.gov (outbound requests to sec.gov timed out from this
+sandboxed dev environment -- likely a bot-defense measure on SEC's side
+against non-browser clients, not necessarily present on Railway's
+production IPs). The parsing logic itself IS tested here (see the
+functional test run before commit) against hand-built fixtures that
+match the documented real shapes exactly. First real production run
+should be watched via the Data Factory admin panel's error/last_success
+fields to confirm the live round trip actually works from Railway.
+"""
+import logging
+import os
+import re
+import sqlite3
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
+
+from services.outbound_http import get_with_backoff
+from services.data_source_registry import (
+    register_source, is_source_enabled, record_run_start,
+    record_run_success, record_run_error,
+)
+
+logger = logging.getLogger(__name__)
+
+SOURCE_KEY = "sec_13f_ownership"
+register_source(SOURCE_KEY, "SEC 13F Institutional Ownership", "ownership")
+
+# Same identifying User-Agent convention as services/fundamentals_service.py
+# -- SEC explicitly requires this on every request.
+SEC_USER_AGENT = "XFINLABBot/1.0 (+https://www.xfinlab.com; contact: support@xfinlab.com)"
+
+SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
+FILING_INDEX_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/index.json"
+FILING_DOC_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/{filename}"
+ATTRIBUTION = "Data sourced from SEC EDGAR Form 13F filings (sec.gov). Public regulatory filings, not investment advice."
+
+_SEED_FILERS = [
+    (1067983, "Berkshire Hathaway Inc"),
+    (1336528, "Pershing Square Capital Management LP"),
+    (1649339, "Scion Asset Management LLC"),
+]
+
+_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+
+
+def _get_db():
+    conn = sqlite3.connect(_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _init_tables():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sec_13f_watched_filers (
+            cik INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            added_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sec_13f_holdings (
+            filer_cik INTEGER NOT NULL,
+            filer_name TEXT,
+            period_of_report TEXT NOT NULL,
+            issuer_name TEXT,
+            cusip TEXT,
+            shares INTEGER,
+            value_usd INTEGER,
+            fetched_at TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (filer_cik, period_of_report, cusip)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_13f_issuer ON sec_13f_holdings(issuer_name)")
+    for cik, name in _SEED_FILERS:
+        conn.execute(
+            "INSERT INTO sec_13f_watched_filers (cik, name) VALUES (?, ?) ON CONFLICT(cik) DO NOTHING",
+            (cik, name),
+        )
+    conn.commit()
+    conn.close()
+
+
+_init_tables()
+
+
+def list_watched_filers() -> List[dict]:
+    conn = _get_db()
+    rows = conn.execute("SELECT * FROM sec_13f_watched_filers ORDER BY name").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def add_watched_filer(cik: int, name: str):
+    """Lets an admin track a new institutional manager without touching
+    code -- the auto-extensibility AJ asked for, applied to filers
+    specifically (data_source_registry.py's self-registration covers
+    whole NEW data sources; this covers new entities within this one
+    source)."""
+    conn = _get_db()
+    conn.execute(
+        "INSERT INTO sec_13f_watched_filers (cik, name) VALUES (?, ?) ON CONFLICT(cik) DO UPDATE SET name=excluded.name",
+        (cik, name),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _strip_ns(tag: str) -> str:
+    """13F info table XML uses a namespaced schema
+    (xmlns='http://www.sec.gov/edgar/document/thirteenf/informationtable')
+    -- ElementTree keeps the namespace as a '{uri}localname' prefix on
+    every tag. Stripping it defensively means this parser doesn't break
+    if SEC ever revises the namespace URI/version, since we only ever
+    match on local element names."""
+    return tag.split("}", 1)[-1] if "}" in tag else tag
+
+
+def _fetch_json(url: str):
+    res = get_with_backoff(url, headers={"User-Agent": SEC_USER_AGENT}, timeout=20)
+    if res.status_code != 200:
+        raise RuntimeError(f"HTTP {res.status_code} for {url}")
+    return res.json()
+
+
+def _find_latest_13f_filing(cik: int) -> Optional[dict]:
+    """Returns {"accession_nodash": "...", "period_of_report": "YYYY-MM-DD"}
+    for the most recent plain 13F-HR (skips 13F-NT notice-only filings
+    and 13F-HR/A amendments -- amendments are real but out of scope for
+    this MVP's "latest snapshot" use case)."""
+    payload = _fetch_json(SUBMISSIONS_URL.format(cik=cik))
+    recent = (payload.get("filings") or {}).get("recent") or {}
+    forms = recent.get("form", [])
+    accessions = recent.get("accessionNumber", [])
+    report_dates = recent.get("reportDate", [])
+    filing_dates = recent.get("filingDate", [])
+
+    for i, form in enumerate(forms):
+        if form == "13F-HR":
+            accession_nodash = accessions[i].replace("-", "") if i < len(accessions) else None
+            period = report_dates[i] if i < len(report_dates) and report_dates[i] else (
+                filing_dates[i] if i < len(filing_dates) else None
+            )
+            if accession_nodash and period:
+                return {"accession_nodash": accession_nodash, "period_of_report": period}
+    return None
+
+
+def _find_infotable_filename(cik: int, accession_nodash: str) -> Optional[str]:
+    """The information-table XML's filename varies by filer/filing
+    software (e.g. 'form13fInfoTable.xml', 'infotable.xml',
+    '<something>_infotable.xml') -- rather than guess a name, list the
+    filing's actual directory and pick whichever file has 'infotable' in
+    its name, case-insensitively."""
+    idx = _fetch_json(FILING_INDEX_URL.format(cik=cik, accession_nodash=accession_nodash))
+    items = ((idx.get("directory") or {}).get("item")) or []
+    for item in items:
+        fname = item.get("name", "")
+        if "infotable" in fname.lower() and fname.lower().endswith(".xml"):
+            return fname
+    return None
+
+
+def _parse_infotable_xml(xml_bytes: bytes) -> List[dict]:
+    root = ET.fromstring(xml_bytes)
+    holdings = []
+    for el in root:
+        if _strip_ns(el.tag) != "infoTable":
+            continue
+        row = {"issuer_name": None, "cusip": None, "value_usd": None, "shares": None}
+        for child in el:
+            local = _strip_ns(child.tag)
+            if local == "nameOfIssuer":
+                row["issuer_name"] = (child.text or "").strip() or None
+            elif local == "cusip":
+                row["cusip"] = (child.text or "").strip() or None
+            elif local == "value":
+                try:
+                    # 13F "value" is reported in thousands of USD per SEC's spec
+                    row["value_usd"] = int(float((child.text or "0").strip())) * 1000
+                except (TypeError, ValueError):
+                    row["value_usd"] = None
+            elif local == "shrsOrPrnAmt":
+                for gc in child:
+                    if _strip_ns(gc.tag) == "sshPrnamt":
+                        try:
+                            row["shares"] = int(float((gc.text or "0").strip()))
+                        except (TypeError, ValueError):
+                            row["shares"] = None
+        if row["cusip"]:  # cusip is this table's join key -- skip anything without one
+            holdings.append(row)
+    return holdings
+
+
+def refresh_filer(cik: int, filer_name: str) -> int:
+    """Fetches + persists the latest 13F for one filer. Returns the
+    number of holdings persisted (0 on any failure -- failure itself is
+    recorded via record_run_error, never raised out to the caller so a
+    refresh_all() loop over multiple filers can't be aborted by one
+    filer's failure)."""
+    if not is_source_enabled(SOURCE_KEY):
+        return 0
+    record_run_start(SOURCE_KEY)
+    try:
+        filing = _find_latest_13f_filing(cik)
+        if not filing:
+            record_run_error(SOURCE_KEY, f"CIK {cik} ({filer_name}): no 13F-HR filing found")
+            return 0
+
+        filename = _find_infotable_filename(cik, filing["accession_nodash"])
+        if not filename:
+            record_run_error(SOURCE_KEY, f"CIK {cik} ({filer_name}): info table filename not found in filing index")
+            return 0
+
+        doc_url = FILING_DOC_URL.format(cik=cik, accession_nodash=filing["accession_nodash"], filename=filename)
+        res = get_with_backoff(doc_url, headers={"User-Agent": SEC_USER_AGENT}, timeout=30)
+        if res.status_code != 200:
+            record_run_error(SOURCE_KEY, f"CIK {cik} ({filer_name}): HTTP {res.status_code} fetching info table")
+            return 0
+
+        holdings = _parse_infotable_xml(res.content)
+        if not holdings:
+            record_run_error(SOURCE_KEY, f"CIK {cik} ({filer_name}): info table parsed but zero usable rows")
+            return 0
+
+        period = filing["period_of_report"]
+        conn = _get_db()
+        conn.executemany(
+            """
+            INSERT INTO sec_13f_holdings (filer_cik, filer_name, period_of_report, issuer_name, cusip, shares, value_usd, fetched_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(filer_cik, period_of_report, cusip) DO UPDATE SET
+                issuer_name=excluded.issuer_name, shares=excluded.shares,
+                value_usd=excluded.value_usd, fetched_at=datetime('now')
+            """,
+            [(cik, filer_name, period, h["issuer_name"], h["cusip"], h["shares"], h["value_usd"]) for h in holdings],
+        )
+        conn.commit()
+        conn.close()
+        record_run_success(SOURCE_KEY)
+        return len(holdings)
+    except Exception as e:
+        record_run_error(SOURCE_KEY, f"CIK {cik} ({filer_name}): {e}")
+        return 0
+
+
+def refresh_all() -> Dict[str, int]:
+    """Loops every watched filer -- meant to be called from a scheduled
+    job (13F filings only change quarterly, so daily/weekly is plenty;
+    wiring an actual APScheduler job is a follow-up once this is
+    confirmed working live, not part of this foundational step)."""
+    results = {}
+    for filer in list_watched_filers():
+        results[filer["name"]] = refresh_filer(filer["cik"], filer["name"])
+    return results
+
+
+def get_latest_holdings(cik: int, limit: int = 50) -> List[dict]:
+    conn = _get_db()
+    latest_period = conn.execute(
+        "SELECT MAX(period_of_report) AS p FROM sec_13f_holdings WHERE filer_cik=?", (cik,)
+    ).fetchone()["p"]
+    if not latest_period:
+        conn.close()
+        return []
+    rows = conn.execute(
+        "SELECT * FROM sec_13f_holdings WHERE filer_cik=? AND period_of_report=? ORDER BY value_usd DESC LIMIT ?",
+        (cik, latest_period, limit),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_holders_of_issuer(issuer_name_substring: str) -> List[dict]:
+    """Cross-filer lookup -- 'who among our watched managers holds a
+    position matching this name'. Simple substring match on issuer_name
+    as filed (not yet resolved through asset_master_service's alias
+    table -- CUSIP-based resolution is a follow-up once
+    asset_master_service has CUSIPs populated for the tickers this site
+    covers)."""
+    conn = _get_db()
+    rows = conn.execute(
+        """
+        SELECT * FROM sec_13f_holdings
+        WHERE issuer_name LIKE ?
+        AND period_of_report = (SELECT MAX(period_of_report) FROM sec_13f_holdings AS h2 WHERE h2.filer_cik = sec_13f_holdings.filer_cik)
+        ORDER BY value_usd DESC
+        """,
+        (f"%{issuer_name_substring}%",),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+if __name__ == "__main__":
+    import json
+    print(json.dumps(refresh_all(), indent=2))
