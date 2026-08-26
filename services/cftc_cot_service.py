@@ -282,6 +282,47 @@ def get_contract(contract_code: str) -> Optional[Dict]:
     return _fetch_latest_row(contract_code)
 
 
+# ---------------------------------------------------------------------------
+# 2026-08-26 (AJ: "畀用戶睇" -- surface COT on a per-ticker AI analysis
+# page): a plain equity ticker (AAPL, MSFT...) has no COT relevance at
+# all -- COT only makes sense for the handful of ETFs/pairs that
+# genuinely track one of the 9 futures contracts above. Rather than
+# guess a fuzzy mapping, this is an explicit, small, honestly-labeled
+# alias table -- if a ticker isn't in it, get_cot_for_ticker() returns
+# None and the caller shows nothing (not a misleading "no data").
+# `exact` distinguishes a direct tracker (GLD really does track COMEX
+# gold) from a `proxy` (IEF tracks 7-10Y Treasuries, close to but not
+# identical to the CBOT 10-Year Note future) -- the caller surfaces this
+# distinction so a proxy match is never presented as equivalent to the
+# real thing.
+# ---------------------------------------------------------------------------
+_TICKER_TO_CONTRACT = {
+    "GLD": ("088691", "exact"), "IAU": ("088691", "exact"),
+    "SLV": ("084691", "exact"),
+    "USO": ("067651", "proxy"),  # USO tracks near-month WTI futures via a roll strategy, not identical to the raw futures COT contract
+    "UNG": ("023651", "proxy"),  # same roll-strategy caveat as USO, for natural gas
+    "FXE": ("099741", "exact"),
+    "FXY": ("097741", "exact"),
+    "FXB": ("096742", "exact"),
+    "SPY": ("13874A", "proxy"),  # SPY tracks the S&P 500 index itself; the E-mini future is a closely correlated but distinct instrument
+    "IEF": ("043602", "proxy"),  # IEF tracks 7-10Y Treasuries broadly, not the specific 10-Year Note future
+}
+
+
+def get_cot_for_ticker(ticker: str) -> Optional[Dict]:
+    """Returns the matched contract's snapshot plus a 'match_type' field
+    ('exact' or 'proxy') and the ticker used to look it up, or None if
+    this ticker has no COT-relevant mapping at all."""
+    mapping = _TICKER_TO_CONTRACT.get((ticker or "").upper().strip())
+    if not mapping:
+        return None
+    contract_code, match_type = mapping
+    row = _fetch_latest_row(contract_code)
+    if not row:
+        return None
+    return {**row, "match_type": match_type, "matched_ticker": ticker.upper(), "attribution": ATTRIBUTION}
+
+
 if __name__ == "__main__":
     import json
     print(json.dumps(get_snapshot(), indent=2, ensure_ascii=False))

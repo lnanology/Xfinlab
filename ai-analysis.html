@@ -355,6 +355,33 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </details>
 
+    <!-- 2026-08-26 (Data Factory "畀用戶睇"): real SEC 13F holdings from a
+         small, concentrated-manager watchlist (services/sec_ownership_
+         service.py). Hidden unless data.ownership.available AND holders
+         is non-empty -- an empty holders list just means none of our 3
+         tracked managers hold this ticker, not "no institution owns it",
+         so it's never shown as a negative signal. -->
+    <details class="xfl-accordion" id="ownershipAccordion" style="display:none">
+      <summary data-i18n="aa_ownership_title">▶ Institutional Ownership (13F)</summary>
+      <div class="xfl-accordion-body">
+        <div id="ownershipBody"></div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="aa_ownership_note">From SEC EDGAR 13F filings for a small watchlist of concentrated managers (Berkshire Hathaway, Pershing Square, Scion Asset Management) -- not a full ownership picture. For research reference only, not investment advice.</div>
+      </div>
+    </details>
+
+    <!-- Same batch: CFTC Commitments of Traders positioning, shown only
+         for tickers with an explicit futures/ETF mapping (services/
+         cftc_cot_service.py's _TICKER_TO_CONTRACT) -- a plain equity
+         ticker has no COT relevance and this section simply never
+         appears for it. -->
+    <details class="xfl-accordion" id="cotAccordion" style="display:none">
+      <summary data-i18n="aa_cot_title">▶ CFTC Positioning (Commitments of Traders)</summary>
+      <div class="xfl-accordion-body">
+        <div id="cotBody"></div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" id="cotNote"></div>
+      </div>
+    </details>
+
     <details class="xfl-accordion">
       <summary data-i18n="aa_support_resistance_title">▶ 支持阻力</summary>
       <div class="xfl-accordion-body" id="supportResistanceBody">-</div>
@@ -677,6 +704,64 @@ function renderShippingProxy(sp){
   combinedEl.className = '';
 }
 
+// 2026-08-26 (Data Factory "畀用戶睇"): renders services/sec_ownership_
+// service.py's get_ownership_summary() result inside #ownershipAccordion.
+// Hidden unless available AND holders is non-empty (see that function's
+// docstring -- an empty list is honest "not held by our 3 tracked
+// managers", not "no institution owns it", so it must never render as a
+// visible-but-empty/negative-looking section).
+function renderOwnership(ownership){
+  const acc = document.getElementById('ownershipAccordion');
+  if (!acc) return;
+  if (!ownership || !ownership.available || !ownership.holders || !ownership.holders.length){
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+  const rows = ownership.holders.map(h => {
+    const valueStr = h.value_usd ? '$' + (h.value_usd / 1e6).toFixed(1) + 'M' : '-';
+    const sharesStr = h.shares ? h.shares.toLocaleString() + ' shares' : '';
+    return `<div class="prob-section" style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="prob-label" style="font-weight:600">${h.filer_name}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted)">${sharesStr} · as of ${h.period_of_report}</div>
+      </div>
+      <div style="font-weight:700">${valueStr}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('ownershipBody').innerHTML = rows;
+}
+
+// Same batch: renders services/cftc_cot_service.py's get_cot_for_ticker()
+// result inside #cotAccordion. Hidden entirely when this ticker has no
+// COT-relevant futures/ETF mapping (null result), not shown as "no data".
+function renderCotPositioning(cot){
+  const acc = document.getElementById('cotAccordion');
+  if (!acc) return;
+  if (!cot){
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+  const netNoncomm = cot.net_noncomm;
+  const positive = netNoncomm !== null && netNoncomm !== undefined && netNoncomm >= 0;
+  const netStr = (netNoncomm === null || netNoncomm === undefined) ? '-' : (netNoncomm > 0 ? '+' : '') + netNoncomm.toLocaleString();
+  document.getElementById('cotBody').innerHTML = `
+    <div class="prob-section" style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="prob-label" style="font-weight:600">${cot.label || cot.matched_ticker}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted)">Report date: ${cot.report_date || '-'} · Open interest: ${(cot.open_interest || 0).toLocaleString()}</div>
+      </div>
+      <div style="font-weight:700;color:${positive ? '#22c55e' : '#ef4444'}">${netStr}</div>
+    </div>
+  `;
+  const noteEl = document.getElementById('cotNote');
+  const baseNote = 'Non-Commercial (fund) net long/short positioning, weekly, from CFTC public data.';
+  noteEl.textContent = cot.match_type === 'proxy'
+    ? `${baseNote} ${cot.matched_ticker} is a close proxy for this contract, not an exact tracker -- treat as directional context, not a 1:1 signal.`
+    : `${baseNote} ${cot.matched_ticker} directly tracks this contract.`;
+}
+
 // 2026-07-25 ("自行建可顯示任何資產嘅K線圖，不用TradingView"): self-hosted
 // candlestick chart (Lightweight Charts, free/open-source, no API key)
 // instead of the TradingView iframe embed, using the real OHLC bars the
@@ -897,6 +982,8 @@ async function runAnalysis(){
     renderSmartBeta(data.smart_beta);
     renderCapitalFlowForecast(data.capital_flow_forecast);
     renderShippingProxy(data.shipping_proxy);
+    renderOwnership(data.ownership);
+    renderCotPositioning(data.cot_positioning);
 
     // ---- Layer 4: reasons accordion ----
     const reasons = data.reasons || { bullish: [], bearish: [] };

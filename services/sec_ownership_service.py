@@ -56,7 +56,7 @@ import os
 import re
 import sqlite3
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Dict, List, Optional
 
 from services.outbound_http import get_with_backoff
@@ -335,6 +335,114 @@ def get_holders_of_issuer(issuer_name_substring: str) -> List[dict]:
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-26 (AJ: "畀用戶睇" -- surface this on a per-ticker AI analysis
+# page, not just the admin panel): resolves an ordinary stock ticker
+# (e.g. "AAPL") to whether any of our watched filers hold it. Own
+# lightweight ticker->company-name cache, deliberately NOT sharing
+# services/fundamentals_service.py's _load_ticker_cik_map() (same
+# company_tickers.json source, same SEC_USER_AGENT convention) because
+# that cache only keeps ticker->CIK and discards the "title" field this
+# needs for issuer-name matching -- duplicating a small, cheap fetch
+# here avoids modifying an already-shipped, already-tested module for
+# an unrelated feature.
+# ---------------------------------------------------------------------------
+TICKER_TITLE_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
+_TICKER_TITLE_CACHE_TTL_DAYS = 7
+_ticker_title_cache = {"data": None, "fetched_at": None}
+
+_NAME_SUFFIXES = re.compile(
+    r"\b(INC|INCORPORATED|CORP|CORPORATION|CO|COMPANY|LTD|LIMITED|LLC|LLP|PLC|L P|LP|THE|CLASS A|CLASS B|CL A|CL B|COM|SA|NV|AG|HOLDINGS?)\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize_company_name(name: str) -> str:
+    """Loose normalization for matching a 13F-filed issuer name (often
+    ALL CAPS, abbreviated, no punctuation -- e.g. 'APPLE INC') against
+    SEC's own ticker->title map ('Apple Inc.') -- strips common corporate
+    suffixes and punctuation, uppercases, collapses whitespace. Not a
+    fuzzy/ML match -- deliberately simple and auditable, matching this
+    codebase's honesty-first posture (a wrong match here would falsely
+    tell a user an institution holds a stock it doesn't)."""
+    if not name:
+        return ""
+    n = re.sub(r"[^\w\s]", " ", name.upper())
+    n = _NAME_SUFFIXES.sub(" ", n)
+    return re.sub(r"\s+", " ", n).strip()
+
+
+def _load_ticker_title_map() -> dict:
+    today = date.today()
+    cached = _ticker_title_cache["data"]
+    fetched_at = _ticker_title_cache["fetched_at"]
+    if cached and fetched_at and (today - fetched_at).days < _TICKER_TITLE_CACHE_TTL_DAYS:
+        return cached
+    try:
+        res = get_with_backoff(TICKER_TITLE_MAP_URL, headers={"User-Agent": SEC_USER_AGENT}, timeout=20)
+        if res.status_code != 200:
+            return cached or {}
+        payload = res.json()
+        mapping = {str(e["ticker"]).upper(): e.get("title", "") for e in payload.values()}
+        _ticker_title_cache["data"] = mapping
+        _ticker_title_cache["fetched_at"] = today
+        return mapping
+    except Exception as e:
+        logger.info("sec_ownership_service: ticker->title map fetch failed: %s", e)
+        return cached or {}
+
+
+def get_ownership_summary(ticker: str) -> Dict:
+    """
+    Returns:
+        {"available": True, "attribution": "...",
+         "holders": [{"filer_name": "...", "shares": ..., "value_usd": ...,
+                      "period_of_report": "..."}, ...]}
+        {"available": False, "message": "..."} if the ticker can't even
+        be resolved to a company name (e.g. non-US ticker SEC doesn't
+        cover).
+
+    `holders` is an empty list, NOT absence of the "available" key, when
+    the ticker resolves fine but none of our watched filers hold it --
+    this is the honest reading given we only track 3 concentrated
+    managers, not "no institution anywhere owns this stock". Callers
+    (the ai-analysis.html UI) should only render a holders section when
+    the list is non-empty, to avoid implying a negative signal from a
+    simple "we don't track anyone who holds this" result.
+    """
+    ticker = (ticker or "").upper().strip()
+    title_map = _load_ticker_title_map()
+    title = title_map.get(ticker)
+    if not title:
+        return {"available": False, "message": f"{ticker} 唔喺SEC EDGAR嘅美股公司名單入面（可能唔係美股）。"}
+
+    target_norm = _normalize_company_name(title)
+    if not target_norm:
+        return {"available": False, "message": "無法解析公司名稱。"}
+
+    conn = _get_db()
+    rows = conn.execute("""
+        SELECT * FROM sec_13f_holdings AS h
+        WHERE period_of_report = (
+            SELECT MAX(period_of_report) FROM sec_13f_holdings AS h2 WHERE h2.filer_cik = h.filer_cik
+        )
+    """).fetchall()
+    conn.close()
+
+    holders = []
+    for r in rows:
+        row_norm = _normalize_company_name(r["issuer_name"] or "")
+        if row_norm and (row_norm == target_norm or row_norm in target_norm or target_norm in row_norm):
+            holders.append({
+                "filer_name": r["filer_name"],
+                "shares": r["shares"],
+                "value_usd": r["value_usd"],
+                "period_of_report": r["period_of_report"],
+            })
+
+    return {"available": True, "attribution": ATTRIBUTION, "holders": holders}
 
 
 if __name__ == "__main__":

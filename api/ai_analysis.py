@@ -529,6 +529,33 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         shipping_proxy = None
 
+    # 2026-08-26 (Data Factory "畀用戶睇" -- surfacing the 13F/CFTC
+    # collectors built this batch on the actual per-ticker analysis page,
+    # not just the admin panel). Both best-effort, same guarded-Exception
+    # convention as shipping_proxy above -- a fetch failure or an
+    # unmapped ticker must never break the rest of the analysis.
+    # ownership: empty holders list is a valid, honest result (we track
+    # 3 concentrated managers, not "no institution owns this") --
+    # get_ownership_summary()'s own docstring says the caller should only
+    # render a UI section when holders is non-empty; done client-side
+    # here by passing the whole dict through unfiltered and letting the
+    # frontend decide, keeping this endpoint a thin passthrough like
+    # every other engine call on this page.
+    try:
+        from services.sec_ownership_service import get_ownership_summary
+        ownership = get_ownership_summary(symbol)
+    except Exception:
+        ownership = None
+
+    # cot_positioning: None (not an error dict) when this ticker has no
+    # COT-relevant mapping at all (see cftc_cot_service._TICKER_TO_CONTRACT)
+    # -- e.g. a plain equity ticker with no futures-tracking relevance.
+    try:
+        from services.cftc_cot_service import get_cot_for_ticker
+        cot_positioning = get_cot_for_ticker(symbol)
+    except Exception:
+        cot_positioning = None
+
     # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer surface
     # for the same Probabilistic K-Line engine just shipped on the
     # Intelligence API as GET /v1/forecast/{ticker}): bundled into the
@@ -620,5 +647,7 @@ async def ai_analysis(request: Request, body: dict):
             "direction_probability": direction_probability,
             "shipping_proxy": shipping_proxy,
             "capital_flow_forecast": capital_flow_forecast if is_pro_plan else _locked_advanced_engine,
+            "ownership": ownership,
+            "cot_positioning": cot_positioning,
         }
     }
