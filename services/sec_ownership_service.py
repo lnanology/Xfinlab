@@ -193,16 +193,42 @@ def _find_latest_13f_filing(cik: int) -> Optional[dict]:
 
 def _find_infotable_filename(cik: int, accession_nodash: str) -> Optional[str]:
     """The information-table XML's filename varies by filer/filing
-    software (e.g. 'form13fInfoTable.xml', 'infotable.xml',
-    '<something>_infotable.xml') -- rather than guess a name, list the
-    filing's actual directory and pick whichever file has 'infotable' in
-    its name, case-insensitively."""
+    software -- confirmed live against real filings that a plain
+    'infotable' substring match alone is NOT reliable (Berkshire
+    Hathaway's Q2 2026 13F-HR filing directory has no file with
+    'infotable' in its name at all). Tries three strategies in order,
+    each more permissive than the last:
+      1. Filename contains 'infotable' (the common case -- most filing
+         software does use this, e.g. 'form13fInfoTable.xml').
+      2. The directory index's own 'type' field says this document IS
+         an information table (SEC labels each filed document with a
+         type like '13F-HR', 'COVER PAGE', 'INFORMATION TABLE' --
+         reading that label instead of guessing from the filename is
+         the more robust signal when the filename itself doesn't help).
+      3. Last resort: a 13F-HR filing package normally has exactly one
+         primary_doc.xml (the cover page) plus exactly one other XML
+         file (the information table) -- if that's the shape we see,
+         return the non-primary_doc.xml one.
+    Returns None only if none of the three strategies finds a candidate."""
     idx = _fetch_json(FILING_INDEX_URL.format(cik=cik, accession_nodash=accession_nodash))
     items = ((idx.get("directory") or {}).get("item")) or []
+
     for item in items:
         fname = item.get("name", "")
         if "infotable" in fname.lower() and fname.lower().endswith(".xml"):
             return fname
+
+    for item in items:
+        fname = item.get("name", "")
+        item_type = str(item.get("type", "")).upper()
+        if fname.lower().endswith(".xml") and "INFORMATION TABLE" in item_type:
+            return fname
+
+    xml_items = [item.get("name", "") for item in items if item.get("name", "").lower().endswith(".xml")]
+    non_primary = [f for f in xml_items if f.lower() != "primary_doc.xml"]
+    if len(xml_items) == 2 and len(non_primary) == 1:
+        return non_primary[0]
+
     return None
 
 

@@ -1042,7 +1042,8 @@ def get_sec_13f_debug(token: str, request: Request, cik: int):
     """
     verify_admin(token, "get_sec_13f_debug", request)
     from services.sec_ownership_service import (
-        _find_latest_13f_filing, _find_infotable_filename, SEC_USER_AGENT, FILING_DOC_URL,
+        _find_latest_13f_filing, _find_infotable_filename, _fetch_json,
+        SEC_USER_AGENT, FILING_DOC_URL, FILING_INDEX_URL,
     )
     from services.outbound_http import get_with_backoff
 
@@ -1062,7 +1063,13 @@ def get_sec_13f_debug(token: str, request: Request, cik: int):
         filename = _find_infotable_filename(cik, filing["accession_nodash"])
         result["infotable_filename"] = filename
         if not filename:
-            result["conclusion"] = "Filing found, but no file with 'infotable' in its name exists in this filing's directory listing."
+            result["conclusion"] = "All 3 detection strategies failed -- showing raw directory listing for manual inspection."
+            try:
+                idx = _fetch_json(FILING_INDEX_URL.format(cik=cik, accession_nodash=filing["accession_nodash"]))
+                items = ((idx.get("directory") or {}).get("item")) or []
+                result["directory_listing"] = [{"name": i.get("name"), "type": i.get("type")} for i in items]
+            except Exception as e:
+                result["directory_listing_error"] = str(e)
             return result
     except Exception as e:
         result["error"] = str(e)
