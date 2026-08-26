@@ -1028,6 +1028,59 @@ def get_sec_13f_holdings(token: str, request: Request, cik: int = None):
     return {"watched_filers": list_watched_filers()}
 
 
+@router.get("/admin/sec-13f-debug")
+def get_sec_13f_debug(token: str, request: Request, cik: int):
+    """
+    2026-08-26 (debugging Berkshire's 0-holdings result -- confirmed
+    reproducible: 3 manual refreshes, Berkshire fails all 3 times while
+    Pershing Square/Scion succeed every time, so this is specific to
+    Berkshire's filing, not a flaky network issue). Runs the exact same
+    3-step pipeline services.sec_ownership_service.refresh_filer() uses
+    (submissions.json -> filing index.json -> info table XML), but
+    returns each intermediate result instead of just persisting/failing
+    silently, so we can see exactly which step breaks for this CIK.
+    """
+    verify_admin(token, "get_sec_13f_debug", request)
+    from services.sec_ownership_service import (
+        _find_latest_13f_filing, _find_infotable_filename, SEC_USER_AGENT, FILING_DOC_URL,
+    )
+    from services.outbound_http import get_with_backoff
+
+    result = {"cik": cik, "step": "find_latest_13f_filing"}
+    try:
+        filing = _find_latest_13f_filing(cik)
+        result["filing"] = filing
+        if not filing:
+            result["conclusion"] = "No 13F-HR (exact form type match) found in this CIK's recent filings list."
+            return result
+    except Exception as e:
+        result["error"] = str(e)
+        return result
+
+    result["step"] = "find_infotable_filename"
+    try:
+        filename = _find_infotable_filename(cik, filing["accession_nodash"])
+        result["infotable_filename"] = filename
+        if not filename:
+            result["conclusion"] = "Filing found, but no file with 'infotable' in its name exists in this filing's directory listing."
+            return result
+    except Exception as e:
+        result["error"] = str(e)
+        return result
+
+    result["step"] = "fetch_infotable_document"
+    try:
+        doc_url = FILING_DOC_URL.format(cik=cik, accession_nodash=filing["accession_nodash"], filename=filename)
+        res = get_with_backoff(doc_url, headers={"User-Agent": SEC_USER_AGENT}, timeout=30)
+        result["doc_url"] = doc_url
+        result["status_code"] = res.status_code
+        result["body_preview"] = res.text[:500]
+        result["conclusion"] = "Reached the final fetch step -- check status_code/body_preview above."
+    except Exception as e:
+        result["error"] = str(e)
+    return result
+
+
 @router.post("/admin/sec-13f-refresh")
 def refresh_sec_13f(token: str, request: Request):
     """Manual trigger -- 13F filings only update quarterly so there's no
