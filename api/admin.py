@@ -895,6 +895,62 @@ def get_stripe_account_status(token: str, request: Request):
     return get_account_status()
 
 
+@router.get("/admin/fred-diagnostic")
+def get_fred_diagnostic(token: str, request: Request):
+    """
+    2026-08-26 (debugging the persistent RRPONTSYD/M2SL/WALCL HTTP 400
+    surfaced by the new Data Factory error tracking): AJ manually
+    replicated the exact same request (same series_id, same api_key,
+    same params) via his own browser and it succeeded -- meaning the
+    request shape and the key value HE tested are both fine. Re-pasting
+    the key into Railway's env var didn't clear the error either. This
+    endpoint runs the IDENTICAL request server-side, from inside the
+    actual Railway process, and returns FRED's real response instead of
+    another layer of guessing. Never echoes the key itself -- only its
+    length and whether it has leading/trailing whitespace (a very common
+    real cause of this exact symptom: an invisible copy-paste artifact
+    that works fine when a browser trims it but not when sent raw over
+    HTTP), plus FRED's actual status code and response body for the
+    RRPONTSYD call so we can see FRED's own error message text.
+    """
+    verify_admin(token, "get_fred_diagnostic", request)
+    import os
+    from services.outbound_http import get_with_backoff
+
+    raw_key = os.getenv("FRED_API_KEY")
+    key_info = {
+        "key_set": bool(raw_key),
+        "key_length": len(raw_key) if raw_key else 0,
+        "has_leading_whitespace": bool(raw_key and raw_key != raw_key.lstrip()),
+        "has_trailing_whitespace": bool(raw_key and raw_key != raw_key.rstrip()),
+        "has_quote_chars": bool(raw_key and ('"' in raw_key or "'" in raw_key)),
+    }
+
+    live_test = {"attempted": False}
+    if raw_key:
+        try:
+            res = get_with_backoff(
+                "https://api.stlouisfed.org/fred/series/observations",
+                params={
+                    "series_id": "RRPONTSYD",
+                    "api_key": raw_key,
+                    "file_type": "json",
+                    "sort_order": "desc",
+                    "limit": 30,
+                },
+                timeout=10,
+            )
+            live_test = {
+                "attempted": True,
+                "status_code": res.status_code,
+                "response_body": res.text[:1000],
+            }
+        except Exception as e:
+            live_test = {"attempted": True, "error": str(e)}
+
+    return {"key_info": key_info, "live_test": live_test}
+
+
 @router.get("/admin/api-trending-tickers")
 def get_api_trending_tickers(token: str, request: Request, days: int = 7, limit: int = 20):
     """
