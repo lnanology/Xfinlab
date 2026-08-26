@@ -39,20 +39,112 @@ Honesty contract (same standard as every other data service in this
 codebase): FRED represents a missing observation as the literal string
 "." rather than null/None. This module treats "." as a genuine missing
 value (excluded from `indicators`, never coerced to 0 or interpolated).
+
+2026-08-26 (AJ's "Data Factory" batch, Step 2 -- first real migration
+onto services/data_source_registry.py): before this change, every
+observation this module ever fetched lived only in the in-memory
+`_cache` dict with a 6h TTL -- a Railway restart (deploy, crash, dyno
+recycle) meant every series went back to "no data yet" until the next
+live fetch succeeded. That's fine for a display widget, not fine as a
+"Data Factory" source other engines are meant to build on.
+
+Fix: every successful fetch now also upserts into a small local
+`fred_macro_observations` table (latest known value per series_id+date,
+same xfinlab.db as everything else) so a restart falls back to
+last-known-good data instead of nothing. This is intentionally NOT a
+full point-in-time/vintage store (it does not keep every historical
+revision FRED has ever published for a given date -- CPI/GDP get
+revised after the fact and this table just keeps whatever value was
+most recently seen for that date). A true vintage store is a
+Step 3+ upgrade if/when something actually needs "what did we believe
+on date X, as of date X" rather than "best known value for date X".
+
+Also now self-registers with services.data_source_registry as source_key
+"fred_macro" -- admin can see run/error counts and disable it from the
+Data Factory panel. When disabled, live HTTP fetches are skipped and
+only cached/persisted data is served (existing consumers keep working
+off stale data instead of erroring).
 """
 
 import logging
 import os
+import sqlite3
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
 from services.outbound_http import get_with_backoff
+from services.data_source_registry import (
+    register_source, is_source_enabled, record_run_start,
+    record_run_success, record_run_error,
+)
 
 logger = logging.getLogger(__name__)
 
 FRED_API_KEY_ENV = "FRED_API_KEY"
 FRED_BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 ATTRIBUTION = "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis."
+
+SOURCE_KEY = "fred_macro"
+register_source(SOURCE_KEY, "FRED US Macro & Liquidity", "macro")
+
+_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+
+
+def _init_persistence_table():
+    conn = sqlite3.connect(_DB_PATH)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS fred_macro_observations (
+            series_id TEXT NOT NULL,
+            date TEXT NOT NULL,
+            value REAL NOT NULL,
+            fetched_at TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (series_id, date)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_persistence_table()
+
+
+def _persist_observations(series_id: str, observations: list):
+    """Best-effort -- a DB write failure must never break a live fetch
+    that otherwise succeeded, so this never raises out."""
+    if not observations:
+        return
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        conn.executemany(
+            """
+            INSERT INTO fred_macro_observations (series_id, date, value, fetched_at)
+            VALUES (?, ?, ?, datetime('now'))
+            ON CONFLICT(series_id, date) DO UPDATE SET value=excluded.value, fetched_at=excluded.fetched_at
+            """,
+            [(series_id, o["date"], o["value"]) for o in observations],
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.info("fred_macro_service: failed to persist %s: %s", series_id, e)
+
+
+def _load_persisted(series_id: str, n_obs: int) -> Optional[list]:
+    """Fallback read used when there's no live fetch and no in-memory
+    cache (e.g. right after a restart) -- oldest-first, same shape as
+    _fetch_series' normal return."""
+    try:
+        conn = sqlite3.connect(_DB_PATH)
+        rows = conn.execute(
+            "SELECT date, value FROM fred_macro_observations WHERE series_id=? ORDER BY date DESC LIMIT ?",
+            (series_id, n_obs),
+        ).fetchall()
+        conn.close()
+        if not rows:
+            return None
+        return [{"date": d, "value": v} for d, v in reversed(rows)]
+    except Exception:
+        return None
 
 # Series chosen for market relevance + update frequency (all free, all
 # public, no "Copyright"-marked series used -- see license_registry.py's
@@ -77,11 +169,22 @@ def is_available() -> bool:
 def _fetch_series(series_id: str, n_obs: int = 13) -> Optional[list]:
     """Returns up to n_obs most recent observations, oldest-first, as
     [{"date": "2026-06-01", "value": 5.33}, ...] -- "." (missing) rows
-    are dropped, never coerced. None on any fetch/parse failure."""
+    are dropped, never coerced. None if no live, cached, or persisted
+    data is available at all.
+
+    Fallback order when a fresh HTTP fetch doesn't happen or doesn't
+    return data: in-memory cache (fast, same-process, lost on restart)
+    -> fred_macro_observations table (survives restart, may be stale)
+    -> None."""
     now = datetime.now(timezone.utc).timestamp()
     cached = _cache.get(series_id)
     if cached and (now - cached["fetched_at"]) < _CACHE_TTL_SECONDS:
         return cached["observations"]
+
+    if not is_source_enabled(SOURCE_KEY):
+        # Admin has paused this source from the Data Factory panel --
+        # serve whatever's already known instead of making new HTTP calls.
+        return (cached["observations"] if cached else None) or _load_persisted(series_id, n_obs)
 
     params = {
         "series_id": series_id,
@@ -90,15 +193,18 @@ def _fetch_series(series_id: str, n_obs: int = 13) -> Optional[list]:
         "sort_order": "desc",
         "limit": n_obs,
     }
+    record_run_start(SOURCE_KEY)
     try:
         res = get_with_backoff(FRED_BASE_URL, params=params, timeout=10)
         if res.status_code != 200:
             logger.info("fred_macro_service: %s returned HTTP %s", series_id, res.status_code)
-            return cached["observations"] if cached else None
+            record_run_error(SOURCE_KEY, f"{series_id}: HTTP {res.status_code}")
+            return (cached["observations"] if cached else None) or _load_persisted(series_id, n_obs)
         payload = res.json()
     except Exception as e:
         logger.info("fred_macro_service: failed to fetch %s: %s", series_id, e)
-        return cached["observations"] if cached else None
+        record_run_error(SOURCE_KEY, f"{series_id}: {e}")
+        return (cached["observations"] if cached else None) or _load_persisted(series_id, n_obs)
 
     rows = payload.get("observations") or []
     observations = []
@@ -113,8 +219,11 @@ def _fetch_series(series_id: str, n_obs: int = 13) -> Optional[list]:
 
     if observations:
         _cache[series_id] = {"fetched_at": now, "observations": observations}
+        _persist_observations(series_id, observations)
+        record_run_success(SOURCE_KEY)
         return observations
-    return cached["observations"] if cached else None
+    record_run_error(SOURCE_KEY, f"{series_id}: fetch returned zero usable observations")
+    return (cached["observations"] if cached else None) or _load_persisted(series_id, n_obs)
 
 
 def get_us_snapshot() -> Dict:
