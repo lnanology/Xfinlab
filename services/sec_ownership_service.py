@@ -436,6 +436,7 @@ def get_ownership_summary(ticker: str) -> Dict:
         row_norm = _normalize_company_name(r["issuer_name"] or "")
         if row_norm and (row_norm == target_norm or row_norm in target_norm or target_norm in row_norm):
             holders.append({
+                "filer_cik": r["filer_cik"],
                 "filer_name": r["filer_name"],
                 "shares": r["shares"],
                 "value_usd": r["value_usd"],
@@ -443,6 +444,92 @@ def get_ownership_summary(ticker: str) -> Dict:
             })
 
     return {"available": True, "attribution": ATTRIBUTION, "holders": holders}
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-26 (AJ: "起Control Score" -- following up on AJ's original
+# pasted "Corporate Control & Capital Intelligence Engine" documents'
+# Ownership≠Control concept). Naming/scope decision made here, worth
+# stating plainly: this is NOT the "Control Score" those documents
+# described. That version needed board seats, voting agreements, proxy
+# fights, and 13D/13G activist filings (which signal INTENT to
+# influence, unlike 13F's passive quarterly position disclosure) --
+# none of which this codebase collects yet. Computing a score called
+# "Control" without that data and presenting it to users would be
+# exactly the kind of unsupported-precision claim AJ had this same
+# session's homepage Win Rate stat removed for ("將個%數字拎走"). So:
+# this is honestly named and scoped to what sec_13f_holdings actually
+# contains today -- how many of our tracked managers hold a position,
+# and how large that position is relative to EACH manager's own total
+# reported portfolio (a real, computable proxy for "how much conviction
+# does this specific manager have in this specific stock", not a claim
+# about influence over the company). A real Control Score is a future
+# upgrade once 13D/13G + multi-quarter trend data exists -- tracked as a
+# known gap, not silently approximated.
+# ---------------------------------------------------------------------------
+def _filer_portfolio_total(filer_cik: int, period_of_report: str) -> Optional[int]:
+    conn = _get_db()
+    row = conn.execute(
+        "SELECT SUM(value_usd) AS total FROM sec_13f_holdings WHERE filer_cik=? AND period_of_report=?",
+        (filer_cik, period_of_report),
+    ).fetchone()
+    conn.close()
+    total = row["total"] if row else None
+    return int(total) if total else None
+
+
+def get_conviction_score(ticker: str) -> Dict:
+    """
+    Returns:
+        {"available": True, "score": 0-100,
+         "breadth": {"holders": 2, "of_tracked": 3},
+         "holders_detail": [{"filer_name": "...", "position_pct_of_their_portfolio": 12.4, "value_usd": ...}, ...],
+         "methodology": "..."}
+        {"available": False, "message": "..."} when the ticker resolves
+        but no tracked manager holds it, or can't be resolved at all --
+        callers should treat this as "no score to show", never a 0.
+
+    score = 50% breadth (what fraction of our tracked managers hold
+    this) + 50% average conviction (each holding manager's position size
+    as a % of THEIR OWN total reported 13F portfolio that quarter,
+    scaled so a 25%+ portfolio weight maxes out the conviction half --
+    concentrated managers rarely go much higher than that in one name,
+    so this avoids a single mega-bet swamping the scale). Both halves
+    are simple, auditable, and traceable back to real persisted numbers
+    -- no hidden weighting, no external benchmark.
+    """
+    summary = get_ownership_summary(ticker)
+    if not summary.get("available") or not summary.get("holders"):
+        return {"available": False, "message": "冇追蹤緊嘅機構持有呢隻股票，未能計算Conviction Score。"}
+
+    holders = summary["holders"]
+    total_tracked = len(list_watched_filers())
+    breadth_score = (len(holders) / total_tracked * 100) if total_tracked else 0
+
+    holders_detail = []
+    conviction_values = []
+    for h in holders:
+        portfolio_total = _filer_portfolio_total(h["filer_cik"], h["period_of_report"])
+        pct = None
+        if portfolio_total and h["value_usd"]:
+            pct = round(h["value_usd"] / portfolio_total * 100, 2)
+            conviction_values.append(min(pct / 25 * 100, 100))
+        holders_detail.append({
+            "filer_name": h["filer_name"],
+            "value_usd": h["value_usd"],
+            "position_pct_of_their_portfolio": pct,
+        })
+
+    avg_conviction = (sum(conviction_values) / len(conviction_values)) if conviction_values else 0
+    score = round(0.5 * breadth_score + 0.5 * avg_conviction, 1)
+
+    return {
+        "available": True,
+        "score": score,
+        "breadth": {"holders": len(holders), "of_tracked": total_tracked},
+        "holders_detail": holders_detail,
+        "methodology": "50% breadth (share of tracked managers holding this) + 50% average conviction (each holder's position as a % of their own total 13F portfolio, capped at 25%+ = max). Not a measure of corporate control or influence -- see module docstring.",
+    }
 
 
 if __name__ == "__main__":

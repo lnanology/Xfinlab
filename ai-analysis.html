@@ -365,6 +365,7 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       <summary data-i18n="aa_ownership_title">▶ Institutional Ownership (13F)</summary>
       <div class="xfl-accordion-body">
         <div id="ownershipBody"></div>
+        <div id="ownershipConviction" style="display:none;margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color)"></div>
         <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="aa_ownership_note">From SEC EDGAR 13F filings for a small watchlist of concentrated managers (Berkshire Hathaway, Pershing Square, Scion Asset Management) -- not a full ownership picture. For research reference only, not investment advice.</div>
       </div>
     </details>
@@ -730,6 +731,34 @@ function renderOwnership(ownership){
     </div>`;
   }).join('');
   document.getElementById('ownershipBody').innerHTML = rows;
+
+  // 2026-08-26 (AJ: "起Control Score" -- see sec_ownership_service.
+  // get_conviction_score's docstring for why this is deliberately NOT
+  // called/framed as "Control Score": no board/voting/13D data exists
+  // yet to support that claim. This is an honest "how invested are our
+  // tracked managers in this name" indicator, labeled as such.
+  const scoreWrap = document.getElementById('ownershipConviction');
+  const conviction = ownership.conviction;
+  if (scoreWrap) {
+    if (conviction && conviction.available) {
+      const score = conviction.score;
+      const color = score >= 66 ? '#22c55e' : score >= 33 ? '#eab308' : '#94a3b8';
+      scoreWrap.style.display = '';
+      scoreWrap.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span data-i18n="aa_conviction_label" style="font-weight:600">Institutional Conviction Score</span>
+          <span style="font-weight:700;color:${color}">${score}/100</span>
+        </div>
+        <div style="height:6px;background:var(--border-color);border-radius:3px;overflow:hidden;margin-bottom:6px">
+          <div style="height:100%;width:${score}%;background:${color}"></div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--text-muted)" data-i18n="aa_conviction_note">Not a measure of corporate control or influence -- reflects how many tracked managers hold this and how large the position is relative to each manager's own portfolio.</div>
+      `;
+    } else {
+      scoreWrap.style.display = 'none';
+      scoreWrap.innerHTML = '';
+    }
+  }
 }
 
 // Same batch: renders services/cftc_cot_service.py's get_cot_for_ticker()

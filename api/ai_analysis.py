@@ -542,8 +542,17 @@ async def ai_analysis(request: Request, body: dict):
     # frontend decide, keeping this endpoint a thin passthrough like
     # every other engine call on this page.
     try:
-        from services.sec_ownership_service import get_ownership_summary
+        from services.sec_ownership_service import get_ownership_summary, get_conviction_score
         ownership = get_ownership_summary(symbol)
+        # attach the conviction score (see sec_ownership_service.get_
+        # conviction_score's docstring for why this is NOT called
+        # "Control Score" -- best-effort, never blocks the ownership
+        # section itself if the score calc fails for any reason.
+        if ownership and ownership.get("available") and ownership.get("holders"):
+            try:
+                ownership["conviction"] = get_conviction_score(symbol)
+            except Exception:
+                ownership["conviction"] = None
     except Exception:
         ownership = None
 
