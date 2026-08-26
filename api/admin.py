@@ -942,6 +942,21 @@ def toggle_data_source(source_key: str, token: str, request: Request, enabled: b
     return {"success": True, "source_key": source_key, "enabled": enabled}
 
 
+@router.get("/admin/cftc-cot-snapshot")
+def get_cftc_cot_snapshot(token: str, request: Request):
+    """
+    2026-08-26 (Data Factory Step 3): debug/visibility endpoint for the
+    new services/cftc_cot_service.py collector -- lets AJ actually see
+    the positioning numbers being collected (net long/short per
+    contract), not just the run/error counts the Data Factory panel
+    shows. Same pattern as /admin/api-trending-tickers: a thin read-only
+    wrapper, no new business logic here.
+    """
+    verify_admin(token, "get_cftc_cot_snapshot", request)
+    from services.cftc_cot_service import get_snapshot
+    return get_snapshot()
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """
