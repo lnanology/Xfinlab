@@ -167,6 +167,29 @@ def _extract_hit_fields(hit: dict) -> dict:
     }
 
 
+# 2026-08-26 (live-tested with AJ: AAPL and VTGN both returned 0 hits
+# even though VTGN had a real, independently-confirmed 13D filed --
+# SRX Global Inc. re: Vistagen Therapeutics per public activist-tracker
+# reporting). Root cause: match_phrase on the FULL legal name including
+# ", Inc." is too fragile -- a 13D cover page's issuer-name field often
+# doesn't repeat the exact legal suffix/punctuation SEC's own
+# company_tickers.json title uses, so an exact-phrase match on the full
+# string can miss a real, on-topic filing. Stripping the trailing
+# corporate suffix before searching (matching the same class of company-
+# name normalization sec_ownership_service.py already does for a
+# different reason) makes the phrase shorter and far more likely to
+# appear verbatim somewhere in the filing text.
+_SUFFIX_RE = re.compile(
+    r",?\s*\b(Inc|Incorporated|Corp|Corporation|Co|Company|Ltd|Limited|LLC|LLP|PLC|Holdings?)\.?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _build_search_phrase(title: str) -> str:
+    stripped = _SUFFIX_RE.sub("", title or "").strip()
+    return stripped or title
+
+
 def _doc_url(accession: str, filename: str) -> Optional[str]:
     if not accession or not filename:
         return None
@@ -213,7 +236,7 @@ def search_recent_filings(ticker: str, force_refresh: bool = False) -> Dict:
     end_dt = date.today()
     start_dt = end_dt - timedelta(days=_LOOKBACK_DAYS)
     params = {
-        "q": f'"{title}"',
+        "q": f'"{_build_search_phrase(title)}"',
         "forms": "SC 13D,SC 13G",
         "dateRange": "custom",
         "startdt": start_dt.isoformat(),

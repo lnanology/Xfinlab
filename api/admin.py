@@ -974,7 +974,9 @@ def get_sec_13d13g_debug(token: str, request: Request, ticker: str):
     be spotted in one round-trip.
     """
     verify_admin(token, f"sec_13d13g_debug:{ticker}", request)
-    from services.sec_13d_13g_service import _load_ticker_title_map, EFTS_SEARCH_URL, SEC_USER_AGENT, _LOOKBACK_DAYS
+    from services.sec_13d_13g_service import (
+        _load_ticker_title_map, _build_search_phrase, EFTS_SEARCH_URL, SEC_USER_AGENT, _LOOKBACK_DAYS,
+    )
     from services.outbound_http import get_with_backoff
     from datetime import date, timedelta
 
@@ -986,20 +988,22 @@ def get_sec_13d13g_debug(token: str, request: Request, ticker: str):
 
     end_dt = date.today()
     start_dt = end_dt - timedelta(days=_LOOKBACK_DAYS)
+    search_phrase = _build_search_phrase(title)
     params = {
-        "q": f'"{title}"', "forms": "SC 13D,SC 13G", "dateRange": "custom",
+        "q": f'"{search_phrase}"', "forms": "SC 13D,SC 13G", "dateRange": "custom",
         "startdt": start_dt.isoformat(), "enddt": end_dt.isoformat(), "size": 20,
     }
     try:
         res = get_with_backoff(EFTS_SEARCH_URL, params=params, headers={"User-Agent": SEC_USER_AGENT}, timeout=20)
         return {
             "resolved_title": title,
+            "search_phrase_used": search_phrase,
             "params": params,
             "status_code": res.status_code,
             "raw_response": res.text[:3000],
         }
     except Exception as e:
-        return {"resolved_title": title, "params": params, "error": str(e)}
+        return {"resolved_title": title, "search_phrase_used": search_phrase, "params": params, "error": str(e)}
 
 
 @router.get("/admin/api-trending-tickers")
