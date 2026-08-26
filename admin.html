@@ -2061,6 +2061,7 @@ async function triggerSec13fRefresh() {
     const lines = Object.entries(results).map(([name, n]) => `${escapeHtml(name)}: ${n} holdings`).join('<br>');
     el.innerHTML = `<div class="empty">${lines || 'No results'}</div>`;
     loadSec13fFilers();
+    loadDataSources(); // keep the top "Registered Sources" run/error counts in sync with this manual trigger
   } catch (e) {
     el.innerHTML = '<div class="empty">Refresh failed</div>';
   }
