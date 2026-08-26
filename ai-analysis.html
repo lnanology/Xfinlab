@@ -370,6 +370,22 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </details>
 
+    <!-- 2026-08-26 (Data Factory Step 6, "起13D/13G維權申報collector"):
+         recent Schedule 13D (activist intent) / 13G (passive >5% holder)
+         filings about this ticker, from services/sec_13d_13g_service.py.
+         Own section, deliberately separate from Institutional Ownership
+         above -- that's our 3 watched managers' routine quarterly
+         positions; this is ANY filer crossing 5% via an event-driven
+         filing, which is the real "intent to influence" signal 13F alone
+         can't give. Hidden unless available AND filings is non-empty. -->
+    <details class="xfl-accordion" id="activistAccordion" style="display:none">
+      <summary data-i18n="aa_activist_title">▶ Activist / 5% Ownership Filings (13D/13G)</summary>
+      <div class="xfl-accordion-body">
+        <div id="activistBody"></div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="aa_activist_note">Schedule 13D = filer intends to influence or control the company. Schedule 13G = passive stake, no such intent. Last 180 days, from SEC EDGAR full-text search. For research reference only, not investment advice.</div>
+      </div>
+    </details>
+
     <!-- Same batch: CFTC Commitments of Traders positioning, shown only
          for tickers with an explicit futures/ETF mapping (services/
          cftc_cot_service.py's _TICKER_TO_CONTRACT) -- a plain equity
@@ -761,6 +777,33 @@ function renderOwnership(ownership){
   }
 }
 
+// 2026-08-26 (Data Factory Step 6): renders services/sec_13d_13g_
+// service.py's search_recent_filings() result inside #activistAccordion.
+// Hidden unless available AND filings is non-empty -- same honest-empty
+// convention as renderOwnership above.
+function renderActivistFilings(activist){
+  const acc = document.getElementById('activistAccordion');
+  if (!acc) return;
+  if (!activist || !activist.available || !activist.filings || !activist.filings.length){
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+  const rows = activist.filings.map(f => {
+    const isActivist = (f.form_type || '').toUpperCase().indexOf('13D') !== -1;
+    const badgeColor = isActivist ? '#ef4444' : '#94a3b8';
+    const badgeLabel = isActivist ? 'SC 13D' : 'SC 13G';
+    return `<div class="prob-section" style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="prob-label" style="font-weight:600">${f.filer_display_name || 'Unknown filer'}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted)">${f.file_date || '-'}</div>
+      </div>
+      <span style="font-weight:700;color:${badgeColor};border:1px solid ${badgeColor};border-radius:4px;padding:2px 6px;font-size:0.7rem">${badgeLabel}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('activistBody').innerHTML = rows;
+}
+
 // Same batch: renders services/cftc_cot_service.py's get_cot_for_ticker()
 // result inside #cotAccordion. Hidden entirely when this ticker has no
 // COT-relevant futures/ETF mapping (null result), not shown as "no data".
@@ -1013,6 +1056,7 @@ async function runAnalysis(){
     renderShippingProxy(data.shipping_proxy);
     renderOwnership(data.ownership);
     renderCotPositioning(data.cot_positioning);
+    renderActivistFilings(data.activist_filings);
 
     // ---- Layer 4: reasons accordion ----
     const reasons = data.reasons || { bullish: [], bearish: [] };

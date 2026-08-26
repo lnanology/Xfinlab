@@ -951,6 +951,57 @@ def get_fred_diagnostic(token: str, request: Request):
     return {"key_info": key_info, "live_test": live_test}
 
 
+@router.get("/admin/sec-13d13g-search")
+def get_sec_13d13g_search(token: str, request: Request, ticker: str, force_refresh: bool = False):
+    """
+    2026-08-26 (Data Factory Step 6): admin-facing trigger + view for
+    services/sec_13d_13g_service.py's on-demand per-ticker lookup.
+    """
+    verify_admin(token, f"sec_13d13g_search:{ticker}", request)
+    from services.sec_13d_13g_service import search_recent_filings
+    return search_recent_filings(ticker, force_refresh=force_refresh)
+
+
+@router.get("/admin/sec-13d13g-debug")
+def get_sec_13d13g_debug(token: str, request: Request, ticker: str):
+    """
+    Learned from the 13F info-table filename bug (multiple back-and-forth
+    debugging rounds with AJ to pin down): this time, build the raw-
+    response diagnostic upfront instead of reactively. Runs the exact
+    same EFTS request services.sec_13d_13g_service.search_recent_filings
+    makes, but returns SEC's raw JSON response instead of the parsed/
+    filtered result, so a field-name mismatch in _extract_hit_fields can
+    be spotted in one round-trip.
+    """
+    verify_admin(token, f"sec_13d13g_debug:{ticker}", request)
+    from services.sec_13d_13g_service import _load_ticker_title_map, EFTS_SEARCH_URL, SEC_USER_AGENT, _LOOKBACK_DAYS
+    from services.outbound_http import get_with_backoff
+    from datetime import date, timedelta
+
+    ticker = ticker.upper().strip()
+    title_map = _load_ticker_title_map()
+    title = title_map.get(ticker)
+    if not title:
+        return {"error": f"{ticker} not found in SEC ticker map", "ticker_map_size": len(title_map)}
+
+    end_dt = date.today()
+    start_dt = end_dt - timedelta(days=_LOOKBACK_DAYS)
+    params = {
+        "q": f'"{title}"', "forms": "SC 13D,SC 13G", "dateRange": "custom",
+        "startdt": start_dt.isoformat(), "enddt": end_dt.isoformat(), "size": 20,
+    }
+    try:
+        res = get_with_backoff(EFTS_SEARCH_URL, params=params, headers={"User-Agent": SEC_USER_AGENT}, timeout=20)
+        return {
+            "resolved_title": title,
+            "params": params,
+            "status_code": res.status_code,
+            "raw_response": res.text[:3000],
+        }
+    except Exception as e:
+        return {"resolved_title": title, "params": params, "error": str(e)}
+
+
 @router.get("/admin/api-trending-tickers")
 def get_api_trending_tickers(token: str, request: Request, days: int = 7, limit: int = 20):
     """

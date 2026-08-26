@@ -565,6 +565,21 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         cot_positioning = None
 
+    # 2026-08-26 (Data Factory Step 6, "起13D/13G維權申報collector"): 13D
+    # (activist intent) vs 13G (passive >5% holder) filed about this
+    # ticker in the last 180 days. Deliberately its own field, not folded
+    # into `ownership` above -- that's about our 3 watched managers'
+    # routine quarterly positions, this is about ANY filer crossing 5%
+    # with an event-driven filing, a different and arguably more
+    # "control-relevant" signal. On-demand EDGAR full-text search, so
+    # this is the slowest of the 3 new engine calls on this page --
+    # cached 24h server-side in the service itself.
+    try:
+        from services.sec_13d_13g_service import search_recent_filings
+        activist_filings = search_recent_filings(symbol)
+    except Exception:
+        activist_filings = None
+
     # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer surface
     # for the same Probabilistic K-Line engine just shipped on the
     # Intelligence API as GET /v1/forecast/{ticker}): bundled into the
@@ -658,5 +673,6 @@ async def ai_analysis(request: Request, body: dict):
             "capital_flow_forecast": capital_flow_forecast if is_pro_plan else _locked_advanced_engine,
             "ownership": ownership,
             "cot_positioning": cot_positioning,
+            "activist_filings": activist_filings,
         }
     }
