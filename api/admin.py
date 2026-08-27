@@ -1483,6 +1483,25 @@ def get_email_debug(token: str, request: Request, send_test: bool = False, test_
                             "onboarding@resend.dev (which can only deliver to your own Resend account email). "
                             "Verify this domain's DNS records in the Resend dashboard.")
                 )
+            elif resp.status_code == 401 and "restricted_api_key" in resp.text:
+                # 2026-08-27: AJ's key returned exactly this -- Resend keys
+                # can be scoped to "Sending access" only (vs. "Full
+                # access"), and a sending-only key is correctly REJECTED
+                # from GET /domains (a full-access-only endpoint) even
+                # though it's completely valid for what EmailService.send()
+                # actually needs. Don't misreport a scope restriction as an
+                # invalid/inactive key -- the real send path can't be
+                # verified via this call at all with a sending-only key;
+                # send_test is the only way to confirm it end-to-end.
+                result["auth_check"]["body"] = resp.text[:500]
+                result["conclusion"] = (
+                    "API key is valid but scoped to \"Sending access\" only, so Resend correctly "
+                    "rejects it from this domain-verification check (a full-access-only endpoint) -- "
+                    "this is NOT a broken key. sending emails itself may still work fine. Re-run with "
+                    "send_test=true&test_to=you@example.com to confirm actual delivery -- if "
+                    f"{RESEND_FROM_EMAIL}'s domain isn't verified in the Resend dashboard yet, that "
+                    "test send will fail with a domain-verification error instead."
+                )
             else:
                 result["conclusion"] = f"Resend API key rejected (HTTP {resp.status_code}) -- check RESEND_API_KEY is correct and active."
                 result["auth_check"]["body"] = resp.text[:500]
@@ -1490,7 +1509,11 @@ def get_email_debug(token: str, request: Request, send_test: bool = False, test_
             result["auth_check"] = {"error": str(e)}
             result["conclusion"] = "Could not reach api.resend.com -- see error above."
 
-        if send_test and test_to and result.get("auth_check", {}).get("status_code") == 200:
+        _auth_status = result.get("auth_check", {}).get("status_code")
+        _key_likely_sendable = _auth_status == 200 or (
+            _auth_status == 401 and "restricted_api_key" in result.get("auth_check", {}).get("body", "")
+        )
+        if send_test and test_to and _key_likely_sendable:
             from services.email_service import EmailService
             sent = EmailService.send(test_to, "[XFINLAB] email-debug test (Resend)", "<p>This is a test send from /admin/email-debug.</p>")
             result["send_test"] = {"to": test_to, "sent": sent}
