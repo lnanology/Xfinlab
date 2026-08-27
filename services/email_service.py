@@ -1,5 +1,6 @@
 import os
 import smtplib
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
@@ -16,6 +17,32 @@ EMAIL_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 
+# 2026-08-27 (AJ hit "Key was issued but the confirmation email failed to
+# send" on Intelligence API self-serve signup -- diagnosed via the new
+# /admin/email-debug endpoint: `connect` step to mail.privateemail.com:587
+# timed out. Not a credentials/config bug -- Railway blocks outbound SMTP
+# (ports 25/465/587) on all plans below Pro, confirmed via Railway's own
+# help station. The SMTP path above is unusable on this deployment
+# regardless of what EMAIL_ADDRESS/EMAIL_APP_PASSWORD/SMTP_HOST are set to.
+#
+# Resend's HTTP API sends over plain HTTPS (port 443, never blocked) so it
+# sidesteps the platform restriction entirely -- same "dormant until
+# configured" pattern as EIA_API_KEY/FRED_API_KEY elsewhere in this
+# codebase: if RESEND_API_KEY is unset, send() below falls through to the
+# exact same SMTP path as before (a no-op change for any deployment where
+# SMTP already works, e.g. a future Railway Pro upgrade, or running this
+# outside Railway entirely).
+#
+# RESEND_FROM_EMAIL must be an address on a domain verified in the Resend
+# dashboard (DNS records) to send to arbitrary recipients -- Resend's
+# unverified default (onboarding@resend.dev) only delivers to the
+# account's own signup email, fine for a first connectivity test but not
+# for real users. Falls back to EMAIL_ADDRESS (the existing Namecheap
+# mailbox) as a working default so this doesn't require a fresh decision
+# just to unblock this fix.
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL") or EMAIL_ADDRESS or "onboarding@resend.dev"
+
 
 class EmailService:
     """XFINLAB Email Service - Sends notification emails"""
@@ -23,7 +50,10 @@ class EmailService:
     @staticmethod
     def send(to_email: str, subject: str, html_body: str) -> bool:
         """
-        Send an email
+        Send an email. Uses Resend's HTTP API when RESEND_API_KEY is set
+        (see module docstring above for why -- Railway blocks outbound
+        SMTP below its Pro plan); otherwise falls back to the original
+        direct-SMTP path unchanged.
 
         Args:
             to_email: Recipient email
@@ -33,6 +63,31 @@ class EmailService:
         Returns:
             bool: True if sent successfully
         """
+        if RESEND_API_KEY:
+            try:
+                from_field = RESEND_FROM_EMAIL if "<" in RESEND_FROM_EMAIL else f"XFINLAB <{RESEND_FROM_EMAIL}>"
+                resp = requests.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {RESEND_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "from": from_field,
+                        "to": [to_email],
+                        "subject": subject,
+                        "html": html_body,
+                    },
+                    timeout=15,
+                )
+                if resp.status_code in (200, 201):
+                    return True
+                print(f"Resend error: {resp.status_code} {resp.text}")
+                return False
+            except Exception as e:
+                print(f"Resend error: {e}")
+                return False
+
         try:
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject

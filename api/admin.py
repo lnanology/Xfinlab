@@ -1440,9 +1440,62 @@ def get_email_debug(token: str, request: Request, send_test: bool = False, test_
     Step 2 (opt-in via send_test=true&test_to=you@example.com): only after
     step 1's login succeeds, sends one real test email so AJ can confirm
     delivery end-to-end (not just that auth works) -- e.g. Namecheap/Gmail
-    can accept a login but still silently drop mail past that point."""
+    can accept a login but still silently drop mail past that point.
+
+    2026-08-27: now branches on RESEND_API_KEY first (see services/
+    email_service.py's module docstring -- Railway blocks outbound SMTP
+    below its Pro plan, confirmed via this exact endpoint's `connect:
+    "FAILED: timed out"` result against mail.privateemail.com:587). When
+    RESEND_API_KEY is set, this checks Resend's HTTP API instead (GET
+    /domains, which validates the key without sending anything) and skips
+    the SMTP connect/starttls/login walk entirely, since EmailService.send
+    itself would do the same -- this endpoint should diagnose whichever
+    path send() actually takes, not a path it no longer uses."""
     verify_admin(token, "get_email_debug", request)
     import smtplib
+
+    resend_key = os.getenv("RESEND_API_KEY")
+    if resend_key:
+        from services.email_service import RESEND_FROM_EMAIL
+
+        result = {
+            "active_path": "resend",
+            "env": {"RESEND_API_KEY": True, "RESEND_FROM_EMAIL": RESEND_FROM_EMAIL},
+        }
+        try:
+            resp = requests.get(
+                "https://api.resend.com/domains",
+                headers={"Authorization": f"Bearer {resend_key}"},
+                timeout=15,
+            )
+            result["auth_check"] = {"status_code": resp.status_code}
+            if resp.status_code == 200:
+                domains = resp.json().get("data", [])
+                result["auth_check"]["domains"] = [
+                    {"name": d.get("name"), "status": d.get("status")} for d in domains
+                ]
+                from_domain = RESEND_FROM_EMAIL.split("@")[-1].rstrip(">").strip()
+                verified_names = [d.get("name") for d in domains if d.get("status") == "verified"]
+                result["conclusion"] = (
+                    f"API key valid. RESEND_FROM_EMAIL's domain ({from_domain}) is "
+                    + ("verified -- ready to send to any recipient." if from_domain in verified_names
+                       else "NOT in the verified list above -- sends will fail or silently fall back to "
+                            "onboarding@resend.dev (which can only deliver to your own Resend account email). "
+                            "Verify this domain's DNS records in the Resend dashboard.")
+                )
+            else:
+                result["conclusion"] = f"Resend API key rejected (HTTP {resp.status_code}) -- check RESEND_API_KEY is correct and active."
+                result["auth_check"]["body"] = resp.text[:500]
+        except Exception as e:
+            result["auth_check"] = {"error": str(e)}
+            result["conclusion"] = "Could not reach api.resend.com -- see error above."
+
+        if send_test and test_to and result.get("auth_check", {}).get("status_code") == 200:
+            from services.email_service import EmailService
+            sent = EmailService.send(test_to, "[XFINLAB] email-debug test (Resend)", "<p>This is a test send from /admin/email-debug.</p>")
+            result["send_test"] = {"to": test_to, "sent": sent}
+
+        return result
 
     env_status = {
         "EMAIL_ADDRESS": bool(os.getenv("EMAIL_ADDRESS")),
