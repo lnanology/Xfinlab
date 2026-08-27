@@ -1157,6 +1157,18 @@ def refresh_sec_13f(token: str, request: Request):
     return {"results": refresh_all()}
 
 
+@router.get("/admin/binance-exchange-snapshot")
+def get_binance_exchange_snapshot(token: str, request: Request):
+    """
+    2026-08-26 (Data Factory Step 7): debug/visibility endpoint for
+    services/crypto_exchange_service.py, same pattern as
+    /admin/cftc-cot-snapshot.
+    """
+    verify_admin(token, "get_binance_exchange_snapshot", request)
+    from services.crypto_exchange_service import get_all_tickers
+    return {"tickers": get_all_tickers()}
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """

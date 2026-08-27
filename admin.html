@@ -845,6 +845,16 @@
         <button class="btn btn-sm btn-purple" onclick="loadSec13fFilers()" style="margin-top:12px">🔄 Refresh Filer List</button>
         <button class="btn btn-sm" onclick="triggerSec13fRefresh()" style="margin-top:12px">📡 Fetch Latest 13F Now (all filers)</button>
       </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Binance Exchange Market Data</span>
+          <span id="binanceMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Real single-exchange 24h price change/volume for 10 major coins (Binance spot) -- distinct from the CoinGecko cross-exchange average used elsewhere on the site.</div>
+        <div id="binanceList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadBinanceExchange()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
     </div>
 
     <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
@@ -1298,7 +1308,7 @@ function showPage(name) {
   if (name === 'security') loadSecurityScan();
   if (name === 'stripeaccount') loadStripeAccountStatus();
   if (name === 'apitrending') loadApiTrendingTickers();
-  if (name === 'datafactory') { loadDataSources(); loadCftcCot(); loadSec13fFilers(); }
+  if (name === 'datafactory') { loadDataSources(); loadCftcCot(); loadSec13fFilers(); loadBinanceExchange(); }
   if (name === 'content') loadContentVariants();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
@@ -2065,6 +2075,45 @@ async function triggerSec13fRefresh() {
   } catch (e) {
     el.innerHTML = '<div class="empty">Refresh failed</div>';
   }
+}
+
+async function loadBinanceExchange() {
+  document.getElementById('binanceList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('binanceMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/binance-exchange-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderBinanceExchange(data);
+  } catch (e) {
+    document.getElementById('binanceList').innerHTML = '<div class="empty">Failed to load Binance exchange data</div>';
+  }
+}
+
+function renderBinanceExchange(data) {
+  const el = document.getElementById('binanceList');
+  const tickers = (data && data.tickers) || {};
+  const rows = Object.entries(tickers).filter(([, v]) => v);
+  document.getElementById('binanceMeta').textContent = `${rows.length}/${Object.keys(tickers).length} live`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No Binance data yet -- first fetch may not have run.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(([ticker, t]) => {
+    const pct = t.price_change_pct_24h;
+    const positive = pct !== null && pct !== undefined && pct >= 0;
+    const pctStr = (pct === null || pct === undefined) ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+    return `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600">${ticker}/USDT</span>
+          <span style="font-size:0.72rem;color:var(--muted)">$${(t.last_price || 0).toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted)">24h volume: ${(t.volume_24h || 0).toLocaleString(undefined, {maximumFractionDigits: 0})} ${ticker}</div>
+      </div>
+      <div style="font-weight:700;color:${positive ? '#22c55e' : '#ef4444'}">${pctStr}</div>
+    </div>
+  `; }).join('');
 }
 
 async function loadStripeAccountStatus() {
