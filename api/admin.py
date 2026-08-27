@@ -1290,6 +1290,81 @@ def get_coinbase_exchange_snapshot(token: str, request: Request):
     return {"tickers": get_all_tickers()}
 
 
+@router.get("/admin/sec-form4-snapshot")
+def get_sec_form4_snapshot(token: str, request: Request, ticker: str):
+    """
+    2026-08-27 (Data Factory Step 9a): debug/visibility endpoint for
+    services/sec_form4_service.py, same pattern as /admin/cftc-cot-
+    snapshot -- takes a ticker since (unlike CFTC/EIA) insider trading
+    is inherently per-company, not a fixed small set of contracts.
+    """
+    verify_admin(token, f"get_sec_form4_snapshot:{ticker}", request)
+    from services.sec_form4_service import get_recent_insider_transactions
+    return get_recent_insider_transactions(ticker, force_refresh=True)
+
+
+@router.get("/admin/sec-form4-debug")
+def get_sec_form4_debug(token: str, request: Request, ticker: str):
+    """
+    Upfront diagnostic (same lesson learned from the SEC 13F/13D-13G/EIA
+    debugging sagas -- build this BEFORE a live bug is reported): runs
+    each step of the Form 4 pipeline separately and returns intermediate
+    results, so if EDGAR's browse-edgar Atom feed shape (the one part of
+    this pipeline that couldn't be verified from the sandbox) doesn't
+    match what the parser expects, the raw feed text is visible here
+    instead of just a silent 'no filings' result.
+    """
+    verify_admin(token, f"get_sec_form4_debug:{ticker}", request)
+    from services.sec_form4_service import (
+        _load_ticker_cik_map, _list_recent_form4_filings, _find_ownership_xml_filename,
+        BROWSE_EDGAR_URL, SEC_USER_AGENT,
+    )
+    from services.outbound_http import get_with_backoff
+
+    result = {"ticker": ticker.upper(), "step": "resolve_cik"}
+    cik_map = _load_ticker_cik_map()
+    cik = cik_map.get(ticker.upper())
+    result["cik"] = cik
+    if not cik:
+        result["conclusion"] = "Ticker not found in SEC's company_tickers.json."
+        return result
+
+    result["step"] = "fetch_raw_atom_feed"
+    try:
+        raw_res = get_with_backoff(
+            BROWSE_EDGAR_URL,
+            params={"action": "getcompany", "CIK": cik, "type": "4", "dateb": "", "owner": "include", "count": 5, "output": "atom"},
+            headers={"User-Agent": SEC_USER_AGENT}, timeout=20,
+        )
+        result["atom_status_code"] = raw_res.status_code
+        result["atom_raw_snippet"] = raw_res.text[:2000] if raw_res.status_code == 200 else raw_res.text[:500]
+    except Exception as e:
+        result["atom_fetch_error"] = str(e)
+        return result
+
+    result["step"] = "parse_filings_list"
+    try:
+        filings = _list_recent_form4_filings(cik)
+        result["filings"] = filings
+    except Exception as e:
+        result["parse_error"] = str(e)
+        return result
+
+    if not filings:
+        result["conclusion"] = "Atom feed fetched but zero filings parsed out of it -- check atom_raw_snippet above against the parser's expected <entry>/<title>/<id>/<summary> shape."
+        return result
+
+    result["step"] = "find_ownership_xml_for_first_filing"
+    try:
+        fname = _find_ownership_xml_filename(cik, filings[0]["accession_nodash"])
+        result["first_filing_ownership_xml_filename"] = fname
+        result["conclusion"] = "OK" if fname else "Filing index fetched but no XML file matched any of the 3 detection strategies."
+    except Exception as e:
+        result["find_xml_error"] = str(e)
+
+    return result
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """
