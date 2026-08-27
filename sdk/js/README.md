@@ -67,6 +67,12 @@ try {
 | `intelForTicker(ticker, {limit=5, lang="zh-HK"})` | `GET /v1/intel/{ticker}` | Weighted 8x in quota |
 | `technical(ticker, {period="6mo", interval="1d", lang="en"})` | `GET /v1/technical/{ticker}` | Weighted 3x in quota |
 | `stressTest({symbol, amount, horizon_days=252, n_simulations, lang})` | `POST /v1/stress-test` | Weighted 3x in quota |
+| `regimeSignal(ticker, {regime, minTrades=5})` | `GET /v1/regime-signal/{ticker}` | Weighted 3x in quota |
+| `forecast(ticker, {horizonDays=5, nSimulations})` | `GET /v1/forecast/{ticker}` | Weighted 4x in quota |
+| `insider(ticker)` | `GET /v1/insider/{ticker}` | Weighted 3x in quota |
+| `shortInterest(ticker)` | `GET /v1/short-interest/{ticker}` | Weighted 2x in quota |
+| `energy(ticker)` | `GET /v1/energy/{ticker}` | Weighted 2x in quota |
+| `exchange(ticker)` | `GET /v1/exchange/{ticker}` | Weighted 2x in quota |
 
 Full endpoint docs, pricing tiers, and quota weighting: https://www.xfinlab.com/intelligence-api.html
 

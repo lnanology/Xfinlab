@@ -66,6 +66,12 @@ except XfinlabError as e:
 | `intel_for_ticker(ticker, limit=5, lang="zh-HK")` | `GET /v1/intel/{ticker}` | Weighted 8x in quota |
 | `technical(ticker, period="6mo", interval="1d", lang="en")` | `GET /v1/technical/{ticker}` | Weighted 3x in quota |
 | `stress_test(symbol, amount, horizon_days=252, n_simulations=None, lang=None)` | `POST /v1/stress-test` | Weighted 3x in quota |
+| `regime_signal(ticker, regime=None, min_trades=5)` | `GET /v1/regime-signal/{ticker}` | Weighted 3x in quota |
+| `forecast(ticker, horizon_days=5, n_simulations=None)` | `GET /v1/forecast/{ticker}` | Weighted 4x in quota |
+| `insider(ticker)` | `GET /v1/insider/{ticker}` | Weighted 3x in quota |
+| `short_interest(ticker)` | `GET /v1/short-interest/{ticker}` | Weighted 2x in quota |
+| `energy(ticker)` | `GET /v1/energy/{ticker}` | Weighted 2x in quota |
+| `exchange(ticker)` | `GET /v1/exchange/{ticker}` | Weighted 2x in quota |
 
 Full endpoint docs, pricing tiers, and quota weighting: https://www.xfinlab.com/intelligence-api.html
 

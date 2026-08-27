@@ -164,5 +164,42 @@
     return this._post('/intelligence/v1/stress-test', params);
   };
 
+  // 2026-08-27: this SDK had fallen behind the live API by 6 endpoints --
+  // regimeSignal/forecast (shipped 2026-08-10/08-24) were never wrapped,
+  // and this batch adds the 4 newest (Data Factory -> Intelligence API
+  // monetization: insider/shortInterest/energy/exchange).
+
+  XfinlabClient.prototype.regimeSignal = function (ticker, opts) {
+    opts = opts || {};
+    return this._get('/intelligence/v1/regime-signal/' + encodeURIComponent(ticker), {
+      regime: opts.regime,
+      min_trades: opts.minTrades,
+    });
+  };
+
+  XfinlabClient.prototype.forecast = function (ticker, opts) {
+    opts = opts || {};
+    return this._get('/intelligence/v1/forecast/' + encodeURIComponent(ticker), {
+      horizon_days: opts.horizonDays,
+      n_simulations: opts.nSimulations,
+    });
+  };
+
+  XfinlabClient.prototype.insider = function (ticker) {
+    return this._get('/intelligence/v1/insider/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.shortInterest = function (ticker) {
+    return this._get('/intelligence/v1/short-interest/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.energy = function (ticker) {
+    return this._get('/intelligence/v1/energy/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.exchange = function (ticker) {
+    return this._get('/intelligence/v1/exchange/' + encodeURIComponent(ticker));
+  };
+
   return { XfinlabClient: XfinlabClient, XfinlabError: XfinlabError };
 }));

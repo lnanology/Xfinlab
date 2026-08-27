@@ -26,7 +26,7 @@ from typing import Optional
 
 import requests
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = ["XfinlabClient", "XfinlabError"]
 
 
@@ -170,3 +170,55 @@ class XfinlabClient:
         if lang is not None:
             body["lang"] = lang
         return self._post("/intelligence/v1/stress-test", json_body=body)
+
+    # 2026-08-27: this SDK had fallen behind the live API by 6 endpoints --
+    # regime_signal/forecast (shipped 2026-08-10/08-24) were never wrapped,
+    # and this batch adds the 4 newest (Data Factory -> Intelligence API
+    # monetization: insider/short_interest/energy/exchange). Bumped to
+    # 0.2.0 above since this is a real feature addition, not a patch.
+
+    def regime_signal(
+        self, ticker: str, regime: Optional[str] = None, min_trades: int = 5
+    ) -> dict:
+        """Current causal market regime plus the best-performing signal
+        combo for that regime, backed by walk-forward-validated backtests."""
+        return self._get(
+            f"/intelligence/v1/regime-signal/{ticker}",
+            params={"regime": regime, "min_trades": min_trades},
+        )
+
+    def forecast(
+        self,
+        ticker: str,
+        horizon_days: int = 5,
+        n_simulations: Optional[int] = None,
+    ) -> dict:
+        """Bear/Base/Bull price-path fan chart (10th/50th/90th percentile
+        of a real historical-return bootstrap) plus an ML up-probability
+        cross-check and a capital-flow/liquidity regime reading."""
+        return self._get(
+            f"/intelligence/v1/forecast/{ticker}",
+            params={"horizon_days": horizon_days, "n_simulations": n_simulations},
+        )
+
+    def insider(self, ticker: str) -> dict:
+        """SEC Form 4 insider-trading transactions, cross-indexed under
+        the issuer's own EDGAR CIK. Returns None-like data (check
+        response for an error) if the ticker has no US EDGAR CIK match."""
+        return self._get(f"/intelligence/v1/insider/{ticker}")
+
+    def short_interest(self, ticker: str) -> dict:
+        """FINRA's bi-weekly equity short-interest report -- current/
+        previous short shares, average daily volume, days-to-cover,
+        change %."""
+        return self._get(f"/intelligence/v1/short-interest/{ticker}")
+
+    def energy(self, ticker: str) -> dict:
+        """EIA physical-market context (WTI crude, Henry Hub nat-gas,
+        storage) -- only populated for energy-linked tickers (USO, UNG)."""
+        return self._get(f"/intelligence/v1/energy/{ticker}")
+
+    def exchange(self, ticker: str) -> dict:
+        """Same crypto ticker's live stats from Binance and Coinbase side
+        by side -- only populated for tracked crypto tickers."""
+        return self._get(f"/intelligence/v1/exchange/{ticker}")
