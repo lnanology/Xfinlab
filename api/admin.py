@@ -1417,6 +1417,97 @@ def get_finra_short_interest_debug(token: str, request: Request):
     return result
 
 
+@router.get("/admin/email-debug")
+def get_email_debug(token: str, request: Request, send_test: bool = False, test_to: str = None):
+    """2026-08-27: diagnostic for the "Key was issued but the confirmation
+    email failed to send" error AJ hit on the self-serve Intelligence API
+    signup flow. services/email_service.py's EmailService.send() only ever
+    logs `print(f"Email error: {e}")` to server stdout on failure -- not
+    visible from the outside, and this whole SMTP path can't be exercised
+    from the sandbox (no route to Railway's outbound network / real SMTP
+    creds). This endpoint surfaces exactly which step fails and why,
+    without needing Railway CLI log access.
+
+    Step 1 (always runs, no side effect): reports whether each required
+    env var is SET (never the actual secret value) plus the non-secret
+    SMTP_HOST/SMTP_PORT values, then attempts connect -> starttls -> login
+    against the real configured SMTP server, reporting the exact exception
+    and which of those three steps it happened at. This alone diagnoses
+    the overwhelming majority of "email failed" cases (missing env var,
+    wrong host/port, revoked app password, provider blocking the IP) with
+    zero risk of actually sending anything.
+
+    Step 2 (opt-in via send_test=true&test_to=you@example.com): only after
+    step 1's login succeeds, sends one real test email so AJ can confirm
+    delivery end-to-end (not just that auth works) -- e.g. Namecheap/Gmail
+    can accept a login but still silently drop mail past that point."""
+    verify_admin(token, "get_email_debug", request)
+    import smtplib
+
+    env_status = {
+        "EMAIL_ADDRESS": bool(os.getenv("EMAIL_ADDRESS")),
+        "EMAIL_APP_PASSWORD": bool(os.getenv("EMAIL_APP_PASSWORD")),
+        "SMTP_HOST": os.getenv("SMTP_HOST", "smtp.gmail.com"),
+        "SMTP_PORT": int(os.getenv("SMTP_PORT", "587")),
+    }
+
+    if not env_status["EMAIL_ADDRESS"] or not env_status["EMAIL_APP_PASSWORD"]:
+        return {
+            "env": env_status,
+            "conclusion": "EMAIL_ADDRESS and/or EMAIL_APP_PASSWORD is not set on Railway -- "
+                          "smtplib.login() would fail immediately with these missing. Set both "
+                          "in Railway's environment variables and retry this endpoint.",
+        }
+
+    email_address = os.getenv("EMAIL_ADDRESS")
+    email_password = os.getenv("EMAIL_APP_PASSWORD")
+    smtp_host = env_status["SMTP_HOST"]
+    smtp_port = env_status["SMTP_PORT"]
+
+    steps = {"connect": None, "starttls": None, "login": None, "send": None}
+    try:
+        server = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+        steps["connect"] = "ok"
+        try:
+            server.starttls()
+            steps["starttls"] = "ok"
+            try:
+                server.login(email_address, email_password)
+                steps["login"] = "ok"
+
+                if send_test and test_to:
+                    from email.mime.text import MIMEText
+                    from email.mime.multipart import MIMEMultipart
+                    msg = MIMEMultipart("alternative")
+                    msg["Subject"] = "[XFINLAB] email-debug test"
+                    msg["From"] = f"XFINLAB <{email_address}>"
+                    msg["To"] = test_to
+                    msg.attach(MIMEText("<p>This is a test send from /admin/email-debug.</p>", "html"))
+                    server.send_message(msg)
+                    steps["send"] = "ok"
+            except Exception as e:
+                steps["login"] = f"FAILED: {e}"
+        except Exception as e:
+            steps["starttls"] = f"FAILED: {e}"
+        server.quit()
+    except Exception as e:
+        steps["connect"] = f"FAILED: {e}"
+
+    if all(v in (None, "ok") for v in steps.values()) and steps["login"] == "ok":
+        conclusion = (
+            "Login succeeded -- SMTP credentials and host/port are correct. "
+            "Re-run with send_test=true&test_to=you@example.com to confirm actual delivery, "
+            "or if that already worked, the original failure may have been transient "
+            "(e.g. provider rate-limited a burst of signups)."
+        ) if not (send_test and test_to) else (
+            f"Login and test send both succeeded -- check {test_to}'s inbox (and spam folder)."
+        )
+    else:
+        conclusion = "See the first non-'ok' step above for the exact failure point and exception."
+
+    return {"env": env_status, "steps": steps, "conclusion": conclusion}
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """
