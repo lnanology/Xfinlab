@@ -549,12 +549,39 @@ def get_conviction_score(ticker: str) -> Dict:
     avg_conviction = (sum(conviction_values) / len(conviction_values)) if conviction_values else 0
     score = round(0.5 * breadth_score + 0.5 * avg_conviction, 1)
 
+    # 2026-08-26 ("做下一步" after the 13D/13G collector shipped): this is
+    # the real "intent to influence" ingredient the module docstring
+    # said the score was missing. Deliberately kept as its OWN clearly
+    # labeled field, NOT blended into the numeric score above -- folding
+    # a boolean "someone filed an activist 13D" into a continuous 0-100
+    # number would hide the real reason behind a score jump and imply a
+    # false precision (e.g. "conviction went from 60 to 85" tells a user
+    # nothing when the actual story is "an activist showed up"). Keeping
+    # them visually/structurally separate lets the UI say the honest
+    # thing directly: "3 managers hold this AND an activist just filed a
+    # 13D" is a very different, much more specific claim than a single
+    # blended number.
+    activist_signal = {"has_recent_13d": False, "filers": []}
+    try:
+        from services.sec_13d_13g_service import search_recent_filings as _search_13d13g
+        activity = _search_13d13g(ticker)
+        if activity.get("available"):
+            thirteen_ds = [f for f in activity.get("filings", []) if "13D" in (f.get("form_type") or "").upper()]
+            if thirteen_ds:
+                activist_signal = {
+                    "has_recent_13d": True,
+                    "filers": [{"filer_display_name": f["filer_display_name"], "file_date": f["file_date"]} for f in thirteen_ds],
+                }
+    except Exception:
+        pass  # best-effort -- a 13D/13G lookup failure must never break the conviction score itself
+
     return {
         "available": True,
         "score": score,
         "breadth": {"holders": len(holders), "of_tracked": total_tracked},
         "holders_detail": holders_detail,
-        "methodology": "50% breadth (share of tracked managers holding this) + 50% average conviction (each holder's position as a % of their own total 13F portfolio, capped at 25%+ = max). Not a measure of corporate control or influence -- see module docstring.",
+        "activist_signal": activist_signal,
+        "methodology": "50% breadth (share of tracked managers holding this) + 50% average conviction (each holder's position as a % of their own total 13F portfolio, capped at 25%+ = max). activist_signal is separate and NOT part of the 0-100 score -- see module docstring on why. Not a measure of corporate control or influence.",
     }
 
 
