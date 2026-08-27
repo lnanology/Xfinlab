@@ -1365,6 +1365,58 @@ def get_sec_form4_debug(token: str, request: Request, ticker: str):
     return result
 
 
+@router.get("/admin/finra-short-interest-snapshot")
+def get_finra_short_interest_snapshot(token: str, request: Request, ticker: str):
+    """
+    2026-08-27 (Data Factory Step 9b): debug/visibility endpoint for
+    services/finra_short_interest_service.py, same per-ticker-lookup
+    pattern as /admin/sec-form4-snapshot.
+    """
+    verify_admin(token, f"get_finra_short_interest_snapshot:{ticker}", request)
+    from services.finra_short_interest_service import get_short_interest_for_ticker
+    return get_short_interest_for_ticker(ticker)
+
+
+@router.get("/admin/finra-short-interest-debug")
+def get_finra_short_interest_debug(token: str, request: Request):
+    """
+    Upfront diagnostic (same lesson learned this whole session): the one
+    part of this collector that couldn't be verified from the sandbox is
+    which candidate settlement-date file actually exists on FINRA's CDN
+    right now, and whether its column headers match either of the two
+    schema generations this parser tries. Returns the raw HTTP status
+    for EVERY candidate date tried (not just the first success), plus
+    the raw header row and first data row of whichever one worked.
+    """
+    verify_admin(token, "get_finra_short_interest_debug", request)
+    from services.finra_short_interest_service import (
+        _candidate_settlement_dates, FINRA_CSV_URL_TEMPLATE,
+    )
+    from services.outbound_http import get_with_backoff
+
+    attempts = []
+    first_success_text = None
+    for d in _candidate_settlement_dates():
+        url = FINRA_CSV_URL_TEMPLATE.format(date=d.strftime("%Y%m%d"))
+        try:
+            res = get_with_backoff(url, timeout=30)
+            attempts.append({"date": d.isoformat(), "url": url, "status_code": res.status_code})
+            if res.status_code == 200 and first_success_text is None:
+                first_success_text = res.content.decode("utf-8", errors="replace")
+        except Exception as e:
+            attempts.append({"date": d.isoformat(), "url": url, "error": str(e)})
+
+    result = {"attempts": attempts}
+    if first_success_text:
+        lines = first_success_text.splitlines()
+        result["header_row"] = lines[0] if lines else None
+        result["first_data_row"] = lines[1] if len(lines) > 1 else None
+        result["total_lines"] = len(lines)
+    else:
+        result["conclusion"] = "No candidate settlement date returned HTTP 200 -- check the attempts list above; the URL pattern or settlement-date guessing window may need adjusting."
+    return result
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """

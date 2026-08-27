@@ -898,6 +898,19 @@
         </div>
         <div id="form4List"><div class="empty">Enter a ticker above</div></div>
       </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>FINRA Equity Short Interest</span>
+          <span id="finraShortMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Per-ticker lookup, biweekly settlement data from FINRA's public flat files. Days-to-cover = short interest ÷ average daily volume.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="finraShortTickerInput" type="text" placeholder="e.g. GME" style="background:var(--bg2, #0f1420);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;flex:1" onkeydown="if(event.key==='Enter')loadFinraShortInterest()">
+          <button class="btn btn-sm btn-purple" onclick="loadFinraShortInterest()">🔍 Lookup</button>
+        </div>
+        <div id="finraShortList"><div class="empty">Enter a ticker above</div></div>
+      </div>
     </div>
 
     <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
@@ -2319,6 +2332,46 @@ function renderSecForm4(data) {
       <div style="font-weight:700;color:${color}">${sharesStr} ${priceStr}</div>
     </div>
   `; }).join('');
+}
+
+async function loadFinraShortInterest() {
+  const ticker = (document.getElementById('finraShortTickerInput').value || '').trim().toUpperCase();
+  const el = document.getElementById('finraShortList');
+  document.getElementById('finraShortMeta').textContent = '';
+  if (!ticker) { el.innerHTML = '<div class="empty">Enter a ticker above</div>'; return; }
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/finra-short-interest-snapshot?ticker=${encodeURIComponent(ticker)}&token=${adminToken}`);
+    const data = await res.json();
+    renderFinraShortInterest(data);
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load FINRA short interest data</div>';
+  }
+}
+
+function renderFinraShortInterest(data) {
+  const el = document.getElementById('finraShortList');
+  if (!data || !data.available) {
+    document.getElementById('finraShortMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'No short interest data available'}</div>`;
+    return;
+  }
+  document.getElementById('finraShortMeta').textContent = `as of ${data.settlement_date}`;
+  const pct = data.change_pct;
+  const positive = pct !== null && pct !== undefined && pct >= 0;
+  const pctStr = (pct === null || pct === undefined) ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+  el.innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${data.issue_name || data.ticker}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">Days to cover: ${data.days_to_cover ?? '—'} · Avg daily volume: ${(data.avg_daily_volume || 0).toLocaleString()}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">${(data.current_short_shares || 0).toLocaleString()}</div>
+        <div style="font-size:0.72rem;color:${positive ? '#ef4444' : '#22c55e'}">${pctStr} vs prior period</div>
+      </div>
+    </div>
+  `;
 }
 
 async function loadStripeAccountStatus() {
