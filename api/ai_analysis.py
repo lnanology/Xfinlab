@@ -611,6 +611,29 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         exchange_comparison = None
 
+    # 2026-08-27 (Data Factory Step 9, "畀用戶睇" batch 3): SEC Form 4
+    # insider trading + FINRA short interest, the two newest collectors.
+    # Both are per-ticker, event/period-driven signals (not a fixed small
+    # set like CFTC/EIA), so unlike those two this DOES apply to
+    # essentially any US-listed equity ticker -- "available: False" here
+    # means genuinely no data (not found, or no reportable short
+    # position), not "this ticker type isn't supported". Both are the
+    # slowest calls on this page (Form 4 costs several sequential SEC
+    # HTTP hops on a cache miss, same latency profile already accepted
+    # for activist_filings above) but both cache 24h server-side so
+    # repeat views of the same ticker within a day are fast.
+    try:
+        from services.sec_form4_service import get_recent_insider_transactions
+        insider_transactions = get_recent_insider_transactions(symbol)
+    except Exception:
+        insider_transactions = None
+
+    try:
+        from services.finra_short_interest_service import get_short_interest_for_ticker
+        short_interest = get_short_interest_for_ticker(symbol)
+    except Exception:
+        short_interest = None
+
     # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer surface
     # for the same Probabilistic K-Line engine just shipped on the
     # Intelligence API as GET /v1/forecast/{ticker}): bundled into the
@@ -707,5 +730,7 @@ async def ai_analysis(request: Request, body: dict):
             "activist_filings": activist_filings,
             "energy_context": energy_context,
             "exchange_comparison": exchange_comparison,
+            "insider_transactions": insider_transactions,
+            "short_interest": short_interest,
         }
     }

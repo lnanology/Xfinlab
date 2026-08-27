@@ -425,6 +425,33 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </details>
 
+    <!-- 2026-08-27 (Data Factory Step 9, "畀用戶睇" batch 3): SEC Form 4
+         insider trading, from services/sec_form4_service.py. Only
+         non-derivative (actual stock, not option/RSU) transactions from
+         the most recent filings -- hidden unless available AND
+         transactions is non-empty, same honest-empty convention as
+         Institutional Ownership above. -->
+    <details class="xfl-accordion" id="insiderTransactionsAccordion" style="display:none">
+      <summary data-i18n="aa_insider_title">▶ Insider Trading (SEC Form 4)</summary>
+      <div class="xfl-accordion-body">
+        <div id="insiderTransactionsBody"></div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="aa_insider_note">Non-derivative (open-market/direct stock) transactions by this company's own directors, officers, and 10%+ owners, from their most recent SEC Form 4 filings. Not a complete trading history. For research reference only, not investment advice.</div>
+      </div>
+    </details>
+
+    <!-- Same batch: FINRA equity short interest, from services/finra_
+         short_interest_service.py. Hidden unless available -- a ticker
+         genuinely not in the latest report is honest "no reportable
+         short position", shown as no section rather than a misleading
+         zero. -->
+    <details class="xfl-accordion" id="shortInterestAccordion" style="display:none">
+      <summary data-i18n="aa_short_interest_title">▶ Short Interest (FINRA)</summary>
+      <div class="xfl-accordion-body">
+        <div id="shortInterestBody"></div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="aa_short_interest_note">Biweekly settlement data from FINRA's public short interest report. Days-to-cover = short interest ÷ average daily volume. Not investment advice.</div>
+      </div>
+    </details>
+
     <details class="xfl-accordion">
       <summary data-i18n="aa_support_resistance_title">▶ 支持阻力</summary>
       <div class="xfl-accordion-body" id="supportResistanceBody">-</div>
@@ -922,6 +949,66 @@ function renderExchangeComparison(comparison){
     rowFor('Binance', comparison.binance) + rowFor('Coinbase', comparison.coinbase);
 }
 
+// 2026-08-27 (Data Factory Step 9, "畀用戶睇" batch 3): renders services/
+// sec_form4_service.py's get_recent_insider_transactions() result inside
+// #insiderTransactionsAccordion. Hidden unless available AND
+// transactions is non-empty -- same honest-empty convention as
+// renderOwnership/renderActivistFilings above.
+function renderInsiderTransactions(insider){
+  const acc = document.getElementById('insiderTransactionsAccordion');
+  if (!acc) return;
+  if (!insider || !insider.available || !insider.transactions || !insider.transactions.length){
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+  const rows = insider.transactions.slice(0, 10).map(t => {
+    const acquired = t.acquired_disposed === 'A';
+    const color = acquired ? '#22c55e' : (t.acquired_disposed === 'D' ? '#ef4444' : 'var(--text-muted)');
+    const sharesStr = t.shares != null ? t.shares.toLocaleString() : '—';
+    const priceStr = t.price_per_share != null ? `@ $${t.price_per_share.toLocaleString(undefined, {maximumFractionDigits: 2})}` : '';
+    return `<div class="prob-section" style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="prob-label" style="font-weight:600">${t.insider_name || 'Unknown insider'}${t.officer_title ? ` (${t.officer_title})` : ''}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted)">${t.transaction_date || '-'} · ${t.transaction_label || t.transaction_code}</div>
+      </div>
+      <div style="font-weight:700;color:${color}">${sharesStr} ${priceStr}</div>
+    </div>`;
+  }).join('');
+  const s = insider.summary || {};
+  document.getElementById('insiderTransactionsBody').innerHTML = rows +
+    `<div style="margin-top:0.4rem;font-size:0.75rem;color:var(--text-muted)">${s.buy_count || 0} buys · ${s.sell_count || 0} sells (most recent filings)</div>`;
+}
+
+// Same batch: renders services/finra_short_interest_service.py's
+// get_short_interest_for_ticker() result inside #shortInterestAccordion.
+// Hidden unless available -- not being in FINRA's latest report is a
+// genuine "no reportable short position" result, not an error.
+function renderShortInterest(short){
+  const acc = document.getElementById('shortInterestAccordion');
+  if (!acc) return;
+  if (!short || !short.available){
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+  const pct = short.change_pct;
+  const positive = pct !== null && pct !== undefined && pct >= 0;
+  const pctStr = (pct === null || pct === undefined) ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+  document.getElementById('shortInterestBody').innerHTML = `
+    <div class="prob-section" style="margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="prob-label" style="font-weight:600">${short.issue_name || short.ticker}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted)">As of ${short.settlement_date} · Days to cover: ${short.days_to_cover ?? '—'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">${(short.current_short_shares || 0).toLocaleString()}</div>
+        <div style="font-size:0.72rem;color:${positive ? '#ef4444' : '#22c55e'}">${pctStr} vs prior period</div>
+      </div>
+    </div>
+  `;
+}
+
 // 2026-07-25 ("自行建可顯示任何資產嘅K線圖，不用TradingView"): self-hosted
 // candlestick chart (Lightweight Charts, free/open-source, no API key)
 // instead of the TradingView iframe embed, using the real OHLC bars the
@@ -1147,6 +1234,8 @@ async function runAnalysis(){
     renderActivistFilings(data.activist_filings);
     renderEnergyContext(data.energy_context);
     renderExchangeComparison(data.exchange_comparison);
+    renderInsiderTransactions(data.insider_transactions);
+    renderShortInterest(data.short_interest);
 
     // ---- Layer 4: reasons accordion ----
     const reasons = data.reasons || { bullish: [], bearish: [] };
