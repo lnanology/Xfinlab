@@ -32,6 +32,10 @@ codebase rather than duplicating it:
   - Liquidity: services/fred_macro_service.py's new get_liquidity_snapshot()
     (M2 / Fed balance sheet / reverse repo) -- genuine upstream liquidity
     data, US-only (FRED has no equivalent free global series).
+  - Fiscal liquidity (2026-08-27 addition): services/treasury_fiscal_
+    service.py's Treasury General Account balance trend -- the fiscal-side
+    counterpart to the Fed-side liquidity above (see _compute_snapshot's
+    comment for the tailwind/headwind rationale). Also US-only.
   - Volume-based per-symbol flow: formula_engine.money_flow_index(), which
     existed but was never wired into anything -- OBV already is (see
     technical_analysis_service.py's obv_trend, Confluence signal #7).
@@ -132,11 +136,43 @@ def _compute_snapshot() -> Dict:
     except Exception:
         liquidity = {"available": False, "message": "流動性數據暫時無法計算。"}
 
+    # 2026-08-27 (Data Factory Step 8 follow-up, AJ: "加落Capital Flow
+    # Engine"): the FISCAL side of liquidity, complementing FRED's Fed-
+    # side series above. The Treasury General Account (TGA) is the
+    # federal government's own checking account at the Fed -- when its
+    # balance FALLS, the Treasury is spending accumulated cash back into
+    # the economy (a genuine liquidity tailwind, independent of anything
+    # the Fed itself is doing); when it RISES (e.g. after a big debt
+    # issuance settles), cash is being pulled OUT of the economy into
+    # that account (a headwind). Same directional-scaled-to-±100
+    # convention as fred_macro_service.get_liquidity_snapshot's reverse-
+    # repo inversion, not a statistical z-score. Total public debt
+    # outstanding is surfaced for context but deliberately NOT scored --
+    # debt level alone doesn't have a clean, uncontested short-term
+    # direction for market liquidity the way a cash-balance draw/build
+    # does, and this module's honesty rule is to only score what has an
+    # unambiguous sign.
+    try:
+        from services.treasury_fiscal_service import get_snapshot as get_treasury_snapshot
+        fiscal = get_treasury_snapshot()
+    except Exception:
+        fiscal = {"available": False, "message": "財政部數據暫時無法計算。"}
+
+    fiscal_score = None
+    if fiscal.get("available"):
+        tga = fiscal.get("series", {}).get("treasury_general_account_balance_usd_millions")
+        if tga and tga.get("period_change_pct") is not None:
+            # Falling TGA (negative period_change_pct) -> tailwind -> positive score.
+            # x10 scale + clamp to ±100: a ~10%/month TGA swing (a large
+            # but not unprecedented move) maps to a full-strength reading,
+            # matching the FRED liquidity score's own scale.
+            fiscal_score = max(-100.0, min(100.0, round(-tga["period_change_pct"] * 10, 1)))
+
     # Composite: simple average of whichever components are actually
-    # available (region rotation, sector rotation, US liquidity) --
-    # never fabricates a missing component, matches every other honesty
-    # convention in this codebase (FRED's "." handling, dormant-until-
-    # configured Stripe/addon services, etc.).
+    # available (region rotation, sector rotation, US Fed-side liquidity,
+    # US fiscal-side liquidity) -- never fabricates a missing component,
+    # matches every other honesty convention in this codebase (FRED's
+    # "." handling, dormant-until-configured Stripe/addon services, etc.).
     components = []
     if region:
         components.append(region["avg_score"])
@@ -144,6 +180,8 @@ def _compute_snapshot() -> Dict:
         components.append(sector["avg_score"])
     if liquidity.get("available"):
         components.append(liquidity["liquidity_score"])
+    if fiscal_score is not None:
+        components.append(fiscal_score)
 
     composite = round(sum(components) / len(components), 1) if components else None
     if composite is None:
@@ -164,6 +202,7 @@ def _compute_snapshot() -> Dict:
         "region_rotation": region,
         "sector_rotation": sector,
         "liquidity": liquidity,
+        "fiscal": {**fiscal, "fiscal_score": fiscal_score} if fiscal.get("available") else fiscal,
     }
 
 
