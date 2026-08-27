@@ -555,6 +555,45 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+def _run_eia_energy_refresh_job():
+    try:
+        from services.eia_energy_service import get_snapshot
+        get_snapshot()
+    except Exception:
+        pass
+
+# EIA spot prices update daily, storage weekly (Thursdays) -- once a day
+# is enough for both without over-polling a series that only moves
+# weekly.
+_push_scheduler.add_job(
+    _run_eia_energy_refresh_job,
+    "cron",
+    hour=5,
+    minute=0,
+    id="eia_energy_refresh",
+    replace_existing=True,
+)
+
+
+def _run_treasury_fiscal_refresh_job():
+    try:
+        from services.treasury_fiscal_service import get_snapshot
+        get_snapshot()
+    except Exception:
+        pass
+
+# Both Treasury series update once per business day (end of day) -- a
+# single daily refresh keeps this fresh without hammering a no-API-key
+# public endpoint.
+_push_scheduler.add_job(
+    _run_treasury_fiscal_refresh_job,
+    "cron",
+    hour=5,
+    minute=30,
+    id="treasury_fiscal_refresh",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

@@ -1169,6 +1169,126 @@ def get_binance_exchange_snapshot(token: str, request: Request):
     return {"tickers": get_all_tickers()}
 
 
+@router.get("/admin/eia-energy-snapshot")
+def get_eia_energy_snapshot(token: str, request: Request):
+    """
+    2026-08-27 (Data Factory Step 8a, AJ: "一次過全加可以嗎"): debug/
+    visibility endpoint for services/eia_energy_service.py, same pattern
+    as /admin/cftc-cot-snapshot.
+    """
+    verify_admin(token, "get_eia_energy_snapshot", request)
+    from services.eia_energy_service import get_snapshot, is_available, EIA_API_KEY_ENV
+    if not is_available():
+        return {"available": False, "message": f"{EIA_API_KEY_ENV} not set on this environment."}
+    return get_snapshot()
+
+
+@router.get("/admin/eia-energy-debug")
+def get_eia_energy_debug(token: str, request: Request):
+    """
+    Upfront diagnostic (same lesson learned from the SEC 13F/13D-13G
+    debugging sagas -- build this BEFORE a live bug is reported, not
+    after) since the sandbox can't reach api.eia.gov directly. Runs one
+    live request per configured series and returns the raw HTTP status +
+    parsed row count for each, so if EIA has reorganized a route/series
+    ID since this was written, the exact failing route/series shows up
+    here immediately instead of a generic 'zero observations' error.
+    """
+    verify_admin(token, "get_eia_energy_debug", request)
+    import os
+    from services.eia_energy_service import _SERIES, EIA_BASE_URL, EIA_API_KEY_ENV
+    from services.outbound_http import get_with_backoff
+
+    key_set = bool(os.getenv(EIA_API_KEY_ENV))
+    results = {}
+    for series_key, meta in _SERIES.items():
+        url = f"{EIA_BASE_URL}/{meta['route']}/data/"
+        params = {
+            "api_key": os.getenv(EIA_API_KEY_ENV, ""),
+            "frequency": meta["frequency"],
+            "data[0]": "value",
+            "facets[series][]": meta["series_id"],
+            "sort[0][column]": "period",
+            "sort[0][direction]": "desc",
+            "offset": 0,
+            "length": 1,
+        }
+        try:
+            res = get_with_backoff(url, params=params, timeout=15)
+            entry = {"route": meta["route"], "series_id": meta["series_id"], "status_code": res.status_code}
+            if res.status_code == 200:
+                payload = res.json()
+                rows = (payload.get("response") or {}).get("data") or []
+                entry["row_count"] = len(rows)
+                entry["sample_row"] = rows[0] if rows else None
+            else:
+                entry["body_snippet"] = res.text[:300]
+            results[series_key] = entry
+        except Exception as e:
+            results[series_key] = {"route": meta["route"], "series_id": meta["series_id"], "error": str(e)}
+    return {"key_set": key_set, "results": results}
+
+
+@router.get("/admin/treasury-fiscal-snapshot")
+def get_treasury_fiscal_snapshot(token: str, request: Request):
+    """
+    2026-08-27 (Data Factory Step 8b): debug/visibility endpoint for
+    services/treasury_fiscal_service.py, same pattern as
+    /admin/cftc-cot-snapshot. No API key gate -- Treasury's Fiscal Data
+    API is open with no key required.
+    """
+    verify_admin(token, "get_treasury_fiscal_snapshot", request)
+    from services.treasury_fiscal_service import get_snapshot
+    return get_snapshot()
+
+
+@router.get("/admin/treasury-fiscal-debug")
+def get_treasury_fiscal_debug(token: str, request: Request):
+    """Same upfront-diagnostic rationale as /admin/eia-energy-debug --
+    one live request per configured Treasury dataset, raw status +
+    row count, so a field-name or route drift surfaces immediately."""
+    verify_admin(token, "get_treasury_fiscal_debug", request)
+    from services.treasury_fiscal_service import _SERIES, TREASURY_BASE_URL
+    from services.outbound_http import get_with_backoff
+
+    results = {}
+    for series_key, meta in _SERIES.items():
+        url = f"{TREASURY_BASE_URL}/{meta['path']}"
+        params = {
+            "fields": f"{meta['date_field']},{meta['value_field']}",
+            "sort": f"-{meta['date_field']}",
+            "page[size]": 1,
+        }
+        if meta["extra_filter"]:
+            params["filter"] = meta["extra_filter"]
+        try:
+            res = get_with_backoff(url, params=params, timeout=15)
+            entry = {"path": meta["path"], "status_code": res.status_code}
+            if res.status_code == 200:
+                payload = res.json()
+                rows = payload.get("data") or []
+                entry["row_count"] = len(rows)
+                entry["sample_row"] = rows[0] if rows else None
+            else:
+                entry["body_snippet"] = res.text[:300]
+            results[series_key] = entry
+        except Exception as e:
+            results[series_key] = {"path": meta["path"], "error": str(e)}
+    return {"results": results}
+
+
+@router.get("/admin/coinbase-exchange-snapshot")
+def get_coinbase_exchange_snapshot(token: str, request: Request):
+    """
+    2026-08-27 (Data Factory Step 8c): debug/visibility endpoint for
+    services/coinbase_exchange_service.py, same pattern as
+    /admin/binance-exchange-snapshot.
+    """
+    verify_admin(token, "get_coinbase_exchange_snapshot", request)
+    from services.coinbase_exchange_service import get_all_tickers
+    return {"tickers": get_all_tickers()}
+
+
 @router.get("/admin/security-scan")
 def get_security_scan(token: str, request: Request):
     """
