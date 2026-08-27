@@ -580,6 +580,37 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         activist_filings = None
 
+    # 2026-08-27 (Data Factory Step 8, "畀用戶睇" batch 2): EIA energy
+    # fundamentals for the two commodity ETFs that have a real EIA
+    # mapping (see eia_energy_service._TICKER_TO_SERIES -- USO -> WTI
+    # spot, UNG -> Henry Hub spot + Lower-48 storage). None for every
+    # other ticker, same "no mapping = no section" convention as
+    # cot_positioning above -- this and cot_positioning are meant to be
+    # read together on the frontend (positioning vs. physical
+    # fundamentals for the same commodity).
+    try:
+        from services.eia_energy_service import get_energy_context_for_ticker
+        energy_context = get_energy_context_for_ticker(symbol)
+    except Exception:
+        energy_context = None
+
+    # exchange_comparison: same coin's stats from two real spot exchanges
+    # (Binance + Coinbase) side by side -- only populated for the 10
+    # tracked crypto tickers (both services return None for anything
+    # else), so a plain equity ticker just gets exchange_comparison: null
+    # like every other crypto-only or commodity-only field above.
+    try:
+        from services.crypto_exchange_service import get_ticker as _get_binance_ticker
+        from services.coinbase_exchange_service import get_ticker as _get_coinbase_ticker
+        _binance_row = _get_binance_ticker(symbol)
+        _coinbase_row = _get_coinbase_ticker(symbol)
+        exchange_comparison = (
+            {"binance": _binance_row, "coinbase": _coinbase_row}
+            if (_binance_row or _coinbase_row) else None
+        )
+    except Exception:
+        exchange_comparison = None
+
     # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer surface
     # for the same Probabilistic K-Line engine just shipped on the
     # Intelligence API as GET /v1/forecast/{ticker}): bundled into the
@@ -674,5 +705,7 @@ async def ai_analysis(request: Request, body: dict):
             "ownership": ownership,
             "cot_positioning": cot_positioning,
             "activist_filings": activist_filings,
+            "energy_context": energy_context,
+            "exchange_comparison": exchange_comparison,
         }
     }
