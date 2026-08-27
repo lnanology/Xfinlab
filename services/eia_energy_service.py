@@ -83,8 +83,15 @@ _SERIES = {
         "cot_contract_code": "067651",
     },
     "henry_hub_natgas_spot_usd_mmbtu": {
-        "route": "natural-gas/pri/sum", "series_id": "RNGWHHD", "frequency": "daily",
-        "unit": "$/MMBTU", "label": "Henry Hub Natural Gas Spot Price",
+        # 2026-08-27: confirmed live via /admin/eia-energy-debug -- this
+        # route only accepts "monthly"/"annual" frequency ("Invalid
+        # frequency 'daily' provided. The only valid frequencies are
+        # 'monthly', and 'annual'." per EIA's own error body), unlike
+        # petroleum/pri/spt which does support daily. RNGWHHD itself is
+        # still the correct series -- just read as a monthly average
+        # here, not a daily print.
+        "route": "natural-gas/pri/sum", "series_id": "RNGWHHD", "frequency": "monthly",
+        "unit": "$/MMBTU", "label": "Henry Hub Natural Gas Price (Monthly Avg)",
         "cot_contract_code": "023651",
     },
     "natgas_storage_lower48_bcf": {

@@ -65,8 +65,19 @@ _SERIES = {
         "unit": "USD", "label": "Total Public Debt Outstanding",
     },
     "treasury_general_account_balance_usd_millions": {
+        # 2026-08-27: confirmed live via /admin/treasury-fiscal-debug --
+        # the filter+route are correct (a real row for this account_type
+        # comes back with HTTP 200), but the most recent record_date's
+        # close_today_bal can be the literal string "null" -- Treasury
+        # appears to publish open_today_bal for "today" before
+        # close_today_bal is finalized (closing balance for a business
+        # day isn't known until it's over). value_field is a list tried
+        # in order per row, same defensive-multi-field-name pattern as
+        # cftc_cot_service.py's noncomm_postions_spread_all typo
+        # handling -- never fabricate, just prefer whichever is actually
+        # populated for that row.
         "path": "v1/accounting/dts/operating_cash_balance",
-        "date_field": "record_date", "value_field": "close_today_bal",
+        "date_field": "record_date", "value_field": ["close_today_bal", "open_today_bal"],
         "extra_filter": "account_type:eq:Treasury General Account (TGA) Closing Balance",
         "unit": "USD millions", "label": "Treasury General Account (TGA) Closing Balance",
     },
@@ -157,9 +168,15 @@ def _fetch_series(series_key: str, n_obs: int = 30) -> Optional[list]:
     if not is_source_enabled(SOURCE_KEY):
         return (cached["observations"] if cached else None) or _load_persisted(series_key, n_obs)
 
+    # value_field may be a single field name or a list of candidate field
+    # names tried in order per row (see the TGA series' comment above) --
+    # normalize to a list once here so the rest of this function doesn't
+    # need to care which it got.
+    value_fields = meta["value_field"] if isinstance(meta["value_field"], list) else [meta["value_field"]]
+
     url = f"{TREASURY_BASE_URL}/{meta['path']}"
     params = {
-        "fields": f"{meta['date_field']},{meta['value_field']}",
+        "fields": f"{meta['date_field']},{','.join(value_fields)}",
         "sort": f"-{meta['date_field']}",
         "page[size]": n_obs,
     }
@@ -182,10 +199,14 @@ def _fetch_series(series_key: str, n_obs: int = 30) -> Optional[list]:
     rows = payload.get("data") or []
     observations = []
     for row in reversed(rows):  # API gave newest-first (sort desc); store oldest-first
-        value = _to_float(row.get(meta["value_field"]))
+        value = None
+        for field in value_fields:
+            value = _to_float(row.get(field))
+            if value is not None:
+                break
         record_date = row.get(meta["date_field"])
         if value is None or not record_date:
-            continue  # genuine missing observation -- never fabricate a fill-in
+            continue  # genuine missing observation (e.g. today's closing balance not posted yet) -- never fabricate a fill-in
         observations.append({"record_date": record_date, "value": value})
 
     if observations:

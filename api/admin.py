@@ -1253,11 +1253,12 @@ def get_treasury_fiscal_debug(token: str, request: Request):
 
     results = {}
     for series_key, meta in _SERIES.items():
+        value_fields = meta["value_field"] if isinstance(meta["value_field"], list) else [meta["value_field"]]
         url = f"{TREASURY_BASE_URL}/{meta['path']}"
         params = {
-            "fields": f"{meta['date_field']},{meta['value_field']}",
+            "fields": f"{meta['date_field']},{','.join(value_fields)}",
             "sort": f"-{meta['date_field']}",
-            "page[size]": 1,
+            "page[size]": 5,  # a few rows, not just 1 -- so a null-on-latest-day case (like TGA's close_today_bal) is visible instead of looking like a hard failure
         }
         if meta["extra_filter"]:
             params["filter"] = meta["extra_filter"]
@@ -1268,7 +1269,7 @@ def get_treasury_fiscal_debug(token: str, request: Request):
                 payload = res.json()
                 rows = payload.get("data") or []
                 entry["row_count"] = len(rows)
-                entry["sample_row"] = rows[0] if rows else None
+                entry["sample_rows"] = rows[:5]
             else:
                 entry["body_snippet"] = res.text[:300]
             results[series_key] = entry
