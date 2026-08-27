@@ -259,6 +259,10 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="stress-test" data-i18n="ia_ep6_name">Monte Carlo Stress Test</option>
           <option value="regime-signal" data-i18n="ia_ep7_name">Regime-Aware Signal</option>
           <option value="forecast" data-i18n="ia_ep8_name">Probabilistic Forecast</option>
+          <option value="insider" data-i18n="ia_ep9_name">Insider Trading</option>
+          <option value="short-interest" data-i18n="ia_ep10_name">Short Interest</option>
+          <option value="energy" data-i18n="ia_ep11_name">Energy Fundamentals</option>
+          <option value="exchange" data-i18n="ia_ep12_name">Exchange Comparison</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -283,7 +287,7 @@ details.schema-details[open] summary::after{content:" ▴"}
   </div>
 
   <div class="section" id="endpoints">
-    <div class="section-title" data-i18n="ia_ep_title">Eight endpoints, one API key</div>
+    <div class="section-title" data-i18n="ia_ep_title">Twelve endpoints, one API key</div>
     <div class="section-sub"><span data-i18n="ia_ep_sub">Every response is AI-structured JSON — never raw scraped article text.</span> <a href="https://api.xfinlab.com/api/intelligence/openapi.json" target="_blank" rel="noopener" data-i18n="ia_openapi_link">View OpenAPI spec →</a> <a href="https://api.xfinlab.com/api/intelligence/postman.json" target="_blank" rel="noopener" data-i18n="ia_postman_link">Download Postman collection →</a></div>
     <!-- 2026-08-17 (task #4 follow-up, upgrade #4): live, not historical --
          calls GET /intelligence/status on load and renders per-capability
@@ -495,6 +499,97 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field"><code>meta.ticker</code>, <code>meta.horizon_days</code></div>
           </div>
           <p class="schema-note" data-i18n="ia_schema_note_forecast">horizon_days accepts 1-60 (query param, default 5). This endpoint never fabricates a fixed bull/base/bear probability split — the returned band_note explains the honest statistical interpretation of the percentile band instead.</p>
+        </details>
+      </div>
+      <!-- 2026-08-27 (Data Factory -> Intelligence API monetization batch):
+           four endpoints wrapping the newest Data Factory collectors --
+           SEC Form 4 insider trading, FINRA short interest, EIA energy
+           fundamentals, and a Binance/Coinbase exchange comparison. Pure
+           packaging, no new computation -- same honesty posture as every
+           other card here: soft-fail to data:null with an error string,
+           never a fabricated reading for an out-of-universe ticker. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4l2 2 4-4"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/insider/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep9_name">Insider Trading</div>
+        <div class="ep-desc" data-i18n="ia_ep9_desc">SEC Form 4 insider-trading transactions, cross-indexed under the issuer's own EDGAR CIK — not just what the issuer itself filed. Non-derivative open-market activity from the most recent filings, with a buy/sell summary. 24h server-side cached.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.transactions</code> <span class="schema-type">array</span> — most recent filings, newest first</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>insider_name</code>, <code>officer_title</code> <span class="schema-type">string|null</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>is_director</code>, <code>is_officer</code>, <code>is_ten_percent_owner</code> <span class="schema-type">bool</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>transaction_date</code>, <code>transaction_code</code>, <code>transaction_label</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>shares</code>, <code>price_per_share</code>, <code>shares_owned_after</code> <span class="schema-type">number|null</span> — gifts/some grants have no price</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>acquired_disposed</code> <span class="schema-type">"A"|"D"</span></div>
+            <div class="schema-field"><code>data.summary</code> <span class="schema-type">object</span> — {buy_count, sell_count, net_shares, net_value_usd}; net_value_usd only sums rows with both a price and share count</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_insider">Covers non-derivative (direct open-market stock) transactions only — not option/RSU activity, and not a complete trading history. Returns data:null with an error string for tickers not resolvable to a US EDGAR CIK.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3h-6v6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/short-interest/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep10_name">Short Interest</div>
+        <div class="ep-desc" data-i18n="ia_ep10_desc">FINRA's bi-weekly equity short-interest report — current/previous reported short shares, average daily volume, days-to-cover, and period-over-period change. From FINRA's genuinely free public flat file, not the member-firm-gated Query API.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.issue_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.settlement_date</code> <span class="schema-type">string</span> — ISO 8601, the biweekly reporting date this snapshot covers</div>
+            <div class="schema-field"><code>data.current_short_shares</code>, <code>data.previous_short_shares</code>, <code>data.avg_daily_volume</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>data.days_to_cover</code>, <code>data.change_pct</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_short_interest">A `data:null` response for a covered ticker is a real, honest "not currently shorted at reportable levels" result, not necessarily an error — check the accompanying error string to tell the two cases apart.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 4 5 7 5 10a5 5 0 0 1-10 0c0-3 2-6 5-10z"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/energy/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep11_name">Energy Fundamentals</div>
+        <div class="ep-desc" data-i18n="ia_ep11_desc">EIA physical-market context for energy-linked tickers — WTI crude spot, Henry Hub natural-gas spot, and Lower-48 working natural-gas storage. Only populated for tickers with a real crude/nat-gas linkage (currently USO, UNG).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.series</code> <span class="schema-type">object</span> — dynamically keyed by EIA series (e.g. wti_crude_spot_usd_bbl), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>period</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_energy">Returns data:null for any ticker without a real physical-market linkage — never a fabricated reading for an unrelated symbol. Coverage is USO (WTI crude) and UNG (Henry Hub + storage) today.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/exchange/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep12_name">Exchange Comparison</div>
+        <div class="ep-desc" data-i18n="ia_ep12_desc">The same crypto ticker's live 24h stats from two real spot exchanges — Binance and Coinbase — side by side. Only populated for the tracked crypto tickers both venues cover.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.binance</code>, <code>data.coinbase</code> <span class="schema-type">object|null</span> — either can independently be null on a venue-specific miss</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>ticker</code>, <code>last_price</code>, <code>price_change_pct_24h</code>, <code>high_24h</code>, <code>low_24h</code>, <code>volume_24h</code></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>binance_symbol</code> <span class="schema-type">string</span> — Binance object only; <code>coinbase_product_id</code> <span class="schema-type">string</span> — Coinbase object only</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>quote_volume_24h</code> <span class="schema-type">number</span> — Binance (real); <code>quote_volume_24h_usd_est</code> <span class="schema-type">number</span> + <code>quote_volume_is_estimated: true</code> — Coinbase (derived, not a real per-trade figure)</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_exchange">Both binance and coinbase are null together only when the ticker isn't tracked by either venue — the response never mixes a real reading from one exchange with a fabricated one from the other.</p>
         </details>
       </div>
     </div>
@@ -835,6 +930,12 @@ const TRY_ENDPOINTS = {
   // needsAmount below so this can show the horizon field WITHOUT the
   // amount field (previously the two were tied together).
   'forecast':        { method: 'GET',  needsTicker: true,  needsAmount: false, needsHorizon: true, path: function(tk) { const h = parseInt((document.getElementById('tryHorizon')||{}).value, 10) || 5; return '/intelligence/v1/forecast/' + encodeURIComponent(tk) + '?horizon_days=' + h; } },
+  // 2026-08-27 (Data Factory -> Intelligence API monetization batch):
+  // all four are simple GET-by-ticker, no amount/horizon fields needed.
+  'insider':         { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/insider/' + encodeURIComponent(tk); } },
+  'short-interest':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/short-interest/' + encodeURIComponent(tk); } },
+  'energy':          { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/energy/' + encodeURIComponent(tk); } },
+  'exchange':        { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/exchange/' + encodeURIComponent(tk); } },
 };
 
 function tryUpdateFields() {
@@ -942,8 +1043,12 @@ async function applyStatusWidget() {
     const upCount = entries.filter(function(e) { return e[1] === true; }).length;
     const allUp = upCount === entries.length;
     document.getElementById('statusDot').className = allUp ? 'status-dot-ok' : 'status-dot-down';
+    // 2026-08-27: was hardcoded "All 7 endpoints operational" -- stale the
+    // moment a new capability key was added to GET /intelligence/status
+    // (like this session's 4). Uses entries.length dynamically so this
+    // never needs a manual update again when the endpoint count changes.
     el.textContent = allUp
-      ? 'All 7 endpoints operational'
+      ? 'All ' + entries.length + ' endpoints operational'
       : upCount + '/' + entries.length + ' endpoints operational (' + entries.filter(function(e){return e[1]!==true;}).map(function(e){return e[0];}).join(', ') + ' degraded)';
   } catch (e) {
     el.textContent = 'Live status unavailable right now';
