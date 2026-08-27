@@ -253,6 +253,10 @@ def intelligence_status():
         "stress_test": True,  # pure computation once price history resolves
         "regime_signal": True,  # reads a local persisted leaderboard, no external gate
         "forecast": True,  # pure computation once price history resolves, ml_cross_check/capital_flow_context degrade individually rather than gating the whole endpoint
+        "insider": True,  # never 503s -- returns data: null for a ticker with no CIK match or an upstream miss
+        "short_interest": True,  # never 503s -- returns data: null for no reportable short position or an upstream miss
+        "energy": True,  # never 503s -- returns data: null for a ticker with no crude/nat-gas linkage
+        "exchange": True,  # never 503s -- returns data: null for a non-crypto ticker
     })
 
 
@@ -267,6 +271,15 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-27",
+        "changes": [
+            {"type": "added", "text": "GET /v1/insider/{ticker} -- SEC Form 4 insider-trading transactions, cross-indexed by issuer CIK via EDGAR."},
+            {"type": "added", "text": "GET /v1/short-interest/{ticker} -- FINRA bi-weekly equity short interest (current/previous shares, days-to-cover, change %)."},
+            {"type": "added", "text": "GET /v1/energy/{ticker} -- EIA WTI crude / Henry Hub nat-gas / storage context for energy-linked tickers (USO, UNG)."},
+            {"type": "added", "text": "GET /v1/exchange/{ticker} -- same crypto ticker's live stats from Binance and Coinbase side by side."},
+        ],
+    },
     {
         "date": "2026-08-24",
         "changes": [
@@ -1013,6 +1026,124 @@ def intelligence_regime_signal(
 
 
 # ---------------------------------------------------------------------------
+# 2026-08-27 (Data Factory -> Intelligence API monetization; AJ's selection
+# "加入Intelligence API (推薦)" after Data Factory's 11 sources went live
+# and fully surfaced on ai-analysis.html with diminishing marginal returns
+# on adding an 12th source vs. monetizing the ones already built): four new
+# endpoints wrapping the newest Data Factory collectors as sellable API
+# product -- pure packaging, no new computation, same honesty posture as
+# every other endpoint in this router. All four soft-fail to `data: null`
+# with an `error` string on an upstream miss or an out-of-universe ticker
+# (e.g. energy context requested for a ticker with no crude/nat-gas
+# linkage, or exchange comparison for a non-crypto ticker) -- never a
+# fabricated reading.
+# ---------------------------------------------------------------------------
+
+@router.get("/intelligence/v1/insider/{ticker}")
+def intelligence_insider(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """SEC Form 4 insider-trading transactions for `ticker` (services/
+    sec_form4_service.py -- non-derivative open-market transactions from
+    the most recent filings cross-indexed under the issuer's own CIK via
+    EDGAR's browse-edgar feed, not just what the issuer itself filed).
+    24h server-side cached, so repeat calls for the same ticker within a
+    day don't re-hit EDGAR."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "insider", response, ticker=ticker.upper())
+
+    from services.sec_form4_service import get_recent_insider_transactions
+
+    ticker = ticker.upper().strip()
+    result = get_recent_insider_transactions(ticker)
+    if not result or not result.get("available"):
+        return _envelope(data=None, error=(result or {}).get("message", f"No insider-trading data available for {ticker}"))
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
+@router.get("/intelligence/v1/short-interest/{ticker}")
+def intelligence_short_interest(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """FINRA bi-weekly equity short-interest for `ticker` (services/
+    finra_short_interest_service.py -- the genuinely free public
+    settlement-date flat file, distinct from FINRA's member-firm-gated
+    Query API). `available: false` with no reported short position is a
+    real, honest "not currently shorted at reportable levels" result, not
+    an error."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "short_interest", response, ticker=ticker.upper())
+
+    from services.finra_short_interest_service import get_short_interest_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_short_interest_for_ticker(ticker)
+    if not result or not result.get("available"):
+        return _envelope(data=None, error=(result or {}).get("message", f"No short-interest data available for {ticker}"))
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
+@router.get("/intelligence/v1/energy/{ticker}")
+def intelligence_energy(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """EIA energy-fundamentals context for `ticker` (services/eia_energy_
+    service.py -- WTI crude spot, Henry Hub nat-gas spot, and Lower-48
+    working nat-gas storage). Only populated for tickers with a real
+    crude/nat-gas linkage (currently USO/UNG, see that module's
+    _TICKER_TO_SERIES) -- any other ticker returns `data: null`, never a
+    fabricated reading for an unrelated symbol."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "energy", response, ticker=ticker.upper())
+
+    from services.eia_energy_service import get_energy_context_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_energy_context_for_ticker(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No energy-fundamentals linkage for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
+@router.get("/intelligence/v1/exchange/{ticker}")
+def intelligence_exchange(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Same crypto ticker's live 24h stats from two real spot exchanges --
+    Binance (services/crypto_exchange_service.py) and Coinbase (services/
+    coinbase_exchange_service.py) -- side by side. Only populated for the
+    tracked crypto tickers both services cover; any other ticker returns
+    `data: null`, never a fabricated cross-exchange reading."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "exchange", response, ticker=ticker.upper())
+
+    from services.crypto_exchange_service import get_ticker as _get_binance_ticker
+    from services.coinbase_exchange_service import get_ticker as _get_coinbase_ticker
+
+    ticker = ticker.upper().strip()
+    binance_row = _get_binance_ticker(ticker)
+    coinbase_row = _get_coinbase_ticker(ticker)
+    if not binance_row and not coinbase_row:
+        return _envelope(data=None, error=f"No exchange data available for {ticker}")
+
+    return _envelope(
+        data={"binance": binance_row, "coinbase": coinbase_row},
+        meta={"ticker": ticker},
+    )
+
+
+# ---------------------------------------------------------------------------
 # 2026-08-17 (task #4 follow-up, AJ: "重有咩可以升級" -- upgrade #2, OpenAPI
 # spec export): a hand-scoped OpenAPI 3.x document covering ONLY the 7/8
 # publicly-documented endpoints above -- deliberately NOT the app's default
@@ -1037,6 +1168,10 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/technical/{ticker}",
     "/intelligence/v1/stress-test",
     "/intelligence/v1/regime-signal/{ticker}",
+    "/intelligence/v1/insider/{ticker}",
+    "/intelligence/v1/short-interest/{ticker}",
+    "/intelligence/v1/energy/{ticker}",
+    "/intelligence/v1/exchange/{ticker}",
 }
 
 # Endpoints that can return a 503 (upstream engine unreachable) on top of

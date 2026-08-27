@@ -118,6 +118,21 @@ ENDPOINT_WEIGHT = {
     # to reflect the extra (cheap but real) ML inference step. Same
     # pending-business-approval caveat as every other number in this dict.
     "forecast": 4,
+    # 2026-08-27 (Data Factory -> Intelligence API monetization batch):
+    # four endpoints wrapping the newest Data Factory collectors. All are
+    # single real network fetch (each with its own on-server cache: 24h
+    # for insider/short_interest, shorter for energy/exchange) + light
+    # parsing -- no LLM call, no fan-out, so weighted with the other
+    # single-fetch endpoints (`technical`/`stress_test`/`regime`) rather
+    # than the fan-out (`world_map`) or LLM-backed (`intel`/`debate`)
+    # tiers. `insider` costs slightly more than the others since a cache
+    # miss can mean parsing several Form 4 XML filings, not just one file
+    # read. Same pending-business-approval caveat as every other number
+    # in this dict.
+    "insider": 3,
+    "short_interest": 2,
+    "energy": 2,
+    "exchange": 2,
 }
 
 
