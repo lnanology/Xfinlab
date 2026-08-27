@@ -1514,9 +1514,29 @@ def get_email_debug(token: str, request: Request, send_test: bool = False, test_
             _auth_status == 401 and "restricted_api_key" in result.get("auth_check", {}).get("body", "")
         )
         if send_test and test_to and _key_likely_sendable:
-            from services.email_service import EmailService
-            sent = EmailService.send(test_to, "[XFINLAB] email-debug test (Resend)", "<p>This is a test send from /admin/email-debug.</p>")
-            result["send_test"] = {"to": test_to, "sent": sent}
+            # 2026-08-27: calls Resend directly (not EmailService.send())
+            # so the real status_code/body reaches this response -- send()
+            # only ever print()s its failure reason to server stdout,
+            # invisible without Railway CLI log access (the exact same gap
+            # this whole endpoint exists to close for the SMTP path above).
+            from services.email_service import RESEND_FROM_EMAIL as _from
+            from_field = _from if "<" in _from else f"XFINLAB <{_from}>"
+            try:
+                send_resp = requests.post(
+                    "https://api.resend.com/emails",
+                    headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                    json={"from": from_field, "to": [test_to], "subject": "[XFINLAB] email-debug test (Resend)",
+                          "html": "<p>This is a test send from /admin/email-debug.</p>"},
+                    timeout=15,
+                )
+                result["send_test"] = {
+                    "to": test_to,
+                    "sent": send_resp.status_code in (200, 201),
+                    "status_code": send_resp.status_code,
+                    "body": send_resp.text[:500],
+                }
+            except Exception as e:
+                result["send_test"] = {"to": test_to, "sent": False, "error": str(e)}
 
         return result
 
