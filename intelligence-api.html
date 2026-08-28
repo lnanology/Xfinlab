@@ -291,7 +291,7 @@ details.schema-details[open] summary::after{content:" ▴"}
   </div>
 
   <div class="section" id="endpoints">
-    <div class="section-title" data-i18n="ia_ep_title">Sixteen endpoints, one API key</div>
+    <div class="section-title" data-i18n="ia_ep_title">Nineteen endpoints, one API key</div>
     <div class="section-sub"><span data-i18n="ia_ep_sub">Every response is AI-structured JSON — never raw scraped article text.</span> <a href="https://api.xfinlab.com/api/intelligence/openapi.json" target="_blank" rel="noopener" data-i18n="ia_openapi_link">View OpenAPI spec →</a> <a href="https://api.xfinlab.com/api/intelligence/postman.json" target="_blank" rel="noopener" data-i18n="ia_postman_link">Download Postman collection →</a></div>
     <!-- 2026-08-17 (task #4 follow-up, upgrade #4): live, not historical --
          calls GET /intelligence/status on load and renders per-capability
@@ -677,6 +677,31 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
           </div>
           <p class="schema-note" data-i18n="ia_schema_note_agriculture">Returns data:null for any ticker without a real commodity linkage. Coverage is CORN, WEAT, SOYB today.</p>
+        </details>
+      </div>
+      <!-- 2026-08-28 (AJ: "重有咩賺錢位" -> Webhook Pro專屬): push
+           notifications instead of polling. Deliberately NOT wired into
+           the Try-it console above (that widget is GET/ticker-shaped;
+           this is a 3-endpoint POST+GET+DELETE management surface) --
+           documented here so a Pro developer knows it exists, tested via
+           curl/SDK per the code examples below instead. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 0-5 5v4l-2 4h14l-2-4V7a5 5 0 0 0-5-5z"/><path d="M9 18a3 3 0 0 0 6 0"/></svg></div>
+          <span class="ep-weight" style="background:var(--accent-2,#7c3aed)">Pro</span>
+        </div>
+        <span class="ep-tag">POST /v1/webhooks/subscribe · GET /v1/webhooks · DELETE /v1/webhooks/{id}</span>
+        <div class="ep-name" data-i18n="ia_ep17_name">Webhooks (Push Notifications)</div>
+        <div class="ep-desc" data-i18n="ia_ep17_desc">Get notified the moment a real event happens instead of polling. Two event types today: vix_regime_change (market-wide contango/backwardation flip) and new_13d_filing (per-ticker, fires when a watched ticker's activist-filing count increases). Both are backed by daily scheduled refresh jobs, so delivery is same-day, never a fabricated "real-time" claim. Pro-tier only -- a free-tier key gets a 403.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>POST /subscribe</code> body: <code>event_type</code> <span class="schema-type">string</span>, <code>url</code> <span class="schema-type">string</span> (must start with https://), <code>ticker</code> <span class="schema-type">string, required for new_13d_filing only</span></div>
+            <div class="schema-field"><code>data.id</code> <span class="schema-type">number</span> -- your new subscription's id, used to unsubscribe</div>
+            <div class="schema-field"><code>GET /webhooks</code> returns <code>data.webhooks</code> <span class="schema-type">array</span> -- every subscription on your own key, with <code>fail_count</code>/<code>last_delivered_at</code>/<code>last_status_code</code></div>
+            <div class="schema-field">Delivered payload: <code>{"event", "ticker", "data", "delivered_at"}</code> POSTed to your URL</div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_webhooks">A subscription auto-deactivates after 5 consecutive delivery failures (check GET /webhooks for fail_count) -- re-subscribe once your endpoint is back up. Delivery is best-effort and fire-and-forget: a slow/dead receiver never blocks or retries indefinitely.</p>
         </details>
       </div>
     </div>

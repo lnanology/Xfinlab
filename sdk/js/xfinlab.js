@@ -219,5 +219,23 @@
     return this._get('/intelligence/v1/agriculture/' + encodeURIComponent(ticker));
   };
 
+  // 2026-08-28: Pro-tier webhooks (push instead of polling). See
+  // services/webhook_service.py's VALID_EVENT_TYPES for the exact
+  // eventType values ('vix_regime_change' market-wide, 'new_13d_filing'
+  // per-ticker).
+  XfinlabClient.prototype.subscribeWebhook = function (eventType, url, ticker) {
+    var body = { event_type: eventType, url: url };
+    if (ticker) body.ticker = ticker;
+    return this._post('/intelligence/v1/webhooks/subscribe', body);
+  };
+
+  XfinlabClient.prototype.listWebhooks = function () {
+    return this._get('/intelligence/v1/webhooks');
+  };
+
+  XfinlabClient.prototype.deleteWebhook = function (webhookId) {
+    return this._request('DELETE', '/intelligence/v1/webhooks/' + encodeURIComponent(webhookId));
+  };
+
   return { XfinlabClient: XfinlabClient, XfinlabError: XfinlabError };
 }));

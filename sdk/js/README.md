@@ -77,6 +77,9 @@ try {
 | `vixTermStructure()` | `GET /v1/vix-term-structure` | Weighted 1x in quota |
 | `bankHealth(ticker)` | `GET /v1/bank-health/{ticker}` | Weighted 2x in quota |
 | `agriculture(ticker)` | `GET /v1/agriculture/{ticker}` | Weighted 2x in quota |
+| `subscribeWebhook(eventType, url, ticker)` | `POST /v1/webhooks/subscribe` | Pro-tier only, no quota spend |
+| `listWebhooks()` | `GET /v1/webhooks` | No quota spend |
+| `deleteWebhook(webhookId)` | `DELETE /v1/webhooks/{id}` | No quota spend |
 
 Full endpoint docs, pricing tiers, and quota weighting: https://www.xfinlab.com/intelligence-api.html
 

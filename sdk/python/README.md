@@ -76,6 +76,9 @@ except XfinlabError as e:
 | `vix_term_structure()` | `GET /v1/vix-term-structure` | Weighted 1x in quota |
 | `bank_health(ticker)` | `GET /v1/bank-health/{ticker}` | Weighted 2x in quota |
 | `agriculture(ticker)` | `GET /v1/agriculture/{ticker}` | Weighted 2x in quota |
+| `subscribe_webhook(event_type, url, ticker=None)` | `POST /v1/webhooks/subscribe` | Pro-tier only, no quota spend |
+| `list_webhooks()` | `GET /v1/webhooks` | No quota spend |
+| `delete_webhook(webhook_id)` | `DELETE /v1/webhooks/{id}` | No quota spend |
 
 Full endpoint docs, pricing tiers, and quota weighting: https://www.xfinlab.com/intelligence-api.html
 

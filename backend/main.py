@@ -581,7 +581,19 @@ _push_scheduler.add_job(
 def _run_cboe_vix_refresh_job():
     try:
         from services.cboe_vix_service import get_snapshot
-        get_snapshot()
+        snapshot = get_snapshot()
+        # 2026-08-28 (AJ: "重有咩賺錢位" -> Intelligence API webhooks,
+        # Pro-only): same refresh this job already did, now also checks
+        # whether the structure actually changed and fires
+        # vix_regime_change webhooks if so. Best-effort, own try/except --
+        # a webhook-delivery problem must never break the underlying VIX
+        # cache refresh this job exists for.
+        if snapshot and snapshot.get("available"):
+            try:
+                from services.webhook_service import check_and_deliver_vix_regime_change
+                check_and_deliver_vix_regime_change(snapshot.get("structure"))
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -636,7 +648,17 @@ _push_scheduler.add_job(
 def _run_sec_13d_13g_refresh_job():
     try:
         from services.sec_13d_13g_service import refresh_all
-        refresh_all()
+        results = refresh_all()
+        # 2026-08-28 (AJ: "重有咩賺錢位" -> Intelligence API webhooks,
+        # Pro-only): refresh_all() already returns {ticker: filing_count}
+        # -- reuse it directly to detect a per-ticker count increase and
+        # fire new_13d_filing webhooks, same best-effort posture as the
+        # VIX job above.
+        try:
+            from services.webhook_service import check_and_deliver_new_13d_filings
+            check_and_deliver_new_13d_filings(results)
+        except Exception:
+            pass
     except Exception:
         pass
 

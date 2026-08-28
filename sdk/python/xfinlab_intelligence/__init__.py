@@ -26,7 +26,7 @@ from typing import Optional
 
 import requests
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = ["XfinlabClient", "XfinlabError"]
 
 
@@ -247,3 +247,21 @@ class XfinlabClient:
         """USDA corn/wheat/soybean price-received context -- only
         populated for CORN/WEAT/SOYB."""
         return self._get(f"/intelligence/v1/agriculture/{ticker}")
+
+    # 2026-08-28: Pro-tier webhooks (push instead of polling). See
+    # services/webhook_service.py's VALID_EVENT_TYPES for the exact
+    # event_type values ("vix_regime_change" market-wide, "new_13d_filing"
+    # per-ticker).
+    def subscribe_webhook(self, event_type: str, url: str, ticker: str = None) -> dict:
+        """Requires a Pro-tier key -- raises XfinlabError(status_code=403)
+        on a free-tier key."""
+        payload = {"event_type": event_type, "url": url}
+        if ticker:
+            payload["ticker"] = ticker
+        return self._post("/intelligence/v1/webhooks/subscribe", json_body=payload)
+
+    def list_webhooks(self) -> dict:
+        return self._get("/intelligence/v1/webhooks")
+
+    def delete_webhook(self, webhook_id: int) -> dict:
+        return self._request("DELETE", f"/intelligence/v1/webhooks/{webhook_id}")

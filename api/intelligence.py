@@ -261,6 +261,7 @@ def intelligence_status():
         "vix_term_structure": True,  # never 503s -- returns data: null only if every CBOE index fetch/cache/persist fails
         "bank_health": True,  # never 503s -- returns data: null for a ticker with no FDIC-mapped lead subsidiary
         "agriculture": True,  # never 503s -- returns data: null for a ticker with no USDA commodity linkage
+        "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
     })
 
 
@@ -278,6 +279,7 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-28",
         "changes": [
+            {"type": "added", "text": "POST /v1/webhooks/subscribe, GET /v1/webhooks, DELETE /v1/webhooks/{id} -- Pro-tier push notifications for vix_regime_change and new_13d_filing events, instead of polling."},
             {"type": "added", "text": "GET /v1/fundamentals/{ticker} -- latest annual (10-K) revenue, net income, diluted EPS, total assets/liabilities, operating cash flow from SEC XBRL. First real fundamentals endpoint in the Intelligence API."},
             {"type": "added", "text": "GET /v1/vix-term-structure -- CBOE VIX9D/VIX/VIX3M/VIX6M term structure and contango/backwardation regime read."},
             {"type": "added", "text": "GET /v1/bank-health/{ticker} -- FDIC Call Report health (ROA/ROE/assets/equity) for major bank holding companies' lead subsidiaries."},
@@ -914,6 +916,12 @@ def intelligence_technical(
     return _envelope(data=tech, meta={"ticker": ticker, "period": period, "interval": interval})
 
 
+class WebhookSubscribeRequest(BaseModel):
+    event_type: str
+    url: str
+    ticker: Optional[str] = None
+
+
 class StressTestRequest(BaseModel):
     symbol: str
     amount: float
@@ -1255,6 +1263,57 @@ def intelligence_agriculture(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+@router.post("/intelligence/v1/webhooks/subscribe")
+def intelligence_webhooks_subscribe(
+    body: WebhookSubscribeRequest,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Pro-tier feature (2026-08-28, AJ: "重有咩賺錢位" -> Webhook Pro專屬):
+    push notifications instead of polling, for 2 real Data Factory
+    events -- see services/webhook_service.py's VALID_EVENT_TYPES for
+    the exact list and why these two were chosen (both already backed by
+    a daily scheduled job, so this promises honest same-cadence delivery,
+    never a fabricated "real-time" claim). Does NOT spend quota -- this
+    is a management action, not a data read."""
+    auth = _require_api_key(x_api_key)
+    if auth["tier"] == "free":
+        raise HTTPException(status_code=403, detail="Webhooks are a Pro-tier feature. Upgrade at https://www.xfinlab.com/pricing.html")
+
+    from services.webhook_service import subscribe
+    result = subscribe(x_api_key, body.event_type, body.url, ticker=body.ticker)
+    if not result["ok"]:
+        return _envelope(data=None, error=result["error"])
+    return _envelope(data={"id": result["id"], "event_type": body.event_type, "ticker": body.ticker, "url": body.url})
+
+
+@router.get("/intelligence/v1/webhooks")
+def intelligence_webhooks_list(
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Lists every webhook subscription owned by the caller's own API
+    key -- never another key's. Read-only, no quota spend."""
+    auth = _require_api_key(x_api_key)
+    from services.webhook_service import list_for_key
+    return _envelope(data={"webhooks": list_for_key(x_api_key)})
+
+
+@router.delete("/intelligence/v1/webhooks/{webhook_id}")
+def intelligence_webhooks_unsubscribe(
+    webhook_id: int,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Deletes a webhook subscription -- only if it belongs to the
+    caller's own API key (services/webhook_service.py's unsubscribe()
+    checks both id AND api_key in the same DELETE, so guessing another
+    key's id can never delete their subscription)."""
+    auth = _require_api_key(x_api_key)
+    from services.webhook_service import unsubscribe
+    deleted = unsubscribe(x_api_key, webhook_id)
+    if not deleted:
+        return _envelope(data=None, error=f"No webhook subscription {webhook_id} found for this API key")
+    return _envelope(data={"deleted": True, "id": webhook_id})
+
+
 # ---------------------------------------------------------------------------
 # 2026-08-17 (task #4 follow-up, AJ: "重有咩可以升級" -- upgrade #2, OpenAPI
 # spec export): a hand-scoped OpenAPI 3.x document covering ONLY the 7/8
@@ -1288,6 +1347,9 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/vix-term-structure",
     "/intelligence/v1/bank-health/{ticker}",
     "/intelligence/v1/agriculture/{ticker}",
+    "/intelligence/v1/webhooks/subscribe",
+    "/intelligence/v1/webhooks",
+    "/intelligence/v1/webhooks/{webhook_id}",
 }
 
 # Endpoints that can return a 503 (upstream engine unreachable) on top of
