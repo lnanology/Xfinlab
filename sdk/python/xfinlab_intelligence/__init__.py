@@ -26,7 +26,7 @@ from typing import Optional
 
 import requests
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = ["XfinlabClient", "XfinlabError"]
 
 
@@ -222,3 +222,28 @@ class XfinlabClient:
         """Same crypto ticker's live stats from Binance and Coinbase side
         by side -- only populated for tracked crypto tickers."""
         return self._get(f"/intelligence/v1/exchange/{ticker}")
+
+    # 2026-08-28: SDK had fallen behind the live API by 4 endpoints again
+    # (fundamentals, vix_term_structure, bank_health, agriculture --
+    # AJ's "咁你一次過起" Data Factory batch, then "最高效賺錢點接" wired
+    # them into the paid API).
+    def fundamentals(self, ticker: str) -> dict:
+        """Latest annual (10-K) revenue, net income, diluted EPS, total
+        assets/liabilities, operating cash flow from SEC XBRL."""
+        return self._get(f"/intelligence/v1/fundamentals/{ticker}")
+
+    def vix_term_structure(self) -> dict:
+        """CBOE VIX9D/VIX/VIX3M/VIX6M term structure and contango/
+        backwardation regime read. Not ticker-specific."""
+        return self._get("/intelligence/v1/vix-term-structure")
+
+    def bank_health(self, ticker: str) -> dict:
+        """FDIC Call Report health (ROA/ROE/assets/equity) for a major
+        bank holding company's lead subsidiary -- only populated for
+        JPM/BAC/WFC/C/USB/PNC/TFC."""
+        return self._get(f"/intelligence/v1/bank-health/{ticker}")
+
+    def agriculture(self, ticker: str) -> dict:
+        """USDA corn/wheat/soybean price-received context -- only
+        populated for CORN/WEAT/SOYB."""
+        return self._get(f"/intelligence/v1/agriculture/{ticker}")

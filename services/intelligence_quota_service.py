@@ -133,6 +133,19 @@ ENDPOINT_WEIGHT = {
     "short_interest": 2,
     "energy": 2,
     "exchange": 2,
+    # 2026-08-28 (AJ: "最高效賺錢點接" -- monetize the new Data Factory
+    # batch as Intelligence API endpoints first). fundamentals priced
+    # highest of this batch -- it's the first real financial-statement
+    # data in the API and the clearest paid-tier differentiator vs. free
+    # stock-data sites. vix_term_structure is cheap to compute (4 small
+    # CSV fetches, market-wide not per-ticker) so priced low despite
+    # being a distinct, sophisticated signal. bank_health/agriculture
+    # are single lightweight lookups against a small explicit ticker
+    # map, similar cost tier to energy/exchange.
+    "fundamentals": 3,
+    "vix_term_structure": 1,
+    "bank_health": 2,
+    "agriculture": 2,
 }
 
 

@@ -263,6 +263,10 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="short-interest" data-i18n="ia_ep10_name">Short Interest</option>
           <option value="energy" data-i18n="ia_ep11_name">Energy Fundamentals</option>
           <option value="exchange" data-i18n="ia_ep12_name">Exchange Comparison</option>
+          <option value="fundamentals" data-i18n="ia_ep13_name">Company Fundamentals</option>
+          <option value="vix-term-structure" data-i18n="ia_ep14_name">VIX Term Structure</option>
+          <option value="bank-health" data-i18n="ia_ep15_name">Bank Health</option>
+          <option value="agriculture" data-i18n="ia_ep16_name">Agriculture Prices</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -287,7 +291,7 @@ details.schema-details[open] summary::after{content:" ▴"}
   </div>
 
   <div class="section" id="endpoints">
-    <div class="section-title" data-i18n="ia_ep_title">Twelve endpoints, one API key</div>
+    <div class="section-title" data-i18n="ia_ep_title">Sixteen endpoints, one API key</div>
     <div class="section-sub"><span data-i18n="ia_ep_sub">Every response is AI-structured JSON — never raw scraped article text.</span> <a href="https://api.xfinlab.com/api/intelligence/openapi.json" target="_blank" rel="noopener" data-i18n="ia_openapi_link">View OpenAPI spec →</a> <a href="https://api.xfinlab.com/api/intelligence/postman.json" target="_blank" rel="noopener" data-i18n="ia_postman_link">Download Postman collection →</a></div>
     <!-- 2026-08-17 (task #4 follow-up, upgrade #4): live, not historical --
          calls GET /intelligence/status on load and renders per-capability
@@ -590,6 +594,89 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
           </div>
           <p class="schema-note" data-i18n="ia_schema_note_exchange">Both binance and coinbase are null together only when the ticker isn't tracked by either venue — the response never mixes a real reading from one exchange with a fabricated one from the other.</p>
+        </details>
+      </div>
+      <!-- 2026-08-28 (Data Factory batch #2 -> Intelligence API monetization,
+           AJ: "最高效賺錢點接"): the first real FUNDAMENTALS endpoint in
+           this API (SEC XBRL), a market-wide volatility term-structure
+           read (CBOE), regulated-bank health (FDIC), and agricultural
+           commodity fundamentals (USDA). Same soft-fail-to-null posture
+           as every card above. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M8 15l3-4 3 2 4-6"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/fundamentals/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep13_name">Company Fundamentals</div>
+        <div class="ep-desc" data-i18n="ia_ep13_desc">Latest annual (10-K) financial-statement facts straight from SEC XBRL — revenue, net income, diluted EPS, total assets/liabilities, operating cash flow. The first real fundamentals data in this API. 24h server-side cached.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.cik</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.facts</code> <span class="schema-type">object</span> — dynamically keyed (revenue, net_income, eps_diluted, total_assets, total_liabilities, operating_cash_flow), each present only if that concept had a usable 10-K value</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>end_date</code>, <code>form</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_fundamentals">A missing concept key means that company has never reported that specific XBRL tag on a 10-K — never a fabricated zero or null placeholder mixed in with real figures.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">GET /v1/vix-term-structure</span>
+        <div class="ep-name" data-i18n="ia_ep14_name">VIX Term Structure</div>
+        <div class="ep-desc" data-i18n="ia_ep14_desc">CBOE VIX9D/VIX/VIX3M/VIX6M term structure, plus a contango/backwardation regime read. Not ticker-specific — one market-wide snapshot per call.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.term_structure</code> <span class="schema-type">object</span> — keyed vix9d/vix/vix3m/vix6m, each {label, date, close} or null</div>
+            <div class="schema-field"><code>data.structure</code> <span class="schema-type">"contango"|"backwardation"|"flat"|null</span></div>
+            <div class="schema-field"><code>data.vix3m_minus_vix</code> <span class="schema-type">number|null</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_vix">Backwardation (near-term vol priced above medium-term) has historically coincided with market stress episodes — this is a regime read, not a price prediction.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="10" rx="1"/><path d="M12 3l9 7H3l9-7z"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/bank-health/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep15_name">Bank Health</div>
+        <div class="ep-desc" data-i18n="ia_ep15_desc">FDIC Call Report health (ROA, ROE, assets, equity, net income) for a major bank holding company's lead insured subsidiary. Covers JPM, BAC, WFC, C, USB, PNC, TFC today.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.bank</code> <span class="schema-type">object</span> — {cert, bank_name, report_date, asset, equity, net_income, roa, roe}</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_bank_health">Reflects the regulated lead bank subsidiary's own Call Report, not consolidated GAAP financials for the holding company's stock — use /v1/fundamentals for that.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M6 8c0 3 3 3 3 6s-3 3-3 6M18 8c0 3-3 3-3 6s3 3 3 6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/agriculture/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep16_name">Agriculture Prices</div>
+        <div class="ep-desc" data-i18n="ia_ep16_desc">USDA price-received-by-farmers data for corn, wheat, and soybeans — pairs with CORN/WEAT/SOYB the same way /v1/energy pairs with USO/UNG.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.series</code> <span class="schema-type">object</span> — one key, e.g. corn_price_received_usd_bu</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>period</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_agriculture">Returns data:null for any ticker without a real commodity linkage. Coverage is CORN, WEAT, SOYB today.</p>
         </details>
       </div>
     </div>
@@ -936,6 +1023,14 @@ const TRY_ENDPOINTS = {
   'short-interest':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/short-interest/' + encodeURIComponent(tk); } },
   'energy':          { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/energy/' + encodeURIComponent(tk); } },
   'exchange':        { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/exchange/' + encodeURIComponent(tk); } },
+  // 2026-08-28 (Data Factory batch #2 -> Intelligence API monetization,
+  // AJ: "最高效賺錢點接"). vix-term-structure is the only endpoint in
+  // this whole console that takes no ticker at all -- market-wide, not
+  // per-symbol -- so needsTicker is false and path() ignores its arg.
+  'fundamentals':      { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/fundamentals/' + encodeURIComponent(tk); } },
+  'vix-term-structure':{ method: 'GET',  needsTicker: false, needsAmount: false, path: function() { return '/intelligence/v1/vix-term-structure'; } },
+  'bank-health':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/bank-health/' + encodeURIComponent(tk); } },
+  'agriculture':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/agriculture/' + encodeURIComponent(tk); } },
 };
 
 function tryUpdateFields() {

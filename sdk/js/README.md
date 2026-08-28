@@ -73,6 +73,10 @@ try {
 | `shortInterest(ticker)` | `GET /v1/short-interest/{ticker}` | Weighted 2x in quota |
 | `energy(ticker)` | `GET /v1/energy/{ticker}` | Weighted 2x in quota |
 | `exchange(ticker)` | `GET /v1/exchange/{ticker}` | Weighted 2x in quota |
+| `fundamentals(ticker)` | `GET /v1/fundamentals/{ticker}` | Weighted 3x in quota |
+| `vixTermStructure()` | `GET /v1/vix-term-structure` | Weighted 1x in quota |
+| `bankHealth(ticker)` | `GET /v1/bank-health/{ticker}` | Weighted 2x in quota |
+| `agriculture(ticker)` | `GET /v1/agriculture/{ticker}` | Weighted 2x in quota |
 
 Full endpoint docs, pricing tiers, and quota weighting: https://www.xfinlab.com/intelligence-api.html
 

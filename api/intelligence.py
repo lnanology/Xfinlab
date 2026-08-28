@@ -257,6 +257,10 @@ def intelligence_status():
         "short_interest": True,  # never 503s -- returns data: null for no reportable short position or an upstream miss
         "energy": True,  # never 503s -- returns data: null for a ticker with no crude/nat-gas linkage
         "exchange": True,  # never 503s -- returns data: null for a non-crypto ticker
+        "fundamentals": True,  # never 503s -- returns data: null for no CIK match or zero usable 10-K concepts
+        "vix_term_structure": True,  # never 503s -- returns data: null only if every CBOE index fetch/cache/persist fails
+        "bank_health": True,  # never 503s -- returns data: null for a ticker with no FDIC-mapped lead subsidiary
+        "agriculture": True,  # never 503s -- returns data: null for a ticker with no USDA commodity linkage
     })
 
 
@@ -271,6 +275,15 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-28",
+        "changes": [
+            {"type": "added", "text": "GET /v1/fundamentals/{ticker} -- latest annual (10-K) revenue, net income, diluted EPS, total assets/liabilities, operating cash flow from SEC XBRL. First real fundamentals endpoint in the Intelligence API."},
+            {"type": "added", "text": "GET /v1/vix-term-structure -- CBOE VIX9D/VIX/VIX3M/VIX6M term structure and contango/backwardation regime read."},
+            {"type": "added", "text": "GET /v1/bank-health/{ticker} -- FDIC Call Report health (ROA/ROE/assets/equity) for major bank holding companies' lead subsidiaries."},
+            {"type": "added", "text": "GET /v1/agriculture/{ticker} -- USDA corn/wheat/soybean price-received context for CORN/WEAT/SOYB."},
+        ],
+    },
     {
         "date": "2026-08-27",
         "changes": [
@@ -1143,6 +1156,105 @@ def intelligence_exchange(
     )
 
 
+@router.get("/intelligence/v1/fundamentals/{ticker}")
+def intelligence_fundamentals(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Latest annual (10-K) financial-statement facts for `ticker`
+    (services/sec_xbrl_service.py -- revenue, net income, diluted EPS,
+    total assets/liabilities, operating cash flow, straight from SEC
+    XBRL Company Facts). The first real fundamentals data in the
+    Intelligence API -- every other endpoint here is positioning,
+    event-driven activity, or macro/commodity context, not the
+    company's own reported financial statements. 24h server-side
+    cached."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "fundamentals", response, ticker=ticker.upper())
+
+    from services.sec_xbrl_service import get_company_facts
+
+    ticker = ticker.upper().strip()
+    result = get_company_facts(ticker)
+    if not result or not result.get("facts"):
+        return _envelope(data=None, error=f"No 10-K fundamentals data available for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
+@router.get("/intelligence/v1/vix-term-structure")
+def intelligence_vix_term_structure(
+    response: Response,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """CBOE VIX9D/VIX/VIX3M/VIX6M term structure (services/
+    cboe_vix_service.py) -- the options market's own forward-looking
+    volatility curve, plus a contango/backwardation regime read. Not
+    ticker-specific -- one market-wide snapshot per call."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "vix_term_structure", response)
+
+    from services.cboe_vix_service import get_snapshot
+
+    result = get_snapshot()
+    if not result or not result.get("available"):
+        return _envelope(data=None, error=(result or {}).get("message", "VIX term structure not available"))
+
+    return _envelope(data=result)
+
+
+@router.get("/intelligence/v1/bank-health/{ticker}")
+def intelligence_bank_health(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """FDIC Call Report health (ROA/ROE/assets/equity) for `ticker`'s
+    lead bank subsidiary (services/fdic_banking_service.py). Only
+    populated for the handful of major publicly-traded bank holding
+    companies this module explicitly maps to a real FDIC certificate
+    number (see _TICKER_TO_CERT) -- any other ticker returns `data:
+    null`, never a guessed match. Reflects the regulated bank
+    subsidiary's own Call Report, not consolidated holding-company
+    GAAP financials."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "bank_health", response, ticker=ticker.upper())
+
+    from services.fdic_banking_service import get_bank_health
+
+    ticker = ticker.upper().strip()
+    result = get_bank_health(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No FDIC-mapped bank subsidiary for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
+@router.get("/intelligence/v1/agriculture/{ticker}")
+def intelligence_agriculture(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """USDA agricultural-commodity price-received context for `ticker`
+    (services/usda_agriculture_service.py -- corn/wheat/soybean, pairs
+    with CORN/WEAT/SOYB the same way /v1/energy pairs with USO/UNG).
+    Only populated for tickers with a real commodity linkage; any other
+    ticker returns `data: null`."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "agriculture", response, ticker=ticker.upper())
+
+    from services.usda_agriculture_service import get_agriculture_context_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_agriculture_context_for_ticker(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No agricultural-commodity linkage for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
 # ---------------------------------------------------------------------------
 # 2026-08-17 (task #4 follow-up, AJ: "重有咩可以升級" -- upgrade #2, OpenAPI
 # spec export): a hand-scoped OpenAPI 3.x document covering ONLY the 7/8
@@ -1172,6 +1284,10 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/short-interest/{ticker}",
     "/intelligence/v1/energy/{ticker}",
     "/intelligence/v1/exchange/{ticker}",
+    "/intelligence/v1/fundamentals/{ticker}",
+    "/intelligence/v1/vix-term-structure",
+    "/intelligence/v1/bank-health/{ticker}",
+    "/intelligence/v1/agriculture/{ticker}",
 }
 
 # Endpoints that can return a 503 (upstream engine unreachable) on top of

@@ -213,6 +213,22 @@ class TechnicalAnalysisService:
             cot = get_cot_for_ticker(symbol)
         except Exception:
             cot = None
+        # 2026-08-28 (AJ: "最高效賺錢點接" -- Confluence Engine gets the two
+        # highest-perceived-value sources from this batch; FDIC/USDA
+        # deliberately skipped here, too few tickers match to be worth a
+        # vote slot in every analysis, see this file's own module notes).
+        try:
+            from services.sec_xbrl_service import get_company_facts
+            _fundamentals_raw = get_company_facts(symbol)
+            fundamentals = _fundamentals_raw if _fundamentals_raw and _fundamentals_raw.get("facts") else None
+        except Exception:
+            fundamentals = None
+        try:
+            from services.cboe_vix_service import get_snapshot as _get_vix_snapshot
+            _vix_raw = _get_vix_snapshot()
+            vix = _vix_raw if _vix_raw and _vix_raw.get("available") else None
+        except Exception:
+            vix = None
         bb_upper, bb_mid, bb_lower = self._bollinger(closes, 20, 2)
         bb_last = (
             {
@@ -323,6 +339,14 @@ class TechnicalAnalysisService:
                 {"net_noncomm": cot.get("net_noncomm"), "match_type": cot.get("match_type")}
                 if cot else None
             ),
+            "fundamentals_signal": (
+                {"net_income": fundamentals["facts"]["net_income"]["value"], "end_date": fundamentals["facts"]["net_income"]["end_date"]}
+                if fundamentals and fundamentals.get("facts", {}).get("net_income") else None
+            ),
+            "vix_structure_signal": (
+                {"structure": vix.get("structure"), "vix3m_minus_vix": vix.get("vix3m_minus_vix")}
+                if vix else None
+            ),
         }
 
         confluence = self._confluence(
@@ -344,6 +368,8 @@ class TechnicalAnalysisService:
             insider=insider,
             activist=activist,
             cot=cot,
+            fundamentals=fundamentals,
+            vix=vix,
         )
 
         decision_levels = self._decision_levels(
@@ -1060,6 +1086,16 @@ class TechnicalAnalysisService:
         "insider": 0.8,   # SEC Form 4 net buy/sell -- a real executed transaction, not a sentiment guess
         "activist": 0.9,  # a 13D filer showing up is a specific, high-conviction catalyst
         "cot": 0.7,        # CFTC COT speculator positioning -- only meaningful for the small futures-tracking ETF/pair universe it covers
+        # 2026-08-28 (AJ: "最高效賺錢點接" -- monetize Data Factory batch #2
+        # via Confluence Engine, the two highest-perceived-value sources
+        # only). fundamentals is a blunt single-fact read (profitable vs.
+        # not, latest 10-K only -- no YoY trend stored), weighted low
+        # like the other lagging/periodic reads. vix is market-wide, not
+        # ticker-specific, so weighted like capital_flow (a nudge, not a
+        # dominant vote) -- only votes on the stress case (backwardation),
+        # never on calm/contango (see _confluence() below).
+        "fundamentals": 0.6,
+        "vix_structure": 0.6,
     }
 
     @classmethod
@@ -1083,6 +1119,8 @@ class TechnicalAnalysisService:
         insider: Optional[Dict] = None,
         activist: Optional[Dict] = None,
         cot: Optional[Dict] = None,
+        fundamentals: Optional[Dict] = None,
+        vix: Optional[Dict] = None,
         proximity_tolerance: float = 0.03,
     ) -> Dict:
         """
@@ -1248,6 +1286,28 @@ class TechnicalAnalysisService:
                 signals.append({"signal": "COT投機淨多倉", "bias": 1, "weight": w["cot"]})
             elif cot["net_noncomm"] < 0:
                 signals.append({"signal": "COT投機淨空倉", "bias": -1, "weight": w["cot"]})
+
+        # 17. Fundamentals -- latest 10-K net income sign (2026-08-28
+        # addition). Deliberately blunt: get_company_facts() only
+        # persists the single latest annual value per concept, not a
+        # history, so there's no honest way to read a YoY trend yet --
+        # this just votes "profitable" vs. "unprofitable" on the most
+        # recent fiscal year, never a fabricated growth-rate claim.
+        if fundamentals and fundamentals.get("facts", {}).get("net_income"):
+            net_income = fundamentals["facts"]["net_income"]["value"]
+            if net_income > 0:
+                signals.append({"signal": "最近一份10-K錄得盈利", "bias": 1, "weight": w["fundamentals"]})
+            elif net_income < 0:
+                signals.append({"signal": "最近一份10-K錄得虧損", "bias": -1, "weight": w["fundamentals"]})
+
+        # 18. VIX term structure (2026-08-28 addition) -- only votes on
+        # the STRESS case (backwardation, near-term fear priced above
+        # medium-term). Normal contango is skipped entirely rather than
+        # voted bullish -- "calm" is the market's default state, not
+        # itself a bullish catalyst for any specific ticker being
+        # analyzed here.
+        if vix and vix.get("structure") == "backwardation":
+            signals.append({"signal": "VIX期限結構倒掛（市場恐慌）", "bias": -1, "weight": w["vix_structure"]})
 
         counted = len(signals)
         weight_total = sum(s["weight"] for s in signals)

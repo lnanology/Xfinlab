@@ -201,5 +201,23 @@
     return this._get('/intelligence/v1/exchange/' + encodeURIComponent(ticker));
   };
 
+  // 2026-08-28: fundamentals/vixTermStructure/bankHealth/agriculture --
+  // same Data Factory monetization batch as the Python SDK's update.
+  XfinlabClient.prototype.fundamentals = function (ticker) {
+    return this._get('/intelligence/v1/fundamentals/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.vixTermStructure = function () {
+    return this._get('/intelligence/v1/vix-term-structure');
+  };
+
+  XfinlabClient.prototype.bankHealth = function (ticker) {
+    return this._get('/intelligence/v1/bank-health/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.agriculture = function (ticker) {
+    return this._get('/intelligence/v1/agriculture/' + encodeURIComponent(ticker));
+  };
+
   return { XfinlabClient: XfinlabClient, XfinlabError: XfinlabError };
 }));

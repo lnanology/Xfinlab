@@ -1,6 +1,6 @@
 {
   "name": "xfinlab-intelligence",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Official JavaScript/Node client for the XFINLAB Intelligence API",
   "main": "xfinlab.js",
   "license": "MIT",
