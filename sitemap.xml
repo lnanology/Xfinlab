@@ -46,6 +46,21 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.xfinlab.com/free-market-regime.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/free-stock-sentiment-api.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/free-technical-analysis-api.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.xfinlab.com/ai-analysis.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
