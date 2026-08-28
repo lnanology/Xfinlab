@@ -555,6 +555,84 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+def _run_sec_xbrl_refresh_job():
+    try:
+        from services.sec_xbrl_service import get_company_facts
+        from services.sec_13d_13g_service import _distinct_known_tickers
+        for ticker in _distinct_known_tickers():
+            get_company_facts(ticker)
+    except Exception:
+        pass
+
+# 2026-08-28 (Data Factory batch, AJ: "咁你一次過起"): fundamentals only
+# change once a quarter (a new 10-K), so once a day is more than enough.
+# Reuses sec_13d_13g_service's organically-grown known-ticker list rather
+# than inventing a third "watched tickers" universe -- same rationale as
+# that module's own refresh_all().
+_push_scheduler.add_job(
+    _run_sec_xbrl_refresh_job,
+    "cron",
+    hour=6,
+    minute=0,
+    id="sec_xbrl_refresh",
+    replace_existing=True,
+)
+
+def _run_cboe_vix_refresh_job():
+    try:
+        from services.cboe_vix_service import get_snapshot
+        get_snapshot()
+    except Exception:
+        pass
+
+# VIX term structure updates once per trading day (close) -- a single
+# daily refresh after market close is enough.
+_push_scheduler.add_job(
+    _run_cboe_vix_refresh_job,
+    "cron",
+    hour=21,
+    minute=30,
+    id="cboe_vix_refresh",
+    replace_existing=True,
+)
+
+def _run_fdic_bank_health_refresh_job():
+    try:
+        from services.fdic_banking_service import get_snapshot
+        get_snapshot()
+    except Exception:
+        pass
+
+# Call Report data updates quarterly -- a weekly refresh is already
+# generous, avoids hammering FDIC's public API for data that barely moves.
+_push_scheduler.add_job(
+    _run_fdic_bank_health_refresh_job,
+    "cron",
+    day_of_week="mon",
+    hour=6,
+    minute=30,
+    id="fdic_bank_health_refresh",
+    replace_existing=True,
+)
+
+def _run_usda_agriculture_refresh_job():
+    try:
+        from services.usda_agriculture_service import get_snapshot
+        get_snapshot()
+    except Exception:
+        pass
+
+# USDA price-received series update monthly/annually -- daily refresh
+# costs nothing (single cheap request/series) and keeps it always fresh.
+_push_scheduler.add_job(
+    _run_usda_agriculture_refresh_job,
+    "cron",
+    hour=6,
+    minute=15,
+    id="usda_agriculture_refresh",
+    replace_existing=True,
+)
+
 def _run_sec_13d_13g_refresh_job():
     try:
         from services.sec_13d_13g_service import refresh_all

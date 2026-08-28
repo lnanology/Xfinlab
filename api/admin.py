@@ -1278,6 +1278,117 @@ def get_treasury_fiscal_debug(token: str, request: Request):
     return {"results": results}
 
 
+@router.get("/admin/sec-xbrl-debug")
+def get_sec_xbrl_debug(token: str, request: Request, ticker: str = "AAPL"):
+    """
+    2026-08-28 (Data Factory batch, AJ: "咁你一次過起"): debug/visibility
+    endpoint for services/sec_xbrl_service.py -- returns the full parsed
+    facts for one ticker (default AAPL) so a tag-alias miss or CIK lookup
+    failure is visible immediately, same upfront-diagnostic rationale as
+    /admin/eia-energy-debug.
+    """
+    verify_admin(token, "get_sec_xbrl_debug", request)
+    from services.sec_xbrl_service import get_company_facts
+    return get_company_facts(ticker) or {"available": False, "ticker": ticker.upper(), "message": "No CIK match or zero usable 10-K concepts."}
+
+
+@router.get("/admin/cboe-vix-snapshot")
+def get_cboe_vix_snapshot(token: str, request: Request):
+    """
+    2026-08-28 (Data Factory batch): debug/visibility endpoint for
+    services/cboe_vix_service.py. No API key required.
+    """
+    verify_admin(token, "get_cboe_vix_snapshot", request)
+    from services.cboe_vix_service import get_snapshot
+    return get_snapshot()
+
+
+@router.get("/admin/cboe-vix-debug")
+def get_cboe_vix_debug(token: str, request: Request):
+    """Same upfront-diagnostic rationale as /admin/eia-energy-debug --
+    one live CSV fetch per index, raw status + parsed row shape, so a
+    CBOE column-header drift surfaces immediately."""
+    verify_admin(token, "get_cboe_vix_debug", request)
+    from services.cboe_vix_service import _INDEX_URLS, _parse_latest_close
+    from services.outbound_http import get_with_backoff
+
+    results = {}
+    for index_key, (url, label) in _INDEX_URLS.items():
+        try:
+            res = get_with_backoff(url, timeout=15)
+            entry = {"url": url, "status_code": res.status_code}
+            if res.status_code == 200:
+                parsed = _parse_latest_close(res.text)
+                entry["header"] = res.text.splitlines()[0] if res.text else None
+                entry["parsed_latest"] = parsed
+            else:
+                entry["body_snippet"] = res.text[:300]
+            results[index_key] = entry
+        except Exception as e:
+            results[index_key] = {"url": url, "error": str(e)}
+    return {"results": results}
+
+
+@router.get("/admin/fdic-bank-health-snapshot")
+def get_fdic_bank_health_snapshot(token: str, request: Request):
+    """
+    2026-08-28 (Data Factory batch): debug/visibility endpoint for
+    services/fdic_banking_service.py. No API key required.
+    """
+    verify_admin(token, "get_fdic_bank_health_snapshot", request)
+    from services.fdic_banking_service import get_snapshot
+    return get_snapshot()
+
+
+@router.get("/admin/usda-agriculture-snapshot")
+def get_usda_agriculture_snapshot(token: str, request: Request):
+    """
+    2026-08-28 (Data Factory batch): debug/visibility endpoint for
+    services/usda_agriculture_service.py. Requires USDA_NASS_API_KEY.
+    """
+    verify_admin(token, "get_usda_agriculture_snapshot", request)
+    from services.usda_agriculture_service import get_snapshot, is_available, USDA_API_KEY_ENV
+    if not is_available():
+        return {"available": False, "message": f"{USDA_API_KEY_ENV} not set on this environment."}
+    return get_snapshot()
+
+
+@router.get("/admin/usda-agriculture-debug")
+def get_usda_agriculture_debug(token: str, request: Request):
+    """Same upfront-diagnostic rationale as /admin/eia-energy-debug --
+    one live request per configured USDA short_desc, raw status + row
+    count, so a short_desc drift surfaces immediately."""
+    verify_admin(token, "get_usda_agriculture_debug", request)
+    import os
+    from services.usda_agriculture_service import _SERIES, USDA_BASE_URL, USDA_API_KEY_ENV
+    from services.outbound_http import get_with_backoff
+
+    key_set = bool(os.getenv(USDA_API_KEY_ENV))
+    results = {}
+    for series_key, meta in _SERIES.items():
+        params = {
+            "key": os.getenv(USDA_API_KEY_ENV, ""),
+            "short_desc": meta["short_desc"],
+            "agg_level_desc": "NATIONAL",
+            "freq_desc": "ANNUAL",
+            "format": "JSON",
+        }
+        try:
+            res = get_with_backoff(USDA_BASE_URL, params=params, timeout=20)
+            entry = {"short_desc": meta["short_desc"], "status_code": res.status_code}
+            if res.status_code == 200:
+                payload = res.json()
+                rows = payload.get("data") or []
+                entry["row_count"] = len(rows)
+                entry["sample_row"] = rows[0] if rows else None
+            else:
+                entry["body_snippet"] = res.text[:300]
+            results[series_key] = entry
+        except Exception as e:
+            results[series_key] = {"short_desc": meta["short_desc"], "error": str(e)}
+    return {"key_set": key_set, "results": results}
+
+
 @router.get("/admin/coinbase-exchange-snapshot")
 def get_coinbase_exchange_snapshot(token: str, request: Request):
     """

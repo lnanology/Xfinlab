@@ -911,6 +911,49 @@
         </div>
         <div id="finraShortList"><div class="empty">Enter a ticker above</div></div>
       </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>SEC XBRL Company Facts (Fundamentals)</span>
+          <span id="xbrlMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Per-ticker lookup -- latest annual (10-K) revenue, net income, diluted EPS, total assets/liabilities and operating cash flow, straight from SEC XBRL. No API key required.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="xbrlTickerInput" type="text" placeholder="e.g. AAPL" style="background:var(--bg2, #0f1420);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;flex:1" onkeydown="if(event.key==='Enter')loadSecXbrl()">
+          <button class="btn btn-sm btn-purple" onclick="loadSecXbrl()">🔍 Lookup</button>
+        </div>
+        <div id="xbrlList"><div class="empty">Enter a ticker above</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>CBOE VIX Term Structure</span>
+          <span id="vixMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">VIX9D / VIX / VIX3M / VIX6M -- contango (calm) vs. backwardation (stress) shape of the options market's own forward volatility view. No API key required.</div>
+        <div id="vixList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadCboeVix()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>FDIC Bank Health</span>
+          <span id="fdicMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Lead bank subsidiary Call Report data (ROA/ROE/assets/equity) for JPM, BAC, WFC, C, USB, PNC, TFC. Reflects the regulated bank subsidiary, not consolidated holding-company financials. No API key required.</div>
+        <div id="fdicList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadFdicBankHealth()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>USDA Agricultural Prices</span>
+          <span id="usdaMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Corn/wheat/soybean price received by farmers -- pairs with CORN/WEAT/SOYB ETFs the same way EIA pairs with USO/UNG (positioning vs. physical fundamentals). Requires USDA_NASS_API_KEY.</div>
+        <div id="usdaList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadUsdaAgriculture()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
     </div>
 
     <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
@@ -1364,7 +1407,7 @@ function showPage(name) {
   if (name === 'security') loadSecurityScan();
   if (name === 'stripeaccount') loadStripeAccountStatus();
   if (name === 'apitrending') loadApiTrendingTickers();
-  if (name === 'datafactory') { loadDataSources(); loadCftcCot(); loadSec13fFilers(); loadBinanceExchange(); loadEiaEnergy(); loadTreasuryFiscal(); loadCoinbaseExchange(); }
+  if (name === 'datafactory') { loadDataSources(); loadCftcCot(); loadSec13fFilers(); loadBinanceExchange(); loadEiaEnergy(); loadTreasuryFiscal(); loadCoinbaseExchange(); loadCboeVix(); loadFdicBankHealth(); loadUsdaAgriculture(); }
   if (name === 'content') loadContentVariants();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
@@ -2372,6 +2415,141 @@ function renderFinraShortInterest(data) {
       </div>
     </div>
   `;
+}
+
+async function loadSecXbrl() {
+  const ticker = (document.getElementById('xbrlTickerInput').value || '').trim().toUpperCase();
+  const el = document.getElementById('xbrlList');
+  document.getElementById('xbrlMeta').textContent = '';
+  if (!ticker) { el.innerHTML = '<div class="empty">Enter a ticker above</div>'; return; }
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/sec-xbrl-debug?ticker=${encodeURIComponent(ticker)}&token=${adminToken}`);
+    const data = await res.json();
+    renderSecXbrl(data);
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load SEC XBRL data</div>';
+  }
+}
+
+function renderSecXbrl(data) {
+  const el = document.getElementById('xbrlList');
+  if (!data || !data.available || !data.facts) {
+    document.getElementById('xbrlMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'No 10-K facts available for this ticker'}</div>`;
+    return;
+  }
+  document.getElementById('xbrlMeta').textContent = `CIK ${data.cik || '—'}`;
+  const facts = Object.values(data.facts);
+  el.innerHTML = facts.map(f => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${f.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">FY end ${f.end_date} · ${f.form}</div>
+      </div>
+      <div style="font-weight:700">${f.unit === 'USD' ? '$' + Number(f.value).toLocaleString(undefined, {maximumFractionDigits: 0}) : Number(f.value).toLocaleString(undefined, {maximumFractionDigits: 2}) + ' ' + f.unit}</div>
+    </div>
+  `).join('');
+}
+
+async function loadCboeVix() {
+  document.getElementById('vixList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('vixMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/cboe-vix-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderCboeVix(data);
+  } catch (e) {
+    document.getElementById('vixList').innerHTML = '<div class="empty">Failed to load CBOE VIX data</div>';
+  }
+}
+
+function renderCboeVix(data) {
+  const el = document.getElementById('vixList');
+  if (!data || !data.available) {
+    document.getElementById('vixMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'VIX term structure not available'}</div>`;
+    return;
+  }
+  document.getElementById('vixMeta').textContent = data.structure ? `${data.structure} (VIX3M − VIX: ${data.vix3m_minus_vix > 0 ? '+' : ''}${data.vix3m_minus_vix})` : '';
+  const rows = Object.values(data.term_structure || {}).filter(v => v);
+  el.innerHTML = rows.map(s => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${s.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${s.date}</div>
+      </div>
+      <div style="font-weight:700">${s.close}</div>
+    </div>
+  `).join('');
+}
+
+async function loadFdicBankHealth() {
+  document.getElementById('fdicList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('fdicMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/fdic-bank-health-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderFdicBankHealth(data);
+  } catch (e) {
+    document.getElementById('fdicList').innerHTML = '<div class="empty">Failed to load FDIC bank health data</div>';
+  }
+}
+
+function renderFdicBankHealth(data) {
+  const el = document.getElementById('fdicList');
+  if (!data || !data.available) {
+    document.getElementById('fdicMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'FDIC bank health data not available'}</div>`;
+    return;
+  }
+  const banks = Object.entries(data.banks || {}).filter(([, v]) => v);
+  document.getElementById('fdicMeta').textContent = `${banks.length}/${Object.keys(data.banks || {}).length} live`;
+  el.innerHTML = banks.map(([ticker, b]) => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${ticker} -- ${b.bank_name}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">As of ${b.report_date} · Assets $${(b.asset || 0).toLocaleString()}k</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">ROA ${b.roa ?? '—'}%</div>
+        <div style="font-size:0.72rem;color:var(--muted)">ROE ${b.roe ?? '—'}%</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadUsdaAgriculture() {
+  document.getElementById('usdaList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('usdaMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/usda-agriculture-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderUsdaAgriculture(data);
+  } catch (e) {
+    document.getElementById('usdaList').innerHTML = '<div class="empty">Failed to load USDA agriculture data</div>';
+  }
+}
+
+function renderUsdaAgriculture(data) {
+  const el = document.getElementById('usdaList');
+  if (!data || !data.available) {
+    document.getElementById('usdaMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'USDA data not available'}</div>`;
+    return;
+  }
+  const series = data.series || {};
+  const rows = Object.entries(series).filter(([, v]) => v);
+  document.getElementById('usdaMeta').textContent = `${rows.length}/${Object.keys(series).length} live`;
+  el.innerHTML = rows.map(([key, s]) => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${s.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${s.period} · pairs with ${s.etf_ticker}</div>
+      </div>
+      <div style="font-weight:700">$${Number(s.value).toFixed(2)}/BU</div>
+    </div>
+  `).join('');
 }
 
 async function loadStripeAccountStatus() {
