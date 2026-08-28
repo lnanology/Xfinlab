@@ -23,7 +23,7 @@ logging.basicConfig(
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
@@ -728,6 +728,28 @@ def root():
         "version": "1.0.0",
         "status": "running"
     }
+
+
+@app.get("/llms.txt", include_in_schema=False)
+@limiter.exempt
+def llms_txt(request: Request):
+    """2026-08-28 (AJ: 0-cost marketing -- AI agent discoverability):
+    mirrors the static /llms.txt served on www.xfinlab.com (Vercel) so an
+    agent that crawls api.xfinlab.com directly still finds it, without
+    duplicating the text in two places -- reads the same repo-root file
+    Vercel serves. Fails open with a minimal fallback rather than a 500 if
+    the file is ever missing (e.g. a deploy path mismatch), matching this
+    codebase's honest-empty convention elsewhere."""
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "llms.txt")
+        with open(path, "r", encoding="utf-8") as f:
+            return PlainTextResponse(f.read())
+    except Exception:
+        return PlainTextResponse(
+            "# XFINLAB Intelligence API\n\n"
+            "> Financial intelligence API for developers and AI agents.\n\n"
+            "Docs: https://www.xfinlab.com/intelligence-api.html\n"
+        )
 
 
 @app.get("/health")
