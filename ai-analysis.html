@@ -196,6 +196,12 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       <span style="font-size:0.76rem;color:var(--muted)" data-i18n="aa_copy_code_label">Copy as code</span>
       <button onclick="copyApiSnippet('python', this)" style="background:none;border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:0.76rem;cursor:pointer" data-i18n="aa_copy_python_btn">Copy Python</button>
       <button onclick="copyApiSnippet('curl', this)" style="background:none;border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:0.76rem;cursor:pointer" data-i18n="aa_copy_curl_btn">Copy curl</button>
+      <!-- 2026-08-28 (AJ, "0成本推廣" -> viral share loop): downloads a
+           branded PNG research card for the ticker on screen (see
+           api/research_card.py, reuses the same Pillow renderer already
+           live for the daily Telegram auto-post) -- every share carries
+           the XFINLAB wordmark back out into Telegram/X/WhatsApp. -->
+      <button onclick="shareResearchCard(this)" style="background:none;border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:6px;font-size:0.76rem;cursor:pointer" data-i18n="aa_share_card_btn">📤 Share Research Card</button>
     </div>
 
     <!-- Layer 2: Dashboard grid (30-second read) -->
@@ -1226,6 +1232,43 @@ function copyApiSnippet(lang, btn) {
     btn.textContent = (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['aa_copy_code_copied']) || 'Copied ✓';
     setTimeout(() => { btn.textContent = orig; }, 1500);
   }).catch(() => {});
+}
+
+// 2026-08-28 (AJ, "0成本推廣" -> viral share loop): downloads api/research_
+// card.py's branded PNG for the ticker actually on screen (window.__aaLast
+// Ticker, same "last analyzed, not just whatever's in the input box" var
+// copyApiSnippet() above already relies on). Fetches as a blob rather than
+// a plain <a href> navigation so a slow/failed generation shows an inline
+// button state instead of the whole tab navigating to a broken image.
+async function shareResearchCard(btn) {
+  const input = document.getElementById('symbolInput');
+  const fallback = input ? (input.value || '').split(',')[0].trim().toUpperCase() : '';
+  const ticker = window.__aaLastTicker || fallback || 'AAPL';
+  const rawLang = ((typeof I18N !== 'undefined' && I18N.currentLang) || 'en').split('-')[0];
+  const cardLang = ['en', 'zh', 'es'].includes(rawLang) ? rawLang : 'en';
+
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    const resp = await fetch(`${API_BASE}/api/research-card/${encodeURIComponent(ticker)}?lang=${encodeURIComponent(cardLang)}`);
+    if (!resp.ok) throw new Error('research-card fetch failed');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `XFINLAB-${ticker}-research-card.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    btn.textContent = (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['aa_share_card_done']) || 'Downloaded ✓';
+  } catch (e) {
+    btn.textContent = (typeof I18N !== 'undefined' && I18N.translations && I18N.translations['aa_share_card_error']) || 'Failed, try again';
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  }
 }
 
 async function runAnalysis(){
