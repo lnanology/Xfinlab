@@ -185,6 +185,34 @@ class TechnicalAnalysisService:
             capital_flow = get_capital_flow_signal_for_confluence()
         except Exception:
             capital_flow = None
+
+        # 2026-08-27 (AJ: "信號整合落Confluence Engine" -- the Data Factory's
+        # SEC/CFTC collectors, previously display-only on ai-analysis.html,
+        # now vote in the Confluence Engine too). Same fail-open posture as
+        # capital_flow above: any of these three can be slow/unavailable
+        # (SEC EDGAR/CFTC rate limits, no CIK match, out-of-universe
+        # ticker) without ever breaking a technical analysis call that
+        # doesn't need them. Each returns None for the common case of "this
+        # ticker has no relevant data" (e.g. insider for a non-US symbol,
+        # cot for a plain equity) -- _confluence() already skips a None
+        # signal cleanly, same as every other optional signal here.
+        try:
+            from services.sec_form4_service import get_recent_insider_transactions
+            _insider_raw = get_recent_insider_transactions(symbol)
+            insider = _insider_raw if _insider_raw and _insider_raw.get("available") else None
+        except Exception:
+            insider = None
+        try:
+            from services.sec_ownership_service import get_conviction_score
+            _activist_raw = get_conviction_score(symbol)
+            activist = _activist_raw if _activist_raw and _activist_raw.get("available") else None
+        except Exception:
+            activist = None
+        try:
+            from services.cftc_cot_service import get_cot_for_ticker
+            cot = get_cot_for_ticker(symbol)
+        except Exception:
+            cot = None
         bb_upper, bb_mid, bb_lower = self._bollinger(closes, 20, 2)
         bb_last = (
             {
@@ -276,6 +304,25 @@ class TechnicalAnalysisService:
             "donchian": donchian_last,
             "keltner": keltner_last,
             "capital_flow": capital_flow,
+            # 2026-08-27: compact summaries only -- NOT the full raw
+            # objects (insider.transactions / activist.holders_detail can
+            # be dozens of rows each, already available in full via their
+            # own dedicated endpoints/fields elsewhere -- ai_analysis.py's
+            # insider_transactions/ownership fields, api/intelligence.py's
+            # /v1/insider). This field just documents what fed the
+            # confluence vote below, same compact style as capital_flow.
+            "insider_signal": (
+                {"buy_count": insider["summary"].get("buy_count"), "sell_count": insider["summary"].get("sell_count")}
+                if insider and insider.get("summary") else None
+            ),
+            "activist_signal": (
+                {"has_recent_13d": activist["activist_signal"]["has_recent_13d"]}
+                if activist and activist.get("activist_signal") else None
+            ),
+            "cot_signal": (
+                {"net_noncomm": cot.get("net_noncomm"), "match_type": cot.get("match_type")}
+                if cot else None
+            ),
         }
 
         confluence = self._confluence(
@@ -294,6 +341,9 @@ class TechnicalAnalysisService:
             keltner=keltner_last,
             gann=gann,
             capital_flow=capital_flow,
+            insider=insider,
+            activist=activist,
+            cot=cot,
         )
 
         decision_levels = self._decision_levels(
@@ -1001,6 +1051,15 @@ class TechnicalAnalysisService:
         # being analyzed, so it should nudge the score rather than
         # dominate it the way a support/resistance touch does.
         "capital_flow": 0.7,
+        # 2026-08-27 (AJ: "信號整合落Confluence Engine" -- wiring the Data
+        # Factory's SEC/CFTC collectors in as real votes, not just display-
+        # only cards). All three are lagging/periodic fundamental-style
+        # reads rather than real-time price action, so weighted in the
+        # same lower tier as capital_flow rather than alongside the
+        # price-derived technical signals above.
+        "insider": 0.8,   # SEC Form 4 net buy/sell -- a real executed transaction, not a sentiment guess
+        "activist": 0.9,  # a 13D filer showing up is a specific, high-conviction catalyst
+        "cot": 0.7,        # CFTC COT speculator positioning -- only meaningful for the small futures-tracking ETF/pair universe it covers
     }
 
     @classmethod
@@ -1021,6 +1080,9 @@ class TechnicalAnalysisService:
         keltner: Optional[Dict] = None,
         gann: Optional[Dict] = None,
         capital_flow: Optional[Dict] = None,
+        insider: Optional[Dict] = None,
+        activist: Optional[Dict] = None,
+        cot: Optional[Dict] = None,
         proximity_tolerance: float = 0.03,
     ) -> Dict:
         """
@@ -1151,6 +1213,41 @@ class TechnicalAnalysisService:
             elif cf_dir.startswith("資金淨流出"):
                 signals.append({"signal": "資金流Engine：全球資金淨流出，風險偏好下降", "bias": -1, "weight": w["capital_flow"]})
             # 分歧/中性 (dispersed/neutral) is skipped, same as Ichimoku's 雲內.
+
+        # 14. Insider trading net activity (2026-08-27 addition) -- SEC
+        # Form 4 non-derivative open-market transactions from services/
+        # sec_form4_service.py. Net buy vs. net sell COUNT (not dollar
+        # value -- summary.net_value_usd can be None when rows lack a
+        # price, e.g. gifts, so count is the more reliably-populated
+        # comparison). Skipped for a tie or when no data is available.
+        if insider and insider.get("summary"):
+            buy_count = insider["summary"].get("buy_count") or 0
+            sell_count = insider["summary"].get("sell_count") or 0
+            if buy_count > sell_count:
+                signals.append({"signal": "內幕人淨買入（Form 4）", "bias": 1, "weight": w["insider"]})
+            elif sell_count > buy_count:
+                signals.append({"signal": "內幕人淨賣出（Form 4）", "bias": -1, "weight": w["insider"]})
+
+        # 15. Activist 13D presence (2026-08-27 addition) -- from services/
+        # sec_ownership_service.get_conviction_score()'s activist_signal
+        # sub-field. An activist filing a 13D (vs. a passive 13G) signals
+        # intent to push for change/value-unlock -- read as a bullish
+        # catalyst. This is a real, specific event, not a fabricated
+        # "will it work" prediction about the activist's campaign.
+        if activist and activist.get("activist_signal", {}).get("has_recent_13d"):
+            signals.append({"signal": "近期有13D激進投資人申報", "bias": 1, "weight": w["activist"]})
+
+        # 16. CFTC COT speculator net positioning (2026-08-27 addition) --
+        # only populated for the small futures-tracking ETF/pair universe
+        # services/cftc_cot_service.get_cot_for_ticker() covers (gold,
+        # silver, oil, nat-gas, major FX pairs, SPY, IEF) -- None for a
+        # plain equity, skipped like every other optional signal here.
+        # Reads the CURRENT level's sign, not a week-over-week change.
+        if cot and cot.get("net_noncomm") is not None:
+            if cot["net_noncomm"] > 0:
+                signals.append({"signal": "COT投機淨多倉", "bias": 1, "weight": w["cot"]})
+            elif cot["net_noncomm"] < 0:
+                signals.append({"signal": "COT投機淨空倉", "bias": -1, "weight": w["cot"]})
 
         counted = len(signals)
         weight_total = sum(s["weight"] for s in signals)
