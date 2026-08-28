@@ -555,6 +555,30 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+def _run_sec_13d_13g_refresh_job():
+    try:
+        from services.sec_13d_13g_service import refresh_all
+        refresh_all()
+    except Exception:
+        pass
+
+# 2026-08-27 (AJ: "13D/13G加排程"): unlike 13F (quarterly, monthly job is
+# plenty), a 13D/13G filing is event-driven and can land on any trading
+# day -- an activist's stake crossing 5% is market-moving news the moment
+# it's filed, so this runs daily like EIA/Treasury rather than monthly
+# like 13F. refresh_all() only re-checks tickers already persisted from a
+# real user lookup (see that function's own docstring for why there's no
+# fixed "watched ticker" list here the way 13F has watched filers), so
+# this job's cost grows with real usage, not a guessed universe.
+_push_scheduler.add_job(
+    _run_sec_13d_13g_refresh_job,
+    "cron",
+    hour=5,
+    minute=15,
+    id="sec_13d_13g_refresh",
+    replace_existing=True,
+)
+
 def _run_eia_energy_refresh_job():
     try:
         from services.eia_energy_service import get_snapshot

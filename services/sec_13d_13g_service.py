@@ -309,6 +309,46 @@ def get_persisted_filings(ticker: str, limit: int = 20) -> List[dict]:
     return [dict(r) for r in rows]
 
 
+def _distinct_known_tickers() -> List[str]:
+    """Every ticker this service has ever persisted a filing search for --
+    i.e. every ticker a real user has looked up on ai-analysis.html (or
+    now, the Intelligence/Confluence Engine path) at least once. Used by
+    refresh_all() below as an organically-grown watchlist rather than a
+    hand-maintained fixed universe -- this module has no natural
+    "tracked filer" or "tracked ticker" list the way sec_ownership_
+    service.py's 13F collector does (that one loops watched INSTITUTIONS,
+    which each cover many tickers per filing; 13D/13G search is inherently
+    per-SUBJECT-COMPANY, so there's no equivalent filer-side list to loop)."""
+    conn = _get_db()
+    rows = conn.execute("SELECT DISTINCT ticker FROM sec_13d_13g_filings").fetchall()
+    conn.close()
+    return [r["ticker"] for r in rows]
+
+
+def refresh_all() -> Dict[str, int]:
+    """2026-08-27 (AJ: "13D/13G加排程" -- follow-up to the 2026-08-26
+    "做下一步" note in get_conviction_score()'s docstring that this
+    collector was on-demand only). Meant to be called from a scheduled
+    job. Loops every ticker this service already has persisted data for
+    (see _distinct_known_tickers() above) with force_refresh=True, so a
+    daily job keeps activist filings current for anything a real user has
+    ever looked up -- without inventing a fabricated "top tickers" list
+    for a collector that has no natural equivalent to 13F's watched-filer
+    universe. Returns {ticker: filing_count} for the admin panel /
+    scheduler logs; a per-ticker fetch failure (rate limit, transient
+    EDGAR error) degrades to whatever search_recent_filings() itself
+    returns (cached/persisted fallback) rather than raising and aborting
+    the whole run."""
+    results: Dict[str, int] = {}
+    for ticker in _distinct_known_tickers():
+        try:
+            result = search_recent_filings(ticker, force_refresh=True)
+            results[ticker] = len(result.get("filings", [])) if result.get("available") else 0
+        except Exception:
+            results[ticker] = -1
+    return results
+
+
 if __name__ == "__main__":
     import json
     print(json.dumps(search_recent_filings("AAPL"), indent=2, ensure_ascii=False))
