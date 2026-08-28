@@ -452,6 +452,29 @@ nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid 
       </div>
     </details>
 
+    <!-- 2026-08-28 (AJ: "重有咩賺錢位" -> consumer Fundamentals+Macro
+         pack): SEC XBRL fundamentals, CBOE VIX term structure, FDIC bank
+         health, USDA agriculture -- a new standalone à la carte SKU
+         ("fundamentals_macro_pack", see api/ai_analysis.py's
+         is_fundamentals_macro_plan gate), deliberately separate from
+         advanced_engines_bundle since this is Data Factory data, not a
+         quant-engine computation. Each of the 4 sub-items independently
+         hidden if null for this ticker (e.g. bank_health only for
+         JPM/BAC/WFC/C/USB/PNC/TFC) -- same honest-empty convention as
+         every other Data Factory accordion above. -->
+    <details class="xfl-accordion" id="fundamentalsMacroAccordion" style="display:none">
+      <summary data-i18n="aa_fmp_title">▶ Fundamentals &amp; Macro Pack</summary>
+      <div class="xfl-accordion-body">
+        <div id="fmpUnlockPrompt" class="ai-summary-box" style="display:none;margin-bottom:0.8rem">
+          <div class="ai-summary-label" data-i18n="aa_bundle_unlock_label">單獨解鎖呢個功能</div>
+          <p data-i18n="aa_fmp_unlock_desc">SEC財報基本面、VIX期限結構、銀行健康度、農產品價格一齊解鎖,唔使升級成個Pro+方案。</p>
+          <button type="button" id="fmpUnlockBtn" class="primary-btn" style="height:38px;padding:0 14px;margin-top:0.4rem" data-i18n="aa_bundle_unlock_btn">🔓 解鎖進階分析</button>
+        </div>
+        <div id="fmpBody"></div>
+        <div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted)" data-i18n="aa_fmp_note">SEC XBRL / CBOE / FDIC / USDA official data. Not every sub-section applies to every ticker. For research reference only, not investment advice.</div>
+      </div>
+    </details>
+
     <details class="xfl-accordion">
       <summary data-i18n="aa_support_resistance_title">▶ 支持阻力</summary>
       <div class="xfl-accordion-body" id="supportResistanceBody">-</div>
@@ -1009,6 +1032,85 @@ function renderShortInterest(short){
   `;
 }
 
+// 2026-08-28 (AJ: "重有咩賺錢位" -> consumer Fundamentals+Macro pack):
+// all 4 fields (sec_fundamentals/vix_term_structure/bank_health/
+// agriculture_context) are gated together by the SAME
+// fundamentals_macro_pack addon, so api/ai_analysis.py sends the exact
+// same {locked:true,...} placeholder on all 4 for a non-holder -- only
+// need to check one of them here. Same unlock-offer-instead-of-hiding
+// pattern as renderSmartBeta() above.
+function renderFundamentalsMacroPack(fundamentals, vix, bankHealth, agriculture){
+  const acc = document.getElementById('fundamentalsMacroAccordion');
+  if (!acc) return;
+  const unlockPrompt = document.getElementById('fmpUnlockPrompt');
+  const locked = fundamentals && fundamentals.locked;
+  if (locked) {
+    if (_xflLiveAddonKeys.includes('fundamentals_macro_pack')) {
+      acc.style.display = '';
+      unlockPrompt.style.display = 'block';
+      document.getElementById('fmpBody').innerHTML = '';
+    } else {
+      acc.style.display = 'none';
+    }
+    return;
+  }
+  if (unlockPrompt) unlockPrompt.style.display = 'none';
+
+  const sections = [];
+  if (fundamentals && fundamentals.facts && Object.keys(fundamentals.facts).length) {
+    const rows = Object.values(fundamentals.facts).map(f => `
+      <div class="prob-section" style="margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="prob-label" style="font-weight:600">${f.label}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted)">FY end ${f.end_date} · ${f.form}</div>
+        </div>
+        <div style="font-weight:700">${f.unit === 'USD' ? '$' + Number(f.value).toLocaleString(undefined, {maximumFractionDigits: 0}) : Number(f.value).toLocaleString(undefined, {maximumFractionDigits: 2}) + ' ' + f.unit}</div>
+      </div>`).join('');
+    sections.push(`<div class="prob-label" style="font-weight:700;margin:0.3rem 0">SEC Fundamentals (10-K)</div>${rows}`);
+  }
+  if (vix && vix.term_structure) {
+    const rows = Object.values(vix.term_structure).filter(v => v).map(s => `
+      <div class="prob-section" style="margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center">
+        <div class="prob-label">${s.label}</div>
+        <div style="font-weight:700">${s.close}</div>
+      </div>`).join('');
+    const structureNote = vix.structure ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.3rem">Structure: ${vix.structure}</div>` : '';
+    sections.push(`<div class="prob-label" style="font-weight:700;margin:0.3rem 0">VIX Term Structure</div>${structureNote}${rows}`);
+  }
+  if (bankHealth && bankHealth.bank) {
+    const b = bankHealth.bank;
+    sections.push(`<div class="prob-label" style="font-weight:700;margin:0.3rem 0">Bank Health (FDIC)</div>
+      <div class="prob-section" style="margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="prob-label" style="font-weight:600">${b.bank_name}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted)">As of ${b.report_date}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700">ROA ${b.roa ?? '—'}%</div>
+          <div style="font-size:0.72rem;color:var(--text-muted)">ROE ${b.roe ?? '—'}%</div>
+        </div>
+      </div>`);
+  }
+  if (agriculture && agriculture.series) {
+    const rows = Object.values(agriculture.series).filter(s => s).map(s => `
+      <div class="prob-section" style="margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="prob-label" style="font-weight:600">${s.label}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted)">${s.period}</div>
+        </div>
+        <div style="font-weight:700">$${Number(s.value).toFixed(2)}/BU</div>
+      </div>`).join('');
+    sections.push(`<div class="prob-label" style="font-weight:700;margin:0.3rem 0">USDA Agriculture</div>${rows}`);
+  }
+
+  if (!sections.length) {
+    acc.style.display = 'none';
+    return;
+  }
+  acc.style.display = '';
+  document.getElementById('fmpBody').innerHTML = sections.join('');
+}
+
 // 2026-07-25 ("自行建可顯示任何資產嘅K線圖，不用TradingView"): self-hosted
 // candlestick chart (Lightweight Charts, free/open-source, no API key)
 // instead of the TradingView iframe embed, using the real OHLC bars the
@@ -1236,6 +1338,7 @@ async function runAnalysis(){
     renderExchangeComparison(data.exchange_comparison);
     renderInsiderTransactions(data.insider_transactions);
     renderShortInterest(data.short_interest);
+    renderFundamentalsMacroPack(data.sec_fundamentals, data.vix_term_structure, data.bank_health, data.agriculture_context);
 
     // ---- Layer 4: reasons accordion ----
     const reasons = data.reasons || { bullish: [], bearish: [] };
@@ -1667,6 +1770,7 @@ async function unlockFeatureAddon(featureKey, btnId) {
 document.getElementById('debateUnlockBtn').addEventListener('click', () => unlockFeatureAddon('agent_debate', 'debateUnlockBtn'));
 document.getElementById('sbUnlockBtn').addEventListener('click', () => unlockFeatureAddon('advanced_engines_bundle', 'sbUnlockBtn'));
 document.getElementById('cffUnlockBtn').addEventListener('click', () => unlockFeatureAddon('advanced_engines_bundle', 'cffUnlockBtn'));
+document.getElementById('fmpUnlockBtn').addEventListener('click', () => unlockFeatureAddon('fundamentals_macro_pack', 'fmpUnlockBtn'));
 
 document.getElementById('debateRunBtn').addEventListener('click', async () => {
   if (!_xflLastAnalyzedSymbol) return;

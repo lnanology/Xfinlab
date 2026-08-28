@@ -68,6 +68,13 @@ async def ai_analysis(request: Request, body: dict):
     # services/feature_addon_service.py / api/webhooks_stripe.py's
     # VALID_ADDON_FEATURES.
     is_pro_plan = is_advanced_engine_plan(token, feature_key="advanced_engines_bundle")
+    # 2026-08-28 (AJ: "重有咩賺錢位" -> consumer Fundamentals+Macro pack):
+    # separate SKU from advanced_engines_bundle -- this is fundamentally-
+    # data (SEC XBRL/CBOE VIX/FDIC/USDA), not a quant-engine computation,
+    # so it's priced/sold as its own à la carte unlock rather than folded
+    # into the existing bundle. Same soft-check, same locked-placeholder
+    # posture as every other gated field on this page.
+    is_fundamentals_macro_plan = is_advanced_engine_plan(token, feature_key="fundamentals_macro_pack")
     _locked_advanced_engine = {
         "locked": True,
         "required_plan": "pro",
@@ -634,6 +641,40 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         short_interest = None
 
+    # 2026-08-28 (AJ: "重有咩賺錢位" -> consumer Fundamentals+Macro pack):
+    # 4 fields wrapping the newest Data Factory batch (SEC XBRL, CBOE
+    # VIX, FDIC, USDA) -- computed for everyone regardless of plan (same
+    # "gating bug can't break the analysis" posture as regime/scenario/
+    # smart_beta above), redacted to _locked_advanced_engine just before
+    # the response if the caller doesn't hold fundamentals_macro_pack.
+    try:
+        from services.sec_xbrl_service import get_company_facts
+        sec_fundamentals = get_company_facts(symbol)
+        if not sec_fundamentals or not sec_fundamentals.get("facts"):
+            sec_fundamentals = None
+    except Exception:
+        sec_fundamentals = None
+
+    try:
+        from services.cboe_vix_service import get_snapshot as _get_vix_snapshot
+        vix_term_structure = _get_vix_snapshot()
+        if not vix_term_structure or not vix_term_structure.get("available"):
+            vix_term_structure = None
+    except Exception:
+        vix_term_structure = None
+
+    try:
+        from services.fdic_banking_service import get_bank_health
+        bank_health = get_bank_health(symbol)
+    except Exception:
+        bank_health = None
+
+    try:
+        from services.usda_agriculture_service import get_agriculture_context_for_ticker
+        agriculture_context = get_agriculture_context_for_ticker(symbol)
+    except Exception:
+        agriculture_context = None
+
     # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer surface
     # for the same Probabilistic K-Line engine just shipped on the
     # Intelligence API as GET /v1/forecast/{ticker}): bundled into the
@@ -732,5 +773,9 @@ async def ai_analysis(request: Request, body: dict):
             "exchange_comparison": exchange_comparison,
             "insider_transactions": insider_transactions,
             "short_interest": short_interest,
+            "sec_fundamentals": sec_fundamentals if is_fundamentals_macro_plan else _locked_advanced_engine,
+            "vix_term_structure": vix_term_structure if is_fundamentals_macro_plan else _locked_advanced_engine,
+            "bank_health": bank_health if is_fundamentals_macro_plan else _locked_advanced_engine,
+            "agriculture_context": agriculture_context if is_fundamentals_macro_plan else _locked_advanced_engine,
         }
     }
