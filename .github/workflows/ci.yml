@@ -46,8 +46,17 @@ jobs:
       # Hard gate: boots the real FastAPI app in-process (same backend.main
       # that Railway runs) and hits "/" + "/docs". If this fails, the app
       # would fail to start on Railway too.
+      #
+      # 2026-08-29: must be `python -m pytest`, not bare `pytest` -- there's
+      # no conftest.py at repo root, so bare `pytest` never puts the repo
+      # root on sys.path and `from backend.main import app` inside
+      # tests/test_level1.py fails with ModuleNotFoundError on a clean CI
+      # runner. `python -m pytest` always prepends the cwd to sys.path
+      # first, so this actually resolves. Pre-existing bug in this
+      # workflow, unrelated to any application code change -- only
+      # surfaced now that this check became a required, enforced gate.
       - name: App boot smoke test
-        run: pytest tests/test_level1.py -v
+        run: python -m pytest tests/test_level1.py -v
 
   extended-checks:
     runs-on: ubuntu-latest
@@ -69,7 +78,7 @@ jobs:
       # API -- that can legitimately fail on rate limits/network hiccups
       # unrelated to any real bug, so this step is non-blocking by design.
       - name: Engine unit tests (non-blocking)
-        run: pytest tests/test_suite.py -v
+        run: python -m pytest tests/test_suite.py -v
         continue-on-error: true
 
       # Informational only: requirements-dev.txt already lists ruff but
@@ -92,6 +101,5 @@ jobs:
       # still small -- can flip to a hard gate once it's grown real
       # coverage and proven itself flake-free.
       - name: BDD scenarios (non-blocking)
-        run: pytest tests/step_defs/ -v
+        run: python -m pytest tests/step_defs/ -v
         continue-on-error: true
-
