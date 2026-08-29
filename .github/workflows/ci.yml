@@ -5,6 +5,16 @@ name: CI
 # This does NOT deploy anything -- Railway still auto-deploys off main on its
 # own trigger, same as today. This just gives you (and Claude) a visible
 # red/green signal before that happens.
+#
+# 2026-08-29: split into two named jobs (build-check + extended-checks) so
+# there are two distinct GitHub status checks, matching the repo's branch
+# ruleset ("2 of 2 required status checks") added around this date. Was
+# previously a single `build-check` job -- a repo with a rule requiring 2
+# checks but a workflow only producing 1 would permanently block every PR
+# from merging, regardless of how green the actual run is. Splitting keeps
+# the exact same hard-gate-vs-informational split as before; nothing that
+# was blocking became non-blocking, and nothing that was non-blocking
+# became blocking.
 on:
   push:
     branches: [main]
@@ -39,6 +49,20 @@ jobs:
       - name: App boot smoke test
         run: pytest tests/test_level1.py -v
 
+  extended-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
       # Informational only: engine unit tests (RuleEngine/ScoreEngine/
       # RiskEngine/DecisionEngine/EventEngine) are offline and safe, but
       # TestCryptoService in the same file calls a live external crypto price
@@ -70,3 +94,4 @@ jobs:
       - name: BDD scenarios (non-blocking)
         run: pytest tests/step_defs/ -v
         continue-on-error: true
+
