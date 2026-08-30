@@ -31,6 +31,28 @@ diff -- no AI, no estimation -- so it never fabricates a trend; if there's
 no prior snapshot yet (first time this ticker's been queried, or it's the
 first call of the day), `what_changed` honestly reports
 `{"available": False}` rather than inventing a baseline.
+
+2026-08-30 (AJ: "起 Phase 2 3 一次過"): added Phase 2 and Phase 3 as two
+more sub-sections, same zero-fabrication posture as above:
+  - `business_relationship_mentions` (Phase 2, services/
+    sec_business_text_service.py): literal sentence excerpts from the
+    issuer's own 10-K naming a competitor/supplier/customer. This
+    codebase's first raw-prose-document fetch from SEC EDGAR (every
+    other SEC module here only ever touches structured JSON APIs). Each
+    mention is a real quoted excerpt with a link back to the source
+    filing -- never a cleaned-up/inferred "these are the competitors"
+    list.
+  - `event_impact` (Phase 3, services/event_impact_service.py): what the
+    real stock price actually did after each of the ticker's most recent
+    tracked Form 4 / 13D-13G events, computed live from real historical
+    closes. Deliberately NOT the "average historical reaction" style
+    feature this codebase already tried and explicitly rejected once
+    (see engines/event_engine.py's docstring) -- this is a single real
+    past outcome per event, not a statistic, and never implies
+    causation or prediction.
+Both sub-calls are wrapped in try/except: a Phase 2 or Phase 3 failure
+degrades that section to {"available": False, ...} without breaking the
+Phase 1 response that was already live in production.
 """
 import os
 import sqlite3
@@ -162,7 +184,9 @@ def get_company_network(ticker: str) -> Dict:
          "insider_trading": {...from sec_form4_service.get_recent_insider_transactions...},
          "commodity_exposure": {...from cftc_cot_service.get_cot_for_ticker...} or None,
          "network_summary": {...pure pass-through counts/sums, see module docstring...},
-         "what_changed": {...day-over-day diff, or {"available": False} if no prior snapshot...}}
+         "what_changed": {...day-over-day diff, or {"available": False} if no prior snapshot...},
+         "business_relationship_mentions": {...Phase 2, from sec_business_text_service...},
+         "event_impact": {...Phase 3, from event_impact_service...}}
 
     Always `available: True` at the top level (this endpoint never 503s) --
     each sub-section carries its own honest `available` flag independently,
@@ -219,6 +243,18 @@ def get_company_network(ticker: str) -> Dict:
 
     what_changed = _save_snapshot_and_diff(ticker, network_summary)
 
+    try:
+        from services.sec_business_text_service import get_business_relationship_mentions
+        business_relationship_mentions = get_business_relationship_mentions(ticker)
+    except Exception:
+        business_relationship_mentions = {"available": False, "message": "Business relationship extraction unavailable this run."}
+
+    try:
+        from services.event_impact_service import get_event_impact
+        event_impact = get_event_impact(ticker)
+    except Exception:
+        event_impact = {"available": False, "message": "Event impact lookup unavailable this run."}
+
     return {
         "available": True,
         "ticker": ticker,
@@ -231,4 +267,6 @@ def get_company_network(ticker: str) -> Dict:
         "commodity_exposure": cot,
         "network_summary": network_summary,
         "what_changed": what_changed,
+        "business_relationship_mentions": business_relationship_mentions,
+        "event_impact": event_impact,
     }

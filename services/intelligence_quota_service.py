@@ -136,7 +136,18 @@ ENDPOINT_WEIGHT = {
     # LLM call, but the widest single-ticker fan-out of the non-AI
     # endpoints, so weighted above insider/technical/forecast and just
     # under world_map (which fans out across regions, not just sources).
-    "company_network": 5,
+    #
+    # 2026-08-30 (Phase 2/3, "起 Phase 2 3 一次過"): raised 5->7. Phase 2
+    # (sec_business_text_service) adds this codebase's first raw-HTML
+    # 10-K document fetch + BeautifulSoup parse (a full filing document,
+    # not a small JSON payload) and Phase 3 (event_impact_service) adds a
+    # live 1-year OHLC fetch on top of the original 4-source fan-out --
+    # both are 24h-cached like the rest of this endpoint, but a cache-miss
+    # call is now meaningfully heavier than the Phase 1-only version was.
+    # Kept below world_map (multi-region fan-out) since this is still a
+    # single-ticker, single-document-per-call cost shape. Same
+    # pending-business-approval caveat as every other number in this dict.
+    "company_network": 7,
     "short_interest": 2,
     "energy": 2,
     "exchange": 2,
