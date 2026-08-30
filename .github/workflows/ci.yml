@@ -24,6 +24,17 @@ on:
 jobs:
   build-check:
     runs-on: ubuntu-latest
+    # 2026-08-29: services/news_service.py's NewsService.__init__ raises
+    # ValueError("NEWS_API_KEY not found in .env file") if this is unset --
+    # it only checks the key is present, never calls the real NewsAPI at
+    # import time, so a harmless placeholder is enough to let backend.main
+    # import successfully on a clean CI runner (there's no .env file here,
+    # unlike local dev / Railway, which both have a real key). Another
+    # pre-existing gap in this workflow, same root cause as the `python -m
+    # pytest` fix above: this hard gate had never actually completed a run
+    # before the branch ruleset made it required.
+    env:
+      NEWS_API_KEY: ci-smoke-test-placeholder-not-a-real-key
     steps:
       - uses: actions/checkout@v4
 
@@ -60,6 +71,10 @@ jobs:
 
   extended-checks:
     runs-on: ubuntu-latest
+    # Same placeholder as build-check's env block above -- test_suite.py /
+    # step_defs/ may also transitively import backend.main.
+    env:
+      NEWS_API_KEY: ci-smoke-test-placeholder-not-a-real-key
     steps:
       - uses: actions/checkout@v4
 
