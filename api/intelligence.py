@@ -278,6 +278,12 @@ def intelligence_status():
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
     {
+        "date": "2026-08-30",
+        "changes": [
+            {"type": "changed", "text": "GET /v1/company-network/{ticker} -- added business_relationship_mentions (Phase 2: literal, sourced sentence excerpts from the issuer's own latest 10-K naming a competitor/supplier/customer -- quotable and independently verifiable, never a cleaned-up inferred list) and event_impact (Phase 3: what the real stock price actually did after each of the ticker's most recent tracked Form 4 / 13D-13G events, computed live from real historical closes -- a factual record of one past outcome, not a prediction, average, or causal claim). Both are new sub-sections on the existing endpoint, not a new route. Quota weight raised 5->7 to reflect the extra document fetch."},
+        ],
+    },
+    {
         "date": "2026-08-29",
         "changes": [
             {"type": "added", "text": "GET /v1/company-network/{ticker} -- combines 13F institutional ownership, 13D/13G activist filings, Form 4 insider trading, and CFTC COT (if linked) into one relationship view, plus a day-over-day what_changed diff. Zero new data sources."},
