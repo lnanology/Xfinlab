@@ -254,6 +254,7 @@ def intelligence_status():
         "regime_signal": True,  # reads a local persisted leaderboard, no external gate
         "forecast": True,  # pure computation once price history resolves, ml_cross_check/capital_flow_context degrade individually rather than gating the whole endpoint
         "insider": True,  # never 503s -- returns data: null for a ticker with no CIK match or an upstream miss
+        "company_network": True,  # never 503s -- pure re-packaging of insider/13F/13D/COT, each sub-section honestly flags its own availability
         "short_interest": True,  # never 503s -- returns data: null for no reportable short position or an upstream miss
         "energy": True,  # never 503s -- returns data: null for a ticker with no crude/nat-gas linkage
         "exchange": True,  # never 503s -- returns data: null for a non-crypto ticker
@@ -276,6 +277,12 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-29",
+        "changes": [
+            {"type": "added", "text": "GET /v1/company-network/{ticker} -- combines 13F institutional ownership, 13D/13G activist filings, Form 4 insider trading, and CFTC COT (if linked) into one relationship view, plus a day-over-day what_changed diff. Zero new data sources."},
+        ],
+    },
     {
         "date": "2026-08-28",
         "changes": [
@@ -1085,6 +1092,40 @@ def intelligence_insider(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+@router.get("/intelligence/v1/company-network/{ticker}")
+def intelligence_company_network(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Company relationship intelligence for `ticker` (services/
+    company_network_service.py -- Phase 1 of the "Company Intelligence"
+    direction, 2026-08-29). Combines four already-collected Data Factory
+    signals into one view: SEC 13F institutional ownership + conviction
+    score, SEC 13D/13G activist filings, SEC Form 4 insider trading, and
+    CFTC COT futures positioning if the ticker has a directly linked
+    contract. Zero new data sources -- pure re-packaging of endpoints
+    already live elsewhere in this API (/v1/insider is a subset of this
+    response's insider_trading field).
+
+    Also returns `what_changed`: a day-over-day diff of this ticker's
+    network_summary numbers against the prior day's snapshot. Pure
+    mechanical diff, no AI -- `available: False` the first time a ticker
+    is queried on a given day (no prior snapshot to diff against yet)
+    rather than fabricating a baseline."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "company_network", response, ticker=ticker.upper())
+
+    from services.company_network_service import get_company_network
+
+    ticker = ticker.upper().strip()
+    result = get_company_network(ticker)
+    if not result or not result.get("available"):
+        return _envelope(data=None, error=(result or {}).get("message", f"No company-network data available for {ticker}"))
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
 @router.get("/intelligence/v1/short-interest/{ticker}")
 def intelligence_short_interest(
     response: Response,
@@ -1340,6 +1381,7 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/stress-test",
     "/intelligence/v1/regime-signal/{ticker}",
     "/intelligence/v1/insider/{ticker}",
+    "/intelligence/v1/company-network/{ticker}",
     "/intelligence/v1/short-interest/{ticker}",
     "/intelligence/v1/energy/{ticker}",
     "/intelligence/v1/exchange/{ticker}",

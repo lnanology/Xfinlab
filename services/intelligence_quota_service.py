@@ -130,6 +130,13 @@ ENDPOINT_WEIGHT = {
     # read. Same pending-business-approval caveat as every other number
     # in this dict.
     "insider": 3,
+    # 2026-08-29 (Company Network, Phase 1 of "Company Intelligence"):
+    # fans out to FOUR underlying lookups (13F ownership+conviction, 13D/13G
+    # search, Form 4 insider, COT) plus a local snapshot read/write -- no
+    # LLM call, but the widest single-ticker fan-out of the non-AI
+    # endpoints, so weighted above insider/technical/forecast and just
+    # under world_map (which fans out across regions, not just sources).
+    "company_network": 5,
     "short_interest": 2,
     "energy": 2,
     "exchange": 2,
