@@ -5,6 +5,16 @@ name: CI
 # This does NOT deploy anything -- Railway still auto-deploys off main on its
 # own trigger, same as today. This just gives you (and Claude) a visible
 # red/green signal before that happens.
+#
+# 2026-08-29: split into two named jobs (build-check + extended-checks) so
+# there are two distinct GitHub status checks, matching the repo's branch
+# ruleset ("2 of 2 required status checks") added around this date. Was
+# previously a single `build-check` job -- a repo with a rule requiring 2
+# checks but a workflow only producing 1 would permanently block every PR
+# from merging, regardless of how green the actual run is. Splitting keeps
+# the exact same hard-gate-vs-informational split as before; nothing that
+# was blocking became non-blocking, and nothing that was non-blocking
+# became blocking.
 on:
   push:
     branches: [main]
@@ -14,6 +24,17 @@ on:
 jobs:
   build-check:
     runs-on: ubuntu-latest
+    # 2026-08-29: services/news_service.py's NewsService.__init__ raises
+    # ValueError("NEWS_API_KEY not found in .env file") if this is unset --
+    # it only checks the key is present, never calls the real NewsAPI at
+    # import time, so a harmless placeholder is enough to let backend.main
+    # import successfully on a clean CI runner (there's no .env file here,
+    # unlike local dev / Railway, which both have a real key). Another
+    # pre-existing gap in this workflow, same root cause as the `python -m
+    # pytest` fix above: this hard gate had never actually completed a run
+    # before the branch ruleset made it required.
+    env:
+      NEWS_API_KEY: ci-smoke-test-placeholder-not-a-real-key
     steps:
       - uses: actions/checkout@v4
 
@@ -36,8 +57,35 @@ jobs:
       # Hard gate: boots the real FastAPI app in-process (same backend.main
       # that Railway runs) and hits "/" + "/docs". If this fails, the app
       # would fail to start on Railway too.
+      #
+      # 2026-08-29: must be `python -m pytest`, not bare `pytest` -- there's
+      # no conftest.py at repo root, so bare `pytest` never puts the repo
+      # root on sys.path and `from backend.main import app` inside
+      # tests/test_level1.py fails with ModuleNotFoundError on a clean CI
+      # runner. `python -m pytest` always prepends the cwd to sys.path
+      # first, so this actually resolves. Pre-existing bug in this
+      # workflow, unrelated to any application code change -- only
+      # surfaced now that this check became a required, enforced gate.
       - name: App boot smoke test
-        run: pytest tests/test_level1.py -v
+        run: python -m pytest tests/test_level1.py -v
+
+  extended-checks:
+    runs-on: ubuntu-latest
+    # Same placeholder as build-check's env block above -- test_suite.py /
+    # step_defs/ may also transitively import backend.main.
+    env:
+      NEWS_API_KEY: ci-smoke-test-placeholder-not-a-real-key
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       # Informational only: engine unit tests (RuleEngine/ScoreEngine/
       # RiskEngine/DecisionEngine/EventEngine) are offline and safe, but
@@ -45,7 +93,7 @@ jobs:
       # API -- that can legitimately fail on rate limits/network hiccups
       # unrelated to any real bug, so this step is non-blocking by design.
       - name: Engine unit tests (non-blocking)
-        run: pytest tests/test_suite.py -v
+        run: python -m pytest tests/test_suite.py -v
         continue-on-error: true
 
       # Informational only: requirements-dev.txt already lists ruff but
@@ -68,5 +116,5 @@ jobs:
       # still small -- can flip to a hard gate once it's grown real
       # coverage and proven itself flake-free.
       - name: BDD scenarios (non-blocking)
-        run: pytest tests/step_defs/ -v
+        run: python -m pytest tests/step_defs/ -v
         continue-on-error: true
