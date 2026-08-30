@@ -585,6 +585,87 @@ def get_conviction_score(ticker: str) -> Dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# 2026-08-30 (Company Network Phase 4, AJ: "2 3 做啦" picking option 2 of a
+# 3-option next-feature menu -- "cross-ticker fund overlap, zero new data
+# source, pure re-package of already-collected 13F data"). What this adds
+# that get_ownership_summary()/get_conviction_score() don't: those two
+# only ever look at ONE ticker's slice of sec_13f_holdings. But every
+# 13F filing already persisted in that table has EVERY position the
+# filer reported that quarter, not just the one the caller asked about
+# -- so for a tracked manager that holds this ticker, we already have
+# their full other holdings sitting in the same table, unused until now.
+#
+# Deliberately not a "smart money score" or ranking -- just literal rows
+# from real filings: which of our tracked concentrated managers hold
+# this ticker, and what else (by real reported value) that SAME manager
+# holds. No CUSIP->ticker resolution exists yet (see module docstring),
+# so "other holdings" are shown by their real SEC-reported issuer name,
+# never guessed at a ticker symbol.
+def get_smart_money_crossholdings(ticker: str, other_limit: int = 5) -> Dict:
+    """
+    Returns:
+        {"available": True, "attribution": "...",
+         "watched_filers_note": "...",
+         "crossholdings": [
+             {"filer_name": "...", "filer_cik": ..., "period_of_report": "...",
+              "position_in_ticker": {"shares": ..., "value_usd": ...},
+              "other_top_holdings": [{"issuer_name": "...", "value_usd": ..., "shares": ...}, ...]},
+             ...
+         ]}
+        {"available": False, "message": "..."} when the ticker resolves
+        but none of our tracked managers hold it, or can't be resolved.
+
+    `other_top_holdings` is capped at `other_limit` (default 5), sorted
+    by real reported value_usd descending, and always excludes the
+    queried ticker's own issuer row (that's already in position_in_ticker).
+    """
+    summary = get_ownership_summary(ticker)
+    if not summary.get("available") or not summary.get("holders"):
+        return {"available": False, "message": "冇追蹤緊嘅機構持有呢隻股票，未能睇到相關持倉。"}
+
+    title_map = _load_ticker_title_map()
+    target_title = title_map.get((ticker or "").upper().strip()) or ""
+    target_norm = _normalize_company_name(target_title)
+
+    conn = _get_db()
+    crossholdings = []
+    for h in summary["holders"]:
+        rows = conn.execute(
+            "SELECT issuer_name, shares, value_usd FROM sec_13f_holdings "
+            "WHERE filer_cik=? AND period_of_report=? ORDER BY value_usd DESC",
+            (h["filer_cik"], h["period_of_report"]),
+        ).fetchall()
+        other = []
+        for r in rows:
+            row_norm = _normalize_company_name(r["issuer_name"] or "")
+            if target_norm and row_norm and (row_norm == target_norm or row_norm in target_norm or target_norm in row_norm):
+                continue  # this is the queried ticker itself -- already in position_in_ticker
+            other.append({"issuer_name": r["issuer_name"], "value_usd": r["value_usd"], "shares": r["shares"]})
+            if len(other) >= other_limit:
+                break
+        crossholdings.append({
+            "filer_name": h["filer_name"],
+            "filer_cik": h["filer_cik"],
+            "period_of_report": h["period_of_report"],
+            "position_in_ticker": {"shares": h["shares"], "value_usd": h["value_usd"]},
+            "other_top_holdings": other,
+        })
+    conn.close()
+
+    watched = list_watched_filers()
+    return {
+        "available": True,
+        "attribution": ATTRIBUTION,
+        "watched_filers_note": (
+            f"Tracks {len(watched)} concentrated, stock-picking managers ({', '.join(w['name'] for w in watched)}) "
+            "-- not a comprehensive institutional universe. See sec_ownership_service.py's module docstring for why "
+            "large index managers (BlackRock/Vanguard/State Street) aren't tracked here."
+        ),
+        "crossholdings": crossholdings,
+    }
+
+
 if __name__ == "__main__":
     import json
     print(json.dumps(refresh_all(), indent=2))

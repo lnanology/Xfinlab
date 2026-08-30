@@ -147,6 +147,11 @@ ENDPOINT_WEIGHT = {
     # Kept below world_map (multi-region fan-out) since this is still a
     # single-ticker, single-document-per-call cost shape. Same
     # pending-business-approval caveat as every other number in this dict.
+    #
+    # 2026-08-30 (Phase 4): smart_money_crossholdings added but weight NOT
+    # raised further -- it's a local SQL re-query against sec_13f_holdings
+    # rows already fetched for the same response's institutional_ownership
+    # section, no new network round trip, negligible marginal cost.
     "company_network": 7,
     "short_interest": 2,
     "energy": 2,
