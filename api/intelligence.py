@@ -262,6 +262,7 @@ def intelligence_status():
         "vix_term_structure": True,  # never 503s -- returns data: null only if every CBOE index fetch/cache/persist fails
         "bank_health": True,  # never 503s -- returns data: null for a ticker with no FDIC-mapped lead subsidiary
         "agriculture": True,  # never 503s -- returns data: null for a ticker with no USDA commodity linkage
+        "real_estate": True,  # never 503s -- returns data: null for a ticker with no housing-market linkage
         "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
     })
 
@@ -277,6 +278,12 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-30",
+        "changes": [
+            {"type": "added", "text": "GET /v1/real-estate/{ticker} -- FRED 30-year mortgage rate, Case-Shiller home price index, housing starts, and existing home sales for housing-linked tickers (homebuilders, REITs, a mortgage originator, housing-sector ETFs). First of 3 cross-industry expansion candidates."},
+        ],
+    },
     {
         "date": "2026-08-30",
         "changes": [
@@ -1188,6 +1195,32 @@ def intelligence_energy(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+@router.get("/intelligence/v1/real-estate/{ticker}")
+def intelligence_real_estate(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """FRED US housing-market context for `ticker` (services/real_estate_
+    service.py -- 30-year mortgage rate, Case-Shiller home price index,
+    housing starts, existing home sales). Only populated for tickers with
+    a real housing-market linkage (homebuilders, REITs, a mortgage
+    originator, housing-sector ETFs -- see that module's _TICKER_TO_NAME)
+    -- any other ticker returns `data: null`, never a fabricated reading
+    for an unrelated symbol."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "real_estate", response, ticker=ticker.upper())
+
+    from services.real_estate_service import get_real_estate_context_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_real_estate_context_for_ticker(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No housing-market linkage for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
 @router.get("/intelligence/v1/exchange/{ticker}")
 def intelligence_exchange(
     response: Response,
@@ -1401,6 +1434,7 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/vix-term-structure",
     "/intelligence/v1/bank-health/{ticker}",
     "/intelligence/v1/agriculture/{ticker}",
+    "/intelligence/v1/real-estate/{ticker}",
     "/intelligence/v1/webhooks/subscribe",
     "/intelligence/v1/webhooks",
     "/intelligence/v1/webhooks/{webhook_id}",
