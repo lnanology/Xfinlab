@@ -236,6 +236,50 @@ def demo_opportunity_radar(request: Request):
     return {"success": True, "data": result, "cta": _CTA}
 
 
+@router.get("/free-tools-demo/consumer-safety")
+@limiter.limit(_DEMO_LIMIT)
+def demo_consumer_safety(request: Request, ticker: str = ""):
+    """Backs a future free-consumer-safety-api.html. Same
+    services.openfda_service.get_consumer_safety_context_for_ticker()
+    the paid /intelligence/v1/consumer-safety/{ticker} endpoint calls.
+    Only whitelisted food/drug/device-linked tickers return real data;
+    see that module's _TICKER_TO_KEYWORDS."""
+    from services.openfda_service import get_consumer_safety_context_for_ticker, _TICKER_TO_KEYWORDS
+
+    ticker = ticker.upper().strip()
+    if not ticker:
+        return {"success": False, "error": "ticker query param is required",
+                "meta": {"tickers": sorted(_TICKER_TO_KEYWORDS.keys())}, "cta": _CTA}
+
+    result = get_consumer_safety_context_for_ticker(ticker)
+    if not result:
+        return {"success": False, "error": f"No FDA-regulated brand/manufacturer linkage for {ticker}",
+                "meta": {"tickers": sorted(_TICKER_TO_KEYWORDS.keys())}, "cta": _CTA}
+    return {"success": True, "data": result, "cta": _CTA}
+
+
+@router.get("/free-tools-demo/product-recalls")
+@limiter.limit(_DEMO_LIMIT)
+def demo_product_recalls(request: Request, ticker: str = ""):
+    """Backs a future free-product-recalls-api.html. Same
+    services.cpsc_service.get_recall_context_for_ticker() the paid
+    /intelligence/v1/product-recalls/{ticker} endpoint calls. Only
+    whitelisted manufacturer-linked tickers return real data; see that
+    module's _TICKER_TO_KEYWORDS."""
+    from services.cpsc_service import get_recall_context_for_ticker, _TICKER_TO_KEYWORDS
+
+    ticker = ticker.upper().strip()
+    if not ticker:
+        return {"success": False, "error": "ticker query param is required",
+                "meta": {"tickers": sorted(_TICKER_TO_KEYWORDS.keys())}, "cta": _CTA}
+
+    result = get_recall_context_for_ticker(ticker)
+    if not result:
+        return {"success": False, "error": f"No CPSC manufacturer linkage for {ticker}",
+                "meta": {"tickers": sorted(_TICKER_TO_KEYWORDS.keys())}, "cta": _CTA}
+    return {"success": True, "data": result, "cta": _CTA}
+
+
 @router.get("/free-tools-demo/trust-status")
 @limiter.limit(_DEMO_LIMIT)
 def demo_trust_status(request: Request):
