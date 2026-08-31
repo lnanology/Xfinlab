@@ -282,7 +282,7 @@ class XfinlabClient:
     # 2026-08-28: Pro-tier webhooks (push instead of polling). See
     # services/webhook_service.py's VALID_EVENT_TYPES for the exact
     # event_type values ("vix_regime_change" market-wide, "new_13d_filing"
-    # per-ticker).
+    # per-ticker, "opportunity_radar_shift" market-wide -- added 2026-08-31).
     def subscribe_webhook(self, event_type: str, url: str, ticker: str = None) -> dict:
         """Requires a Pro-tier key -- raises XfinlabError(status_code=403)
         on a free-tier key."""

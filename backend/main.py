@@ -790,6 +790,45 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+
+def _run_opportunity_radar_shift_check_job():
+    try:
+        from services.opportunity_radar_service import get_opportunity_radar
+        radar = get_opportunity_radar()
+        # 2026-08-31 (AJ: "加Webhook提醒" -- follow-up to the Opportunity
+        # Radar energy/agriculture expansion): this job does NOT re-fetch
+        # anything itself -- get_opportunity_radar() just re-reads
+        # whatever the 6 refresh jobs above already cached/persisted
+        # today, so running this last (after fred_macro/real_estate/
+        # supply_chain/consumer_demand/eia_energy/usda_agriculture have
+        # each had their own cron slot) gives a snapshot of the
+        # freshest same-day data. Fires opportunity_radar_shift webhooks
+        # only for an industry whose net improving/worsening lean
+        # actually flipped since yesterday's check -- see
+        # webhook_service.check_and_deliver_opportunity_radar_shift()'s
+        # own docstring for the exact no-noise rule (a flip into/out of
+        # "mixed" alone never fires).
+        if radar and radar.get("available"):
+            try:
+                from services.webhook_service import check_and_deliver_opportunity_radar_shift
+                check_and_deliver_opportunity_radar_shift(radar.get("industries") or {})
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+# Runs after all 6 underlying refresh jobs above (latest is
+# usda_agriculture_refresh at 6:15) so it reads same-day-fresh data --
+# see the job's own comment.
+_push_scheduler.add_job(
+    _run_opportunity_radar_shift_check_job,
+    "cron",
+    hour=6,
+    minute=45,
+    id="opportunity_radar_shift_check",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 
