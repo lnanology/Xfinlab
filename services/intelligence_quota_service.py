@@ -169,6 +169,10 @@ ENDPOINT_WEIGHT = {
     "vix_term_structure": 1,
     "bank_health": 2,
     "agriculture": 2,
+    # 2026-08-30 (Real Estate Intelligence, cross-industry expansion #1):
+    # same cost shape as agriculture/energy -- 4 small FRED series fetches
+    # against an explicit ticker map, 6h server-side cached. Priced the same.
+    "real_estate": 2,
 }
 
 

@@ -516,6 +516,32 @@ _push_scheduler.add_job(
 )
 
 
+# 2026-08-30 (Real Estate Intelligence, first of 3 cross-industry
+# expansion candidates AJ picked "由1開始順住做" -- start with real
+# estate): same warm-the-cache-even-without-traffic reasoning as
+# fred_macro_refresh above. Only 4 FRED series, fetched once regardless
+# of how many housing-linked tickers get queried that day (all tickers
+# share the same national indicators, see services/real_estate_service
+# .py's _SERIES).
+def _run_real_estate_refresh_job():
+    try:
+        from services import real_estate_service
+        if real_estate_service.is_available():
+            for meta in real_estate_service._SERIES.values():
+                real_estate_service._fetch_series(meta["series_id"], n_obs=1)
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_real_estate_refresh_job,
+    "cron",
+    hour=3,
+    minute=15,
+    id="real_estate_refresh",
+    replace_existing=True,
+)
+
+
 def _run_cftc_cot_refresh_job():
     try:
         from services.cftc_cot_service import get_snapshot
