@@ -829,6 +829,57 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+
+def _run_openfda_refresh_job():
+    try:
+        from services.openfda_service import get_consumer_safety_context_for_ticker, _TICKER_TO_KEYWORDS
+        for ticker in _TICKER_TO_KEYWORDS:
+            try:
+                get_consumer_safety_context_for_ticker(ticker)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+# 2026-08-31 (AJ: "感官與消費者科學" follow-up, "起"): openFDA needs no
+# key and has no natural "current value" (event-driven recalls/adverse
+# events, see that module's docstring) -- this job just warms the cache
+# + persistence table for every mapped ticker daily, so a live user
+# request never has to wait on ~4 datasets x several keywords of
+# synchronous external search. Off-hours, no other job runs at this slot.
+_push_scheduler.add_job(
+    _run_openfda_refresh_job,
+    "cron",
+    hour=7,
+    minute=0,
+    id="openfda_refresh",
+    replace_existing=True,
+)
+
+
+def _run_cpsc_refresh_job():
+    try:
+        from services.cpsc_service import get_recall_context_for_ticker, _TICKER_TO_KEYWORDS
+        for ticker in _TICKER_TO_KEYWORDS:
+            try:
+                get_recall_context_for_ticker(ticker)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+# Same warm-cache rationale as openfda_refresh above. Separate slot so a
+# slow/erroring CPSC backend (see services/cpsc_service.py's live-
+# reliability note) never delays the openFDA job.
+_push_scheduler.add_job(
+    _run_cpsc_refresh_job,
+    "cron",
+    hour=7,
+    minute=15,
+    id="cpsc_refresh",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

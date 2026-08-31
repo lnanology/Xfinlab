@@ -237,6 +237,14 @@
     return this._get('/intelligence/v1/opportunity-radar');
   };
 
+  XfinlabClient.prototype.consumerSafety = function (ticker) {
+    return this._get('/intelligence/v1/consumer-safety/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.productRecalls = function (ticker) {
+    return this._get('/intelligence/v1/product-recalls/' + encodeURIComponent(ticker));
+  };
+
   // 2026-08-28: Pro-tier webhooks (push instead of polling). See
   // services/webhook_service.py's VALID_EVENT_TYPES for the exact
   // eventType values ('vix_regime_change' market-wide, 'new_13d_filing'

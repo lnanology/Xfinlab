@@ -266,6 +266,8 @@ def intelligence_status():
         "supply_chain": True,  # never 503s -- returns data: null for a ticker with no freight/logistics linkage
         "consumer_demand": True,  # never 503s -- returns data: null for a ticker with no consumer-spending linkage
         "opportunity_radar": True,  # market-wide, dormant until FRED_API_KEY set (same gate as real_estate/supply_chain/consumer_demand)
+        "consumer_safety": True,  # never 503s -- openFDA needs no key at all, returns data: null for a ticker with no keyword mapping
+        "product_recalls": True,  # never 503s -- CPSC needs no key, returns data: null for no mapping (fetch_error:true in-body if CPSC's own backend is down)
         "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
     })
 
@@ -281,6 +283,13 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-31",
+        "changes": [
+            {"type": "added", "text": "GET /v1/consumer-safety/{ticker} -- FDA-regulated food/drug/device recall and food adverse-event (CAERS) context via openFDA, trailing 12 months. No API key required on openFDA's side -- a first for this API's underlying data sources."},
+            {"type": "added", "text": "GET /v1/product-recalls/{ticker} -- CPSC general consumer product recall context (toys, appliances, furniture, electronics, tools), trailing 12 months. No API key required. Note: CPSC's own live backend has shown intermittent reliability issues -- surfaced honestly as fetch_error:true in the response body, never a fabricated zero-recalls reading."},
+        ],
+    },
     {
         "date": "2026-08-31",
         "changes": [
@@ -1456,6 +1465,68 @@ def intelligence_agriculture(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+# 2026-08-31 (AJ: "感官與消費者科學" follow-up, "起"): 2 new consumer-safety
+# sources -- openFDA (FDA-regulated food/drug/device recalls + food
+# adverse events) and CPSC (general consumer product recalls). Both
+# event-driven (a recent window, not a single "current value"), same
+# per-ticker explicit-keyword-map convention as every ticker-linked
+# module above, never a fabricated match for an unmapped ticker.
+@router.get("/intelligence/v1/consumer-safety/{ticker}")
+def intelligence_consumer_safety(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """FDA-regulated recall and adverse-event context for `ticker`
+    (services/openfda_service.py) -- food/drug/device enforcement
+    (recalls) plus food-specific consumer adverse-event reports (CAERS),
+    trailing 12 months. No API key required on openFDA's side (a first
+    for this codebase's Data Factory collectors -- see that module's
+    docstring). Only populated for tickers with a real keyword mapping;
+    any other ticker returns `data: null`."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "consumer_safety", response, ticker=ticker.upper())
+
+    from services.openfda_service import get_consumer_safety_context_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_consumer_safety_context_for_ticker(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No FDA-regulated brand/manufacturer linkage for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
+@router.get("/intelligence/v1/product-recalls/{ticker}")
+def intelligence_product_recalls(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """CPSC consumer product recall context for `ticker`
+    (services/cpsc_service.py) -- general consumer products (toys,
+    appliances, furniture, electronics, tools), trailing 12 months,
+    broader scope than /v1/consumer-safety's FDA-regulated categories.
+    No API key required on CPSC's side. Only populated for tickers with
+    a real manufacturer-keyword mapping; any other ticker returns
+    `data: null`. Note: CPSC's own live backend has shown intermittent
+    reliability issues as of this endpoint's ship date (see that
+    module's docstring) -- a `fetch_error: true` in the response body
+    (not a 5xx) is how that's surfaced honestly rather than a fabricated
+    "zero recalls"."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "product_recalls", response, ticker=ticker.upper())
+
+    from services.cpsc_service import get_recall_context_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_recall_context_for_ticker(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No CPSC manufacturer linkage for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
 @router.post("/intelligence/v1/webhooks/subscribe")
 def intelligence_webhooks_subscribe(
     body: WebhookSubscribeRequest,
@@ -1545,6 +1616,8 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/supply-chain/{ticker}",
     "/intelligence/v1/consumer-demand/{ticker}",
     "/intelligence/v1/opportunity-radar",
+    "/intelligence/v1/consumer-safety/{ticker}",
+    "/intelligence/v1/product-recalls/{ticker}",
     "/intelligence/v1/webhooks/subscribe",
     "/intelligence/v1/webhooks",
     "/intelligence/v1/webhooks/{webhook_id}",
