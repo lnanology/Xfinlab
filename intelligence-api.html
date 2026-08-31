@@ -277,6 +277,8 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="supply-chain" data-i18n="ia_ep19_name">Supply Chain</option>
           <option value="consumer-demand" data-i18n="ia_ep20_name">Consumer Demand</option>
           <option value="opportunity-radar" data-i18n="ia_ep21_name">Opportunity Radar</option>
+          <option value="consumer-safety" data-i18n="ia_ep22_name">Consumer Safety (openFDA)</option>
+          <option value="product-recalls" data-i18n="ia_ep23_name">Product Recalls (CPSC)</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -808,6 +810,50 @@ details.schema-details[open] summary::after{content:" ▴"}
           <p class="schema-note" data-i18n="ia_schema_note_opportunity_radar">5 industries, each gated independently on its own data source's key (FRED_API_KEY for real estate/supply chain/consumer demand, EIA_API_KEY for energy, USDA_NASS_API_KEY for agriculture). An industry whose key isn't configured still appears with an empty indicators object and an honest "not configured" summary -- it never takes the rest of the response down, and never fabricates a placeholder reading.</p>
         </details>
       </div>
+      <!-- 2026-08-31 (AJ: "感官與消費者科學" follow-up, "起"): 2 new
+           consumer-safety sources -- openFDA (FDA-regulated recalls +
+           food adverse events) and CPSC (general consumer product
+           recalls). Both event-driven (a recent window, not a single
+           reading), both need no API key on the source's own side --
+           the first Data Factory collectors in this codebase with zero
+           signup friction. Same per-ticker explicit-keyword-map
+           convention as real-estate/supply-chain/consumer-demand above. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/consumer-safety/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep22_name">Consumer Safety (openFDA)</div>
+        <div class="ep-desc" data-i18n="ia_ep22_desc">FDA-regulated food/drug/device recall and food adverse-event (CAERS) context, trailing 12 months, via openFDA. No API key required on openFDA's own side. Only populated for tickers with a real brand/manufacturer keyword linkage.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_keywords</code> <span class="schema-type">array</span>, <code>data.attribution</code>, <code>data.lookback_days</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>data.datasets</code> <span class="schema-type">object</span> -- food_recalls, drug_recalls, device_recalls, food_adverse_events, each with <code>count</code>, <code>recent</code> <span class="schema-type">array</span>, <code>fetch_error</code> <span class="schema-type">boolean</span></div>
+            <div class="schema-field">&nbsp;&nbsp;recall items: <code>recall_number</code>, <code>date</code>, <code>status</code>, <code>classification</code>, <code>recalling_firm</code>, <code>product_description</code>, <code>reason_for_recall</code></div>
+            <div class="schema-field">&nbsp;&nbsp;adverse-event items: <code>report_number</code>, <code>date</code>, <code>product_brand</code>, <code>reactions</code>, <code>outcomes</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_consumer_safety">Per openFDA's own disclaimer: a report existing is not proof of causation, and this data should not be used to estimate incidence or risk. Returns data:null for any ticker without a real brand/manufacturer linkage.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86l-8.18 14.14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.89-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/product-recalls/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep23_name">Product Recalls (CPSC)</div>
+        <div class="ep-desc" data-i18n="ia_ep23_desc">CPSC general consumer product recall context (toys, appliances, furniture, electronics, tools), trailing 12 months. Broader scope than Consumer Safety's FDA-regulated categories. No API key required. Only populated for tickers with a real manufacturer keyword linkage.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_keywords</code> <span class="schema-type">array</span>, <code>data.attribution</code>, <code>data.lookback_days</code> <span class="schema-type">number</span>, <code>data.count</code> <span class="schema-type">number</span>, <code>data.fetch_error</code> <span class="schema-type">boolean</span></div>
+            <div class="schema-field"><code>data.recent</code> <span class="schema-type">array</span> -- <code>recall_id</code>, <code>recall_number</code>, <code>date</code>, <code>title</code>, <code>product_name</code>, <code>manufacturer</code>, <code>hazard</code>, <code>remedy</code>, <code>url</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_product_recalls">CPSC's own live backend has shown intermittent reliability issues -- surfaced honestly as fetch_error:true in the response body, never a fabricated zero-recalls reading. Returns data:null for any ticker without a real manufacturer linkage.</p>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -1168,6 +1214,10 @@ const TRY_ENDPOINTS = {
   // 2026-08-31: Opportunity Radar -- global snapshot, no ticker, same
   // needsTicker:false pattern as vix-term-structure above.
   'opportunity-radar': { method: 'GET',  needsTicker: false, needsAmount: false, path: function() { return '/intelligence/v1/opportunity-radar'; } },
+  // 2026-08-31: openFDA/CPSC consumer-safety sources -- simple GET-by-
+  // ticker, same shape as real-estate/supply-chain/consumer-demand above.
+  'consumer-safety':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/consumer-safety/' + encodeURIComponent(tk); } },
+  'product-recalls':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/product-recalls/' + encodeURIComponent(tk); } },
 };
 
 function tryUpdateFields() {

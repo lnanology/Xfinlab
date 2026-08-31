@@ -187,6 +187,15 @@ ENDPOINT_WEIGHT = {
     # 7 since an individual industry here can be a fast no-op (empty
     # indicators dict) when that source's own key isn't configured.
     "opportunity_radar": 6,
+    # 2026-08-31 (openFDA/CPSC consumer-safety expansion): unlike the
+    # FRED-shape modules above (one fetch per series against a warm
+    # cache), these run a live multi-keyword search per ticker across
+    # multiple sub-datasets each call (4 for consumer_safety: food/drug/
+    # device recalls + food adverse events; 1 for product_recalls) --
+    # priced closer to short_interest/insider's per-ticker cost than the
+    # cheap single-series FRED lookups, reflecting the real fan-out.
+    "consumer_safety": 3,
+    "product_recalls": 2,
 }
 
 

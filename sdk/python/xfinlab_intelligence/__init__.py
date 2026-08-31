@@ -279,6 +279,23 @@ class XfinlabClient:
         cross-industry score."""
         return self._get("/intelligence/v1/opportunity-radar")
 
+    def consumer_safety(self, ticker: str) -> dict:
+        """FDA-regulated food/drug/device recall and food adverse-event
+        (CAERS) context via openFDA, trailing 12 months -- only
+        populated for tickers with a real brand/manufacturer keyword
+        mapping. No API key required on openFDA's own side."""
+        return self._get(f"/intelligence/v1/consumer-safety/{ticker}")
+
+    def product_recalls(self, ticker: str) -> dict:
+        """CPSC general consumer product recall context (toys,
+        appliances, furniture, electronics, tools), trailing 12 months --
+        only populated for tickers with a real manufacturer keyword
+        mapping. No API key required. See CPSC's own live-reliability
+        note in services/cpsc_service.py -- a `fetch_error: true` in the
+        response means CPSC's own backend was unreachable, not zero
+        recalls."""
+        return self._get(f"/intelligence/v1/product-recalls/{ticker}")
+
     # 2026-08-28: Pro-tier webhooks (push instead of polling). See
     # services/webhook_service.py's VALID_EVENT_TYPES for the exact
     # event_type values ("vix_regime_change" market-wide, "new_13d_filing"
