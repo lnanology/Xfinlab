@@ -542,6 +542,48 @@ _push_scheduler.add_job(
 )
 
 
+# 2026-08-31 -- same pre-warm reasoning as _run_real_estate_refresh_job
+# above, for services/supply_chain_service.py's 5 series.
+def _run_supply_chain_refresh_job():
+    try:
+        from services import supply_chain_service
+        if supply_chain_service.is_available():
+            for meta in supply_chain_service._SERIES.values():
+                supply_chain_service._fetch_series(meta["series_id"], n_obs=1)
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_supply_chain_refresh_job,
+    "cron",
+    hour=3,
+    minute=20,
+    id="supply_chain_refresh",
+    replace_existing=True,
+)
+
+
+# 2026-08-31 -- same pre-warm reasoning as _run_real_estate_refresh_job
+# above, for services/consumer_demand_service.py's 4 series.
+def _run_consumer_demand_refresh_job():
+    try:
+        from services import consumer_demand_service
+        if consumer_demand_service.is_available():
+            for meta in consumer_demand_service._SERIES.values():
+                consumer_demand_service._fetch_series(meta["series_id"], n_obs=1)
+    except Exception:
+        pass
+
+_push_scheduler.add_job(
+    _run_consumer_demand_refresh_job,
+    "cron",
+    hour=3,
+    minute=25,
+    id="consumer_demand_refresh",
+    replace_existing=True,
+)
+
+
 def _run_cftc_cot_refresh_job():
     try:
         from services.cftc_cot_service import get_snapshot
