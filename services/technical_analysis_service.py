@@ -1657,6 +1657,23 @@ _EN_FIXED = {
     "現價創20日新低，Donchian破位訊號": "Price made a 20-day low, Donchian breakdown signal",
     "現價突破Keltner上軌，強勢延續": "Price broke above the Keltner upper band, strength continuation",
     "現價跌穿Keltner下軌，弱勢延續": "Price broke below the Keltner lower band, weakness continuation",
+    # 2026-08-30 fix: these 12 signals were added to the Confluence Engine
+    # alongside the Gann/Capital Flow/Data Factory features but never
+    # added here -- so they leaked raw Chinese into EVERY language,
+    # including English, ever since. See _SIGNAL_KEY_MAP above for the
+    # real per-language versions; these stay as the last-resort fallback.
+    "現價貼近江恩九宮格阻力位，回落風險": "Price near a Gann Square-of-Nine resistance level, pullback risk",
+    "現價貼近江恩九宮格支撐位，反彈機會": "Price near a Gann Square-of-Nine support level, possible bounce",
+    "資金流Engine：全球資金淨流入，風險偏好上升": "Capital Flow Engine: global net capital inflow, risk appetite rising",
+    "資金流Engine：全球資金淨流出，風險偏好下降": "Capital Flow Engine: global net capital outflow, risk appetite falling",
+    "內幕人淨買入（Form 4）": "Net insider buying (Form 4)",
+    "內幕人淨賣出（Form 4）": "Net insider selling (Form 4)",
+    "近期有13D激進投資人申報": "Recent Schedule 13D activist investor filing",
+    "COT投機淨多倉": "COT speculators net long",
+    "COT投機淨空倉": "COT speculators net short",
+    "最近一份10-K錄得盈利": "Most recent 10-K reported a profit",
+    "最近一份10-K錄得虧損": "Most recent 10-K reported a loss",
+    "VIX期限結構倒掛（市場恐慌）": "VIX term structure inverted (market fear)",
 }
 # RSI signals carry an interpolated numeric value (f"RSI過熱（{rsi}，≥70）"
 # etc) so they can't be a plain dict lookup -- matched by regex instead.
@@ -1664,12 +1681,61 @@ _RSI_RE = re.compile(r"^RSI(過熱|超賣|偏多|偏空)（([\d.\-]+)，(.+)）$
 _RSI_EN = {"過熱": "overheated", "超賣": "oversold", "偏多": "bullish", "偏空": "bearish"}
 
 
-def _translate_signal(s: str) -> str:
+# 2026-08-30 fix ("其他圖英文中見，白色及灰色中文字，更正所有語言" audit):
+# two problems found in the functions below. (1) 12 signals added after
+# the 2026-07-25/31 fix (Gann/Capital Flow/insider/activist/COT/10-K/VIX
+# -- everything from services/technical_analysis_service.py's signals.
+# append() calls added alongside those later features) were never added
+# to _EN_FIXED at all, so they leaked raw Chinese into EVERY language
+# including English. (2) even the original 20 signals + market-structure
+# templates only ever had an English translation, never a real
+# per-language one, despite confluence.direction/confidence/trend/
+# volume_desc right next to them on the same page already being real
+# per-language via _LANG_KEY_MAP -- so a Japanese/French/etc UI showed a
+# translated page with English signal sentences mixed in.
+#
+# Fix: _SIGNAL_KEY_MAP/_MS_TEMPLATE_KEY_MAP below map every known signal/
+# market-structure-detail source string to a services/i18n.py key
+# (ts_sig_*/ts_ms_*), with real translations shipped for the 14 languages
+# covering the large majority of traffic (en + zh-TW/zh-HK/zh-CN + es/fr/
+# de/it/pt/ru/ja/ko/ar/hi) and an English fallback for the other 33 --
+# never raw Chinese again for any of them, matching this file's existing
+# "English now, N-language table is the follow-up" convention. Full
+# native coverage for the remaining languages is the next increment.
+_SIGNAL_KEY_MAP = {
+    "趨勢（高於MA50）": "ts_sig_trend_above_ma50", "趨勢（低於MA50）": "ts_sig_trend_below_ma50",
+    "MACD柱狀圖轉正（金叉）": "ts_sig_macd_golden", "MACD柱狀圖轉負（死叉）": "ts_sig_macd_death",
+    "現價貼近支撐位，反彈機會": "ts_sig_support_bounce", "現價貼近阻力位，回落風險": "ts_sig_resistance_pullback",
+    "現價企穩0.618回調位之上": "ts_sig_fib_hold_above", "現價跌穿0.618回調位，結構轉弱": "ts_sig_fib_break_below",
+    "現價觸及布林上軌，超買風險": "ts_sig_boll_upper_overbought", "現價觸及布林下軌，超賣反彈機會": "ts_sig_boll_lower_oversold",
+    "OBV成交量動能上升，資金流入": "ts_sig_obv_rising", "OBV成交量動能下降，資金流出": "ts_sig_obv_falling",
+    "SuperTrend看多（收於支撐線之上）": "ts_sig_supertrend_bull", "SuperTrend看空（收於阻力線之下）": "ts_sig_supertrend_bear",
+    "現價企穩Ichimoku雲之上，結構偏多": "ts_sig_ichimoku_above", "現價跌穿Ichimoku雲之下，結構偏空": "ts_sig_ichimoku_below",
+    "現價創20日新高，Donchian突破訊號": "ts_sig_donchian_high", "現價創20日新低，Donchian破位訊號": "ts_sig_donchian_low",
+    "現價突破Keltner上軌，強勢延續": "ts_sig_keltner_break_up", "現價跌穿Keltner下軌，弱勢延續": "ts_sig_keltner_break_down",
+    "現價貼近江恩九宮格阻力位，回落風險": "ts_sig_gann_resistance", "現價貼近江恩九宮格支撐位，反彈機會": "ts_sig_gann_support",
+    "資金流Engine：全球資金淨流入，風險偏好上升": "ts_sig_capitalflow_inflow", "資金流Engine：全球資金淨流出，風險偏好下降": "ts_sig_capitalflow_outflow",
+    "內幕人淨買入（Form 4）": "ts_sig_insider_buy", "內幕人淨賣出（Form 4）": "ts_sig_insider_sell",
+    "近期有13D激進投資人申報": "ts_sig_activist_13d",
+    "COT投機淨多倉": "ts_sig_cot_long", "COT投機淨空倉": "ts_sig_cot_short",
+    "最近一份10-K錄得盈利": "ts_sig_10k_profit", "最近一份10-K錄得虧損": "ts_sig_10k_loss",
+    "VIX期限結構倒掛（市場恐慌）": "ts_sig_vix_inverted",
+}
+
+
+def _translate_signal(s: str, tr: Optional[Dict] = None) -> str:
+    key = _SIGNAL_KEY_MAP.get(s)
+    if key and tr and tr.get(key):
+        return tr[key]
     if s in _EN_FIXED:
         return _EN_FIXED[s]
     m = _RSI_RE.match(s)
     if m:
-        return f"RSI {_RSI_EN.get(m.group(1), m.group(1))} ({m.group(2)}, {m.group(3)})"
+        word_zh = m.group(1)
+        rsi_key = {"過熱": "ts_rsi_overheated", "超賣": "ts_rsi_oversold",
+                   "偏多": "ts_bias_bullish", "偏空": "ts_bias_bearish"}.get(word_zh)
+        word = (tr.get(rsi_key) if tr and rsi_key else None) or _RSI_EN.get(word_zh, word_zh)
+        return f"RSI {word} ({m.group(2)}, {m.group(3)})"
     return s  # unmapped signal (new/rare) -- honestly left as-is, never guessed
 
 
@@ -1678,35 +1744,43 @@ def _translate_signal(s: str) -> str:
 # of _market_structure()'s event `detail` strings interpolates a real swing
 # price level, so -- same reasoning as _RSI_RE above -- they can't be a
 # plain dict lookup either. One regex per template, matched in order.
+# 2026-08-30: added `key` (services/i18n.py ts_ms_* lookup) + `en_build`
+# (unchanged English fallback) to each entry so real per-language
+# templates can be tried first -- same fix as _SIGNAL_KEY_MAP above.
 _MARKET_STRUCTURE_PATTERNS = [
-    (re.compile(r"^價格企穩突破前高 ([\d.\-]+)，確認上升結構延續$"),
+    (re.compile(r"^價格企穩突破前高 ([\d.\-]+)，確認上升結構延續$"), "ts_ms_uptrend_continue",
      lambda m: f"Price holding above prior high {m.group(1)}, confirming uptrend structure continuation"),
-    (re.compile(r"^價格企穩跌穿前低 ([\d.\-]+)，確認下降結構延續$"),
+    (re.compile(r"^價格企穩跌穿前低 ([\d.\-]+)，確認下降結構延續$"), "ts_ms_downtrend_continue",
      lambda m: f"Price holding below prior low {m.group(1)}, confirming downtrend structure continuation"),
-    (re.compile(r"^價格突破前高 ([\d.\-]+)，下降結構出現轉勢跡象$"),
+    (re.compile(r"^價格突破前高 ([\d.\-]+)，下降結構出現轉勢跡象$"), "ts_ms_downtrend_reversal_sign",
      lambda m: f"Price broke above prior high {m.group(1)} -- early sign the downtrend structure may be reversing"),
-    (re.compile(r"^價格跌穿前低 ([\d.\-]+)，上升結構出現轉勢跡象$"),
+    (re.compile(r"^價格跌穿前低 ([\d.\-]+)，上升結構出現轉勢跡象$"), "ts_ms_uptrend_reversal_sign",
      lambda m: f"Price broke below prior low {m.group(1)} -- early sign the uptrend structure may be reversing"),
-    (re.compile(r"^高位插針掃過前高 ([\d.\-]+) 後收返落嚟，疑似掃流動性$"),
+    (re.compile(r"^高位插針掃過前高 ([\d.\-]+) 後收返落嚟，疑似掃流動性$"), "ts_ms_liquidity_sweep_high",
      lambda m: f"Wick swept above prior high {m.group(1)} then closed back below -- possible liquidity sweep"),
-    (re.compile(r"^低位插針穿過前低 ([\d.\-]+) 後收返上去，疑似掃流動性$"),
+    (re.compile(r"^低位插針穿過前低 ([\d.\-]+) 後收返上去，疑似掃流動性$"), "ts_ms_liquidity_sweep_low",
      lambda m: f"Wick swept below prior low {m.group(1)} then closed back above -- possible liquidity sweep"),
 ]
 
 
-def _translate_market_structure_detail(s: str) -> str:
-    for pattern, build in _MARKET_STRUCTURE_PATTERNS:
+def _translate_market_structure_detail(s: str, tr: Optional[Dict] = None) -> str:
+    for pattern, key, en_build in _MARKET_STRUCTURE_PATTERNS:
         m = pattern.match(s)
         if m:
-            return build(m)
+            template = tr.get(key) if tr else None
+            if template:
+                return template.replace("{level}", m.group(1))
+            return en_build(m)
     return s  # unmapped/new template -- honestly left as-is, never guessed
 
 
 # Chinese source phrase -> services/i18n.py key, for the handful of fields
-# that are always visible in chart-analysis.html's main result grid (as
-# opposed to the deeper signal-list/market-structure detail strings, which
-# stay on the English-only _EN_FIXED shim per the comment above -- a real
-# 47-language table for those ~28 sentences is the larger follow-up).
+# that are always visible in chart-analysis.html's main result grid.
+# 2026-08-30: added the 3 ichimoku cloud_position entries here (were
+# previously hardcoded to the English-only _EN_FIXED table below,
+# unconditionally, regardless of requested `lang`) -- see the larger
+# _SIGNAL_KEY_MAP/_MARKET_STRUCTURE_PATTERNS fix just above this for the
+# same class of bug in the deeper signal-list/market-structure strings.
 _LANG_KEY_MAP = {
     "上升": "ts_trend_up", "下降": "ts_trend_down",
     "金叉/看漲": "ts_macd_golden", "死叉/看跌": "ts_macd_death",
@@ -1714,6 +1788,7 @@ _LANG_KEY_MAP = {
     "訊號分歧，中性": "ts_mixed_neutral", "數據不足": "ts_insufficient_data",
     "高": "ts_conf_high", "中": "ts_conf_medium", "低": "ts_conf_low",
     "成交量數據不足": "ts_vol_insufficient",
+    "雲上（偏多結構）": "ts_cloud_above", "雲下（偏空結構）": "ts_cloud_below", "雲內（盤整）": "ts_cloud_inside",
 }
 
 
@@ -1764,10 +1839,10 @@ def translate_technical_analysis(tech: Dict, lang: Optional[str]) -> Dict:
                 confluence[field] = _lang_translate(confluence[field], tr)
         for field in ("bullish_signals", "bearish_signals"):
             if confluence.get(field):
-                confluence[field] = [_translate_signal(s) for s in confluence[field]]
+                confluence[field] = [_translate_signal(s, tr) for s in confluence[field]]
     ichimoku = (tech.get("indicators") or {}).get("ichimoku")
     if ichimoku and ichimoku.get("cloud_position") in _EN_FIXED:
-        ichimoku["cloud_position"] = _EN_FIXED[ichimoku["cloud_position"]]
+        ichimoku["cloud_position"] = _lang_translate(ichimoku["cloud_position"], tr)
     # 2026-07-25 fix (task #415): translate Market Structure Engine's
     # BOS/CHOCH/liquidity-sweep event descriptions the same way confluence
     # signals are handled above -- these were still leaking raw Chinese
@@ -1776,7 +1851,7 @@ def translate_technical_analysis(tech: Dict, lang: Optional[str]) -> Dict:
     if market_structure and market_structure.get("events"):
         for event in market_structure["events"]:
             if event.get("detail"):
-                event["detail"] = _translate_market_structure_detail(event["detail"])
+                event["detail"] = _translate_market_structure_detail(event["detail"], tr)
     return tech
 
 
