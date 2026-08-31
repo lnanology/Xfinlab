@@ -76,6 +76,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.xfinlab.com/opportunity-radar.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.xfinlab.com/ai-analysis.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

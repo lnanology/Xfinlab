@@ -218,3 +218,19 @@ def demo_consumer_demand(request: Request, ticker: str = ""):
         return {"success": False, "error": f"No consumer-spending linkage for {ticker}",
                 "meta": {"tickers": sorted(_TICKER_TO_NAME.keys())}, "cta": _CTA}
     return {"success": True, "data": result, "cta": _CTA}
+
+
+@router.get("/free-tools-demo/opportunity-radar")
+@limiter.limit(_DEMO_LIMIT)
+def demo_opportunity_radar(request: Request):
+    """Backs opportunity-radar.html. Same services.opportunity_radar_
+    service.get_opportunity_radar() the paid /intelligence/v1/
+    opportunity-radar endpoint calls -- global, no ticker, no trimming
+    (this is already the full honest computation, not a large payload
+    with selling-point fields to hold back)."""
+    from services.opportunity_radar_service import get_opportunity_radar
+
+    result = get_opportunity_radar()
+    if not result or not result.get("available"):
+        return {"success": False, "error": (result or {}).get("message", "Opportunity Radar temporarily unavailable"), "cta": _CTA}
+    return {"success": True, "data": result, "cta": _CTA}

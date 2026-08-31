@@ -179,6 +179,11 @@ ENDPOINT_WEIGHT = {
     # same shape/cost as real_estate above -- 4 small FRED series fetches
     # against an explicit ticker map, 6h server-side cached.
     "consumer_demand": 2,
+    # market-wide, not per-ticker, but re-fetches ~13 series across 4
+    # modules (each with n_obs=6 instead of 1) every call -- priced
+    # closer to company_network's multi-fetch weight than the single-
+    # digit per-ticker FRED endpoints above.
+    "opportunity_radar": 4,
 }
 
 

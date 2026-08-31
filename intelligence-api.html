@@ -276,6 +276,7 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="real-estate" data-i18n="ia_ep18_name">Real Estate</option>
           <option value="supply-chain" data-i18n="ia_ep19_name">Supply Chain</option>
           <option value="consumer-demand" data-i18n="ia_ep20_name">Consumer Demand</option>
+          <option value="opportunity-radar" data-i18n="ia_ep21_name">Opportunity Radar</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -778,6 +779,32 @@ details.schema-details[open] summary::after{content:" ▴"}
           <p class="schema-note" data-i18n="ia_schema_note_consumer_demand">Returns data:null for any ticker without a real consumer-spending linkage -- never a fabricated reading for an unrelated symbol. Coverage: WMT, TGT, COST, HD, LOW, AMZN, BBY, TJX, ROST, XRT, XLY today.</p>
         </details>
       </div>
+      <!-- 2026-08-31: Opportunity Radar -- global snapshot across the 3
+           industries above + a US macro backdrop, no ticker. Explicitly
+           NOT a fabricated composite score (see services/opportunity_
+           radar_service.py docstring) -- each indicator reports its own
+           real % change and improving/worsening label, never a blended
+           number. Weighted 4x since it re-fetches ~13 series across 4
+           modules per call. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><path d="M12 12l5-3"/></svg></div>
+          <span class="ep-weight">4x</span>
+        </div>
+        <span class="ep-tag">GET /v1/opportunity-radar</span>
+        <div class="ep-name" data-i18n="ia_ep21_name">Opportunity Radar</div>
+        <div class="ep-desc" data-i18n="ia_ep21_desc">Global (no ticker) snapshot across real estate, supply chain and consumer demand, plus a US macro backdrop -- each indicator's own real % change (latest vs. oldest of its trailing observations) and improving/worsening label. No fabricated cross-industry score: industries are never ranked or blended against each other.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.as_of</code>, <code>data.attribution</code>, <code>data.methodology_note</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.macro_backdrop.indicators</code> <span class="schema-type">object</span> -- fed_funds_rate_pct, unemployment_pct, yield_curve_10y2y_pct, jobless_claims_initial (direction-only, no improving label)</div>
+            <div class="schema-field"><code>data.industries</code> <span class="schema-type">object</span> -- real_estate, supply_chain, consumer_demand, each with <code>label</code>, <code>indicators</code>, <code>indicators_available</code>, <code>improving_count</code>, <code>worsening_count</code>, <code>flat_count</code>, <code>summary</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;each indicator: <code>label</code>, <code>unit</code>, <code>latest_date</code>, <code>latest_value</code>, <code>compare_date</code>, <code>compare_value</code>, <code>pct_change</code>, <code>direction</code> (up/down/flat), <code>improving</code> (true/false/null)</div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_opportunity_radar">Covers only the 3 industries with a FRED-style series fetch today (real estate, supply chain, consumer demand) -- energy and agriculture use a different fetch shape and aren't in this endpoint yet, an honestly-scoped gap rather than a silent omission.</p>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -1135,6 +1162,9 @@ const TRY_ENDPOINTS = {
   'real-estate':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/real-estate/' + encodeURIComponent(tk); } },
   'supply-chain':      { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/supply-chain/' + encodeURIComponent(tk); } },
   'consumer-demand':   { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/consumer-demand/' + encodeURIComponent(tk); } },
+  // 2026-08-31: Opportunity Radar -- global snapshot, no ticker, same
+  // needsTicker:false pattern as vix-term-structure above.
+  'opportunity-radar': { method: 'GET',  needsTicker: false, needsAmount: false, path: function() { return '/intelligence/v1/opportunity-radar'; } },
 };
 
 function tryUpdateFields() {

@@ -272,6 +272,13 @@ class XfinlabClient:
         docs for why."""
         return self._get(f"/intelligence/v1/consumer-demand/{ticker}")
 
+    def opportunity_radar(self) -> dict:
+        """Global (no ticker) snapshot across real estate, supply chain
+        and consumer demand, plus a US macro backdrop -- each indicator's
+        own real % change and improving/worsening label. No fabricated
+        cross-industry score."""
+        return self._get("/intelligence/v1/opportunity-radar")
+
     # 2026-08-28: Pro-tier webhooks (push instead of polling). See
     # services/webhook_service.py's VALID_EVENT_TYPES for the exact
     # event_type values ("vix_regime_change" market-wide, "new_13d_filing"

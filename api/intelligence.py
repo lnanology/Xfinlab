@@ -265,6 +265,7 @@ def intelligence_status():
         "real_estate": True,  # never 503s -- returns data: null for a ticker with no housing-market linkage
         "supply_chain": True,  # never 503s -- returns data: null for a ticker with no freight/logistics linkage
         "consumer_demand": True,  # never 503s -- returns data: null for a ticker with no consumer-spending linkage
+        "opportunity_radar": True,  # market-wide, dormant until FRED_API_KEY set (same gate as real_estate/supply_chain/consumer_demand)
         "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
     })
 
@@ -280,6 +281,12 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-31",
+        "changes": [
+            {"type": "added", "text": "GET /v1/opportunity-radar -- structural macro-mismatch read across US real estate, supply chain/manufacturing, and consumer demand, plus a US macro backdrop. Each indicator reports its own real % change over its trailing observations (exact dates included), and each industry reports a plain improving/worsening/flat count -- deliberately not a fabricated single cross-industry 'Opportunity Score'."},
+        ],
+    },
     {
         "date": "2026-08-31",
         "changes": [
@@ -1285,6 +1292,35 @@ def intelligence_consumer_demand(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+@router.get("/intelligence/v1/opportunity-radar")
+def intelligence_opportunity_radar(
+    response: Response,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Structural macro-mismatch read across US real estate, supply
+    chain/manufacturing, and consumer demand (services/
+    opportunity_radar_service.py), plus a US macro backdrop. Not
+    ticker-specific -- one market-wide snapshot per call, same shape as
+    /v1/vix-term-structure.
+
+    Deliberately NOT a fabricated single "Opportunity Score" -- each
+    indicator reports its own real % change over its trailing
+    observation window (exact dates included), and each industry
+    reports a plain count of how many of its indicators are improving/
+    worsening/flat. See that module's docstring for the full honesty
+    contract."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "opportunity_radar", response)
+
+    from services.opportunity_radar_service import get_opportunity_radar
+
+    result = get_opportunity_radar()
+    if not result or not result.get("available"):
+        return _envelope(data=None, error=(result or {}).get("message", "Opportunity Radar not available"))
+
+    return _envelope(data=result)
+
+
 @router.get("/intelligence/v1/exchange/{ticker}")
 def intelligence_exchange(
     response: Response,
@@ -1501,6 +1537,7 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/real-estate/{ticker}",
     "/intelligence/v1/supply-chain/{ticker}",
     "/intelligence/v1/consumer-demand/{ticker}",
+    "/intelligence/v1/opportunity-radar",
     "/intelligence/v1/webhooks/subscribe",
     "/intelligence/v1/webhooks",
     "/intelligence/v1/webhooks/{webhook_id}",

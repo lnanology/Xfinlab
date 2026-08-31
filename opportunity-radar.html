@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opportunity Radar - Structural Macro Signals - XFINLAB</title>
+<link rel="canonical" href="https://www.xfinlab.com/opportunity-radar.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="Free Opportunity Radar. Real, live FRED data across US real estate, supply chain/manufacturing, and consumer demand -- which indicators are improving vs worsening, with exact numbers and dates. No fabricated scores.">
+<meta name="keywords" content="market opportunity radar, structural macro mismatch, industry trend data, FRED indicators, real estate supply chain consumer demand trends, XFINLAB">
+<meta property="og:title" content="Opportunity Radar - XFINLAB">
+<meta property="og:description" content="Live macro trend read across real estate, supply chain, and consumer demand -- real numbers, no fabricated scores.">
+<meta property="og:url" content="https://www.xfinlab.com/opportunity-radar.html">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Opportunity Radar (FRED)","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://www.xfinlab.com/opportunity-radar.html"}
+</script>
+<style>
+body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
+nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
+.brand{color:#F97316;font-weight:700;font-size:1.1rem;text-decoration:none}
+.nav-link{color:#94a3b8;text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:820px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.9rem;color:#fff;margin-bottom:8px}
+.subtitle{color:#64748b;margin-bottom:8px;line-height:1.7}
+.as-of{color:#475569;font-size:0.8rem;margin-bottom:28px}
+.section{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:20px}
+h2{color:#fff;font-size:1.1rem;margin:0 0 4px}
+.section-summary{color:#94a3b8;font-size:0.85rem;margin-bottom:16px}
+h3{color:#94a3b8;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px}
+p{color:#cbd5e1;line-height:1.8}
+.indicator-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1e2d45;font-size:0.88rem}
+.indicator-row:last-child{border-bottom:none}
+.i-name{color:#e2e8f0}
+.i-dates{color:#475569;font-size:0.72rem;margin-top:2px}
+.i-right{text-align:right}
+.i-value{color:#e2e8f0;font-weight:600}
+.badge{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:99px;font-size:0.72rem;font-weight:700}
+.badge.up{background:#052e1c;color:#22c55e}
+.badge.down{background:#2e0505;color:#ef4444}
+.badge.flat{background:#1e2d45;color:#94a3b8}
+.badge.improving{background:#052e1c;color:#22c55e}
+.badge.worsening{background:#2e0505;color:#ef4444}
+.loading{color:#64748b;text-align:center;padding:40px}
+.err{color:#f87171;text-align:center;padding:24px;display:none}
+.cta{background:#F97316;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin-top:8px}
+.method-note{color:#64748b;font-size:0.82rem;line-height:1.8}
+footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
+footer a{color:#64748b;margin:0 6px;text-decoration:none}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
+  <span><a href="tools.html" class="nav-link">Free Tools</a><a href="intelligence-api.html" class="nav-link">Full API</a></span>
+</nav>
+<main>
+<h1>Opportunity Radar</h1>
+<p class="subtitle">Real, live FRED data across US real estate, supply chain/manufacturing, and consumer demand -- which indicators are actually improving vs worsening, with exact numbers and dates. No fabricated cross-industry "opportunity score" -- see the methodology below.</p>
+<div class="as-of" id="asOf"></div>
+
+<div id="loadingBox" class="loading">Loading live data…</div>
+<div id="errBox" class="err"></div>
+<div id="content" style="display:none"></div>
+
+<div class="section">
+<h2>Methodology</h2>
+<p class="method-note" id="methodNote">This tool reports each indicator's own real % change over its trailing observations against itself -- never a made-up weighted score combining unrelated indicators. "Improving"/"worsening" reflects each indicator's own real-world direction (e.g. a falling mortgage rate is improving for housing; a falling inventory/sales ratio is improving for supply-chain tightness). Industries are never ranked against each other.</p>
+</div>
+
+<div class="section">
+<h2>Want More Industries or Programmatic Access?</h2>
+<p>This page calls the same live FRED pipeline as the full XFINLAB Intelligence API's <code>/v1/opportunity-radar</code> endpoint. A free API key gets you this plus 20+ other endpoints -- per-ticker real estate/supply chain/consumer demand linkage, SEC fundamentals, insider trading, company network intelligence, an MCP server for AI agents, and more.</p>
+<a href="intelligence-api.html" class="cta">Get Free API Key →</a>
+</div>
+
+<div class="section">
+<h2>Risk Disclaimer</h2>
+<p>This tool surfaces real macroeconomic indicators for informational and educational purposes only. It does not constitute financial, investment, or business advice, and is not a recommendation to start or avoid any venture. Always conduct your own research and consult qualified professionals before making financial or business decisions.</p>
+</div>
+</main>
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  © 2026 XFINLAB — AI Investment Intelligence Platform<br><br>
+  <a href="tools.html">Free Tools</a>
+  <a href="intelligence-api.html">Developer API</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="terms.html">Terms</a>
+  <a href="privacy.html">Privacy</a>
+</footer>
+<script>
+(function(){
+  var loadingBox = document.getElementById('loadingBox');
+  var errBox = document.getElementById('errBox');
+  var content = document.getElementById('content');
+  var asOfEl = document.getElementById('asOf');
+  var methodNoteEl = document.getElementById('methodNote');
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function directionBadge(direction){
+    if (!direction) return '';
+    var cls = direction === 'up' ? 'up' : (direction === 'down' ? 'down' : 'flat');
+    var arrow = direction === 'up' ? '▲' : (direction === 'down' ? '▼' : '—');
+    return '<span class="badge ' + cls + '">' + arrow + ' ' + escapeHtml(direction) + '</span>';
+  }
+
+  function improvingBadge(improving){
+    if (improving === true) return '<span class="badge improving">IMPROVING</span>';
+    if (improving === false) return '<span class="badge worsening">WORSENING</span>';
+    return '';
+  }
+
+  function renderIndicatorRow(key, ind){
+    if (!ind) {
+      return '<div class="indicator-row"><span class="i-name">' + escapeHtml(key) + '</span><span class="i-right">—</span></div>';
+    }
+    var pct = (ind.pct_change > 0 ? '+' : '') + ind.pct_change + '%';
+    return '<div class="indicator-row">' +
+      '<span><span class="i-name">' + escapeHtml(ind.label) + '</span>' +
+      '<div class="i-dates">' + escapeHtml(ind.compare_date) + ' → ' + escapeHtml(ind.latest_date) + '</div></span>' +
+      '<span class="i-right"><span class="i-value">' + escapeHtml(ind.latest_value) + ' ' + escapeHtml(ind.unit) + '</span>' +
+      '<div>' + pct + directionBadge(ind.direction) + improvingBadge(ind.improving) + '</div></span>' +
+      '</div>';
+  }
+
+  function renderIndustry(key, ind){
+    var rows = '';
+    Object.keys(ind.indicators || {}).forEach(function(k){
+      rows += renderIndicatorRow(k, ind.indicators[k]);
+    });
+    return '<div class="section"><h2>' + escapeHtml(ind.label) + '</h2>' +
+      '<div class="section-summary">' + escapeHtml(ind.summary) + '</div>' + rows + '</div>';
+  }
+
+  function renderMacro(macro){
+    var rows = '';
+    Object.keys(macro.indicators || {}).forEach(function(k){
+      rows += renderIndicatorRow(k, macro.indicators[k]);
+    });
+    return '<div class="section"><h3>US Macro Backdrop</h3>' + rows + '</div>';
+  }
+
+  fetch('/api/free-tools-demo/opportunity-radar')
+    .then(function(r){ return r.json(); })
+    .then(function(json){
+      loadingBox.style.display = 'none';
+      if (!json.success) {
+        errBox.textContent = json.error || 'Temporarily unavailable -- please try again shortly.';
+        errBox.style.display = 'block';
+        return;
+      }
+      var d = json.data;
+      asOfEl.textContent = 'As of ' + d.as_of;
+      if (d.methodology_note) methodNoteEl.textContent = d.methodology_note;
+
+      var html = renderMacro(d.macro_backdrop || {indicators:{}});
+      Object.keys(d.industries || {}).forEach(function(k){
+        html += renderIndustry(k, d.industries[k]);
+      });
+      content.innerHTML = html;
+      content.style.display = 'block';
+    })
+    .catch(function(){
+      loadingBox.style.display = 'none';
+      errBox.textContent = 'Network error -- please try again.';
+      errBox.style.display = 'block';
+    });
+})();
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+</body>
+</html>
