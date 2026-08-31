@@ -179,11 +179,14 @@ ENDPOINT_WEIGHT = {
     # same shape/cost as real_estate above -- 4 small FRED series fetches
     # against an explicit ticker map, 6h server-side cached.
     "consumer_demand": 2,
-    # market-wide, not per-ticker, but re-fetches ~13 series across 4
-    # modules (each with n_obs=6 instead of 1) every call -- priced
-    # closer to company_network's multi-fetch weight than the single-
-    # digit per-ticker FRED endpoints above.
-    "opportunity_radar": 4,
+    # market-wide, not per-ticker, but re-fetches ~19 series across 6
+    # modules (each with n_obs=6 instead of 1) every call -- 2026-08-31
+    # expansion added energy (EIA) + agriculture (USDA) on top of the
+    # original 3 FRED industries + macro backdrop, so bumped from 4 to
+    # 6 to track the real added fetch cost. Still below company_network's
+    # 7 since an individual industry here can be a fast no-op (empty
+    # indicators dict) when that source's own key isn't configured.
+    "opportunity_radar": 6,
 }
 
 

@@ -284,6 +284,13 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-31",
         "changes": [
+            {"type": "changed", "text": "GET /v1/opportunity-radar -- expanded from 3 to 5 industries: added energy (EIA WTI crude/Henry Hub spot prices, natural gas storage) and agriculture (USDA corn/wheat/soybean price received by farmers). Each industry now gates independently on its own data source's key (FRED/EIA/USDA) rather than the whole endpoint going dark if just one is unset."},
+            {"type": "added", "text": "Webhooks: opportunity_radar_shift event type -- fires when an Opportunity Radar industry's net improving/worsening lean flips (e.g. real estate goes from net-improving to net-worsening). Market-wide, Pro-tier only, same delivery mechanics as the existing 2 event types."},
+        ],
+    },
+    {
+        "date": "2026-08-31",
+        "changes": [
             {"type": "added", "text": "GET /v1/opportunity-radar -- structural macro-mismatch read across US real estate, supply chain/manufacturing, and consumer demand, plus a US macro backdrop. Each indicator reports its own real % change over its trailing observations (exact dates included), and each industry reports a plain improving/worsening/flat count -- deliberately not a fabricated single cross-industry 'Opportunity Score'."},
         ],
     },

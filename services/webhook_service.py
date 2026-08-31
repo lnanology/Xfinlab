@@ -51,6 +51,10 @@ _DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinl
 VALID_EVENT_TYPES = {
     "vix_regime_change": {"per_ticker": False, "label": "VIX contango/backwardation regime change"},
     "new_13d_filing": {"per_ticker": True, "label": "New 13D activist filing for a watched ticker"},
+    # 2026-08-31 (AJ: "加Webhook提醒" -- Opportunity Radar follow-up):
+    # market-wide, no ticker (Opportunity Radar itself has no ticker
+    # concept). See check_and_deliver_opportunity_radar_shift() below.
+    "opportunity_radar_shift": {"per_ticker": False, "label": "An Opportunity Radar industry's net improving/worsening lean flipped"},
 }
 
 _MAX_CONSECUTIVE_FAILURES = 5  # auto-deactivate after this many delivery failures in a row
@@ -310,4 +314,65 @@ def check_and_deliver_new_13d_filings(ticker_filing_counts: Dict[str, int]) -> D
             fired[ticker] = result
     if fired:
         logger.info("webhook_service: new_13d_filing fired for tickers: %s", sorted(fired))
+    return fired
+
+
+def check_and_deliver_opportunity_radar_shift(industries: Dict[str, Dict]) -> Dict[str, Dict]:
+    """Call this from backend/main.py's opportunity_radar_shift_check job
+    with the exact `industries` dict services.opportunity_radar_service.
+    get_opportunity_radar() returns. This function does not fetch
+    anything itself -- it only re-derives each industry's NET LEAN from
+    the already-computed improving_count/worsening_count and diffs it
+    against the last observed lean.
+
+    Net lean per industry: "improving" if improving_count > worsening_count,
+    "worsening" if worsening_count > improving_count, "mixed" otherwise
+    (a tie -- including 0-0 when that industry's own data source key
+    isn't configured, since a source-less industry has zero real
+    indicators and must never be assigned a fabricated lean).
+
+    Fires opportunity_radar_shift ONLY when an industry's lean flips
+    between the two non-mixed states (improving<->worsening). A flip
+    into or out of "mixed" is deliberately NOT fire-worthy on its own --
+    a single indicator wobbling across the flat threshold could nudge a
+    3-improving/3-worsening industry into "mixed" without the industry
+    genuinely reversing course, and firing on that would be noise, not
+    signal. First-ever observation per industry records the baseline
+    without firing, same no-spurious-first-fire rule as the other 2
+    event types above. Returns {industry_key: deliver_result} for every
+    industry that actually fired this run."""
+    fired = {}
+    for industry_key, data in (industries or {}).items():
+        improving = data.get("improving_count", 0) or 0
+        worsening = data.get("worsening_count", 0) or 0
+        if improving > worsening:
+            lean = "improving"
+        elif worsening > improving:
+            lean = "worsening"
+        else:
+            lean = "mixed"
+
+        state_key = f"opportunity_radar_lean:{industry_key}"
+        previous = _get_state(state_key)
+        _set_state(state_key, lean)
+
+        if previous is None or previous == lean:
+            continue  # baseline-only, or genuinely unchanged
+        if "mixed" in (previous, lean):
+            continue  # flip into/out of mixed alone isn't fire-worthy, see docstring
+
+        result = deliver(
+            "opportunity_radar_shift",
+            {
+                "industry": industry_key,
+                "previous_lean": previous,
+                "new_lean": lean,
+                "improving_count": improving,
+                "worsening_count": worsening,
+                "summary": data.get("summary"),
+            },
+        )
+        fired[industry_key] = result
+    if fired:
+        logger.info("webhook_service: opportunity_radar_shift fired for industries: %s", sorted(fired))
     return fired

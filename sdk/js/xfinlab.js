@@ -240,7 +240,7 @@
   // 2026-08-28: Pro-tier webhooks (push instead of polling). See
   // services/webhook_service.py's VALID_EVENT_TYPES for the exact
   // eventType values ('vix_regime_change' market-wide, 'new_13d_filing'
-  // per-ticker).
+  // per-ticker, 'opportunity_radar_shift' market-wide -- added 2026-08-31).
   XfinlabClient.prototype.subscribeWebhook = function (eventType, url, ticker) {
     var body = { event_type: eventType, url: url };
     if (ticker) body.ticker = ticker;

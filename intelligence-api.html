@@ -702,7 +702,7 @@ details.schema-details[open] summary::after{content:" ▴"}
         </div>
         <span class="ep-tag">POST /v1/webhooks/subscribe · GET /v1/webhooks · DELETE /v1/webhooks/{id}</span>
         <div class="ep-name" data-i18n="ia_ep17_name">Webhooks (Push Notifications)</div>
-        <div class="ep-desc" data-i18n="ia_ep17_desc">Get notified the moment a real event happens instead of polling. Two event types today: vix_regime_change (market-wide contango/backwardation flip) and new_13d_filing (per-ticker, fires when a watched ticker's activist-filing count increases). Both are backed by daily scheduled refresh jobs, so delivery is same-day, never a fabricated "real-time" claim. Pro-tier only -- a free-tier key gets a 403.</div>
+        <div class="ep-desc" data-i18n="ia_ep17_desc">Get notified the moment a real event happens instead of polling. Three event types today: vix_regime_change (market-wide contango/backwardation flip), new_13d_filing (per-ticker, fires when a watched ticker's activist-filing count increases), and opportunity_radar_shift (market-wide, fires when an Opportunity Radar industry's net improving/worsening lean flips). All three are backed by daily scheduled refresh jobs, so delivery is same-day, never a fabricated "real-time" claim. Pro-tier only -- a free-tier key gets a 403.</div>
         <details class="schema-details">
           <summary data-i18n="ia_schema_toggle">Response fields</summary>
           <div class="schema-fields">
@@ -784,25 +784,28 @@ details.schema-details[open] summary::after{content:" ▴"}
            NOT a fabricated composite score (see services/opportunity_
            radar_service.py docstring) -- each indicator reports its own
            real % change and improving/worsening label, never a blended
-           number. Weighted 4x since it re-fetches ~13 series across 4
-           modules per call. -->
+           number. Weighted 6x since it re-fetches ~19 series across 6
+           modules per call. 2026-08-31 follow-up: expanded from 3 to 5
+           industries (added energy/EIA and agriculture/USDA) -- each
+           industry now gates independently on its own source's key, so
+           a missing EIA/USDA key never takes down the other industries. -->
       <div class="ep-card">
         <div class="ep-head">
           <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><path d="M12 12l5-3"/></svg></div>
-          <span class="ep-weight">4x</span>
+          <span class="ep-weight">6x</span>
         </div>
         <span class="ep-tag">GET /v1/opportunity-radar</span>
         <div class="ep-name" data-i18n="ia_ep21_name">Opportunity Radar</div>
-        <div class="ep-desc" data-i18n="ia_ep21_desc">Global (no ticker) snapshot across real estate, supply chain and consumer demand, plus a US macro backdrop -- each indicator's own real % change (latest vs. oldest of its trailing observations) and improving/worsening label. No fabricated cross-industry score: industries are never ranked or blended against each other.</div>
+        <div class="ep-desc" data-i18n="ia_ep21_desc">Global (no ticker) snapshot across real estate, supply chain, consumer demand, energy and agriculture, plus a US macro backdrop -- each indicator's own real % change (latest vs. oldest of its trailing observations) and improving/worsening label. No fabricated cross-industry score: industries are never ranked or blended against each other.</div>
         <details class="schema-details">
           <summary data-i18n="ia_schema_toggle">Response fields</summary>
           <div class="schema-fields">
             <div class="schema-field"><code>data.as_of</code>, <code>data.attribution</code>, <code>data.methodology_note</code> <span class="schema-type">string</span></div>
             <div class="schema-field"><code>data.macro_backdrop.indicators</code> <span class="schema-type">object</span> -- fed_funds_rate_pct, unemployment_pct, yield_curve_10y2y_pct, jobless_claims_initial (direction-only, no improving label)</div>
-            <div class="schema-field"><code>data.industries</code> <span class="schema-type">object</span> -- real_estate, supply_chain, consumer_demand, each with <code>label</code>, <code>indicators</code>, <code>indicators_available</code>, <code>improving_count</code>, <code>worsening_count</code>, <code>flat_count</code>, <code>summary</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.industries</code> <span class="schema-type">object</span> -- real_estate, supply_chain, consumer_demand, energy, agriculture, each with <code>label</code>, <code>indicators</code>, <code>indicators_available</code>, <code>improving_count</code>, <code>worsening_count</code>, <code>flat_count</code>, <code>summary</code> <span class="schema-type">string</span></div>
             <div class="schema-field">&nbsp;&nbsp;each indicator: <code>label</code>, <code>unit</code>, <code>latest_date</code>, <code>latest_value</code>, <code>compare_date</code>, <code>compare_value</code>, <code>pct_change</code>, <code>direction</code> (up/down/flat), <code>improving</code> (true/false/null)</div>
           </div>
-          <p class="schema-note" data-i18n="ia_schema_note_opportunity_radar">Covers only the 3 industries with a FRED-style series fetch today (real estate, supply chain, consumer demand) -- energy and agriculture use a different fetch shape and aren't in this endpoint yet, an honestly-scoped gap rather than a silent omission.</p>
+          <p class="schema-note" data-i18n="ia_schema_note_opportunity_radar">5 industries, each gated independently on its own data source's key (FRED_API_KEY for real estate/supply chain/consumer demand, EIA_API_KEY for energy, USDA_NASS_API_KEY for agriculture). An industry whose key isn't configured still appears with an empty indicators object and an honest "not configured" summary -- it never takes the rest of the response down, and never fabricates a placeholder reading.</p>
         </details>
       </div>
     </div>
