@@ -263,6 +263,8 @@ def intelligence_status():
         "bank_health": True,  # never 503s -- returns data: null for a ticker with no FDIC-mapped lead subsidiary
         "agriculture": True,  # never 503s -- returns data: null for a ticker with no USDA commodity linkage
         "real_estate": True,  # never 503s -- returns data: null for a ticker with no housing-market linkage
+        "supply_chain": True,  # never 503s -- returns data: null for a ticker with no freight/logistics linkage
+        "consumer_demand": True,  # never 503s -- returns data: null for a ticker with no consumer-spending linkage
         "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
     })
 
@@ -278,6 +280,14 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-08-31",
+        "changes": [
+            {"type": "added", "text": "GET /v1/supply-chain/{ticker} -- FRED inventory/sales ratio, manufacturing new orders, durable goods orders, industrial production, and manufacturing employment for freight/logistics-linked tickers (carriers, railroads, transportation ETFs). Second of 3 cross-industry expansion candidates."},
+            {"type": "added", "text": "GET /v1/consumer-demand/{ticker} -- FRED retail sales, personal consumption expenditures, and durable goods consumption for consumer-spending-linked tickers (large retailers, e-commerce, consumer-discretionary ETFs). Third of 3 cross-industry expansion candidates -- not Google Trends search-interest data, see that endpoint's docs for why."},
+            {"type": "fixed", "text": "News search (/v1/events, /v1/sentiment) now resolves bare ticker queries to their real company name before searching headlines, and widens the GDELT lookback window -- fixes zero-results for well-known large-cap tickers whose headlines almost never contain the bare ticker symbol."},
+        ],
+    },
     {
         "date": "2026-08-30",
         "changes": [
@@ -1221,6 +1231,60 @@ def intelligence_real_estate(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+@router.get("/intelligence/v1/supply-chain/{ticker}")
+def intelligence_supply_chain(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """FRED US manufacturing/supply-chain context for `ticker` (services/
+    supply_chain_service.py -- inventory/sales ratio, manufacturing new
+    orders, durable goods orders, industrial production, manufacturing
+    employment). Only populated for tickers with a real freight/logistics
+    linkage (carriers, railroads, transportation ETFs -- see that
+    module's _TICKER_TO_NAME) -- any other ticker returns `data: null`,
+    never a fabricated reading for an unrelated symbol."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "supply_chain", response, ticker=ticker.upper())
+
+    from services.supply_chain_service import get_supply_chain_context_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_supply_chain_context_for_ticker(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No supply-chain linkage for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
+@router.get("/intelligence/v1/consumer-demand/{ticker}")
+def intelligence_consumer_demand(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """FRED US consumer-spending context for `ticker` (services/
+    consumer_demand_service.py -- retail sales, personal consumption
+    expenditures, durable goods consumption). NOT Google Trends search-
+    interest data -- see that module's docstring for why (no officially
+    licensed, commercial-use-safe search-trends API exists). Only
+    populated for tickers with a real consumer-spending linkage (large
+    retailers, e-commerce, consumer-discretionary ETFs -- see that
+    module's _TICKER_TO_NAME) -- any other ticker returns `data: null`,
+    never a fabricated reading for an unrelated symbol."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "consumer_demand", response, ticker=ticker.upper())
+
+    from services.consumer_demand_service import get_consumer_demand_context_for_ticker
+
+    ticker = ticker.upper().strip()
+    result = get_consumer_demand_context_for_ticker(ticker)
+    if not result:
+        return _envelope(data=None, error=f"No consumer-spending linkage for {ticker}")
+
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
 @router.get("/intelligence/v1/exchange/{ticker}")
 def intelligence_exchange(
     response: Response,
@@ -1435,6 +1499,8 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/bank-health/{ticker}",
     "/intelligence/v1/agriculture/{ticker}",
     "/intelligence/v1/real-estate/{ticker}",
+    "/intelligence/v1/supply-chain/{ticker}",
+    "/intelligence/v1/consumer-demand/{ticker}",
     "/intelligence/v1/webhooks/subscribe",
     "/intelligence/v1/webhooks",
     "/intelligence/v1/webhooks/{webhook_id}",

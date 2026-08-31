@@ -173,6 +173,12 @@ ENDPOINT_WEIGHT = {
     # same cost shape as agriculture/energy -- 4 small FRED series fetches
     # against an explicit ticker map, 6h server-side cached. Priced the same.
     "real_estate": 2,
+    # same shape/cost as real_estate above -- 5 small FRED series fetches
+    # against an explicit ticker map, 6h server-side cached.
+    "supply_chain": 2,
+    # same shape/cost as real_estate above -- 4 small FRED series fetches
+    # against an explicit ticker map, 6h server-side cached.
+    "consumer_demand": 2,
 }
 
 
