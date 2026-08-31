@@ -53,6 +53,18 @@ more sub-sections, same zero-fabrication posture as above:
 Both sub-calls are wrapped in try/except: a Phase 2 or Phase 3 failure
 degrades that section to {"available": False, ...} without breaking the
 Phase 1 response that was already live in production.
+
+2026-08-30 (Phase 4, AJ picked "cross-ticker fund overlap" from a 3-option
+next-feature menu): added `smart_money_crossholdings` (services/
+sec_ownership_service.py's get_smart_money_crossholdings()) -- for each
+of our tracked concentrated managers (Berkshire/Pershing Square/Scion)
+that holds this ticker, what ELSE (by real reported 13F value) that same
+manager holds. Zero new data source: every row was already sitting in
+sec_13f_holdings from Phase 1's ownership collector, just never queried
+outside the single requested ticker's slice until now. Same
+zero-fabrication posture: literal filing rows, real issuer names (no
+CUSIP->ticker resolution exists yet, so no guessed tickers), never a
+ranking or "smart money score".
 """
 import os
 import sqlite3
@@ -186,7 +198,8 @@ def get_company_network(ticker: str) -> Dict:
          "network_summary": {...pure pass-through counts/sums, see module docstring...},
          "what_changed": {...day-over-day diff, or {"available": False} if no prior snapshot...},
          "business_relationship_mentions": {...Phase 2, from sec_business_text_service...},
-         "event_impact": {...Phase 3, from event_impact_service...}}
+         "event_impact": {...Phase 3, from event_impact_service...},
+         "smart_money_crossholdings": {...Phase 4, from sec_ownership_service...}}
 
     Always `available: True` at the top level (this endpoint never 503s) --
     each sub-section carries its own honest `available` flag independently,
@@ -255,6 +268,12 @@ def get_company_network(ticker: str) -> Dict:
     except Exception:
         event_impact = {"available": False, "message": "Event impact lookup unavailable this run."}
 
+    try:
+        from services.sec_ownership_service import get_smart_money_crossholdings
+        smart_money_crossholdings = get_smart_money_crossholdings(ticker)
+    except Exception:
+        smart_money_crossholdings = {"available": False, "message": "Smart money crossholdings unavailable this run."}
+
     return {
         "available": True,
         "ticker": ticker,
@@ -269,4 +288,5 @@ def get_company_network(ticker: str) -> Dict:
         "what_changed": what_changed,
         "business_relationship_mentions": business_relationship_mentions,
         "event_impact": event_impact,
+        "smart_money_crossholdings": smart_money_crossholdings,
     }

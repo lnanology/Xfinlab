@@ -280,6 +280,12 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-08-30",
         "changes": [
+            {"type": "changed", "text": "GET /v1/company-network/{ticker} -- added smart_money_crossholdings (Phase 4: for each tracked concentrated manager -- Berkshire Hathaway, Pershing Square, Scion Asset Management -- that holds this ticker, what else that same manager holds by real reported 13F value. Zero new data source, pure re-query of already-collected filing rows; real issuer names, no guessed tickers, no ranking or score)."},
+        ],
+    },
+    {
+        "date": "2026-08-30",
+        "changes": [
             {"type": "changed", "text": "GET /v1/company-network/{ticker} -- added business_relationship_mentions (Phase 2: literal, sourced sentence excerpts from the issuer's own latest 10-K naming a competitor/supplier/customer -- quotable and independently verifiable, never a cleaned-up inferred list) and event_impact (Phase 3: what the real stock price actually did after each of the ticker's most recent tracked Form 4 / 13D-13G events, computed live from real historical closes -- a factual record of one past outcome, not a prediction, average, or causal claim). Both are new sub-sections on the existing endpoint, not a new route. Quota weight raised 5->7 to reflect the extra document fetch."},
         ],
     },
