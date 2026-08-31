@@ -73,7 +73,7 @@ need a dedicated library.
 
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from email.utils import parsedate_to_datetime
 from typing import Dict, List, Optional
 from xml.etree import ElementTree as ET
@@ -82,6 +82,74 @@ from services.outbound_http import get_with_backoff
 from services import gdelt_news_service
 
 logger = logging.getLogger(__name__)
+
+# 2026-08-30 fix (AJ live-tested /v1/events and /v1/sentiment for "AAPL"
+# on the production Intelligence API console and got a real, honest
+# "no headlines found" -- not a broken fetch, but a genuinely weak
+# result for one of the most-covered stocks in the world). Root cause:
+# search_headlines() below matched (and passed to GDELT's search) the
+# literal ticker string only -- "aapl" as a title substring, or "AAPL" as
+# a GDELT keyword. Real news headlines/articles overwhelmingly say
+# "Apple", not the bare ticker, so a ticker-only query structurally
+# undershoots for exactly the pool this module has (2 general-purpose
+# wires + GDELT's global monitoring, none of which are finance-specific
+# feeds where bare tickers are common). This resolves a bare ticker to
+# its real SEC-registered company name (same public, no-auth, already-
+# proven-reliable source used by services/sec_ownership_service.py,
+# services/sec_xbrl_service.py, etc. for the same lookup) and searches
+# with BOTH the raw query and the resolved name, unioned -- never
+# replacing the raw-query path, so a query that's already a company name
+# or a ticker with no SEC match behaves exactly as before.
+TICKER_TITLE_MAP_URL = "https://www.sec.gov/files/company_tickers.json"
+SEC_USER_AGENT = "XFINLABBot/1.0 (+https://www.xfinlab.com; contact: support@xfinlab.com)"
+_TICKER_TITLE_CACHE_TTL_DAYS = 7
+_ticker_title_cache = {"data": None, "fetched_at": None}
+_BARE_TICKER_RE = re.compile(r"^[A-Z]{1,5}$")
+
+
+def _load_ticker_title_map() -> dict:
+    """Own copy of the ticker->title lookup (SEC's own public company_
+    tickers.json) -- deliberately independent of services/sec_ownership_
+    service.py's copy, matching this codebase's per-module-independence
+    convention (see services/sec_form4_service.py's module docstring for
+    why every SEC-adjacent module keeps its own resolver rather than a
+    shared import)."""
+    today = date.today()
+    cached = _ticker_title_cache["data"]
+    fetched_at = _ticker_title_cache["fetched_at"]
+    if cached and fetched_at and (today - fetched_at).days < _TICKER_TITLE_CACHE_TTL_DAYS:
+        return cached
+    try:
+        res = get_with_backoff(TICKER_TITLE_MAP_URL, headers={"User-Agent": SEC_USER_AGENT}, timeout=20)
+        if res.status_code != 200:
+            return cached or {}
+        payload = res.json()
+        mapping = {str(e["ticker"]).upper(): (e.get("title") or "") for e in payload.values()}
+        _ticker_title_cache["data"] = mapping
+        _ticker_title_cache["fetched_at"] = today
+        return mapping
+    except Exception as e:
+        logger.info("rss_news_service: ticker->title map fetch failed: %s", e)
+        return cached or {}
+
+
+def _resolve_company_name(query: str) -> Optional[str]:
+    """Returns a real SEC-registered company name for a bare-ticker-
+    looking query (e.g. "AAPL" -> "Apple Inc."), or None if `query`
+    doesn't look like a bare ticker or has no match -- never a guessed
+    name. "Inc."/"Corp"/"Corporation"/etc suffix is stripped for search
+    purposes (news headlines almost never include the legal suffix)."""
+    q = (query or "").strip().upper()
+    if not _BARE_TICKER_RE.match(q):
+        return None
+    title = _load_ticker_title_map().get(q)
+    if not title:
+        return None
+    short = re.sub(
+        r"\s+(Inc\.?|Incorporated|Corp\.?|Corporation|Co\.|Company|Ltd\.?|Limited|plc|Group|Holdings|N\.V\.|S\.A\.)\.?$",
+        "", title, flags=re.I,
+    ).strip()
+    return short or title
 
 FEEDS: Dict[str, Dict] = {
     "globenewswire_public_companies": {
@@ -253,6 +321,16 @@ def search_headlines(query: str, limit: int = 20) -> Dict:
         substring filter over a fixed small pool, so it can surface
         per-company coverage the RSS pool alone would miss.
     Deduplicated by link before returning.
+
+    2026-08-30: if `query` looks like a bare ticker (e.g. "AAPL"), it is
+    resolved to its real SEC-registered company name (e.g. "Apple") via
+    _resolve_company_name(), and BOTH the raw ticker and the resolved
+    name are searched through both paths above, unioned together. Real
+    headlines/articles almost always say "Apple", never "AAPL", so a
+    ticker-only query structurally misses nearly everything for exactly
+    the well-known names users are most likely to ask about. A query
+    that isn't a bare ticker, or a ticker with no SEC match, searches
+    exactly as before (single term, unchanged behavior).
     """
     query = (query or "").strip()
     if not query:
@@ -262,20 +340,33 @@ def search_headlines(query: str, limit: int = 20) -> Dict:
     if not needle:
         return {"status": "error", "message": "查詢字串無效。", "items": []}
 
+    resolved_name = _resolve_company_name(query)
+    search_terms = [query] if not resolved_name else [query, resolved_name]
+    needles = {needle}
+    if resolved_name:
+        resolved_needle = _TICKER_STRIP_RE.sub("", resolved_name.lower()).strip()
+        if resolved_needle:
+            needles.add(resolved_needle)
+
     merged = get_all_headlines(limit=200)
     matches = [
         item for item in merged["items"]
-        if needle in _TICKER_STRIP_RE.sub("", item["title"].lower())
+        if any(n in _TICKER_STRIP_RE.sub("", item["title"].lower()) for n in needles)
     ]
 
-    try:
-        gdelt_result = gdelt_news_service.search_global_events(query, limit=limit)
-        gdelt_matches = [
-            {**item, "kind": "market_news"} for item in gdelt_result.get("items", [])
-        ]
-    except Exception as e:
-        logger.info("rss_news_service: GDELT search failed for %r: %s", query, e)
-        gdelt_matches = []
+    gdelt_matches: List[Dict] = []
+    for term in search_terms:
+        try:
+            # 7-day window (was the function default of 3d, applied
+            # implicitly here before this fix) -- widened for this call
+            # site only; services/global_news_region_service.py's own
+            # explicit timespan="2d" call is untouched.
+            gdelt_result = gdelt_news_service.search_global_events(term, limit=limit, timespan="7d")
+            gdelt_matches.extend(
+                {**item, "kind": "market_news"} for item in gdelt_result.get("items", [])
+            )
+        except Exception as e:
+            logger.info("rss_news_service: GDELT search failed for %r: %s", term, e)
 
     seen_links = set()
     combined: List[Dict] = []
@@ -291,6 +382,7 @@ def search_headlines(query: str, limit: int = 20) -> Dict:
         "status": "ok" if combined else "error",
         "message": None if combined else f"暫時搵唔到同「{query}」相關嘅新聞/公告。",
         "query": query,
+        "resolved_company_name": resolved_name,
         "items": combined[:limit],
     }
 
