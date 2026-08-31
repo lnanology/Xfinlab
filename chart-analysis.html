@@ -1424,7 +1424,12 @@ async function requestRegimeRouter(){
   btn.disabled = true;
   btn.textContent = t('ca_regime_router_loading','分析緊現時市況...');
   try {
-    const response = await fetch(`${API}/regime-router/${encodeURIComponent(currentSearchSymbol)}/best-for-regime`);
+    // 2026-08-31 fix (AJ flagged mixed-language rendering): this fetch used
+    // to omit ?lang= entirely, so the backend always returned hardcoded
+    // Cantonese reason/caveat text no matter what language was selected.
+    // Same pattern as _calang/_mtflang above.
+    const _rrlang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/regime-router/${encodeURIComponent(currentSearchSymbol)}/best-for-regime${_rrlang ? '?lang=' + encodeURIComponent(_rrlang) : ''}`);
     const json = await response.json();
     if(json.status !== 'ok' || !json.data){
       throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));

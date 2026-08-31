@@ -77,6 +77,7 @@ from backend.alpha.regime_detector import RegimeDetector
 from services.backtest_service import WARMUP_BARS, BacktestService
 from services.formula_composer_service import generate_candidates
 from services.technical_analysis_service import TechnicalAnalysisService
+from services.i18n import get_translations
 
 logger = logging.getLogger(__name__)
 
@@ -251,12 +252,27 @@ def run_regime_scan(symbol: str, period: str = "2y", interval: str = "1d") -> Di
     }
 
 
-def get_best_for_regime(symbol: str, regime: str, min_trades: int = 5) -> Dict:
+def get_best_for_regime(symbol: str, regime: str, min_trades: int = 5, lang: str = None) -> Dict:
     """Reads the persisted leaderboard for `symbol`, filtered to `regime`,
     ranked by avg_return_pct, requiring at least `min_trades` trades in
     that specific (candidate, regime) cell. Returns {"available": False,
     "reason": ...} honestly if nothing clears the bar, rather than
-    returning a best-of-nothing pick."""
+    returning a best-of-nothing pick.
+
+    2026-08-31 fix (AJ flagged mixed-language rendering on ai-analysis.html/
+    chart-analysis.html -- the "Current regime: ..." label was following the
+    page's selected UI language while this function's reason/caveat text
+    stayed hardcoded Cantonese regardless of caller): lang param added,
+    mirroring services/historical_analog_service.py's is_zh_default/
+    get_translations(lang)/_t() pattern exactly. No lang passed (or zh-HK/
+    zh-TW/zh-CN) keeps the original Cantonese text -- zero behavior change
+    for existing callers that don't pass lang."""
+    is_zh_default = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
+    tr = None if is_zh_default else get_translations(lang)
+
+    def _t(key, fallback):
+        return tr.get(key, fallback) if tr else fallback
+
     symbol = (symbol or "").upper().strip()
     conn = _get_db()
     try:
@@ -274,8 +290,11 @@ def get_best_for_regime(symbol: str, regime: str, min_trades: int = 5) -> Dict:
             "available": False,
             "symbol": symbol,
             "regime": regime,
-            "reason": f"暫時未有足夠數據（少於{min_trades}單交易）去揀選呢個regime表現最好嘅組合，"
-                      f"請先用 run_regime_scan() 掃描呢隻股票，或者呢隻股票喺呢個regime出現嘅交易次數太少。",
+            "reason": _t(
+                "regime_router_reason_insufficient",
+                "暫時未有足夠數據（少於{min_trades}單交易）去揀選呢個regime表現最好嘅組合，"
+                "請先用 run_regime_scan() 掃描呢隻股票，或者呢隻股票喺呢個regime出現嘅交易次數太少。",
+            ).format(min_trades=min_trades),
         }
 
     best = dict(rows[0])
@@ -295,13 +314,13 @@ def get_best_for_regime(symbol: str, regime: str, min_trades: int = 5) -> Dict:
             for r in rows[1:6]
         ],
         "caveats": [
-            "細樣本統計學上唔可靠，請留意 trade_count。",
-            "呢個係揀選歷史上喺呢個regime表現最好嘅已有組合，唔係即時交易訊號，唔係投資建議。",
+            _t("regime_router_caveat_sample", "細樣本統計學上唔可靠，請留意 trade_count。"),
+            _t("regime_router_caveat_notadvice", "呢個係揀選歷史上喺呢個regime表現最好嘅已有組合，唔係即時交易訊號，唔係投資建議。"),
         ],
     }
 
 
-def get_current_regime(symbol: str) -> Dict:
+def get_current_regime(symbol: str, lang: str = None) -> Dict:
     """
     Live convenience wrapper: computes just the LATEST bar's causal
     regime label (same classify_regime_series() logic, but only the last
@@ -309,16 +328,25 @@ def get_current_regime(symbol: str) -> Dict:
     backtest period). Intended as the "what regime is this symbol in
     right now" half of the router, to be read alongside get_best_for_
     regime(symbol, that_regime) for the full recommendation.
+
+    2026-08-31: lang param added, same fix/rationale as get_best_for_
+    regime() above.
     """
+    is_zh_default = not lang or lang in ("zh-HK", "zh-TW", "zh-CN")
+    tr = None if is_zh_default else get_translations(lang)
+
+    def _t(key, fallback):
+        return tr.get(key, fallback) if tr else fallback
+
     symbol = (symbol or "").upper().strip()
     if not symbol:
-        return {"error": "缺少代號"}
+        return {"error": _t("regime_router_err_missing_symbol", "缺少代號")}
     try:
         df = _svc._fetch_history(symbol, "6mo", "1d")
     except Exception as e:
-        return {"error": f"攞唔到 {symbol} 嘅歷史數據：{str(e)}"}
+        return {"error": _t("analog_err_fetch", "攞唔到 {symbol} 嘅歷史數據：{error}").format(symbol=symbol, error=str(e))}
     if df is None or df.empty or len(df) < WARMUP_BARS + 5:
-        return {"error": f"{symbol} 歷史數據不足，無法判斷現時regime"}
+        return {"error": _t("regime_router_err_insufficient", "{symbol} 歷史數據不足，無法判斷現時regime").format(symbol=symbol)}
     df = df.dropna()
     closes, highs, lows, volume = df["Close"], df["High"], df["Low"], df["Volume"]
     ind = BacktestService._compute_causal_indicators(closes, highs, lows, volume)
