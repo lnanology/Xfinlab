@@ -61,6 +61,21 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.xfinlab.com/free-real-estate-api.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/free-supply-chain-api.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/free-consumer-demand-api.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.xfinlab.com/ai-analysis.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

@@ -4,6 +4,17 @@ free-stock-sentiment-api.html, free-technical-analysis-api.html) that exist
 purely to prove the Intelligence API's data is real, with zero signup
 friction, and funnel visitors into getting a free X-API-Key.
 
+2026-08-31: added 3 more demo endpoints (real-estate, supply-chain,
+consumer-demand) backing the same-named free-*-api.html pages, for the
+cross-industry expansion that shipped 2026-08-30/31. Same no-trim
+posture as vix-term-structure below (each of these is already a small,
+scoped response, not a large teaser-worthy payload like sentiment/
+technical) -- the only "trim" is that these 3 only have real data for a
+specific whitelist of tickers (see each service's _TICKER_TO_NAME), so
+unlike sentiment/technical which accept any ticker, most random tickers
+here will legitimately return null. The demo pages surface the working
+ticker list directly rather than let a visitor guess and hit dead ends.
+
 NOT the same thing as api/public_demo.py (`/api/demo/analyze/{ticker}`,
 the homepage's one-time 5-minute anonymous trial for the *consumer*
 product) -- that one gates a full teaser report behind a strict per-IP
@@ -141,3 +152,69 @@ def demo_technical(request: Request, ticker: str = ""):
         "meta": {"note": "Preview only. The full API also returns MACD, market structure (BOS/CHOCH/liquidity), chart patterns and decision levels."},
         "cta": _CTA,
     }
+
+
+@router.get("/free-tools-demo/real-estate")
+@limiter.limit(_DEMO_LIMIT)
+def demo_real_estate(request: Request, ticker: str = ""):
+    """Backs free-real-estate-api.html. Same services.real_estate_service
+    .get_real_estate_context_for_ticker() the paid /intelligence/v1/
+    real-estate/{ticker} endpoint calls -- no trimming, this is already a
+    small scoped response. Only whitelisted housing-linked tickers
+    return real data; see that module's _TICKER_TO_NAME."""
+    from services.real_estate_service import get_real_estate_context_for_ticker, _TICKER_TO_NAME
+
+    ticker = ticker.upper().strip()
+    if not ticker:
+        return {"success": False, "error": "ticker query param is required",
+                "meta": {"tickers": sorted(_TICKER_TO_NAME.keys())}, "cta": _CTA}
+
+    result = get_real_estate_context_for_ticker(ticker)
+    if not result:
+        return {"success": False, "error": f"No housing-market linkage for {ticker}",
+                "meta": {"tickers": sorted(_TICKER_TO_NAME.keys())}, "cta": _CTA}
+    return {"success": True, "data": result, "cta": _CTA}
+
+
+@router.get("/free-tools-demo/supply-chain")
+@limiter.limit(_DEMO_LIMIT)
+def demo_supply_chain(request: Request, ticker: str = ""):
+    """Backs free-supply-chain-api.html. Same services.supply_chain_service
+    .get_supply_chain_context_for_ticker() the paid /intelligence/v1/
+    supply-chain/{ticker} endpoint calls. Only whitelisted freight/
+    logistics tickers return real data; see that module's
+    _TICKER_TO_NAME."""
+    from services.supply_chain_service import get_supply_chain_context_for_ticker, _TICKER_TO_NAME
+
+    ticker = ticker.upper().strip()
+    if not ticker:
+        return {"success": False, "error": "ticker query param is required",
+                "meta": {"tickers": sorted(_TICKER_TO_NAME.keys())}, "cta": _CTA}
+
+    result = get_supply_chain_context_for_ticker(ticker)
+    if not result:
+        return {"success": False, "error": f"No supply-chain linkage for {ticker}",
+                "meta": {"tickers": sorted(_TICKER_TO_NAME.keys())}, "cta": _CTA}
+    return {"success": True, "data": result, "cta": _CTA}
+
+
+@router.get("/free-tools-demo/consumer-demand")
+@limiter.limit(_DEMO_LIMIT)
+def demo_consumer_demand(request: Request, ticker: str = ""):
+    """Backs free-consumer-demand-api.html. Same
+    services.consumer_demand_service.get_consumer_demand_context_for_
+    ticker() the paid /intelligence/v1/consumer-demand/{ticker} endpoint
+    calls. Only whitelisted retail/consumer tickers return real data;
+    see that module's _TICKER_TO_NAME."""
+    from services.consumer_demand_service import get_consumer_demand_context_for_ticker, _TICKER_TO_NAME
+
+    ticker = ticker.upper().strip()
+    if not ticker:
+        return {"success": False, "error": "ticker query param is required",
+                "meta": {"tickers": sorted(_TICKER_TO_NAME.keys())}, "cta": _CTA}
+
+    result = get_consumer_demand_context_for_ticker(ticker)
+    if not result:
+        return {"success": False, "error": f"No consumer-spending linkage for {ticker}",
+                "meta": {"tickers": sorted(_TICKER_TO_NAME.keys())}, "cta": _CTA}
+    return {"success": True, "data": result, "cta": _CTA}

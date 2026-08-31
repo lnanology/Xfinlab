@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Real Estate Market API - Housing Data - XFINLAB</title>
+<link rel="canonical" href="https://www.xfinlab.com/free-real-estate-api.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="Free real estate market API. 30-year mortgage rate, Case-Shiller home price index, housing starts, and existing home sales for homebuilder/REIT tickers -- live FRED data, no signup required.">
+<meta name="keywords" content="real estate API, housing market API, mortgage rate API, Case-Shiller API, homebuilder stocks data, REIT data API, XFINLAB">
+<meta property="og:title" content="Free Real Estate Market API - XFINLAB">
+<meta property="og:description" content="Live 30-year mortgage rate, home price index, housing starts and existing home sales for housing-linked tickers -- free, instant, no signup.">
+<meta property="og:url" content="https://www.xfinlab.com/free-real-estate-api.html">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Real Estate Market API (FRED)","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://www.xfinlab.com/free-real-estate-api.html"}
+</script>
+<style>
+body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
+nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
+.brand{color:#F97316;font-weight:700;font-size:1.1rem;text-decoration:none}
+.nav-link{color:#94a3b8;text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:720px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.9rem;color:#fff;margin-bottom:8px}
+.subtitle{color:#64748b;margin-bottom:32px}
+.calc{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:24px}
+.field{margin-bottom:12px;display:flex;gap:10px}
+.field input{flex:1;box-sizing:border-box;background:#131c2e;border:1px solid #1e2d45;color:#e2e8f0;border-radius:8px;padding:12px;font-size:1rem;text-transform:uppercase}
+.btn{background:#F97316;color:#000;border:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer}
+.btn:disabled{opacity:0.6;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{background:#131c2e;border:1px solid #1e2d45;color:#94a3b8;border-radius:99px;padding:5px 12px;font-size:0.78rem;cursor:pointer}
+.chip:hover{border-color:#F97316;color:#F97316}
+.chip-label{color:#475569;font-size:0.75rem;margin:10px 0 4px}
+.result{background:#131c2e;border:1px solid #F97316;border-radius:10px;padding:20px;margin-top:16px;display:none}
+.result .name{font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:12px}
+.indicator{padding:10px 0;border-bottom:1px solid #1e2d45;display:flex;justify-content:space-between;align-items:baseline;font-size:0.88rem}
+.indicator:last-child{border-bottom:none}
+.indicator .i-label{color:#94a3b8}
+.indicator .i-value{color:#F97316;font-weight:700}
+.indicator .i-date{color:#475569;font-size:0.72rem;margin-left:6px}
+.err{color:#f87171;font-size:0.85rem;margin-top:10px;display:none}
+.section{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:20px}
+h2{color:#94a3b8;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px}
+p{color:#cbd5e1;line-height:1.8}
+.cta{background:#F97316;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin-top:8px}
+footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
+footer a{color:#64748b;margin:0 6px;text-decoration:none}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
+  <span><a href="tools.html" class="nav-link">Free Tools</a><a href="intelligence-api.html" class="nav-link">Full API</a></span>
+</nav>
+<main>
+<h1>Real Estate Market API — Housing Data</h1>
+<p class="subtitle">30-year mortgage rate, Case-Shiller home price index, housing starts, and existing home sales -- live FRED data for housing-linked tickers, free, no signup.</p>
+
+<div class="calc">
+  <div class="field">
+    <input type="text" id="tickerInput" placeholder="e.g. DHI" maxlength="10">
+    <button class="btn" id="runBtn" onclick="checkTicker()">Look Up</button>
+  </div>
+  <div class="chip-label">Try a covered ticker:</div>
+  <div class="chips" id="chipRow"></div>
+  <div id="resultBox" class="result">
+    <div class="name" id="resName"></div>
+    <div id="indicators"></div>
+  </div>
+  <div class="err" id="errBox"></div>
+</div>
+
+<div class="section">
+<h2>What This Covers</h2>
+<p>This isn't a generic real estate index -- it's national housing-market fundamentals (mortgage rates, home prices, housing starts, existing home sales, all sourced live from FRED) paired specifically with tickers whose business is directly, mechanically exposed to those numbers: homebuilders (DHI, LEN, PHM, NVR, TOL, KBH, MTH), REITs (O, SPG, PLD, PSA, AVB, EQR), a mortgage originator (RKT), and 3 housing-sector ETFs (VNQ, XHB, ITB). Any other ticker honestly returns "no linkage" rather than a fabricated reading.</p>
+</div>
+
+<div class="section">
+<h2>Want This In Your Own App?</h2>
+<p>This page calls the same live FRED pipeline as the full XFINLAB Intelligence API's <code>/v1/real-estate/{ticker}</code> endpoint. A free API key gets you this plus 20+ other endpoints -- supply chain, consumer demand, SEC fundamentals, insider trading, company network intelligence, an MCP server for AI agents, and more.</p>
+<a href="intelligence-api.html" class="cta">Get Free API Key →</a>
+</div>
+
+<div class="section">
+<h2>Risk Disclaimer</h2>
+<p>This tool surfaces real macroeconomic indicators for informational and educational purposes only. It does not constitute financial advice and is not a directional trading signal. Always conduct your own research and consult a qualified financial advisor before making investment decisions.</p>
+</div>
+</main>
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  © 2026 XFINLAB — AI Investment Intelligence Platform<br><br>
+  <a href="tools.html">Free Tools</a>
+  <a href="intelligence-api.html">Developer API</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="terms.html">Terms</a>
+  <a href="privacy.html">Privacy</a>
+</footer>
+<script>
+(function(){
+  var TICKERS = ['DHI','LEN','PHM','NVR','TOL','KBH','MTH','O','SPG','PLD','PSA','AVB','EQR','RKT','VNQ','XHB','ITB'];
+  var input = document.getElementById('tickerInput');
+  var btn = document.getElementById('runBtn');
+  var resultBox = document.getElementById('resultBox');
+  var nameEl = document.getElementById('resName');
+  var indicatorsEl = document.getElementById('indicators');
+  var errEl = document.getElementById('errBox');
+  var chipRow = document.getElementById('chipRow');
+
+  TICKERS.forEach(function(t){
+    var c = document.createElement('span');
+    c.className = 'chip';
+    c.textContent = t;
+    c.onclick = function(){ input.value = t; checkTicker(); };
+    chipRow.appendChild(c);
+  });
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  window.checkTicker = function(){
+    var ticker = (input.value || '').trim().toUpperCase();
+    if (!ticker) { input.focus(); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    errEl.style.display = 'none';
+    resultBox.style.display = 'none';
+
+    fetch('/api/free-tools-demo/real-estate?ticker=' + encodeURIComponent(ticker))
+      .then(function(r){ return r.json(); })
+      .then(function(json){
+        btn.disabled = false;
+        btn.textContent = 'Look Up';
+        if (!json.success) {
+          var msg = json.error || 'Temporarily unavailable -- please try again shortly.';
+          if (json.meta && json.meta.tickers) {
+            msg += ' Covered tickers: ' + json.meta.tickers.join(', ') + '.';
+          }
+          errEl.textContent = msg;
+          errEl.style.display = 'block';
+          return;
+        }
+        var d = json.data;
+        if (d.available === false) {
+          errEl.textContent = d.message || 'Data source temporarily unavailable.';
+          errEl.style.display = 'block';
+          return;
+        }
+        nameEl.textContent = d.matched_ticker + ' — ' + d.matched_name;
+        var rowsHtml = '';
+        Object.keys(d.indicators || {}).forEach(function(k){
+          var ind = d.indicators[k];
+          if (!ind) {
+            rowsHtml += '<div class="indicator"><span class="i-label">' + escapeHtml(k) + '</span><span class="i-value">—</span></div>';
+            return;
+          }
+          rowsHtml += '<div class="indicator"><span class="i-label">' + escapeHtml(ind.label) + '</span>' +
+            '<span><span class="i-value">' + escapeHtml(ind.value) + ' ' + escapeHtml(ind.unit) + '</span>' +
+            '<span class="i-date">' + escapeHtml(ind.date) + '</span></span></div>';
+        });
+        indicatorsEl.innerHTML = rowsHtml;
+        resultBox.style.display = 'block';
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = 'Look Up';
+        errEl.textContent = 'Network error -- please try again.';
+        errEl.style.display = 'block';
+      });
+  };
+
+  input.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') checkTicker();
+  });
+})();
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+</body>
+</html>
