@@ -675,6 +675,32 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         agriculture_context = None
 
+    # 2026-08-31 (AJ: Path A -- "將cross-industry context接返落ai-
+    # analysis.html"): the 3 FRED-backed cross-industry modules that
+    # shipped alongside Opportunity Radar (real estate, supply chain,
+    # consumer demand) never got wired into the main consumer product --
+    # they only ever lived on the developer Intelligence API and the free
+    # tool pages. Same shape/gate as agriculture_context above (bundled
+    # into fundamentals_macro_pack below), same honest-None-for-unmapped-
+    # ticker convention as every other Data Factory field on this page.
+    try:
+        from services.real_estate_service import get_real_estate_context_for_ticker
+        real_estate_context = get_real_estate_context_for_ticker(symbol)
+    except Exception:
+        real_estate_context = None
+
+    try:
+        from services.supply_chain_service import get_supply_chain_context_for_ticker
+        supply_chain_context = get_supply_chain_context_for_ticker(symbol)
+    except Exception:
+        supply_chain_context = None
+
+    try:
+        from services.consumer_demand_service import get_consumer_demand_context_for_ticker
+        consumer_demand_context = get_consumer_demand_context_for_ticker(symbol)
+    except Exception:
+        consumer_demand_context = None
+
     # 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- consumer surface
     # for the same Probabilistic K-Line engine just shipped on the
     # Intelligence API as GET /v1/forecast/{ticker}): bundled into the
@@ -777,5 +803,8 @@ async def ai_analysis(request: Request, body: dict):
             "vix_term_structure": vix_term_structure if is_fundamentals_macro_plan else _locked_advanced_engine,
             "bank_health": bank_health if is_fundamentals_macro_plan else _locked_advanced_engine,
             "agriculture_context": agriculture_context if is_fundamentals_macro_plan else _locked_advanced_engine,
+            "real_estate_context": real_estate_context if is_fundamentals_macro_plan else _locked_advanced_engine,
+            "supply_chain_context": supply_chain_context if is_fundamentals_macro_plan else _locked_advanced_engine,
+            "consumer_demand_context": consumer_demand_context if is_fundamentals_macro_plan else _locked_advanced_engine,
         }
     }
