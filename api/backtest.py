@@ -106,15 +106,18 @@ def formula_composer_leaderboard(symbol: str = None, limit: int = 20):
 
 
 @router.get("/regime-router/{ticker}/current-regime")
-def regime_router_current(ticker: str):
+def regime_router_current(ticker: str, lang: str = None):
     """2026-08-10 (P3 of the Quant Research Factory roadmap) -- current
     causal regime classification for `ticker`. See services/regime_
     router_service.py's module docstring for why this uses its own
     causal-only classifier rather than the live Confluence/Regime Belief
-    engines (which depend on look-ahead-tainted swing-point inputs)."""
+    engines (which depend on look-ahead-tainted swing-point inputs).
+
+    2026-08-31: lang query param added and threaded through (AJ flagged
+    mixed-language rendering -- see get_current_regime()'s docstring)."""
     if not _SYMBOL_RE.match(ticker):
         return {"status": "error", "message": "無效嘅代號格式"}
-    result = get_current_regime(ticker)
+    result = get_current_regime(ticker, lang=lang)
     if "error" in result:
         return {"status": "error", "message": result["error"]}
     return {"status": "ok", "data": result}
@@ -136,19 +139,28 @@ def regime_router_scan(ticker: str, period: str = "2y"):
 
 
 @router.get("/regime-router/{ticker}/best-for-regime")
-def regime_router_best(ticker: str, regime: str = None, min_trades: int = 5):
+def regime_router_best(ticker: str, regime: str = None, min_trades: int = 5, lang: str = None):
     """Reads the persisted regime-conditional leaderboard. If `regime` is
     omitted, first computes the ticker's CURRENT regime (same as
     /current-regime above) and looks that up -- the actual "what should I
     use right now" answer this roadmap phase promised. Requires
-    /scan to have been run for this symbol first."""
+    /scan to have been run for this symbol first.
+
+    2026-08-31: lang query param added and threaded through to both
+    get_current_regime() and get_best_for_regime() -- previously this
+    endpoint had no lang param at all, so its "reason"/caveat text stayed
+    hardcoded Cantonese no matter what language the calling page had
+    selected (ai-analysis.html/chart-analysis.html's regime-router labels
+    DO follow the page's selected language via data-i18n, which produced a
+    visibly mixed-language result whenever a non-Chinese language was
+    selected -- AJ flagged this directly)."""
     if not _SYMBOL_RE.match(ticker):
         return {"status": "error", "message": "無效嘅代號格式"}
     min_trades = max(1, min(50, min_trades))
     if not regime:
-        current = get_current_regime(ticker)
+        current = get_current_regime(ticker, lang=lang)
         if "error" in current:
             return {"status": "error", "message": current["error"]}
         regime = current["regime"]
-    result = get_best_for_regime(ticker, regime, min_trades=min_trades)
+    result = get_best_for_regime(ticker, regime, min_trades=min_trades, lang=lang)
     return {"status": "ok", "data": result}

@@ -1483,10 +1483,17 @@ async function runAnalysis(){
     // the current regime immediately (that half is a fast live call).
     const regimeRouterAccordion = document.getElementById('regimeRouterAccordion');
     const regimeRouterBody = document.getElementById('regimeRouterBody');
+    // 2026-08-31 fix (AJ flagged mixed-language rendering): this fetch used
+    // to omit ?lang= entirely, so the backend always returned hardcoded
+    // Cantonese reason/caveat text regardless of the page's selected UI
+    // language -- while the regimeLine label right above it (built via
+    // tr2()) DID follow the selected language, producing a visibly
+    // mixed-language result. Mirrors analogLang's pattern above.
+    const regimeRouterLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
     if (symbols.length) {
       regimeRouterAccordion.style.display = 'block';
       regimeRouterBody.textContent = tr2('aa_regime_router_loading', '分析緊現時市況...');
-      fetch(`${API_BASE}/api/regime-router/${encodeURIComponent(symbols[0])}/best-for-regime`)
+      fetch(`${API_BASE}/api/regime-router/${encodeURIComponent(symbols[0])}/best-for-regime?lang=${encodeURIComponent(regimeRouterLang)}`)
         .then(r => r.json())
         .then(res => {
           if (res.status !== 'ok' || !res.data) { regimeRouterBody.textContent = tr2('aa_regime_router_error', '暫時無法判斷市況配對。'); return; }
