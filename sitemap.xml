@@ -81,6 +81,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.xfinlab.com/iex-cloud-alternative.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.xfinlab.com/financial-data-api-alternatives.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.xfinlab.com/ai-analysis.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
