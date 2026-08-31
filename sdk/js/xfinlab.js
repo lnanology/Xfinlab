@@ -219,6 +219,20 @@
     return this._get('/intelligence/v1/agriculture/' + encodeURIComponent(ticker));
   };
 
+  // 2026-08-30/31: cross-industry expansion -- real estate, supply
+  // chain, consumer demand. Same shape as agriculture()/energy() above.
+  XfinlabClient.prototype.realEstate = function (ticker) {
+    return this._get('/intelligence/v1/real-estate/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.supplyChain = function (ticker) {
+    return this._get('/intelligence/v1/supply-chain/' + encodeURIComponent(ticker));
+  };
+
+  XfinlabClient.prototype.consumerDemand = function (ticker) {
+    return this._get('/intelligence/v1/consumer-demand/' + encodeURIComponent(ticker));
+  };
+
   // 2026-08-28: Pro-tier webhooks (push instead of polling). See
   // services/webhook_service.py's VALID_EVENT_TYPES for the exact
   // eventType values ('vix_regime_change' market-wide, 'new_13d_filing'

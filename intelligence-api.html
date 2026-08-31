@@ -273,6 +273,9 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="vix-term-structure" data-i18n="ia_ep14_name">VIX Term Structure</option>
           <option value="bank-health" data-i18n="ia_ep15_name">Bank Health</option>
           <option value="agriculture" data-i18n="ia_ep16_name">Agriculture Prices</option>
+          <option value="real-estate" data-i18n="ia_ep18_name">Real Estate</option>
+          <option value="supply-chain" data-i18n="ia_ep19_name">Supply Chain</option>
+          <option value="consumer-demand" data-i18n="ia_ep20_name">Consumer Demand</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -710,6 +713,71 @@ details.schema-details[open] summary::after{content:" ▴"}
           <p class="schema-note" data-i18n="ia_schema_note_webhooks">A subscription auto-deactivates after 5 consecutive delivery failures (check GET /webhooks for fail_count) -- re-subscribe once your endpoint is back up. Delivery is best-effort and fire-and-forget: a slow/dead receiver never blocks or retries indefinitely.</p>
         </details>
       </div>
+      <!-- 2026-08-30/31 cross-industry expansion (AJ: "由1開始順住做"):
+           real estate, supply chain, consumer demand -- 3 new industries
+           of ticker-linked FRED context, same soft-fail-to-null posture
+           as every card above. Documented together since they shipped
+           in quick succession and share one pattern. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/real-estate/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep18_name">Real Estate</div>
+        <div class="ep-desc" data-i18n="ia_ep18_desc">FRED US housing-market context -- 30-year fixed mortgage rate, Case-Shiller home price index, housing starts, existing home sales. Only populated for housing-linked tickers (homebuilders, REITs, a mortgage originator, housing-sector ETFs).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.indicators</code> <span class="schema-type">object</span> -- dynamically keyed (mortgage_rate_30y_pct, home_price_index, housing_starts_thousands, existing_home_sales_thousands), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>date</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_real_estate">Returns data:null for any ticker without a real housing-market linkage -- never a fabricated reading for an unrelated symbol. Coverage: DHI, LEN, PHM, NVR, TOL, KBH, MTH, O, SPG, PLD, PSA, AVB, EQR, RKT, VNQ, XHB, ITB today.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="15" height="10" rx="1"/><path d="M16 10h4l3 3v4h-7z"/><circle cx="5.5" cy="19.5" r="1.5"/><circle cx="18.5" cy="19.5" r="1.5"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/supply-chain/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep19_name">Supply Chain</div>
+        <div class="ep-desc" data-i18n="ia_ep19_desc">FRED US manufacturing/supply-chain context -- inventory/sales ratio, manufacturing new orders, durable goods orders, industrial production, manufacturing employment. Only populated for freight/logistics-linked tickers (carriers, railroads, transportation ETFs).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.indicators</code> <span class="schema-type">object</span> -- dynamically keyed (inventory_sales_ratio, manufacturing_new_orders_musd, durable_goods_orders_musd, industrial_production_manufacturing_index, manufacturing_employment_thousands), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>date</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_supply_chain">Returns data:null for any ticker without a real freight/logistics linkage -- never a fabricated reading for an unrelated symbol. Coverage: FDX, UPS, XPO, JBHT, CHRW, ODFL, GXO, EXPD, CSX, UNP, NSC, IYT, XTN today.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/><path d="M2 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6L21 7H6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/consumer-demand/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep20_name">Consumer Demand</div>
+        <div class="ep-desc" data-i18n="ia_ep20_desc">FRED US consumer-spending context -- retail sales, personal consumption expenditures, durable goods consumption. Not Google Trends search-interest data -- no officially licensed, commercial-use-safe search-trends API exists; real spending data is the more reliable proxy. Only populated for consumer-spending-linked tickers (large retailers, e-commerce, consumer-discretionary ETFs).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.indicators</code> <span class="schema-type">object</span> -- dynamically keyed (retail_sales_total_musd, retail_sales_goods_only_musd, personal_consumption_expenditures_busd, durable_goods_consumption_busd), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>date</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_consumer_demand">Returns data:null for any ticker without a real consumer-spending linkage -- never a fabricated reading for an unrelated symbol. Coverage: WMT, TGT, COST, HD, LOW, AMZN, BBY, TJX, ROST, XRT, XLY today.</p>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -1062,6 +1130,11 @@ const TRY_ENDPOINTS = {
   'vix-term-structure':{ method: 'GET',  needsTicker: false, needsAmount: false, path: function() { return '/intelligence/v1/vix-term-structure'; } },
   'bank-health':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/bank-health/' + encodeURIComponent(tk); } },
   'agriculture':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/agriculture/' + encodeURIComponent(tk); } },
+  // 2026-08-30/31 cross-industry expansion -- all three are simple
+  // GET-by-ticker, same shape as energy/agriculture above.
+  'real-estate':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/real-estate/' + encodeURIComponent(tk); } },
+  'supply-chain':      { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/supply-chain/' + encodeURIComponent(tk); } },
+  'consumer-demand':   { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/consumer-demand/' + encodeURIComponent(tk); } },
 };
 
 function tryUpdateFields() {

@@ -248,6 +248,30 @@ class XfinlabClient:
         populated for CORN/WEAT/SOYB."""
         return self._get(f"/intelligence/v1/agriculture/{ticker}")
 
+    # 2026-08-30/31: cross-industry expansion -- real estate, supply
+    # chain, consumer demand. Same shape as agriculture()/energy() above.
+    def real_estate(self, ticker: str) -> dict:
+        """FRED US housing-market context (30-year mortgage rate,
+        Case-Shiller home price index, housing starts, existing home
+        sales) -- only populated for homebuilders, REITs, a mortgage
+        originator, and housing-sector ETFs."""
+        return self._get(f"/intelligence/v1/real-estate/{ticker}")
+
+    def supply_chain(self, ticker: str) -> dict:
+        """FRED US manufacturing/supply-chain context (inventory/sales
+        ratio, manufacturing new orders, durable goods orders, industrial
+        production, manufacturing employment) -- only populated for
+        freight carriers, railroads, and transportation ETFs."""
+        return self._get(f"/intelligence/v1/supply-chain/{ticker}")
+
+    def consumer_demand(self, ticker: str) -> dict:
+        """FRED US consumer-spending context (retail sales, personal
+        consumption expenditures, durable goods consumption) -- only
+        populated for large retailers, e-commerce, and consumer-
+        discretionary ETFs. Not Google Trends data -- see the endpoint
+        docs for why."""
+        return self._get(f"/intelligence/v1/consumer-demand/{ticker}")
+
     # 2026-08-28: Pro-tier webhooks (push instead of polling). See
     # services/webhook_service.py's VALID_EVENT_TYPES for the exact
     # event_type values ("vix_regime_change" market-wide, "new_13d_filing"
