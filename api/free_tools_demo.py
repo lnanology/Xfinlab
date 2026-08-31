@@ -234,3 +234,42 @@ def demo_opportunity_radar(request: Request):
     if not result or not result.get("available"):
         return {"success": False, "error": (result or {}).get("message", "Opportunity Radar temporarily unavailable"), "cta": _CTA}
     return {"success": True, "data": result, "cta": _CTA}
+
+
+@router.get("/free-tools-demo/trust-status")
+@limiter.limit(_DEMO_LIMIT)
+def demo_trust_status(request: Request):
+    """Backs trust.html -- 2026-08-31 (AJ: "零捏造信任賣點", the pick out of
+    the market-pain-point research batch: 2026's AI-hallucination-in-
+    finance trust crisis -- $2.3B in Q1 2026 trading losses tied to
+    AI-misstated earnings, FINRA/FCA now flagging hallucinations as a
+    compliance risk -- makes "every number is either real or an honest
+    'unavailable', never guessed" a genuine market differentiator worth
+    proving in public, not just claiming).
+
+    Exposes services.data_source_registry.list_sources() -- the same
+    table admin.html's Data Factory panel reads -- but PUBLICLY and
+    read-only, whitelisting only non-sensitive columns. Deliberately
+    strips last_error/last_error_at/last_error_notified_at: raw exception
+    text can leak internal details (stack fragments, upstream account/
+    quota specifics) that have no business being public, even though the
+    whole point of this page is transparency about which sources are
+    live vs down. "This source failed recently" is the honest, safe
+    signal; the raw error string is not."""
+    from services.data_source_registry import list_sources
+
+    sources = list_sources()
+    sanitized = [
+        {
+            "source_key": s.get("source_key"),
+            "label": s.get("label"),
+            "category": s.get("category"),
+            "enabled": bool(s.get("enabled")),
+            "run_count": s.get("run_count"),
+            "error_count": s.get("error_count"),
+            "last_run_at": s.get("last_run_at"),
+            "last_success_at": s.get("last_success_at"),
+        }
+        for s in sources
+    ]
+    return {"success": True, "data": {"sources": sanitized, "count": len(sanitized)}, "cta": _CTA}
