@@ -1401,12 +1401,25 @@ def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[
         f"topic text -- describe concepts, context, and publicly known facts only.\n"
         f"Line {num_slides}: a 1-sentence closing disclaimer that this is general information "
         f"only, not investment advice, mentioning xfinlab.com.\n\n"
+        f"IMPORTANT: the 'Topic' text below is an instruction describing what the video should "
+        f"be about -- it is NOT a script to read aloud. Do not copy, quote, or lightly reword the "
+        f"topic text back as narration. Write original spoken sentences ABOUT the topic, in your "
+        f"own words, as a narrator explaining it to a viewer who has not seen the topic text.\n\n"
         f"Topic (as requested by the XFINLAB team):\n{topic}\n\n"
         f"Output ONLY the {num_slides} lines of narration text, nothing else."
     )
 
     try:
-        response = get_ai_response(prompt, max_tokens=500, reasoning_effort="low")
+        # 2026-09-02 fix (AJ reported: typing a request into the admin chat
+        # box produced narration that just read the typed text back almost
+        # verbatim instead of writing new commentary about it). reasoning_
+        # effort="low" (the original setting) gives Groq's model a small
+        # completion-token floor (700, see _groq()'s docstring) and little
+        # room to do anything but closely mirror short/directive input --
+        # "high" (floor 1400) gives it room to actually reason about the
+        # topic and produce original sentences, at the cost of a slightly
+        # slower call. Paired with the explicit anti-echo instruction above.
+        response = get_ai_response(prompt, max_tokens=500, reasoning_effort="high")
     except Exception:
         return None
     if not response:
