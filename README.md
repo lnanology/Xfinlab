@@ -37,6 +37,8 @@ const sentiment = await client.sentiment('AAPL');
 
 ## MCP server (for Claude and other AI agents)
 
+Every field this server returns is either a real computation/real official-source value, or `null` with an explanation — the MCP ecosystem has a lot of servers now, few of them say anything about the actual quality of the data behind the tool calls. This one does, in public: [xfinlab.com/trust.html](https://www.xfinlab.com/trust.html) shows every underlying data collector's live/down status in real time.
+
 Already live in production — no setup needed, just point an MCP-compatible client at it:
 
 ```json

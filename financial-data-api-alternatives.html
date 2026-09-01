@@ -72,11 +72,13 @@ footer a{color:#64748b;margin:0 6px;text-decoration:none}
 <p>An MCP server ships alongside the REST API and SDKs, so an agent like Claude can call XFINLAB's endpoints directly without custom tool glue.</p>
 <h3>A published zero-fabrication policy</h3>
 <p>Every field is either a real computation/value or explicitly null with a reason -- documented publicly with a live data-source status table at <a href="trust.html" style="color:#94a3b8">trust.html</a>, not just a claim in marketing copy.</p>
+<h3>Real Taiwan coverage, not a scraped stand-in</h3>
+<p>Asia-Pacific is a widely-reported gap for developer-facing financial data APIs -- coverage of the region is consistently described as thin across the category. XFINLAB's Taiwan-listed price data comes from the Taiwan Stock Exchange's own official open-data API, licensed for commercial redistribution to the same standard as the US feed -- not a best-effort scraper standing in for a real connection.</p>
 </div>
 
 <div class="section">
 <h2>Being Honest About Gaps</h2>
-<p>XFINLAB is US-centric by nature -- most underlying sources (SEC, FINRA, FDIC, CFTC, USDA, EIA) are US government data, so non-US ticker coverage is thin. The AI debate endpoint is the most compute-heavy one and is gated to paid tiers. If your use case is specifically options flow/dark pool prints (Unusual Whales' core strength) or deep congressional-trading history (Quiver/Benzinga), those specialized platforms may cover that narrower need better today.</p>
+<p>XFINLAB is still largely US-centric -- most underlying sources (SEC, FINRA, FDIC, CFTC, USDA, EIA) are US government data, so coverage outside the US and Taiwan is thin (Hong Kong and other markets currently fall back to a best-effort source while a licensed provider is evaluated -- see <a href="trust.html" style="color:#94a3b8">trust.html</a> for what's live right now). The AI debate endpoint is the most compute-heavy one and is gated to paid tiers. If your use case is specifically options flow/dark pool prints (Unusual Whales' core strength) or deep congressional-trading history (Quiver/Benzinga), those specialized platforms may cover that narrower need better today.</p>
 </div>
 
 <div class="section">
