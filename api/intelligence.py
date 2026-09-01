@@ -450,6 +450,11 @@ INTELLIGENCE_ROADMAP = [
         "title": "Published SDKs on PyPI / npm",
         "text": "The Python/Node SDKs already exist (see sdk/ in the repo) and install fine straight from GitHub -- publishing them as real packages is gated on enough paying developers using this API to justify the ongoing maintenance overhead, not on the code itself.",
     },
+    {
+        "status": "planned",
+        "title": "Licensed Hong Kong (and other non-Taiwan APAC) price data",
+        "text": "Hong Kong and other non-US, non-Taiwan symbols currently use a best-effort fallback source, disclosed as such on trust.html -- not a silent gap. Moving to a properly licensed feed (the same commercial-redistribution standard already met for the US and Taiwan feeds) is a real cost, not just engineering time, so this is genuinely gated on revenue rather than a committed date.",
+    },
 ]
 
 

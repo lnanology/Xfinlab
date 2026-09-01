@@ -896,6 +896,14 @@ details.schema-details[open] summary::after{content:" ▴"}
         <div class="ep-desc" data-i18n="ia_ds3_desc">Taiwan-listed symbols: the Taiwan Stock Exchange's own official open-data API — fully licensed for commercial redistribution, same standard as the US feed. Hong Kong and other non-US, non-Taiwan symbols currently use a best-effort fallback source while we evaluate a licensed provider — disclosed here, not hidden. And regardless of source, no endpoint re-exports raw price bars: every price-derived field (trend, RSI, support/resistance, market structure) is a computed result, not the underlying feed.</div>
       </div>
     </div>
+    <!-- 2026-09-02: new key (same drift-safe reasoning as the MCP quality
+         note above) -- Asia-Pacific coverage is a widely-acknowledged gap
+         for most Western financial data APIs (industry coverage
+         consistently notes it as "thin" for the region); real, officially
+         licensed Taiwan Stock Exchange coverage is a genuine point of
+         difference worth naming plainly, not just leaving implicit in the
+         card above. -->
+    <div class="section-sub" data-i18n="ia_ds_apac_note" style="margin-top:10px">Asia-Pacific coverage is a widely-reported gap for most developer-facing financial data APIs. XFINLAB's Taiwan feed is a real, officially licensed exchange connection — not a scraped or best-effort source pretending otherwise.</div>
   </div>
 
   <div class="section" id="sdks">
@@ -947,6 +955,13 @@ await client.sentiment('AAPL');</span></div>
   <div class="section" id="mcp">
     <div class="section-title" data-i18n="ia_mcp_title">MCP Server — for AI agents &amp; Claude</div>
     <div class="section-sub" data-i18n="ia_mcp_sub">The same 7 endpoints above, exposed as Model Context Protocol tools — so an AI agent (Claude, or any MCP-compatible client) can call them directly instead of you writing the HTTP glue yourself.</div>
+    <!-- 2026-09-02: new key, not appended to ia_mcp_sub above, so this
+         doesn't create a translation-drift gap in the other 46 languages
+         while this line waits to be translated -- i18n.js's apply() only
+         swaps text when translations[key] is truthy, so an untranslated
+         key just shows this English fallback everywhere until it's added
+         to i18n.py, never a mixed-language render. -->
+    <div class="section-sub" data-i18n="ia_mcp_quality_note" style="margin-top:-8px">Most MCP servers don't say anything about the quality of the data behind their tool calls. This one does, in public — see the live status of every underlying data source at <a href="trust.html" style="color:#94a3b8">xfinlab.com/trust.html</a>.</div>
     <div class="sdk-card">
       <div class="sdk-panel active" style="display:block">
         <div class="sdk-install"><span>Streamable HTTP endpoint: https://api.xfinlab.com/api/mcp</span></div>
