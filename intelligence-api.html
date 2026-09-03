@@ -1521,6 +1521,18 @@ document.getElementById('accessForm').addEventListener('submit', async function(
 });
 </script>
 
+<!-- 2026-09-03: LaunchNest verification badge -- required for the free
+     listing at launchnest.io/p/xfinlab-intelligence-api to publish (their
+     crawler checks this exact page for the badge image wrapped in a
+     non-nofollow link back to the listing). Kept their embed markup as-is,
+     only added rel="noopener" since it's a target=_blank external link --
+     that doesn't affect their nofollow/sponsored/ugc check. -->
+<div style="text-align:center;padding:16px 20px 0">
+  <a href="https://launchnest.io/p/xfinlab-intelligence-api" target="_blank" rel="noopener">
+    <img src="https://launchnest.io/badge/xfinlab-intelligence-api.svg?variant=listed" alt="XFINLAB Intelligence API on LaunchNest" width="220" height="56">
+  </a>
+</div>
+
 <footer>
   <div class="footer-note"><span data-i18n="ia_footer2_prefix">XFINLAB © 2026 · Intelligence API</span> · <a href="api-terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms">API Terms</a> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_risk">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms2">Terms</a></div>
 </footer>
