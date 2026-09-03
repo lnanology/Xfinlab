@@ -158,11 +158,12 @@
 <!-- Login -->
 <div id="loginPage">
   <div class="login-box">
-    <h2>🔐 Admin Login</h2>
-    <p>XFINLAB Intelligence Platform</p>
-    <input type="email" id="loginEmail" placeholder="Admin Email" value="abcoaj888@gmail.com">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button class="btn btn-primary" onclick="handleLogin()">Sign In</button>
+    <button type="button" onclick="toggleAdminLang()" style="float:right;background:none;border:1px solid var(--border,#333);color:inherit;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer" id="langToggleBtn">中文</button>
+    <h2 data-i18n-admin="login_title">🔐 Admin Login</h2>
+    <p data-i18n-admin="login_subtitle">XFINLAB Intelligence Platform</p>
+    <input type="email" id="loginEmail" data-i18n-admin-placeholder="login_email_ph" placeholder="Admin Email" value="abcoaj888@gmail.com">
+    <input type="password" id="loginPassword" data-i18n-admin-placeholder="login_pw_ph" placeholder="Password">
+    <button class="btn btn-primary" onclick="handleLogin()" data-i18n-admin="login_submit">Sign In</button>
     <div id="loginError" class="error-msg"></div>
   </div>
 </div>
@@ -172,42 +173,43 @@
 
   <!-- Sidebar -->
   <div class="sidebar">
-    <div class="sidebar-brand">
+    <div class="sidebar-brand" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div class="logo"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<span>FIN</span>LAB <span class="badge">ADMIN</span></div>
+      <button type="button" onclick="toggleAdminLang()" id="sidebarLangToggleBtn" style="background:none;border:1px solid var(--border,#333);color:inherit;border-radius:6px;padding:3px 8px;font-size:0.7rem;cursor:pointer;white-space:nowrap">中文</button>
     </div>
 
-    <div class="nav-section">Overview</div>
-    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
-    <div class="nav-item" onclick="showPage('health')"><span class="icon">📡</span> System Health</div>
+    <div class="nav-section" data-i18n-admin="ns_overview">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> <span data-i18n-admin="nav_dashboard">Dashboard</span></div>
+    <div class="nav-item" onclick="showPage('health')"><span class="icon">📡</span> <span data-i18n-admin="nav_health">System Health</span></div>
 
-    <div class="nav-section">Users</div>
-    <div class="nav-item" onclick="showPage('users')"><span class="icon">👤</span> User Management</div>
-    <div class="nav-item" onclick="showPage('trending')"><span class="icon">🔍</span> Trending</div>
+    <div class="nav-section" data-i18n-admin="ns_users">Users</div>
+    <div class="nav-item" onclick="showPage('users')"><span class="icon">👤</span> <span data-i18n-admin="nav_users">User Management</span></div>
+    <div class="nav-item" onclick="showPage('trending')"><span class="icon">🔍</span> <span data-i18n-admin="nav_trending">Trending</span></div>
 
-    <div class="nav-section">Content</div>
-    <div class="nav-item" onclick="showPage('telegram')"><span class="icon">✈️</span> Telegram Publisher</div>
-    <div class="nav-item" onclick="showPage('content')"><span class="icon">📢</span> Content Center</div>
-    <div class="nav-item" onclick="showPage('seo')"><span class="icon">🌐</span> SEO Page Engine</div>
-    <div class="nav-item" onclick="showPage('email')"><span class="icon">📧</span> Email Engine</div>
-    <div class="nav-item" onclick="showPage('widgets')"><span class="icon">🧩</span> Widget Engine</div>
-    <div class="nav-item" onclick="showPage('apiusage')"><span class="icon">🔑</span> API Usage</div>
-    <div class="nav-item" onclick="showPage('referral')"><span class="icon">🎁</span> Referral Engine</div>
-    <div class="nav-item" onclick="showPage('video')"><span class="icon">🎬</span> Video Engine</div>
+    <div class="nav-section" data-i18n-admin="ns_content">Content</div>
+    <div class="nav-item" onclick="showPage('telegram')"><span class="icon">✈️</span> <span data-i18n-admin="nav_telegram">Telegram Publisher</span></div>
+    <div class="nav-item" onclick="showPage('content')"><span class="icon">📢</span> <span data-i18n-admin="nav_content">Content Center</span></div>
+    <div class="nav-item" onclick="showPage('seo')"><span class="icon">🌐</span> <span data-i18n-admin="nav_seo">SEO Page Engine</span></div>
+    <div class="nav-item" onclick="showPage('email')"><span class="icon">📧</span> <span data-i18n-admin="nav_email">Email Engine</span></div>
+    <div class="nav-item" onclick="showPage('widgets')"><span class="icon">🧩</span> <span data-i18n-admin="nav_widgets">Widget Engine</span></div>
+    <div class="nav-item" onclick="showPage('apiusage')"><span class="icon">🔑</span> <span data-i18n-admin="nav_apiusage">API Usage</span></div>
+    <div class="nav-item" onclick="showPage('referral')"><span class="icon">🎁</span> <span data-i18n-admin="nav_referral">Referral Engine</span></div>
+    <div class="nav-item" onclick="showPage('video')"><span class="icon">🎬</span> <span data-i18n-admin="nav_video">Video Engine</span></div>
 
-    <div class="nav-section">Settings</div>
-    <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> Feature Flags</div>
-    <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> Audit Log</div>
-    <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> Security Scan</div>
-    <div class="nav-item" onclick="showPage('stripeaccount')"><span class="icon">💳</span> Stripe Account</div>
-    <div class="nav-item" onclick="showPage('apitrending')"><span class="icon">📈</span> API Trending Tickers</div>
-    <div class="nav-item" onclick="showPage('datafactory')"><span class="icon">🏭</span> Data Factory</div>
-    <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> Prediction Ledger</div>
-    <div class="nav-item" onclick="showPage('composer')"><span class="icon">🧩</span> Formula Composer</div>
-    <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> Feedback</div>
+    <div class="nav-section" data-i18n-admin="ns_settings">Settings</div>
+    <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> <span data-i18n-admin="nav_flags">Feature Flags</span></div>
+    <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> <span data-i18n-admin="nav_auditlog">Audit Log</span></div>
+    <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> <span data-i18n-admin="nav_security">Security Scan</span></div>
+    <div class="nav-item" onclick="showPage('stripeaccount')"><span class="icon">💳</span> <span data-i18n-admin="nav_stripeaccount">Stripe Account</span></div>
+    <div class="nav-item" onclick="showPage('apitrending')"><span class="icon">📈</span> <span data-i18n-admin="nav_apitrending">API Trending Tickers</span></div>
+    <div class="nav-item" onclick="showPage('datafactory')"><span class="icon">🏭</span> <span data-i18n-admin="nav_datafactory">Data Factory</span></div>
+    <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> <span data-i18n-admin="nav_predledger">Prediction Ledger</span></div>
+    <div class="nav-item" onclick="showPage('composer')"><span class="icon">🧩</span> <span data-i18n-admin="nav_composer">Formula Composer</span></div>
+    <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> <span data-i18n-admin="nav_feedback">Feedback</span></div>
 
     <div class="sidebar-footer">
       <div class="admin-info" id="sidebarEmail"></div>
-      <button class="btn btn-sm btn-red" onclick="logout()" style="width:100%">Sign Out</button>
+      <button class="btn btn-sm btn-red" onclick="logout()" style="width:100%" data-i18n-admin="signout">Sign Out</button>
     </div>
   </div>
 
@@ -216,7 +218,7 @@
 
     <!-- Dashboard -->
     <div class="page active" id="page-dashboard">
-      <div class="page-title">Dashboard</div>
+      <div class="page-title" data-i18n-admin="pt_dashboard">Dashboard</div>
       <div class="page-sub">Platform overview — real-time stats</div>
 
       <div class="stats-grid">
@@ -268,7 +270,7 @@
 
     <!-- System Health -->
     <div class="page" id="page-health">
-      <div class="page-title">System Health</div>
+      <div class="page-title" data-i18n-admin="pt_health">System Health</div>
       <div class="page-sub">Real-time API & service status</div>
       <div class="panel">
         <div class="panel-title">Service Status</div>
@@ -279,7 +281,7 @@
 
     <!-- Users -->
     <div class="page" id="page-users">
-      <div class="page-title">User Management</div>
+      <div class="page-title" data-i18n-admin="pt_users">User Management</div>
       <div class="page-sub">Manage all registered users</div>
       <div class="panel">
         <div class="panel-title">All Users</div>
@@ -290,7 +292,7 @@
 
     <!-- Trending -->
     <div class="page" id="page-trending">
-      <div class="page-title">Trending</div>
+      <div class="page-title" data-i18n-admin="pt_trending">Trending</div>
       <div class="page-sub">Most searched & analyzed stocks</div>
       <div class="grid-2">
         <div class="panel">
@@ -306,7 +308,7 @@
 
     <!-- Telegram -->
     <div class="page" id="page-telegram">
-      <div class="page-title">Telegram Publisher</div>
+      <div class="page-title" data-i18n-admin="pt_telegram">Telegram Publisher</div>
       <div class="page-sub">Manually push to Telegram channels</div>
       <div class="grid-3">
         <div class="push-card">
@@ -340,7 +342,7 @@
 
     <!-- Content Center -->
     <div class="page" id="page-content">
-      <div class="page-title">Content Center</div>
+      <div class="page-title" data-i18n-admin="pt_content">Content Center</div>
       <div class="page-sub">Manage SEO, social media & content publishing</div>
       <div class="grid-2">
         <div class="panel">
@@ -415,7 +417,7 @@
          api/admin.py's /admin/seo/* endpoints. Gated by the
          seo_auto_engine feature flag on the Feature Flags page. -->
     <div class="page" id="page-seo">
-      <div class="page-title">SEO Page Engine</div>
+      <div class="page-title" data-i18n-admin="pt_seo">SEO Page Engine</div>
       <div class="page-sub">Generate new ticker/ETF/forex/crypto landing pages, auto-added to sitemap.xml</div>
 
       <div class="panel">
@@ -473,7 +475,7 @@
          confirm (see services/email_digest_service.py). Gated by the
          email_digest_engine feature flag. -->
     <div class="page" id="page-email">
-      <div class="page-title">Email Engine</div>
+      <div class="page-title" data-i18n-admin="pt_email">Email Engine</div>
       <div class="page-sub">Daily signals digest, sent via the existing SMTP mailbox to double-opt-in subscribers</div>
 
       <div class="panel">
@@ -500,7 +502,7 @@
          api/widgets.py + widgets.html (the public embed-code gallery).
          Gated by the widget_engine feature flag. -->
     <div class="page" id="page-widgets">
-      <div class="page-title">Widget Engine</div>
+      <div class="page-title" data-i18n-admin="pt_widgets">Widget Engine</div>
       <div class="page-sub">Embeddable widgets for third-party sites -- see widgets.html for the public gallery + embed codes</div>
 
       <div class="panel">
@@ -530,7 +532,7 @@
          is a read-only reporting view, not something that can misbehave
          in production. -->
     <div class="page" id="page-apiusage">
-      <div class="page-title">API Usage</div>
+      <div class="page-title" data-i18n-admin="pt_apiusage">API Usage</div>
       <div class="page-sub">Intelligence API devrel tracking -- who's using it, how much, on which tier</div>
 
       <div class="panel">
@@ -566,7 +568,7 @@
          the new referral_config table, instead of editing module
          constants and redeploying. -->
     <div class="page" id="page-referral">
-      <div class="page-title">Referral Engine</div>
+      <div class="page-title" data-i18n-admin="pt_referral">Referral Engine</div>
       <div class="page-sub">Referral stats + live-adjustable reward amounts (services/referral_service.py)</div>
 
       <div class="panel">
@@ -600,7 +602,7 @@
          expected, not a bug. Gated by the video_engine flag (default
          OFF, see Feature Flags page) on top of that env var. -->
     <div class="page" id="page-video">
-      <div class="page-title">Video Engine</div>
+      <div class="page-title" data-i18n-admin="pt_video">Video Engine</div>
       <div class="page-sub">Daily AI-narrated market-signal short video (services/video_engine_service.py)</div>
 
       <div class="panel">
@@ -728,7 +730,7 @@
 
     <!-- Feature Flags -->
     <div class="page" id="page-flags">
-      <div class="page-title">Feature Flags</div>
+      <div class="page-title" data-i18n-admin="pt_flags">Feature Flags</div>
       <div class="page-sub">Toggle features without redeploying</div>
       <div class="panel">
         <div class="panel-title">Platform Features</div>
@@ -750,7 +752,7 @@
 
     <!-- Audit Log -->
     <div class="page" id="page-auditlog">
-      <div class="page-title">Audit Log</div>
+      <div class="page-title" data-i18n-admin="pt_auditlog">Audit Log</div>
       <div class="page-sub">Login / register / admin action trail</div>
       <div class="panel">
         <div class="panel-title">Recent Activity</div>
@@ -761,7 +763,7 @@
 
     <!-- Security Scan (task #326) -->
     <div class="page" id="page-security">
-      <div class="page-title">Security Scan</div>
+      <div class="page-title" data-i18n-admin="pt_security">Security Scan</div>
       <div class="page-sub">Headers, SSL, dependency CVEs, injected code & live-vs-git file integrity -- runs automatically every 6 hours</div>
       <div class="panel">
         <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -783,7 +785,7 @@
 
     <!-- Stripe Account Status (2026-08-24, AJ: "點知面家個STRIPE係咪完全可收款提款無問題") -->
     <div class="page" id="page-stripeaccount">
-      <div class="page-title">Stripe Account</div>
+      <div class="page-title" data-i18n-admin="pt_stripeaccount">Stripe Account</div>
       <div class="page-sub">Live check against Stripe's own Account.retrieve() -- not just whether STRIPE_SECRET_KEY/price IDs are set (see the public /stripe/status for that). This answers whether the account can actually accept charges and pay out right now, and exactly what Stripe is still waiting on if not.</div>
       <div class="panel">
         <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -797,7 +799,7 @@
 
     <!-- API Trending Tickers (2026-08-25, AJ: "咁FREE KEY比人用，我接到數據訓ENGINE或儲存之類嗎") -->
     <div class="page" id="page-apitrending">
-      <div class="page-title">API Trending Tickers</div>
+      <div class="page-title" data-i18n-admin="pt_apitrending">API Trending Tickers</div>
       <div class="page-sub">Aggregate-only signal: which tickers/endpoints Intelligence API consumers actually query, across all keys/tiers. Endpoint+ticker+timestamp only -- never the response payload, and never which specific key queried what. This is what "letting people use a free key" actually gets you back: a product signal (what developers care about), not engine training data or graded accuracy (that's the separate Prediction Ledger, which only grades this site's OWN internal predictions).</div>
       <div class="panel">
         <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -811,7 +813,7 @@
 
     <!-- Data Factory (2026-08-26, AJ's "Data Factory" batch: "起啦") -->
     <div class="page" id="page-datafactory">
-      <div class="page-title">Data Factory</div>
+      <div class="page-title" data-i18n-admin="pt_datafactory">Data Factory</div>
       <div class="page-sub">Foundation layer for auto-extensible external data collectors (FRED, SEC EDGAR, CFTC COT, crypto exchanges, etc.). Each collector self-registers the moment its module is imported -- no code change needed here to see a new one appear. Toggle a source off if it's failing or you want to pause it; failures also email you directly (deduped to once per 6h per source).</div>
       <div class="panel">
         <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -958,7 +960,7 @@
 
     <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
     <div class="page" id="page-predledger">
-      <div class="page-title">Prediction Ledger</div>
+      <div class="page-title" data-i18n-admin="pt_predledger">Prediction Ledger</div>
       <div class="page-sub">Auto-graded accuracy scoreboard for every direction-probability prediction served via POST /ai-analysis -- hit rate + Brier score against what actually happened, not a self-reported backtest number. Graded automatically once daily.</div>
       <div class="panel">
         <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -976,7 +978,7 @@
 
     <!-- Formula Composer (P2 of the Quant Research Factory roadmap, 2026-08-10) -->
     <div class="page" id="page-composer">
-      <div class="page-title">Formula Composer</div>
+      <div class="page-title" data-i18n-admin="pt_composer">Formula Composer</div>
       <div class="page-sub">Small-scale combinatorial strategy scan -- 35 candidate combinations (AND-pairs + 2-of-3 vote triples) of 6 existing causal indicator primitives (trend/RSI/MACD/Bollinger/OBV/Donchian), each walk-forward-validated via services/backtest_service.py before being kept. Enter a ticker and scan on demand; results are cached per symbol below.</div>
       <div class="panel">
         <div class="panel-title">Run a Scan</div>
@@ -998,7 +1000,7 @@
 
     <!-- Feedback -->
     <div class="page" id="page-feedback">
-      <div class="page-title">Feedback Center</div>
+      <div class="page-title" data-i18n-admin="pt_feedback">Feedback Center</div>
       <div class="page-sub">User feedback, bug reports & feature requests</div>
       <div class="panel">
         <div class="panel-title">Feedback Channels</div>
@@ -1043,6 +1045,96 @@
 const API = 'https://api.xfinlab.com/api';
 let adminToken = localStorage.getItem('xfinlab_admin_token');
 let currentPage = 1;
+
+// --- AJ's request (2026-09-03): "加個香港中文得啦" -- a Hong Kong Chinese
+// toggle for the admin UI chrome. This is an internal, single-operator
+// tool (only AJ uses it), not the public 47-language site, so this is
+// scoped deliberately: the sidebar nav, page titles, and login screen --
+// the "which button does what" chrome -- get a EN/繁中 toggle. Dynamic
+// content (live API data, ticker numbers, audit-log rows, error text)
+// stays in English/whatever the API returns, same as every stat/table on
+// this page already does; translating live data would misrepresent it.
+const ADMIN_ZH = {
+  ns_overview: '總覽', ns_users: '用戶', ns_content: '內容', ns_settings: '設定',
+  nav_dashboard: '儀表板', nav_health: '系統狀態',
+  nav_users: '用戶管理', nav_trending: '熱門趨勢',
+  nav_telegram: 'Telegram 發佈', nav_content: '內容中心', nav_seo: 'SEO 頁面引擎',
+  nav_email: '電郵引擎', nav_widgets: '小工具引擎', nav_apiusage: 'API 用量',
+  nav_referral: '推薦計劃引擎', nav_video: '影片引擎',
+  nav_flags: '功能開關', nav_auditlog: '操作紀錄', nav_security: '安全掃描',
+  nav_stripeaccount: 'Stripe 帳戶', nav_apitrending: 'API 熱門股票',
+  nav_datafactory: '數據工廠', nav_predledger: '預測紀錄',
+  nav_composer: '公式編輯器', nav_feedback: '意見反饋',
+  pt_dashboard: '儀表板', pt_health: '系統狀態',
+  pt_users: '用戶管理', pt_trending: '熱門趨勢',
+  pt_telegram: 'Telegram 發佈', pt_content: '內容中心', pt_seo: 'SEO 頁面引擎',
+  pt_email: '電郵引擎', pt_widgets: '小工具引擎', pt_apiusage: 'API 用量',
+  pt_referral: '推薦計劃引擎', pt_video: '影片引擎',
+  pt_flags: '功能開關', pt_auditlog: '操作紀錄', pt_security: '安全掃描',
+  pt_stripeaccount: 'Stripe 帳戶', pt_apitrending: 'API 熱門股票',
+  pt_datafactory: '數據工廠', pt_predledger: '預測紀錄',
+  pt_composer: '公式編輯器', pt_feedback: '意見反饋中心',
+  login_title: '🔐 管理員登入', login_subtitle: 'XFINLAB Intelligence Platform',
+  login_email_ph: '管理員電郵', login_pw_ph: '密碼', login_submit: '登入',
+  signout: '登出',
+};
+const ADMIN_EN = {}; // populated on first apply, so "switch back to English" is exact
+let adminLang = localStorage.getItem('xfinlab_admin_lang') || 'en';
+
+function applyAdminLang() {
+  const dict = adminLang === 'zh' ? ADMIN_ZH : ADMIN_EN;
+  document.querySelectorAll('[data-i18n-admin]').forEach(el => {
+    const key = el.getAttribute('data-i18n-admin');
+    if (!(key in ADMIN_EN)) ADMIN_EN[key] = el.textContent; // capture original English once
+    el.textContent = dict[key] || ADMIN_EN[key];
+  });
+  document.querySelectorAll('[data-i18n-admin-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-admin-placeholder');
+    if (!(key in ADMIN_EN)) ADMIN_EN[key] = el.placeholder;
+    el.placeholder = dict[key] || ADMIN_EN[key];
+  });
+  const btnLabel = adminLang === 'zh' ? 'EN' : '中文';
+  const b1 = document.getElementById('langToggleBtn'); if (b1) b1.textContent = btnLabel;
+  const b2 = document.getElementById('sidebarLangToggleBtn'); if (b2) b2.textContent = btnLabel;
+}
+function toggleAdminLang() {
+  adminLang = adminLang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('xfinlab_admin_lang', adminLang);
+  applyAdminLang();
+}
+
+// --- Fix for AJ-reported bug (2026-09-03): System Health showed every
+// service as "Offline" and Email Engine showed "undefined confirmed /
+// undefined pending / undefined total". Root cause: an expired admin
+// token. loadHealth() and loadEmailStats() (unlike loadFlags(), which
+// already checks res.ok) parsed the {"detail":"Invalid token"} 401 error
+// body as if it were real data -- data.market_api is undefined so it fell
+// back to a placeholder "Offline/N/A", and data.confirmed/pending/total
+// are undefined so they rendered literally as the word "undefined".
+// Rather than patch each of the 30+ admin fetch() call sites individually,
+// wrap fetch once: any 401 from an /admin/ endpoint means the stored
+// token expired, so log out and show the login screen with a clear
+// reason instead of quietly rendering wrong data.
+const _origFetch = window.fetch.bind(window);
+window.fetch = async function(...args) {
+  const res = await _origFetch(...args);
+  const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+  if (res.status === 401 && url.includes('/admin/') && adminToken) {
+    localStorage.removeItem('xfinlab_admin_token');
+    adminToken = null;
+    const loginPage = document.getElementById('loginPage');
+    const layout = document.getElementById('adminLayout');
+    if (loginPage && layout) {
+      loginPage.style.display = 'flex';
+      layout.style.display = 'none';
+      const err = document.getElementById('loginError');
+      if (err) err.textContent = adminLang === 'zh'
+        ? '登入已過期，請重新登入。'
+        : 'Your session expired -- please log in again.';
+    }
+  }
+  return res;
+};
 const FLAGS_DESC = {
   research_agent: 'AI Research Report generation',
   portfolio: 'Portfolio allocation engine',
@@ -1066,6 +1158,7 @@ const FLAGS_DESC = {
 
 // Auto login
 window.addEventListener('DOMContentLoaded', () => {
+  applyAdminLang(); // apply saved EN/中文 choice to both login screen and sidebar chrome
   if (adminToken) { initAdmin(); return; }
   tryReuseMainSiteSession();
 });
@@ -1170,6 +1263,10 @@ async function loadHealth() {
   try {
     const res = await fetch(`${API}/admin/health?token=${adminToken}`);
     const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('healthList').innerHTML = `<div class="empty">Failed to load health data (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
     const services = [
       { key: 'market_api', name: 'Market Data (yfinance)', icon: '📈' },
       { key: 'news_api', name: 'News API', icon: '📰' },
@@ -1570,6 +1667,10 @@ async function loadEmailStats() {
   try {
     const res = await fetch(`${API}/admin/email/stats?token=${adminToken}`);
     const data = await res.json();
+    if (!res.ok) {
+      el.innerHTML = `<div class="empty">Failed to load email stats (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
     el.innerHTML = `<b>${data.confirmed}</b> confirmed &nbsp;·&nbsp; <b>${data.pending}</b> pending confirmation &nbsp;·&nbsp; <b>${data.total}</b> total`;
   } catch (e) {
     el.innerHTML = '<div class="empty">Connection error loading email stats</div>';
