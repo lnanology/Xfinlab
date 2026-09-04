@@ -1545,6 +1545,18 @@ document.getElementById('accessForm').addEventListener('submit', async function(
   </a>
 </div>
 
+<!-- 2026-09-04: KittyLaunch verification badge -- required to unlock the
+     do-follow backlink + verified badge on the free KittyLaunch listing
+     ("Verify Badge" checks this exact page for the badge markup below, same
+     pattern as the LaunchNest/DevHub badges above). Kept their embed markup
+     as-is, only added rel="noopener" since it's a target=_blank external
+     link -- doesn't affect their verification check. -->
+<div style="text-align:center;padding:8px 20px 0">
+  <a href="https://kittylaunch.com/p/xfinlab-intelligence-api?utm_source=badge" target="_blank" rel="noopener">
+    <img src="https://kittylaunch.com/api/public/badges/launch_badge.svg?style=pill&theme=light" width="296" alt="XFINLAB Intelligence API — Verified by KittyLaunch" data-kittylaunch-badge="1">
+  </a>
+</div>
+
 <footer>
   <div class="footer-note"><span data-i18n="ia_footer2_prefix">XFINLAB © 2026 · Intelligence API</span> · <a href="api-terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms">API Terms</a> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_risk">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms2">Terms</a></div>
 </footer>
