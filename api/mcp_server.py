@@ -169,7 +169,23 @@ def _resolve_api_key(request: Request, arguments: dict) -> Optional[str]:
     header_key = request.headers.get("x-api-key")
     if header_key:
         return header_key
-    return arguments.get("api_key")
+    arg_key = arguments.get("api_key")
+    if arg_key:
+        return arg_key
+    # 2026-09-04: some MCP gateways/marketplaces (e.g. Smithery's config
+    # builder) pass a user-configured credential as a URL query parameter
+    # on the server URL itself rather than as a real HTTP header or a
+    # JSON-RPC tool-call argument -- their own connection-diagram preview
+    # showed `https://api.xfinlab.com/api/mcp?X-API-Key={X-API-Key}` for a
+    # parameter the user had named "X-API-Key". Accept a few likely query
+    # param spellings as a last-resort fallback so listings on gateways
+    # that only support this delivery style still work, without changing
+    # behavior for the two methods already documented (header / tool arg).
+    for param_name in ("X-API-Key", "x-api-key", "api_key", "apiKey"):
+        q_key = request.query_params.get(param_name)
+        if q_key:
+            return q_key
+    return None
 
 
 def _auth_and_quota(request: Request, arguments: dict, endpoint: str) -> dict:
