@@ -37,6 +37,7 @@ auto-run on every search.
 
 import logging
 import os
+import time
 from typing import Dict
 
 from ai import ai_router
@@ -47,6 +48,27 @@ logger = logging.getLogger(__name__)
 
 _PROVIDER = "deepseek"
 _MAX_TOKENS = 300  # keep each persona's argument short -- this is a quick read, not an essay
+
+# 2026-09-05 cost/latency optimization: this is the single most expensive
+# feature on the site per-call (4 sequential LLM calls -- see the module
+# docstring's cost breakdown), and in practice the same handful of popular
+# tickers (AAPL, TSLA, NVDA...) get re-debated by different users within
+# minutes of each other. Short-lived in-memory cache, same pattern as
+# services/sec_form4_service.py's `_cache` (ticker -> {fetched_at, result}
+# dict, simple time.time() TTL check, no content-hash invalidation --
+# consistent with how every other cached service in this codebase already
+# trades a bit of staleness for a lot fewer calls). 15 minutes was picked
+# deliberately short relative to that file's 24h: unlike an SEC filing,
+# the confluence/regime inputs here can meaningfully shift intraday, and
+# this feature explicitly bills real AI-provider cost per call (not a free
+# scrape), so the TTL only needs to be long enough to absorb a burst of
+# near-simultaneous requests for the same symbol, not to avoid re-fetching
+# a slow-changing source. Keyed by (symbol, lang) since the language
+# instruction changes the actual generated text. Only successful runs
+# (error is None) are cached -- a mid-debate failure should retry fresh
+# next time, not serve a cached error.
+_DEBATE_CACHE_TTL_SECONDS = 15 * 60
+_debate_cache: Dict[str, Dict] = {}
 
 
 def is_available() -> bool:
@@ -142,6 +164,16 @@ def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
     # requested, same guard api/ai_analysis.py's is_zh_default check uses.
     lang_instruction = "" if is_zh_default else f" {ai_language_instruction(lang)}"
 
+    cache_key = f"{symbol}:{lang or 'default'}"
+    cached = _debate_cache.get(cache_key)
+    if cached and (time.time() - cached["fetched_at"]) < _DEBATE_CACHE_TTL_SECONDS:
+        # Cache hit -- no LLM calls made, so the honest token cost is 0,
+        # not whatever this shared slot happened to hold from a previous,
+        # unrelated call on this same worker. Keeps record_ai_token_usage()
+        # billing real usage per this file's zero-fabrication convention.
+        ai_router.set_last_usage_tokens(0)
+        return cached["result"]
+
     summary = _context_summary(symbol, context)
     arguments = {}
     total_tokens = 0
@@ -168,7 +200,7 @@ def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
         # not just this last arbiter call.
         ai_router.set_last_usage_tokens(total_tokens)
 
-        return {
+        result = {
             "available": True,
             "arguments": arguments,
             "verdict": verdict,
@@ -179,6 +211,10 @@ def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
             ),
             "error": None,
         }
+        # Only successful runs are cached -- see the cache block above's
+        # docstring for why a mid-debate failure should retry fresh.
+        _debate_cache[cache_key] = {"fetched_at": time.time(), "result": result}
+        return result
     except Exception as e:
         ai_router.set_last_usage_tokens(total_tokens)
         logger.info("agent_debate_service: debate failed for %s: %s", symbol, e)
