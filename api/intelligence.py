@@ -36,7 +36,7 @@ from services import rss_news_service
 from services.request_ip import get_client_ip
 from services.finbert_sentiment_service import is_available as finbert_available, analyze_batch
 from services.agent_debate_service import is_available as debate_available, run_debate
-from services.intelligence_pipeline_service import build_intelligence_feed
+from services.intelligence_pipeline_service import get_cached_intelligence_feed
 from api.admin import verify_admin
 
 router = APIRouter()
@@ -893,7 +893,7 @@ def intelligence_latest(
     if result["status"] != "ok" or not result["items"]:
         return _envelope(data=[], error=result.get("message") or "No recent events found")
 
-    feed = build_intelligence_feed(result["items"], max_clusters=limit, lang=lang)
+    feed = get_cached_intelligence_feed("latest", result["items"], max_clusters=limit, lang=lang)
     return _envelope(data=feed, meta={"count": len(feed)})
 
 
@@ -918,7 +918,7 @@ def intelligence_ticker(
     if result["status"] != "ok" or not result["items"]:
         return _envelope(data=[], error=result.get("message") or f"No recent events found for {ticker}")
 
-    feed = build_intelligence_feed(result["items"], max_clusters=limit, lang=lang)
+    feed = get_cached_intelligence_feed(ticker, result["items"], max_clusters=limit, lang=lang)
     return _envelope(data=feed, meta={"ticker": ticker, "count": len(feed)})
 
 

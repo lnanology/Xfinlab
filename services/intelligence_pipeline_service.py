@@ -29,6 +29,7 @@ debate endpoint (weight 5) for its 4 sequential LLM calls.
 """
 
 import logging
+import time
 from typing import Dict, List
 
 from services.news_dedup_engine import cluster_headlines
@@ -40,6 +41,25 @@ from services.event_chain_service import add_event_chain
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MAX_CLUSTERS = 5
+
+# 2026-09-05 cost/latency optimization: this is the most expensive endpoint
+# on the site per call (weight 8 -- up to 2 AI calls PER cluster, up to
+# max_clusters=10 clusters = up to 20 calls). The raw headlines feeding
+# this pipeline are themselves only refreshed every 15 minutes (see
+# services/rss_news_service.py's `_CACHE_TTL_SECONDS = 900`), so within
+# that same window a repeated call for the same (ticker-or-"latest",
+# limit, lang) re-clusters and re-narrates an IDENTICAL headline set from
+# scratch every time -- pure wasted AI spend. Same time-based cache
+# pattern as services/agent_debate_service.py's `_debate_cache` (and
+# rss_news_service's own `_cache`): keyed by the caller-supplied natural
+# key (api/intelligence.py passes "latest" or the ticker), TTL matched to
+# the underlying headline cache's 900s since caching any longer wouldn't
+# reflect fresher headlines anyway. Caller must still fetch `items` itself
+# on a miss -- this wraps build_intelligence_feed(), it doesn't fetch
+# headlines, so a cache hit skips the AI pipeline entirely without ever
+# touching rss_news_service.
+_FEED_CACHE_TTL_SECONDS = 900
+_feed_cache: Dict[str, Dict] = {}
 
 
 def build_intelligence_feed(
@@ -78,4 +98,36 @@ def build_intelligence_feed(
         except Exception as e:
             logger.warning("intelligence_pipeline_service: cluster build failed, skipping: %s", e)
             continue
+    return feed
+
+
+def get_cached_intelligence_feed(
+    cache_key: str,
+    items: List[Dict],
+    max_clusters: int = _DEFAULT_MAX_CLUSTERS,
+    lang: str = "zh-HK",
+    generate_narrative: bool = True,
+) -> List[Dict]:
+    """Same contract as build_intelligence_feed(), but skips the whole
+    Phase 1-3 AI pipeline on a cache hit -- see this module's
+    `_feed_cache` docstring above for why. `cache_key` should be whatever
+    the caller already uses to distinguish requests (api/intelligence.py
+    passes "latest" or the uppercased ticker); `max_clusters`/`lang`/
+    `generate_narrative` are folded into the cache key too since each
+    produces a genuinely different feed for the same underlying items.
+
+    Callers should still fetch `items` before calling this (via
+    rss_news_service, which has its own 900s cache) -- a cache hit here
+    just means those fetched items go unused, not that the fetch itself
+    is skipped. That's an intentional, small redundancy: keeping this
+    function's signature identical to build_intelligence_feed()'s (same
+    inputs in, same shape out) is worth more than shaving one already-
+    cheap, already-cached headline fetch."""
+    key = f"{cache_key}:{max_clusters}:{lang}:{generate_narrative}"
+    cached = _feed_cache.get(key)
+    if cached and (time.time() - cached["fetched_at"]) < _FEED_CACHE_TTL_SECONDS:
+        return cached["feed"]
+
+    feed = build_intelligence_feed(items, max_clusters=max_clusters, lang=lang, generate_narrative=generate_narrative)
+    _feed_cache[key] = {"fetched_at": time.time(), "feed": feed}
     return feed
