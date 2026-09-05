@@ -1468,6 +1468,57 @@ def parse_video_chat_request(message: str) -> dict:
     return {"topic": text, "lang": lang, "aspect_ratio": aspect_ratio, "theme": theme}
 
 
+
+# 2026-09-05 (admin asked "商品期貨外匯 點打" -- commodities/forex don't
+# have a deterministic ticker that classify_ai() below can reliably
+# invent from a plain-language name; that function is a generic LLM
+# ticker-extraction prompt with no forex/commodity examples, so typing
+# "gold"/"oil"/"EUR/USD" was silently falling through to a plain text
+# slide -- no chart, no error, easy to miss why. This is a small,
+# deterministic keyword -> ETF-ticker lookup checked FIRST, before the
+# AI classifier -- scoped entirely to this file (does not touch
+# services/intent_router_service.py, which other features share) so it
+# cannot change ticker-detection behavior anywhere else on the site.
+# Maps to liquid, plain-equity-format commodity/currency ETFs rather
+# than yfinance's =F/=X futures/forex syntax specifically because
+# _fetch_candles() -> fetch_ohlc_history() only special-cases Alpaca for
+# ^[A-Z]{1,5}$-shaped symbols and falls back to yfinance for everything
+# else -- an ETF ticker is the one format guaranteed to resolve either
+# way, and it's also a symbol a human can type directly if this lookup
+# ever misses a phrasing.
+_COMMODITY_FOREX_KEYWORDS = {
+    "gold": "GLD", "黃金": "GLD", "金價": "GLD",
+    "silver": "SLV", "白銀": "SLV", "銀價": "SLV",
+    "crude oil": "USO", "crude": "USO", "oil price": "USO", "原油": "USO", "石油": "USO",
+    "natural gas": "UNG", "天然氣": "UNG",
+    "copper": "CPER", "銅價": "CPER",
+    "platinum": "PPLT", "鉑金": "PPLT", "白金": "PPLT",
+    "wheat": "WEAT", "小麥": "WEAT",
+    "corn": "CORN", "粟米": "CORN", "玉米": "CORN",
+    "soybean": "SOYB", "大豆": "SOYB", "黃豆": "SOYB",
+    "dollar index": "UUP", "dxy": "UUP", "美元指數": "UUP",
+    "eur/usd": "FXE", "eurusd": "FXE", "歐元": "FXE",
+    "japanese yen": "FXY", "usd/jpy": "FXY", "日圓": "FXY", "日元": "FXY",
+    "british pound": "FXB", "gbp/usd": "FXB", "英鎊": "FXB",
+    "vix": "VXX", "volatility index": "VXX", "波幅指數": "VXX",
+}
+
+
+def _detect_commodity_forex_ticker(topic: str) -> Optional[str]:
+    """Checked before intent_router_service.classify_ai() in
+    generate_custom_video() -- see _COMMODITY_FOREX_KEYWORDS' comment
+    above for why. Longest keyword first so e.g. "crude oil" matches
+    before a shorter, less specific substring would. Returns None
+    (never raises) on no match -- same contract as classify_ai()'s
+    ticker field, so the caller's existing fallback/error handling
+    doesn't need to change."""
+    lower = (topic or "").lower()
+    for keyword in sorted(_COMMODITY_FOREX_KEYWORDS, key=len, reverse=True):
+        if keyword in lower:
+            return _COMMODITY_FOREX_KEYWORDS[keyword]
+    return None
+
+
 def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: str = None) -> dict:
     """2026-08-09 (admin chat-to-video feature, requested as "Video Engine
     可以加個CHAT更彈性做任何影片嗎"): admin-only, free-text-driven video
@@ -1526,9 +1577,11 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: 
     chart_candles = []
     chart_sr = None
     try:
-        from services.intent_router_service import classify_ai
-        classification = classify_ai(parsed["topic"])
-        candidate = (classification or {}).get("ticker")
+        candidate = _detect_commodity_forex_ticker(parsed["topic"])
+        if not candidate:
+            from services.intent_router_service import classify_ai
+            classification = classify_ai(parsed["topic"])
+            candidate = (classification or {}).get("ticker")
         if candidate:
             candidate = str(candidate).strip().upper()
             candles = _fetch_candles(candidate, limit=20)
