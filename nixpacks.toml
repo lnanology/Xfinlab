@@ -1,3 +1,33 @@
+# ============================================================================
+# WARNING (2026-09-10, real production incident -- read before adding any
+# file named "Dockerfile" anywhere near the repo root):
+#
+# Railway auto-detects a file literally named `Dockerfile` at the repo root
+# and switches to building with it INSTEAD OF Nixpacks -- this happens even
+# though railway.json explicitly pins "build.builder": "NIXPACKS". Railway's
+# own docs confirm this: "When building a service, Railway will look for and
+# use a Dockerfile at the root of the source directory" -- the builder
+# setting does not override that autodetection.
+#
+# On 2026-09-09, PR #51 added a root-level Dockerfile for an unrelated reason
+# (Glama.ai MCP directory listing verification). Railway silently switched to
+# building with it, which lacked the litestream binary and the ffmpeg/fonts
+# phases this file installs below -- production (api.xfinlab.com) returned
+# 502 on every request for 20+ hours before this was caught and the
+# Dockerfile was removed (PR #53), restoring this Nixpacks build path.
+#
+# If a Dockerfile is ever needed again for some other platform's build check
+# (Glama, Docker Hub, a self-host guide, etc.), name it something other than
+# exactly "Dockerfile" at the repo root (e.g. "Dockerfile.standalone"), or
+# put it in a subdirectory -- never let a file named "Dockerfile" land at
+# the repo root while this project deploys via Nixpacks on Railway.
+#
+# railway.json's "deploy.healthcheckPath": "/health" (added in the same fix)
+# is a second line of defense -- if a future deploy ever fails to actually
+# start serving traffic, Railway should now detect that and keep serving
+# the last good deployment instead of silently going dark like this one did.
+# ============================================================================
+
 [phases.ffmpeg]
 # Growth OS Phase 7 (2026-08-04): system-level ffmpeg/ffprobe binaries for
 # services/video_engine_service.py's video rendering pipeline. FIX #1
