@@ -1548,5 +1548,12 @@ document.getElementById('accessForm').addEventListener('submit', async function(
 
 <script src="js/i18n.js"></script>
 <script src="js/quick-ask-bubble.js"></script>
+<!-- 2026-09-13 (AJ: "12個頁跟API都要做啊" -- match the floating icon column
+     on all 12 feature pages): this page had theme-toggle.js + quick-ask-
+     bubble.js but was missing the "+" dock trigger entirely. Added for
+     visual consistency; this page has no TG/FB/Share/language widgets to
+     dock, so the trigger just won't reveal anything when tapped, same as
+     it would on any page with none of the DOCK_IDS elements present. -->
+<script src="js/mobile-widget-dock.js"></script>
 </body>
 </html>
