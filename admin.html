@@ -1781,7 +1781,7 @@ async function loadApiUsage() {
               <td style="padding:6px 8px;font-family:monospace">${escapeHtml(k.key_preview || '')}</td>
               <td style="padding:6px 8px">${escapeHtml(k.email || '—')}</td>
               <td style="padding:6px 8px">${escapeHtml(k.tier || '—')}</td>
-              <td style="padding:6px 8px">${k.source === 'self_serve' ? 'Self-serve' : 'Admin-issued'}</td>
+              <td style="padding:6px 8px">${k.source === 'self_serve' ? 'Self-serve' : 'Consumer site signup'}</td>
               <td style="padding:6px 8px"><b>${k.today_calls ?? 0}</b></td>
               <td style="padding:6px 8px">${k.total_calls ?? 0}</td>
               <td style="padding:6px 8px">${k.active ? '<span style="color:var(--green)">active</span>' : '<span style="color:var(--muted)">revoked</span>'}</td>

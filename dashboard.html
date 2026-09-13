@@ -817,7 +817,7 @@
       <input id="watchlistTicker" placeholder="輸入代號加入" data-i18n-placeholder="dash_watchlist_placeholder" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:0.82rem;text-transform:uppercase">
       <button onclick="addToWatchlist()" data-i18n="dash_watchlist_add_btn" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">加入</button>
     </div>
-    <div id="watchlistContent"><div class="empty">登入後查看你的自選股</div></div>
+    <div id="watchlistContent"><div class="empty" data-i18n="dash_watchlist_static_login">登入後查看你的自選股</div></div>
   </div>
 
   <!-- API Key (task #724, AJ "全做" batch, 2026-08-09): logged-in users can
@@ -839,7 +839,7 @@
   <!-- Decision Journal (Tier 2 layered-UX addition, 2026-07-18) -->
   <div class="panel" style="margin-bottom:24px">
     <div class="panel-title">📓 Decision Journal</div>
-    <div id="journalContent"><div class="empty">登入後查看你嘅Decision Journal</div></div>
+    <div id="journalContent"><div class="empty" data-i18n="dash_journal_static_login">登入後查看你嘅Decision Journal</div></div>
   </div>
 
   <!-- BOTTOM PANELS -->
@@ -945,8 +945,8 @@ async function runFullAnalysis() {
 
     if (analysisRes.status === 429) {
       const quotaErr = await analysisRes.json();
-      const msg = quotaErr?.detail?.message || t('dash_quota_exceeded', '今日免費分析額度已用完，請升級Pro繼續使用');
-      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#F97316">${t('dash_view_plans','查看方案')}</a></div>`;
+      const msg = quotaErr?.detail?.message || t('dash_quota_exceeded', 'Your free daily analysis quota is used up, please upgrade to Pro to continue');
+      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#F97316">${t('dash_view_plans','View Plans')}</a></div>`;
       document.getElementById('researchContent').innerHTML = '';
       return;
     }
@@ -1260,10 +1260,10 @@ async function loadPointsStatus() {
     const data = await res.json();
     if (data.temp_plan) {
       const until = (data.temp_expires_at || '').split(' ')[0];
-      el.textContent = `⭐ ${t('dash_points_boosted', 'Basic 升級中，直到')} ${until}`;
+      el.textContent = `⭐ ${t('dash_points_boosted', 'Basic upgrade active until')} ${until}`;
       el.style.display = 'block';
     } else if (data.points != null) {
-      el.textContent = `🏅 ${data.points}/${data.target} ${t('dash_points_label', '積分（儲夠500分獲7日Basic升級）')}`;
+      el.textContent = `🏅 ${data.points}/${data.target} ${t('dash_points_label', 'points (reach 500 to earn 7-day Basic upgrade)')}`;
       el.style.display = 'block';
     }
   } catch (e) {}
@@ -1309,7 +1309,7 @@ let _lastWatchlistItems = [];
 
 function downloadWatchlistCsv() {
   if (!_lastWatchlistItems.length) {
-    alert(t('dash_watchlist_download_empty', '未有自選股可以下載'));
+    alert(t('dash_watchlist_download_empty', 'No watchlist items to download'));
     return;
   }
   const header = 'Ticker,Price,Trend,Added At\n';
@@ -1331,7 +1331,7 @@ function downloadWatchlistCsv() {
 async function loadWatchlist() {
   const token = localStorage.getItem('xfinlab_token');
   if (!token) {
-    document.getElementById('watchlistContent').innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','登入')}</a>${t('dash_watchlist_login_suffix','後查看你的自選股')}</div>`;
+    document.getElementById('watchlistContent').innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','Log in')}</a>${t('dash_watchlist_login_suffix',' to see your watchlist')}</div>`;
     return;
   }
   try {
@@ -1340,7 +1340,7 @@ async function loadWatchlist() {
     const items = data.watchlist || [];
     _lastWatchlistItems = items;
     if (items.length === 0) {
-      document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_empty','未有自選股，輸入代號加入')}</div>`;
+      document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_empty','No watchlist stocks yet, enter a ticker to add one')}</div>`;
       return;
     }
     document.getElementById('watchlistContent').innerHTML = items.map(item => {
@@ -1373,7 +1373,7 @@ async function loadWatchlist() {
       });
     }
   } catch(e) {
-    document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_load_error','載入失敗')}</div>`;
+    document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_load_error','Failed to load')}</div>`;
   }
 }
 
@@ -1435,7 +1435,7 @@ function apiKeyCopy(btn) {
   if (!el) return;
   navigator.clipboard.writeText(el.textContent.trim()).then(() => {
     const orig = btn.textContent;
-    btn.textContent = t('dash_apikey_copied', '已複製');
+    btn.textContent = t('dash_apikey_copied', 'Copied');
     setTimeout(() => { btn.textContent = orig; }, 1500);
   });
 }
@@ -1443,7 +1443,7 @@ async function loadApiKeyStatus() {
   const token = localStorage.getItem('xfinlab_token');
   const box = document.getElementById('apiKeyContent');
   if (!token) {
-    box.innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','登入')}</a>${t('dash_apikey_login_suffix','後查看你的API金鑰')}</div>`;
+    box.innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','Log in')}</a>${t('dash_apikey_login_suffix',' to view your API key')}</div>`;
     return;
   }
   try {
@@ -1451,8 +1451,8 @@ async function loadApiKeyStatus() {
     const json = await res.json();
     const data = json.data || {};
     if (!data.has_key) {
-      box.innerHTML = `<div class="empty" style="margin-bottom:10px">${t('dash_apikey_none','你未有API金鑰')}</div>
-        <button onclick="regenerateApiKey()" id="apiKeyGenBtn" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">${t('dash_apikey_generate_btn','產生 API 金鑰')}</button>`;
+      box.innerHTML = `<div class="empty" style="margin-bottom:10px">${t('dash_apikey_none','You don\'t have an API key yet')}</div>
+        <button onclick="regenerateApiKey()" id="apiKeyGenBtn" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">${t('dash_apikey_generate_btn','Generate API Key')}</button>`;
       return;
     }
     box.innerHTML = `
@@ -1460,17 +1460,17 @@ async function loadApiKeyStatus() {
         <span style="font-family:monospace;background:var(--surface2);padding:6px 12px;border-radius:6px;font-size:0.86rem">${data.key_preview}</span>
         <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase">${data.tier}</span>
       </div>
-      <div style="font-size:0.74rem;color:var(--muted);margin-bottom:12px">${t('dash_apikey_created_label','建立於')} ${(data.created_at||'').slice(0,10)}${data.last_used_at ? ' · ' + t('dash_apikey_last_used_label','最後使用') + ' ' + data.last_used_at.slice(0,10) : ''}</div>
-      ${data.quota_bonus > 0 ? `<div style="font-size:0.74rem;color:var(--accent);margin-bottom:12px">🎁 +${data.quota_bonus} ${t('dash_apikey_referral_bonus_label','推薦獎勵額度')}</div>` : ''}
-      <button onclick="regenerateApiKey()" id="apiKeyGenBtn" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">${t('dash_apikey_regenerate_btn','重新產生金鑰')}</button>`;
+      <div style="font-size:0.74rem;color:var(--muted);margin-bottom:12px">${t('dash_apikey_created_label','Created')} ${(data.created_at||'').slice(0,10)}${data.last_used_at ? ' · ' + t('dash_apikey_last_used_label','Last used') + ' ' + data.last_used_at.slice(0,10) : ''}</div>
+      ${data.quota_bonus > 0 ? `<div style="font-size:0.74rem;color:var(--accent);margin-bottom:12px">🎁 +${data.quota_bonus} ${t('dash_apikey_referral_bonus_label','referral bonus quota')}</div>` : ''}
+      <button onclick="regenerateApiKey()" id="apiKeyGenBtn" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">${t('dash_apikey_regenerate_btn','Regenerate Key')}</button>`;
   } catch(e) {
-    box.innerHTML = `<div class="empty">${t('dash_watchlist_load_error','載入失敗')}</div>`;
+    box.innerHTML = `<div class="empty">${t('dash_watchlist_load_error','Failed to load')}</div>`;
   }
 }
 async function regenerateApiKey() {
   const token = localStorage.getItem('xfinlab_token');
   if (!token) { window.location.href = 'login.html'; return; }
-  if (!confirm(t('dash_apikey_regenerate_confirm', '重新產生會令舊金鑰即時失效，確定繼續？'))) return;
+  if (!confirm(t('dash_apikey_regenerate_confirm', 'Regenerating will immediately invalidate your old key. Continue?'))) return;
   const btn = document.getElementById('apiKeyGenBtn');
   if (btn) { btn.disabled = true; btn.textContent = '...'; }
   try {
@@ -1479,15 +1479,15 @@ async function regenerateApiKey() {
     const data = json.data || {};
     if (!data.key) { throw new Error('no key in response'); }
     document.getElementById('apiKeyContent').innerHTML = `
-      <div style="font-size:0.76rem;color:var(--accent);margin-bottom:6px">${t('dash_apikey_show_once_warn','請立即複製 -- 呢個畫面之後將無法再顯示完整金鑰')}</div>
+      <div style="font-size:0.76rem;color:var(--accent);margin-bottom:6px">${t('dash_apikey_show_once_warn','Copy this now — you won\'t be able to see the full key again after leaving this screen')}</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
         <code id="apiKeyRawValue" style="font-family:monospace;background:var(--surface2);padding:8px 12px;border-radius:6px;font-size:0.82rem;word-break:break-all">${data.key}</code>
-        <button onclick="apiKeyCopy(this)" style="background:var(--accent);color:#000;border:none;padding:6px 12px;border-radius:6px;font-weight:600;font-size:0.78rem;cursor:pointer">${t('dash_apikey_copy_btn','複製')}</button>
+        <button onclick="apiKeyCopy(this)" style="background:var(--accent);color:#000;border:none;padding:6px 12px;border-radius:6px;font-weight:600;font-size:0.78rem;cursor:pointer">${t('dash_apikey_copy_btn','Copy')}</button>
       </div>
-      <button onclick="loadApiKeyStatus()" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">${t('dash_apikey_done_btn','完成')}</button>`;
+      <button onclick="loadApiKeyStatus()" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">${t('dash_apikey_done_btn','Done')}</button>`;
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = t('dash_apikey_regenerate_btn','重新產生金鑰'); }
-    alert(t('dash_apikey_regenerate_error','產生失敗，請稍後再試'));
+    if (btn) { btn.disabled = false; btn.textContent = t('dash_apikey_regenerate_btn','Regenerate Key'); }
+    alert(t('dash_apikey_regenerate_error','Failed to generate, please try again later'));
   }
 }
 loadApiKeyStatus();
@@ -1499,7 +1499,7 @@ async function loadDecisionJournal() {
   const token = localStorage.getItem('xfinlab_token');
   const journalEl = document.getElementById('journalContent');
   if (!token) {
-    journalEl.innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">登入</a>後查看你嘅Decision Journal</div>`;
+    journalEl.innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','Log in')}</a>${t('dash_journal_login_suffix',' to see your Decision Journal')}</div>`;
     return;
   }
   try {
@@ -1507,7 +1507,7 @@ async function loadDecisionJournal() {
     const data = await res.json();
     const entries = data.entries || [];
     if (entries.length === 0) {
-      journalEl.innerHTML = `<div class="empty">未有紀錄 -- 喺AI市場分析頁撳「加入Decision Journal」即可儲存。</div>`;
+      journalEl.innerHTML = `<div class="empty">${t('dash_journal_empty','No entries yet -- click "Add to Decision Journal" on the AI Market Analysis page to save one.')}</div>`;
       return;
     }
     journalEl.innerHTML = entries.map(e => {
@@ -1526,13 +1526,13 @@ async function loadDecisionJournal() {
           <!-- 2026-07-30 (Paddle compliance, deep rewrite): was "Entry X / Stop Y",
                framing this journal snapshot as an open trade plan. Relabeled to
                plain reference numbers (same real values, no buy/sell framing). -->
-          <span style="font-family:monospace;font-size:0.8rem;color:var(--muted)">參考價 ${e.entry_price != null ? e.entry_price : '-'} ・ 關鍵位 ${e.stop_loss != null ? e.stop_loss : '-'}</span>
+          <span style="font-family:monospace;font-size:0.8rem;color:var(--muted)">${t('dash_journal_ref_price','Ref')} ${e.entry_price != null ? e.entry_price : '-'} ・ ${t('dash_journal_key_level','Key level')} ${e.stop_loss != null ? e.stop_loss : '-'}</span>
           <button onclick="removeJournalEntry(${e.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem">✕</button>
         </div>
       </div>`;
     }).join('');
   } catch(e) {
-    journalEl.innerHTML = `<div class="empty">載入失敗</div>`;
+    journalEl.innerHTML = `<div class="empty">${t('dash_watchlist_load_error','Failed to load')}</div>`;
   }
 }
 
