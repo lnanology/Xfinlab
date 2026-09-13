@@ -39,11 +39,19 @@
       // now sits below this bubble in the right-edge stack, at bottom:20px).
       // Shifted this bubble+panel up by the same ~62px rhythm to make room
       // (was bottom:96px/158px, mobile 104px/166px).
+      // 2026-09-13 (AJ: "白底 加是黑邊，CHAT是黑邊圖案，跟月亮一樣，跟所有
+      // 功能頁" -- same request as js/mobile-widget-dock.js's "+" trigger:
+      // was a solid orange fill regardless of theme; switched to the same
+      // theme-adaptive card/border/text variables js/theme-toggle.js's
+      // round button uses, so this is a black-outlined circle with a
+      // black chat icon in light mode, white-ish in dark mode, matching
+      // the moon/sun button and the "+" dock trigger on every page.
       '#xflQabBtn{position:fixed;right:20px;bottom:82px;z-index:1002;width:52px;height:52px;' +
-        'border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;' +
-        'box-shadow:0 6px 20px rgba(var(--accent-rgb),0.4);display:flex;align-items:center;' +
-        'justify-content:center;transition:transform 0.15s}' +
-      '#xflQabBtn:hover{transform:scale(1.08)}' +
+        'border-radius:50%;background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);' +
+        'color:var(--text-primary,#e2e8f0);cursor:pointer;' +
+        'box-shadow:0 4px 14px rgba(0,0,0,0.25);display:flex;align-items:center;' +
+        'justify-content:center;transition:transform .15s,border-color .2s,color .2s}' +
+      '#xflQabBtn:hover{border-color:var(--accent-orange,#f59e0b);color:var(--accent-orange,#f59e0b);transform:scale(1.08)}' +
       '#xflQabPanel{position:fixed;right:20px;bottom:144px;z-index:1002;width:min(340px,88vw);' +
         'max-height:min(480px,70vh);background:var(--surface,#fff);border:1px solid var(--border,#e2e8f0);' +
         'border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,0.2);display:none;flex-direction:column;overflow:hidden}' +

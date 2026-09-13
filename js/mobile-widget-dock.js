@@ -55,11 +55,19 @@
       // +62) -- same column, same rhythm, just shifted down as a unit.
       "#" + DOCK_ID + "{position:fixed;right:20px;bottom:144px;z-index:1000;" +
         "display:flex;flex-direction:column;align-items:center;}" +
+      // 2026-09-13 (AJ: "右邊睇唔到＋按鈕，白底用黑圈及黑＋顯示，黑底用白圈
+      // 及白＋顯示"): was a solid orange fill (background:var(--accent),
+      // white icon) regardless of theme, which had poor contrast against
+      // the page in some states. Switched to the same theme-adaptive
+      // card/border/text variables js/theme-toggle.js's round button
+      // already uses, so this trigger is automatically a black-on-white
+      // circle in light mode and a white(ish)-on-dark circle in dark mode.
       "#" + TRIGGER_ID + "{order:99;width:48px;height:48px;border-radius:50%;flex-shrink:0;" +
-        "background:var(--accent);color:#fff;border:none;cursor:pointer;" +
-        "box-shadow:0 6px 20px rgba(var(--accent-rgb),0.4);display:flex;align-items:center;" +
-        "justify-content:center;transition:transform 0.15s}" +
-      "#" + TRIGGER_ID + ":hover{transform:scale(1.08)}" +
+        "background:var(--bg-card,#0d1525);border:1px solid var(--border-color,#1e2d45);" +
+        "color:var(--text-primary,#e2e8f0);cursor:pointer;" +
+        "box-shadow:0 4px 14px rgba(0,0,0,0.25);display:flex;align-items:center;" +
+        "justify-content:center;transition:transform .15s,border-color .2s,color .2s}" +
+      "#" + TRIGGER_ID + ":hover{border-color:var(--accent-orange,#f59e0b);color:var(--accent-orange,#f59e0b);transform:scale(1.08)}" +
       "#" + TRIGGER_ID + " svg{transition:transform .25s ease}" +
       "#" + DOCK_ID + ".xfl-dock-open #" + TRIGGER_ID + " svg{transform:rotate(45deg)}" +
       // The 6 widget wrappers/badges themselves stay normal inline-flex

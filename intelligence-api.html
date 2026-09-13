@@ -1521,37 +1521,22 @@ document.getElementById('accessForm').addEventListener('submit', async function(
 });
 </script>
 
-<!-- 2026-09-03: LaunchNest verification badge -- required for the free
-     listing at launchnest.io/p/xfinlab-intelligence-api to publish (their
-     crawler checks this exact page for the badge image wrapped in a
-     non-nofollow link back to the listing). Kept their embed markup as-is,
-     only added rel="noopener" since it's a target=_blank external link --
-     that doesn't affect their nofollow/sponsored/ugc check. -->
-<div style="text-align:center;padding:16px 20px 0">
+<!-- 2026-09-03/04: LaunchNest / DevHub / KittyLaunch verification badges --
+     each required by that listing site's own crawler to check THIS exact
+     page for its badge image wrapped in a link back to the listing (kept
+     each <a>/<img> completely unchanged for that reason -- only rel=
+     "noopener" was added, harmless to all three checks). 2026-09-13 (AJ:
+     "最底果3個 launchnest, devhub, kittylaunch" should read left-to-right):
+     these used to be 3 separate stacked block <div>s (each its own row);
+     merged into a single flex row, wrapping on narrow screens, without
+     touching any badge's own markup. -->
+<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:16px;padding:16px 20px 0">
   <a href="https://launchnest.io/p/xfinlab-intelligence-api" target="_blank" rel="noopener">
     <img src="https://launchnest.io/badge/xfinlab-intelligence-api.svg?variant=listed" alt="XFINLAB Intelligence API on LaunchNest" width="220" height="56">
   </a>
-</div>
-
-<!-- 2026-09-04: DevHub.best backlink verification badge -- required for the
-     free listing at devhub.best/projects/xfinlab-intelligence-api to verify
-     ("Verify Backlink" checks this exact page for the badge image wrapped in
-     a link back to the listing, same pattern as the LaunchNest badge above).
-     Kept their embed markup as-is, only added rel="noopener" since it's a
-     target=_blank external link -- doesn't affect their backlink check. -->
-<div style="text-align:center;padding:8px 20px 0">
   <a href="https://devhub.best/projects/xfinlab-intelligence-api?utm_source=badge" target="_blank" rel="noopener">
     <img src="https://r2.direasy-multi-tenant.focusapps.app/uploads/616d0b1a-3979-4b8c-94d1-b4f1fedd3ead/1783239702078/53yqmim54zv/featured-on-light.svg" alt="Featured on DevHub" style="height:44px;width:auto">
   </a>
-</div>
-
-<!-- 2026-09-04: KittyLaunch verification badge -- required to unlock the
-     do-follow backlink + verified badge on the free KittyLaunch listing
-     ("Verify Badge" checks this exact page for the badge markup below, same
-     pattern as the LaunchNest/DevHub badges above). Kept their embed markup
-     as-is, only added rel="noopener" since it's a target=_blank external
-     link -- doesn't affect their verification check. -->
-<div style="text-align:center;padding:8px 20px 0">
   <a href="https://kittylaunch.com/p/xfinlab-intelligence-api?utm_source=badge" target="_blank" rel="noopener">
     <img src="https://kittylaunch.com/api/public/badges/launch_badge.svg?style=pill&theme=light" width="296" alt="XFINLAB Intelligence API — Verified by KittyLaunch" data-kittylaunch-badge="1">
   </a>
