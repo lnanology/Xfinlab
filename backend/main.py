@@ -151,6 +151,40 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 
+# 2026-09-14 addition (site-wide pain-points audit finding #4 --
+# "observability"): previously there was NO catch-all handler, so any
+# unhandled exception anywhere in api/*.py fell through to Starlette's
+# default plain-text 500 -- a raw, unhelpful response for the caller, and
+# completely invisible to AJ unless he happened to be watching Railway's log
+# viewer at that exact moment. This does two additive things without
+# changing behavior for any already-handled case (a route's own try/except,
+# or a deliberate `raise HTTPException(...)`, both still work exactly as
+# before -- Starlette resolves the most specific matching handler first, so
+# HTTPException keeps going to FastAPI's own default handler, never here):
+#   1. Always logs the full traceback server-side (previously some routes
+#      logged, many didn't).
+#   2. Emails AJ a deduped, cooldown-limited alert (services/error_alert_
+#      service.py) so a real production error surfaces without him needing
+#      to check logs manually -- the actual gap the audit flagged.
+# The caller still just gets a generic JSON 500 -- no traceback, no
+# internals leaked to whoever's making the request.
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logging.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    try:
+        from services.error_alert_service import notify_admin_of_error
+        notify_admin_of_error(request.url.path, exc)
+    except Exception:
+        logging.exception("unhandled_exception_handler: failed to dispatch admin alert")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "internal_server_error",
+            "message": "伺服器發生錯誤，請稍後再試。",
+        },
+    )
+
+
 # Starlette's add_middleware() inserts at position 0, so the middleware
 # added LAST ends up processing requests FIRST (outermost). We need CORS to
 # be outermost so it still sees/decorates the 429 response that
