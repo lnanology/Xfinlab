@@ -1,12 +1,13 @@
 from fastapi import APIRouter
 
 from services.intent_router_service import route_query
+from services.i18n import localized_text
 
 router = APIRouter()
 
 
 @router.get("/smart-route")
-def smart_route(q: str = ""):
+def smart_route(q: str = "", lang: str = None):
     """
     Powers the homepage's single "tell me what you're thinking" input
     box (js/smart-router.js): given free text, figures out which
@@ -22,5 +23,5 @@ def smart_route(q: str = ""):
     """
     q = (q or "").strip()
     if not q:
-        return {"status": "error", "message": "請輸入你想搵嘅資產或問題"}
+        return {"status": "error", "message": localized_text("smart_route_empty_query_error", lang)}
     return route_query(q)

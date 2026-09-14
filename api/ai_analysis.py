@@ -9,7 +9,7 @@ from engines.risk_engine import RiskEngine
 from engines.news_engine import NewsEngine
 from backend.alpha.regime_detector import RegimeDetector
 from services.fundamentals_service import get_fundamentals
-from services.i18n import get_translations, ai_language_instruction
+from services.i18n import get_translations, ai_language_instruction, localized_text
 from services.smart_beta_service import get_smart_beta
 from services.fractal_regime_service import detect_transition_signal as detect_fractal_transition
 from services.direction_probability_service import get_direction_probability
@@ -101,7 +101,7 @@ async def ai_analysis(request: Request, body: dict):
             answer = get_ai_response(prompt, max_tokens=800)
             record_ai_token_usage(user_id)
         except Exception:
-            answer = "篩選服務暫時不可用，請稍後再試。"
+            answer = localized_text("screener_service_unavailable", lang)
         return {"status": "ok", "data": {"conclusion": answer, "analysis": answer}}
 
     if not symbols:

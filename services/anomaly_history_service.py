@@ -30,6 +30,7 @@ except Exception:
     fetch_ohlc_history = None
 
 from services.news_service import NewsService
+from services.i18n import localized_text
 
 # Same thresholds as engines/anomaly_engine.py's AnomalyEngine.detect(),
 # reused directly (not reimplemented) so a "spike" means the same thing
@@ -108,7 +109,7 @@ def _detect_contraction_breakouts(daily_series):
     return signals
 
 
-def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int = 5):
+def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int = 5, lang: str = None):
     """
     Scan the last 30 calendar days of daily bars for `ticker`, flag any
     day whose volume/price move trips AnomalyEngine's thresholds, and
@@ -137,10 +138,11 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
     """
     ticker = (ticker or "").strip().upper()
     if not ticker:
-        return {"status": "error", "message": "代號格式無效，請重新輸入。", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
+        msg = localized_text("anom_ticker_format_error", lang)
+        return {"status": "error", "message": msg, "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     if fetch_ohlc_history is None:
-        return {"status": "error", "message": "市場數據服務暫時無法使用。", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
+        return {"status": "error", "message": localized_text("anom_history_service_unavailable", lang), "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     try:
         # 3mo gives enough trailing history to compute a real 20-day
@@ -149,10 +151,12 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
         # days, plus 20 more trading days of lookback before that).
         hist = fetch_ohlc_history(ticker, period="3mo")
     except Exception as e:
-        return {"status": "error", "message": f"攞唔到 {ticker} 嘅歷史數據: {e}", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
+        msg = localized_text("anom_history_fetch_error", lang).replace("{ticker}", ticker).replace("{error}", str(e))
+        return {"status": "error", "message": msg, "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     if hist is None or hist.empty or len(hist) < 2:
-        return {"status": "error", "message": f"攞唔到 {ticker} 嘅歷史數據，請確認代號正確。", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
+        msg = localized_text("anom_history_no_data_error", lang).replace("{ticker}", ticker)
+        return {"status": "error", "message": msg, "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     hist = hist.sort_index()
     cutoff = datetime.now() - timedelta(days=30)
@@ -204,7 +208,7 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
 
         flagged.append({
             "date": row_date.strftime("%Y-%m-%d"),
-            "time": "收市 (Market Close)",
+            "time": localized_text("anom_market_close_label", lang),
             "volume": current_volume,
             "avg_volume": round(avg_volume, 2),
             "news": [],

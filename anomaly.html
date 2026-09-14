@@ -371,7 +371,12 @@ async function runAnomalyHistory(ticker) {
   const historyBox = document.getElementById('anomHistoryResult');
   historyBox.innerHTML = `<div class="empty-box">${t('anom_history_checking', '搵緊過去30日數據...')}</div>`;
   try {
-    const res = await fetch(`${API}/anomaly/history/${encodeURIComponent(ticker)}`);
+    // 2026-09-14 fix (site-wide lang-leak audit): sibling
+    // runAnomalySearch() already sends I18N.currentLang -- this call never
+    // did, so /anomaly/history's error/label strings always came back
+    // Chinese regardless of UI language.
+    const _histLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const res = await fetch(`${API}/anomaly/history/${encodeURIComponent(ticker)}` + (_histLang ? `?lang=${encodeURIComponent(_histLang)}` : ''));
     const data = await res.json();
     if (data.status !== 'ok') {
       throw new Error(data.message || t('anom_history_error', '暫時攞唔到歷史數據'));
@@ -510,7 +515,7 @@ async function submitFeedback() {
     const res = await fetch('https://api.xfinlab.com/api/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ type, message, email: email || null, token })
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
     });
     const data = await res.json();
     status.textContent = '✅ ' + data.message;

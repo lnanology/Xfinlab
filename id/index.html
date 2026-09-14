@@ -1770,7 +1770,7 @@ async function submitFeedback() {
     const res = await fetch('https://api.xfinlab.com/api/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ type, message, email: email || null, token })
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
     });
     const data = await res.json();
     status.textContent = '✅ ' + data.message;

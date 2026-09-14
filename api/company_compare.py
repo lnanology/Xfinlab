@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from ai.ai_router import get_ai_response
 from services.market_data_service import MarketDataService
 from services.fundamentals_service import get_fundamentals
-from services.i18n import ai_language_instruction
+from services.i18n import ai_language_instruction, localized_text
 
 router = APIRouter()
 market_svc = MarketDataService()
@@ -13,7 +13,7 @@ async def company_compare(body: dict):
     token = body.get("token")
     lang = body.get("lang")
     if not symbols:
-        return {"status": "ok", "data": {"analysis": "請輸入公司代號"}}
+        return {"status": "ok", "data": {"analysis": localized_text("compare_empty_symbols_error", lang)}}
 
     market_data = {}
     for s in symbols:
@@ -51,6 +51,6 @@ async def company_compare(body: dict):
         answer = get_ai_response(prompt, max_tokens=1000)
         record_ai_token_usage(user_id)
     except Exception:
-        answer = "比較分析服務暫時不可用，請稍後再試。"
+        answer = localized_text("compare_service_unavailable", lang)
 
     return {"status": "ok", "data": {"analysis": answer, "conclusion": answer, "market_data": market_data}}

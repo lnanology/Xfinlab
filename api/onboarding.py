@@ -3,6 +3,7 @@ import sqlite3
 from fastapi import APIRouter
 from backend.auth.jwt_handler import verify_token
 from fastapi import HTTPException
+from services.i18n import localized_text
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend", "xfinlab.db")
@@ -57,7 +58,7 @@ def get_onboarding_status(token: str):
 
 
 @router.post("/onboarding/complete-step/{step}")
-def complete_step(step: int, token: str):
+def complete_step(step: int, token: str, lang: str = None):
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -88,7 +89,12 @@ def complete_step(step: int, token: str):
             from services.quota_service import QuotaService
             QuotaService.grant_bonus(user_id, "full_analysis", 3)
             conn.execute("UPDATE onboarding SET bonus_given=1 WHERE user_id=?", (user_id,))
-            bonus_message = "🎉 Onboarding 完成！獲得額外 3 次分析獎勵！"
+            # 2026-09-14 fix (site-wide lang-leak audit): was hardcoded
+            # Chinese regardless of `lang`, while this SAME function's other
+            # branch below ("Step {step} completed!") was already English --
+            # an inconsistent mix within one function, not just a missing-
+            # lang case.
+            bonus_message = localized_text("onboarding_bonus_message", lang)
 
         conn.commit()
 
