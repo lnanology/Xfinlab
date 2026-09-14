@@ -1185,7 +1185,25 @@ async function sendQuick(text) {
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   const qParam = params.get('q');
-  if (qParam) sendQuick(qParam);
+  if (qParam) {
+    // 2026-09-14 fix (AJ: "用英文又出現中文...網址也有中文？"): js/i18n.js's
+    // I18N.init() is async (awaits a fetch before setting I18N.currentLang),
+    // but this handler used to call sendQuick() immediately on the same
+    // DOMContentLoaded event -- for a first-time visitor (no cached
+    // xfinlab_lang in localStorage yet) that raced ahead of init(), so the
+    // very first auto-sent message went out with lang=undefined and the
+    // backend defaulted to Chinese, even though the page chrome itself
+    // renders in the detected language moments later once the fetch
+    // resolves. Wait for i18n.js's own "i18nApplied" event (dispatched at
+    // the end of a successful init(), after I18N.currentLang is set) so the
+    // auto-send carries the real language; fall back to a short timeout so
+    // a slow or failed i18n fetch (init()'s try/catch swallows fetch
+    // errors silently) can't strand the auto-send forever.
+    let qParamSent = false;
+    const sendQParamOnce = () => { if (qParamSent) return; qParamSent = true; sendQuick(qParam); };
+    document.addEventListener('i18nApplied', sendQParamOnce, { once: true });
+    setTimeout(sendQParamOnce, 1200);
+  }
 
   // 2026-07-24 ("打HK50 CH50呢D搜不到"): #inputBox never had js/
   // autocomplete.js wired to it at all -- every other search box on the

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from services.rate_limiter import limiter
 from ai.ai_router import get_ai_response_with_escalation
-from services.i18n import ai_language_instruction
+from services.i18n import ai_language_instruction, get_translations, TRANSLATIONS
 from services.ticker_shorthand import build_context_note
 from services.ai_provenance import ai_provenance
 
@@ -9,6 +9,30 @@ router = APIRouter()
 
 conversation_store = {}
 MAX_HISTORY_TURNS = 6  # keep prompt short so cost/latency stays predictable
+
+
+# 2026-09-14 fix (AJ: "用英文又出現中文...網址也有中文？" -- English UI still
+# showing Chinese text): the two static fallback strings below (empty query,
+# AI-call failure) were hardcoded Traditional Chinese literals that
+# completely ignored `lang`, even though this same file already plumbs
+# `lang` correctly into ai_language_instruction(lang) for the real AI-answer
+# path. This is the same "hardcoded Chinese ignores lang" bug class the
+# 2026-07-19 fix (see services/i18n.py's ai_language_instruction docstring)
+# already fixed for this endpoint's PROMPT -- these two response-body
+# literals were simply never covered by that earlier pass.
+#
+# `chat_empty_query`/`chat_service_unavailable` only exist in 4 of the 47
+# TRANSLATIONS dicts (en/zh-TW/zh-HK/zh-CN, matching this session's other
+# i18n additions) -- api/anomaly.py's existing "fall back to a hardcoded
+# Chinese literal" pattern isn't safe to copy here, because that pattern
+# only works for KEYS that already exist in all 47 language dicts. Falling
+# back straight to a Chinese literal for these new keys would still leak
+# Chinese to any of the other 43 languages (fr/es/ja/... ) that lack them,
+# so the fallback chain below goes to English instead -- confirmed via
+# get_translations('fr').get('chat_service_unavailable') returning None.
+def _localized(key: str, lang: str) -> str:
+    tr = get_translations(lang) if lang else TRANSLATIONS["zh-HK"]
+    return tr.get(key) or TRANSLATIONS["en"][key]
 
 
 @router.post("/chat")
@@ -35,7 +59,7 @@ async def chat(request: Request, body: dict):
     lang = body.get("lang")
 
     if not query:
-        return {"status": "ok", "answer": "請輸入問題", "conversation_id": conversation_id}
+        return {"status": "ok", "answer": _localized("chat_empty_query", lang), "conversation_id": conversation_id}
 
     if conversation_id not in conversation_store:
         conversation_store[conversation_id] = []
@@ -197,6 +221,6 @@ async def chat(request: Request, body: dict):
     except Exception:
         return {
             "status": "ok",
-            "answer": "AI 服務暫時不可用，請稍後再試。",
+            "answer": _localized("chat_service_unavailable", lang),
             "conversation_id": conversation_id,
         }
