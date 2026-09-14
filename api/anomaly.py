@@ -1,3 +1,4 @@
+import logging
 import re
 
 from fastapi import APIRouter
@@ -8,6 +9,7 @@ from services.i18n import get_translations
 from services.feature_flags_service import require_feature_enabled
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Same ticker-format guard used by api/chart_analysis.py -- reject junk
 # input cheaply before it ever reaches market_data_service. Includes "^"
@@ -34,33 +36,45 @@ def anomaly(token: str = None):
     # 2026-09-14: enforce admin.html's "anomaly" toggle (previously
     # persisted but never checked -- see services/feature_flags_service.py).
     require_feature_enabled("anomaly")
-    tickers = get_dashboard_tickers(token)
-    snapshots = compute_snapshots(tickers)
+    # 2026-09-14 hardening (site-wide pain-points audit finding #2 --
+    # "backend error handling"): this whole batch scan previously had no
+    # try/except at all -- one bad watchlist entry or a market-data hiccup
+    # on any single ticker inside compute_snapshots()/AnomalyEngine.detect()
+    # took down the entire dashboard Anomaly Radar panel with a raw 500
+    # dashboard.html's loadAnomaly() couldn't parse. Falls back to an
+    # honest "scanned nothing this time" response instead -- same shape
+    # the caller already handles for a genuinely empty watchlist.
+    try:
+        tickers = get_dashboard_tickers(token)
+        snapshots = compute_snapshots(tickers)
 
-    items = []
-    for s in snapshots:
-        result = AnomalyEngine.detect(
-            current_volume=s.get("volume", 0),
-            average_volume=s.get("avg_volume", 1),
-            price_change_pct=s.get("price_change_pct", 0.0),
-        )
-        if result["anomaly_count"] > 0:
-            # 2026-08-10 (task #747-752): sparkline is already computed by
-            # compute_snapshots() (dashboard_snapshot_service.py) -- pass it
-            # straight through, zero extra fetches.
-            items.append({"ticker": s["ticker"], "sparkline": s.get("sparkline", []), **result})
+        items = []
+        for s in snapshots:
+            result = AnomalyEngine.detect(
+                current_volume=s.get("volume", 0),
+                average_volume=s.get("avg_volume", 1),
+                price_change_pct=s.get("price_change_pct", 0.0),
+            )
+            if result["anomaly_count"] > 0:
+                # 2026-08-10 (task #747-752): sparkline is already computed by
+                # compute_snapshots() (dashboard_snapshot_service.py) -- pass it
+                # straight through, zero extra fetches.
+                items.append({"ticker": s["ticker"], "sparkline": s.get("sparkline", []), **result})
 
-    severity_rank = {"HIGH": 2, "MEDIUM": 1, "NONE": 0}
-    overall_severity = "NONE"
-    for item in items:
-        if severity_rank.get(item["severity"], 0) > severity_rank.get(overall_severity, 0):
-            overall_severity = item["severity"]
+        severity_rank = {"HIGH": 2, "MEDIUM": 1, "NONE": 0}
+        overall_severity = "NONE"
+        for item in items:
+            if severity_rank.get(item["severity"], 0) > severity_rank.get(overall_severity, 0):
+                overall_severity = item["severity"]
 
-    return {
-        "scanned": len(snapshots),
-        "severity": overall_severity,
-        "items": items,
-    }
+        return {
+            "scanned": len(snapshots),
+            "severity": overall_severity,
+            "items": items,
+        }
+    except Exception:
+        logger.exception("anomaly: batch scan failed for token=%s", "<redacted>" if token else None)
+        return {"scanned": 0, "severity": "NONE", "items": []}
 
 
 @router.get("/anomaly/search/{ticker}")

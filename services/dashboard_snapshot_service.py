@@ -13,6 +13,7 @@ RuleEngine -> ScoreEngine -> NewsEngine -> RiskEngine pipeline already
 live and tested in api/ai_analysis.py / api/full_analysis_v3.py.
 """
 
+import time
 from typing import List, Dict, Optional
 
 from services.market_data_service import MarketDataService
@@ -34,6 +35,42 @@ news_svc = NewsService()
 DEFAULT_BASKET = ["AAPL", "MSFT", "GOOGL", "NVDA", "AMZN"]
 
 MAX_TICKERS = 6
+
+# 2026-09-14 addition (site-wide pain-points audit finding #3 --
+# "performance"): compute_ticker_snapshot() below drives ALL THREE of
+# api/anomaly.py, api/portfolio.py, api/screener.py, plus anomaly.py's
+# single-ticker search -- every one of those page loads was hitting
+# yfinance (services/market_data_service.py, which has no caching of its
+# own) AND services/sparkline_service.py fresh, per ticker, on every single
+# request. api/chart_analysis.py already solved this exact problem for its
+# own endpoints with a module-level TTL cache; this brings the same pattern
+# here rather than leaving this code path as the one place that never got
+# it. 300s (5 min) matches chart_analysis.py's own TTL for the same
+# yfinance-backed data -- short enough that "anomaly" detection and
+# portfolio scores don't go meaningfully stale, long enough that a user
+# refreshing the dashboard repeatedly (or several users sharing the same
+# default basket) doesn't refetch identical data every time.
+_SNAPSHOT_CACHE: dict = {}
+_SNAPSHOT_CACHE_TTL_SECONDS = 300
+_SNAPSHOT_CACHE_MAX_ENTRIES = 300
+
+
+def _ttl_cache_get(store: dict, key: str, ttl: int):
+    entry = store.get(key)
+    if not entry:
+        return None
+    ts, value = entry
+    if time.time() - ts > ttl:
+        store.pop(key, None)
+        return None
+    return value
+
+
+def _ttl_cache_set(store: dict, key: str, value, max_entries: int) -> None:
+    if len(store) >= max_entries:
+        oldest_key = min(store, key=lambda k: store[k][0])
+        store.pop(oldest_key, None)
+    store[key] = (time.time(), value)
 
 
 def get_dashboard_tickers(token: Optional[str]) -> List[str]:
@@ -59,6 +96,11 @@ def compute_ticker_snapshot(ticker: str) -> Optional[Dict]:
     from live data. Returns None if market data is unavailable for the
     symbol (e.g. bad ticker, data source failure) rather than
     fabricating a placeholder."""
+    cache_key = (ticker or "").upper().strip()
+    cached = _ttl_cache_get(_SNAPSHOT_CACHE, cache_key, _SNAPSHOT_CACHE_TTL_SECONDS)
+    if cached is not None:
+        return cached
+
     market = market_svc.get_stock_data(ticker)
     if not market or market.get("error"):
         return None
@@ -94,7 +136,7 @@ def compute_ticker_snapshot(ticker: str) -> Optional[Dict]:
     risk_score = round(risk_result["overall_risk"], 2)
 
     resolved_ticker = market.get("symbol", ticker.upper())
-    return {
+    result = {
         "ticker": resolved_ticker,
         "price": market.get("price", 0),
         "volume": market.get("volume", 0),
@@ -113,6 +155,8 @@ def compute_ticker_snapshot(ticker: str) -> Optional[Dict]:
         # build their per-ticker items from this snapshot.
         "sparkline": get_recent_closes(resolved_ticker),
     }
+    _ttl_cache_set(_SNAPSHOT_CACHE, cache_key, result, _SNAPSHOT_CACHE_MAX_ENTRIES)
+    return result
 
 
 def compute_snapshots(tickers: List[str]) -> List[Dict]:
