@@ -46,6 +46,67 @@ _TRAILING_WINDOW = 20
 # the caller passes a larger max_news_days.
 _MAX_NEWS_DAYS_HARD_CAP = 10
 
+# 2026-09-14 addition (AJ: "量縮至量放，怎表達？" -- after adding
+# engines/anomaly_engine.py's single-day volume_contraction/
+# consolidation_signal, he asked how to express the actual multi-day
+# TRANSITION -- several quiet days followed by a volume release -- since
+# that's the real tradeable "量縮後放量突破" setup, not just "today is
+# quiet" or "today is a spike" in isolation. AnomalyEngine.detect() only
+# ever sees one day at a time, so this can't live there; it needs the
+# whole daily_series this function already builds while scanning.
+# _QUIET_RATIO_MAX (0.7) is deliberately looser than AnomalyEngine's
+# strict 0.5x volume_contraction threshold -- a real multi-day basing
+# phase rarely has EVERY single day under 0.5x, so requiring that would
+# make _QUIET_DAYS consecutive days almost never trigger. _BREAKOUT_RATIO_MIN
+# (1.5) is deliberately looser than AnomalyEngine's 2.0x volume_spike
+# threshold for the same reason -- the day volume genuinely starts
+# releasing is usually before it fully doubles.
+_QUIET_DAYS = 3
+_QUIET_RATIO_MAX = 0.7
+_BREAKOUT_RATIO_MIN = 1.5
+
+
+def _detect_contraction_breakouts(daily_series):
+    """
+    daily_series: oldest-first list of {"date", "volume_ratio",
+    "price_change_pct"} for every scanned day (not just anomaly-flagged
+    ones -- a quiet day with volume_ratio 0.6 never trips AnomalyEngine's
+    0.5x threshold on its own, but still counts towards a quiet streak
+    here).
+
+    Returns a list of {type, breakout_date, quiet_period_start,
+    quiet_period_end, quiet_days, breakout_volume_ratio,
+    breakout_price_change_pct, direction, detail} -- one per breakout day
+    immediately preceded by _QUIET_DAYS consecutive quiet days, sorted
+    oldest-first (caller re-sorts newest-first alongside `flagged`).
+    """
+    signals = []
+    for i in range(_QUIET_DAYS, len(daily_series)):
+        window = daily_series[i - _QUIET_DAYS:i]
+        if not all(d["volume_ratio"] < _QUIET_RATIO_MAX for d in window):
+            continue
+        today = daily_series[i]
+        if today["volume_ratio"] <= _BREAKOUT_RATIO_MIN:
+            continue
+        direction = "up" if today["price_change_pct"] >= 0 else "down"
+        signals.append({
+            "type": "contraction_breakout",
+            "breakout_date": today["date"],
+            "quiet_period_start": window[0]["date"],
+            "quiet_period_end": window[-1]["date"],
+            "quiet_days": _QUIET_DAYS,
+            "breakout_volume_ratio": today["volume_ratio"],
+            "breakout_price_change_pct": today["price_change_pct"],
+            "direction": direction,
+            "detail": (
+                f"{_QUIET_DAYS} quiet days (volume below {_QUIET_RATIO_MAX}x average, "
+                f"{window[0]['date']} to {window[-1]['date']}) followed by a "
+                f"{today['volume_ratio']}x volume breakout, price {direction} "
+                f"{abs(today['price_change_pct'])}% -- possible 量縮後放量突破"
+            ),
+        })
+    return signals
+
 
 def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int = 5):
     """
@@ -76,10 +137,10 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
     """
     ticker = (ticker or "").strip().upper()
     if not ticker:
-        return {"status": "error", "message": "代號格式無效，請重新輸入。", "ticker": ticker, "flagged": []}
+        return {"status": "error", "message": "代號格式無效，請重新輸入。", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     if fetch_ohlc_history is None:
-        return {"status": "error", "message": "市場數據服務暫時無法使用。", "ticker": ticker, "flagged": []}
+        return {"status": "error", "message": "市場數據服務暫時無法使用。", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     try:
         # 3mo gives enough trailing history to compute a real 20-day
@@ -88,16 +149,21 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
         # days, plus 20 more trading days of lookback before that).
         hist = fetch_ohlc_history(ticker, period="3mo")
     except Exception as e:
-        return {"status": "error", "message": f"攞唔到 {ticker} 嘅歷史數據: {e}", "ticker": ticker, "flagged": []}
+        return {"status": "error", "message": f"攞唔到 {ticker} 嘅歷史數據: {e}", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     if hist is None or hist.empty or len(hist) < 2:
-        return {"status": "error", "message": f"攞唔到 {ticker} 嘅歷史數據，請確認代號正確。", "ticker": ticker, "flagged": []}
+        return {"status": "error", "message": f"攞唔到 {ticker} 嘅歷史數據，請確認代號正確。", "ticker": ticker, "flagged": [], "contraction_breakouts": []}
 
     hist = hist.sort_index()
     cutoff = datetime.now() - timedelta(days=30)
 
     rows = list(hist.itertuples())
     flagged = []
+    # Every scanned day's volume_ratio/price_change_pct, oldest-first --
+    # feeds _detect_contraction_breakouts() below, which needs quiet days
+    # that never individually trip AnomalyEngine's thresholds (so never
+    # end up in `flagged`) to detect the multi-day transition.
+    daily_series = []
 
     for i, row in enumerate(rows):
         row_date = row.Index.to_pydatetime().replace(tzinfo=None)
@@ -127,6 +193,12 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
             average_volume=avg_volume,
             price_change_pct=price_change_pct,
         )
+        daily_series.append({
+            "date": row_date.strftime("%Y-%m-%d"),
+            "volume_ratio": result["volume_ratio"],
+            "price_change_pct": price_change_pct,
+        })
+
         if result["anomaly_count"] == 0:
             continue
 
@@ -140,6 +212,8 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
         })
 
     flagged.sort(key=lambda d: d["date"], reverse=True)
+    contraction_breakouts = _detect_contraction_breakouts(daily_series)
+    contraction_breakouts.sort(key=lambda s: s["breakout_date"], reverse=True)
 
     if attach_news and flagged:
         news_limit = min(max(max_news_days, 0), _MAX_NEWS_DAYS_HARD_CAP)
@@ -166,6 +240,12 @@ def scan_last_30_days(ticker: str, attach_news: bool = True, max_news_days: int 
         "ticker": ticker,
         "days_scanned": len([r for r in rows if r.Index.to_pydatetime().replace(tzinfo=None) >= cutoff]),
         "flagged": flagged,
+        # 2026-09-14 addition -- see _detect_contraction_breakouts() above.
+        # Separate top-level field rather than folded into `flagged`: a
+        # contraction-breakout is a property of a DATE RANGE (quiet_period
+        # + breakout day together), not a single day's anomaly reading, so
+        # it doesn't fit `flagged`'s one-day-per-entry shape.
+        "contraction_breakouts": contraction_breakouts,
         # 2026-08-10 (task #747-752, "所有卡片有資產的都加細K線小圖"): last
         # 20 closes for the shared js/sparkline.js mini-chart -- `hist` is
         # already sitting in memory from the fetch above, so this is a free
