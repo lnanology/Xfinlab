@@ -279,6 +279,7 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="opportunity-radar" data-i18n="ia_ep21_name">Opportunity Radar</option>
           <option value="consumer-safety" data-i18n="ia_ep22_name">Consumer Safety (openFDA)</option>
           <option value="product-recalls" data-i18n="ia_ep23_name">Product Recalls (CPSC)</option>
+          <option value="recall-search" data-i18n="ia_ep24_name">Recall Search by Brand/Product (CPSC)</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -854,6 +855,30 @@ details.schema-details[open] summary::after{content:" ▴"}
           <p class="schema-note" data-i18n="ia_schema_note_product_recalls">CPSC's own live backend has shown intermittent reliability issues -- surfaced honestly as fetch_error:true in the response body, never a fabricated zero-recalls reading. Returns data:null for any ticker without a real manufacturer linkage.</p>
         </details>
       </div>
+      <!-- 2026-09-14 (AJ: "開條賺錢新路" -- Recall Alert API for
+           e-commerce sellers): sibling of Product Recalls above, but
+           free-text keyword search instead of a pre-mapped public-
+           company ticker -- built for a seller checking their OWN brand,
+           not an investor checking a stock. Pairs with the recall_match
+           webhook event type below for ongoing monitoring instead of
+           polling this endpoint yourself. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/recall-search?keyword=</span>
+        <div class="ep-name" data-i18n="ia_ep24_name">Recall Search by Brand/Product (CPSC)</div>
+        <div class="ep-desc" data-i18n="ia_ep24_desc">Free-text CPSC recall search by brand or product name -- for e-commerce sellers checking their own product line, not restricted to Product Recalls' pre-mapped list of ~24 large public-company tickers. Combine with a Pro-tier recall_match webhook (below) to get notified the moment a new recall matches your keyword, instead of polling this endpoint yourself.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.keyword</code>, <code>data.attribution</code>, <code>data.lookback_days</code> <span class="schema-type">number</span>, <code>data.count</code> <span class="schema-type">number</span>, <code>data.fetch_error</code> <span class="schema-type">boolean</span></div>
+            <div class="schema-field"><code>data.recent</code> <span class="schema-type">array</span> -- <code>recall_id</code>, <code>recall_number</code>, <code>date</code>, <code>title</code>, <code>product_name</code>, <code>manufacturer</code>, <code>hazard</code>, <code>remedy</code>, <code>url</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_recall_search">Same live CPSC source as Product Recalls, same honesty posture -- fetch_error:true on a genuine upstream failure, never a fabricated zero-recalls reading. An empty keyword returns count:0 rather than an error.</p>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -1233,6 +1258,15 @@ const TRY_ENDPOINTS = {
   // ticker, same shape as real-estate/supply-chain/consumer-demand above.
   'consumer-safety':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/consumer-safety/' + encodeURIComponent(tk); } },
   'product-recalls':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/product-recalls/' + encodeURIComponent(tk); } },
+  // 2026-09-14 (Recall Alert API for e-commerce sellers): reuses the same
+  // #tryTicker input box as every ticker-based endpoint above (needsTicker:
+  // true) even though this one actually takes a free-text brand/product
+  // keyword, not a stock ticker -- runTryIt() force-uppercases that field's
+  // value before building the path, which is harmless here (CPSC's own
+  // Manufacturer= match is case-insensitive) but the "ticker symbol" label
+  // is a minor UX rough edge worth a dedicated input/label in a follow-up
+  // pass, not a functional bug.
+  'recall-search':     { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/recall-search?keyword=' + encodeURIComponent(tk); } },
 };
 
 function tryUpdateFields() {

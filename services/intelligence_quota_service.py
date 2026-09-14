@@ -196,6 +196,11 @@ ENDPOINT_WEIGHT = {
     # cheap single-series FRED lookups, reflecting the real fan-out.
     "consumer_safety": 3,
     "product_recalls": 2,
+    # 2026-09-14 (Recall Alert API for e-commerce sellers): same live
+    # CPSC search call as product_recalls above, just keyed by a
+    # free-text keyword instead of a pre-mapped ticker -- same real cost,
+    # same weight.
+    "recall_search": 2,
 }
 
 

@@ -269,6 +269,7 @@ def intelligence_status():
         "consumer_safety": True,  # never 503s -- openFDA needs no key at all, returns data: null for a ticker with no keyword mapping
         "product_recalls": True,  # never 503s -- CPSC needs no key, returns data: null for no mapping (fetch_error:true in-body if CPSC's own backend is down)
         "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
+        "recall_search": True,  # never 503s -- same CPSC source as product_recalls, keyed by free-text keyword instead of ticker
     })
 
 
@@ -283,6 +284,13 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-09-14",
+        "changes": [
+            {"type": "added", "text": "GET /v1/recall-search?keyword= -- free-text CPSC consumer-product recall search by brand/product name, NOT restricted to the pre-mapped public-company tickers /v1/product-recalls covers. Built for e-commerce sellers checking their own brand/product line, not investors checking a stock."},
+            {"type": "added", "text": "Webhooks: recall_match event type -- fires when a NEW CPSC recall matches a watched brand/product keyword (subscribe with event_type=\"recall_match\" and ticker=\"<your keyword>\"). Pro-tier, same delivery mechanics as the other event types."},
+        ],
+    },
     {
         "date": "2026-08-31",
         "changes": [
@@ -1532,18 +1540,50 @@ def intelligence_product_recalls(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+@router.get("/intelligence/v1/recall-search")
+def intelligence_recall_search(
+    response: Response,
+    keyword: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """2026-09-14 (AJ: "開條賺錢新路" -- Recall Alert API for e-commerce
+    sellers): free-text CPSC consumer-product recall search by brand or
+    product name (services/cpsc_service.py's search_recalls_by_keyword())
+    -- the sibling /v1/product-recalls/{ticker} above only answers "does
+    this PUBLIC COMPANY have recalls", keyed off a small pre-mapped list
+    of ~24 large tickers; an Amazon/Shopify seller's own brand is almost
+    never one of those, so this takes any free-text keyword instead. Same
+    live CPSC source, same honesty posture (fetch_error:true in-body on a
+    genuine upstream failure, never a fabricated zero-recalls reading)."""
+    auth = _require_api_key(x_api_key)
+    keyword = (keyword or "").strip()
+    if not keyword:
+        return _envelope(data=None, error="keyword query param is required")
+    _check_and_spend_quota(x_api_key, auth["tier"], "recall_search", response, ticker=keyword.upper())
+
+    from services.cpsc_service import search_recalls_by_keyword
+
+    result = search_recalls_by_keyword(keyword)
+    return _envelope(data=result, meta={"keyword": keyword})
+
+
 @router.post("/intelligence/v1/webhooks/subscribe")
 def intelligence_webhooks_subscribe(
     body: WebhookSubscribeRequest,
     x_api_key: str = Header(None, alias="X-API-Key"),
 ):
     """Pro-tier feature (2026-08-28, AJ: "重有咩賺錢位" -> Webhook Pro專屬):
-    push notifications instead of polling, for 2 real Data Factory
+    push notifications instead of polling, for real Data Factory
     events -- see services/webhook_service.py's VALID_EVENT_TYPES for
-    the exact list and why these two were chosen (both already backed by
-    a daily scheduled job, so this promises honest same-cadence delivery,
-    never a fabricated "real-time" claim). Does NOT spend quota -- this
-    is a management action, not a data read."""
+    the exact list. Most are backed by a daily scheduled job that already
+    ran for another reason (honest same-cadence delivery, never a
+    fabricated "real-time" claim); recall_match (2026-09-14) is the first
+    exception -- see backend/main.py's recall_alert_scan job, added
+    specifically to back this event type. To watch a brand/product
+    keyword for new recalls: event_type="recall_match", ticker="<your
+    keyword>" (the `ticker` field doubles as the free-text keyword here --
+    see that event type's comment in webhook_service.py). Does NOT spend
+    quota -- this is a management action, not a data read."""
     auth = _require_api_key(x_api_key)
     if auth["tier"] == "free":
         raise HTTPException(status_code=403, detail="Webhooks are a Pro-tier feature. Upgrade at https://www.xfinlab.com/pricing.html")
@@ -1623,6 +1663,7 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/opportunity-radar",
     "/intelligence/v1/consumer-safety/{ticker}",
     "/intelligence/v1/product-recalls/{ticker}",
+    "/intelligence/v1/recall-search",
     "/intelligence/v1/webhooks/subscribe",
     "/intelligence/v1/webhooks",
     "/intelligence/v1/webhooks/{webhook_id}",
