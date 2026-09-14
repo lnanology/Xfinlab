@@ -16,10 +16,21 @@ from services.backtest_service import BacktestService
 from services.formula_composer_service import get_leaderboard, run_scan
 from services.regime_router_service import get_best_for_regime, get_current_regime, run_regime_scan
 from services.track_record_service import get_track_record
+from services.i18n import localized_text
 
 router = APIRouter()
 
 _SYMBOL_RE = re.compile(r"^[A-Za-z0-9.\-=^]{1,15}$")
+
+# 2026-09-14 fix (site-wide lang-leak audit): every ticker-format rejection
+# below used to be a hardcoded Chinese literal, on 6 of this file's 9
+# endpoints -- the other 3 (regime_router_current/best-for-regime, fixed
+# 2026-08-31) already accept `lang`. Reuses api/anomaly.py's
+# anom_ticker_format_error key (already translated across all 47
+# languages) for the same underlying message, via services/i18n.py's
+# shared localized_text() helper.
+def _invalid_ticker(lang: str = None):
+    return {"status": "error", "message": localized_text("anom_ticker_format_error", lang)}
 
 
 @router.get("/track-record")
@@ -35,9 +46,9 @@ def track_record():
 
 
 @router.get("/backtest/{ticker}")
-def backtest_ticker(ticker: str, strategy: str = "confluence_trend", period: str = "2y"):
+def backtest_ticker(ticker: str, strategy: str = "confluence_trend", period: str = "2y", lang: str = None):
     if not _SYMBOL_RE.match(ticker):
-        return {"status": "error", "message": "無效嘅代號格式"}
+        return _invalid_ticker(lang)
     result = BacktestService.run(ticker, strategy=strategy, period=period)
     if "error" in result:
         return {"status": "error", "message": result["error"]}
@@ -45,9 +56,9 @@ def backtest_ticker(ticker: str, strategy: str = "confluence_trend", period: str
 
 
 @router.get("/backtest/{ticker}/compare")
-def backtest_compare(ticker: str, period: str = "2y"):
+def backtest_compare(ticker: str, period: str = "2y", lang: str = None):
     if not _SYMBOL_RE.match(ticker):
-        return {"status": "error", "message": "無效嘅代號格式"}
+        return _invalid_ticker(lang)
     result = BacktestService.compare(ticker, period=period)
     if "error" in result:
         return {"status": "error", "message": result["error"]}
@@ -56,14 +67,14 @@ def backtest_compare(ticker: str, period: str = "2y"):
 
 @router.get("/backtest/{ticker}/walk-forward")
 def backtest_walk_forward(ticker: str, strategy: str = "confluence_trend",
-                           period: str = "2y", n_folds: int = 4):
+                           period: str = "2y", n_folds: int = 4, lang: str = None):
     """2026-08-10 (P0 of the Quant Research Factory roadmap) -- out-of-
     sample validation, see services/backtest_service.py's
     run_walk_forward() docstring for the full methodology (N chronological
     folds + a 70/30 in-sample/out-of-sample split + a heuristic
     overfitting-risk flag)."""
     if not _SYMBOL_RE.match(ticker):
-        return {"status": "error", "message": "無效嘅代號格式"}
+        return _invalid_ticker(lang)
     n_folds = max(2, min(12, n_folds))  # sane bounds -- too many folds on 2y of daily bars leaves each fold with almost no trades
     result = BacktestService.run_walk_forward(ticker, strategy=strategy, period=period, n_folds=n_folds)
     if "error" in result:
@@ -73,7 +84,7 @@ def backtest_walk_forward(ticker: str, strategy: str = "confluence_trend",
 
 @router.get("/formula-composer/{ticker}/scan")
 def formula_composer_scan(ticker: str, period: str = "2y", n_folds: int = 4,
-                           min_oos_trades: int = 5, top_n: int = 5):
+                           min_oos_trades: int = 5, top_n: int = 5, lang: str = None):
     """2026-08-10 (P2 of the Quant Research Factory roadmap) -- runs
     services/formula_composer_service.py's small-scale combinatorial
     strategy scan (35 candidate combinations of 6 existing causal
@@ -82,7 +93,7 @@ def formula_composer_scan(ticker: str, period: str = "2y", n_folds: int = 4,
     docstring for the full methodology and why this stays deliberately
     small rather than an exhaustive/genetic search."""
     if not _SYMBOL_RE.match(ticker):
-        return {"status": "error", "message": "無效嘅代號格式"}
+        return _invalid_ticker(lang)
     n_folds = max(2, min(12, n_folds))
     top_n = max(1, min(20, top_n))
     min_oos_trades = max(1, min(50, min_oos_trades))
@@ -93,14 +104,14 @@ def formula_composer_scan(ticker: str, period: str = "2y", n_folds: int = 4,
 
 
 @router.get("/formula-composer/leaderboard")
-def formula_composer_leaderboard(symbol: str = None, limit: int = 20):
+def formula_composer_leaderboard(symbol: str = None, limit: int = 20, lang: str = None):
     """Reads the persisted formula_composer_candidates leaderboard --
     either one symbol's full last-scan table (best first) or, without a
     symbol, the most recently scanned rows across all symbols. Read-only,
     never triggers a fresh scan (use the /scan endpoint above for that)."""
     limit = max(1, min(100, limit))
     if symbol is not None and not _SYMBOL_RE.match(symbol):
-        return {"status": "error", "message": "無效嘅代號格式"}
+        return _invalid_ticker(lang)
     rows = get_leaderboard(symbol=symbol, limit=limit)
     return {"status": "ok", "data": rows}
 
@@ -124,14 +135,14 @@ def regime_router_current(ticker: str, lang: str = None):
 
 
 @router.get("/regime-router/{ticker}/scan")
-def regime_router_scan(ticker: str, period: str = "2y"):
+def regime_router_scan(ticker: str, period: str = "2y", lang: str = None):
     """Runs services/regime_router_service.py's regime-conditional scan:
     simulates all 35 formula_composer_service candidates over `ticker`'s
     full history, buckets each trade by the causal regime active at its
     entry bar, and persists per-(candidate, regime) stats. Call this once
     per symbol before using /best-for-regime below."""
     if not _SYMBOL_RE.match(ticker):
-        return {"status": "error", "message": "無效嘅代號格式"}
+        return _invalid_ticker(lang)
     result = run_regime_scan(ticker, period=period)
     if "error" in result:
         return {"status": "error", "message": result["error"]}

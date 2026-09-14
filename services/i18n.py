@@ -1203,6 +1203,22 @@ TRANSLATIONS = {
         "anom_direction_down": "down",
         "chat_empty_query": "Please enter a question",
         "chat_service_unavailable": "AI service is temporarily unavailable, please try again later.",
+        "anom_history_service_unavailable": "Market data service is temporarily unavailable.",
+        "anom_history_fetch_error": "Couldn't get historical data for {ticker}: {error}",
+        "anom_history_no_data_error": "Couldn't get historical data for {ticker}. Please confirm the ticker is correct.",
+        "anom_market_close_label": "Market Close",
+        "chart_no_data_error": "Couldn't get data for {ticker}",
+        "chart_no_data_multi_tf_error": "Couldn't get multi-timeframe data for {ticker}",
+        "chart_ai_commentary_failed_error": "AI commentary generation failed, please try again: {error}",
+        "screener_service_unavailable": "Screener service is temporarily unavailable, please try again later.",
+        "compare_empty_symbols_error": "Please enter company tickers",
+        "compare_service_unavailable": "Comparison analysis service is temporarily unavailable, please try again later.",
+        "news_denoise_service_unavailable": "News analysis service is temporarily unavailable, please try again later.",
+        "feedback_thanks_message": "Thanks for your feedback! We'll get back to you soon.",
+        "demo_trial_expired_error": "Your free trial window has ended. Please log in to continue.",
+        "demo_ticker_not_found_error": "Couldn't find that ticker",
+        "onboarding_bonus_message": "🎉 Onboarding complete! Bonus: +3 extra analyses!",
+        "smart_route_empty_query_error": "Please enter the asset or question you're looking for",
         "anom_history_checking": "Checking 30-day historical data...",
         "anom_history_error": "Unable to retrieve historical data right now",
         "ca_backtest_title": "Strategy Historical Backtest (optional)",
@@ -22827,6 +22843,22 @@ TRANSLATIONS = {
         "anom_direction_down": "下跌",
         "chat_empty_query": "請輸入問題",
         "chat_service_unavailable": "AI 服務暫時無法使用，請稍後再試。",
+        "anom_history_service_unavailable": "市場數據服務暫時無法使用。",
+        "anom_history_fetch_error": "無法取得 {ticker} 的歷史數據：{error}",
+        "anom_history_no_data_error": "無法取得 {ticker} 的歷史數據，請確認代號正確。",
+        "anom_market_close_label": "收市 (Market Close)",
+        "chart_no_data_error": "無法取得 {ticker} 的數據",
+        "chart_no_data_multi_tf_error": "無法取得 {ticker} 的多時間框架數據",
+        "chart_ai_commentary_failed_error": "AI 解讀生成失敗，請重試：{error}",
+        "screener_service_unavailable": "篩選服務暫時無法使用，請稍後再試。",
+        "compare_empty_symbols_error": "請輸入公司代號",
+        "compare_service_unavailable": "比較分析服務暫時無法使用，請稍後再試。",
+        "news_denoise_service_unavailable": "新聞分析服務暫時無法使用，請稍後再試。",
+        "feedback_thanks_message": "感謝你的反饋！我們會盡快回覆。",
+        "demo_trial_expired_error": "你的免費體驗時段已經結束，請登入繼續使用。",
+        "demo_ticker_not_found_error": "查不到這隻股票",
+        "onboarding_bonus_message": "🎉 Onboarding 完成！獲得額外 3 次分析獎勵！",
+        "smart_route_empty_query_error": "請輸入你想搜尋的資產或問題",
         "anom_history_checking": "正在查詢過去30天數據...",
         "anom_history_error": "暫時無法取得歷史數據",
         "ca_backtest_title": "策略歷史回測（選填）",
@@ -24640,6 +24672,22 @@ TRANSLATIONS = {
         "anom_direction_down": "下跌",
         "chat_empty_query": "請輸入問題",
         "chat_service_unavailable": "AI 服務暫時不可用，請稍後再試。",
+        "anom_history_service_unavailable": "市場數據服務暫時無法使用。",
+        "anom_history_fetch_error": "攞唔到 {ticker} 嘅歷史數據：{error}",
+        "anom_history_no_data_error": "攞唔到 {ticker} 嘅歷史數據，請確認代號正確。",
+        "anom_market_close_label": "收市 (Market Close)",
+        "chart_no_data_error": "攞唔到 {ticker} 嘅數據",
+        "chart_no_data_multi_tf_error": "攞唔到 {ticker} 嘅多時間框架數據",
+        "chart_ai_commentary_failed_error": "AI解讀生成失敗，請重試：{error}",
+        "screener_service_unavailable": "篩選服務暫時不可用，請稍後再試。",
+        "compare_empty_symbols_error": "請輸入公司代號",
+        "compare_service_unavailable": "比較分析服務暫時不可用，請稍後再試。",
+        "news_denoise_service_unavailable": "新聞分析服務暫時不可用，請稍後再試。",
+        "feedback_thanks_message": "感謝你的反饋！我們會盡快回覆。",
+        "demo_trial_expired_error": "你嘅免費體驗時段已經完結，請登入繼續使用。",
+        "demo_ticker_not_found_error": "查唔到呢隻股票",
+        "onboarding_bonus_message": "🎉 Onboarding 完成！獲得額外 3 次分析獎勵！",
+        "smart_route_empty_query_error": "請輸入你想搵嘅資產或問題",
         "anom_history_checking": "搵緊過去30日數據...",
         "anom_history_error": "暫時攞唔到歷史數據",
         "ca_backtest_title": "策略歷史回測（選填）",
@@ -26453,6 +26501,22 @@ TRANSLATIONS = {
         "anom_direction_down": "下跌",
         "chat_empty_query": "请输入问题",
         "chat_service_unavailable": "AI 服务暂时不可用，请稍后再试。",
+        "anom_history_service_unavailable": "市场数据服务暂时无法使用。",
+        "anom_history_fetch_error": "无法获取 {ticker} 的历史数据：{error}",
+        "anom_history_no_data_error": "无法获取 {ticker} 的历史数据，请确认代码正确。",
+        "anom_market_close_label": "收盘 (Market Close)",
+        "chart_no_data_error": "无法获取 {ticker} 的数据",
+        "chart_no_data_multi_tf_error": "无法获取 {ticker} 的多时间框架数据",
+        "chart_ai_commentary_failed_error": "AI 解读生成失败，请重试：{error}",
+        "screener_service_unavailable": "筛选服务暂时不可用，请稍后再试。",
+        "compare_empty_symbols_error": "请输入公司代码",
+        "compare_service_unavailable": "比较分析服务暂时不可用，请稍后再试。",
+        "news_denoise_service_unavailable": "新闻分析服务暂时不可用，请稍后再试。",
+        "feedback_thanks_message": "感谢你的反馈！我们会尽快回复。",
+        "demo_trial_expired_error": "你的免费体验时段已经结束，请登录继续使用。",
+        "demo_ticker_not_found_error": "查不到这只股票",
+        "onboarding_bonus_message": "🎉 Onboarding 完成！获得额外 3 次分析奖励！",
+        "smart_route_empty_query_error": "请输入你想搜索的资产或问题",
         "anom_history_checking": "正在查询过去30天数据...",
         "anom_history_error": "暂时无法获取历史数据",
         "ca_backtest_title": "策略历史回测（选填）",
@@ -84742,6 +84806,27 @@ def get_translations(lang: str) -> dict:
 
 def detect_language_from_country(country_code: str) -> str:
     return COUNTRY_LANGUAGE_MAP.get(country_code, "en")
+
+
+# 2026-09-14 addition (AJ, site-wide audit: "全網不同功能不同頁不同方面重有咩
+# 係寫死，完全冇理會前端已經傳緊嘅野" -- following the api/chat.py fix for the
+# same bug in the same session): shared fallback-chain helper for hardcoded
+# response-text literals that ignore `lang`. Many of the newer i18n keys
+# fixed by this audit only exist in 4 of the 47 TRANSLATIONS dicts (en/
+# zh-TW/zh-HK/zh-CN, matching this session's convention for NEW keys) --
+# get_translations(lang) still returns the REAL dict for any other valid
+# lang code (e.g. "fr"), it only falls back to English when the lang code
+# itself is unrecognized. So a naive `.get(key) or "<Chinese literal>"`
+# fallback (the older pattern used by api/anomaly.py's anom_ticker_format_
+# error, safe only because that key already has all-47-language coverage)
+# would still leak Chinese to every OTHER language lacking these new keys.
+# This always falls back to English instead, and to zh-HK (the site's
+# original/base language, matching every hardcoded string this is
+# replacing) when `lang` itself is unset/falsy -- i.e. zero behavior change
+# for any existing caller that doesn't pass `lang` yet.
+def localized_text(key: str, lang: str) -> str:
+    tr = get_translations(lang) if lang else TRANSLATIONS["zh-HK"]
+    return tr.get(key) or TRANSLATIONS["en"][key]
 
 
 # 2026-07-19 fix: every LLM-backed endpoint (chat, company-compare,

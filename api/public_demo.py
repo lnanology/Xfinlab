@@ -36,6 +36,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from services.technical_analysis_service import get_technical_analysis
 from services.request_ip import get_client_ip
+from services.i18n import localized_text
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
@@ -78,7 +79,7 @@ init_demo_usage_table()
 
 
 @router.get("/demo/analyze/{ticker}")
-def demo_analyze(ticker: str, request: Request):
+def demo_analyze(ticker: str, request: Request, lang: str = None):
     # Was request.client.host directly -- on Railway that's the edge
     # proxy's address for every visitor, not the real caller's IP,
     # which would make the "1 free-trial window per IP" policy below
@@ -99,7 +100,7 @@ def demo_analyze(ticker: str, request: Request):
             conn.close()
             raise HTTPException(
                 status_code=429,
-                detail="你嘅免費體驗時段已經完結，請登入繼續使用。",
+                detail=localized_text("demo_trial_expired_error", lang),
             )
         # Still inside the one-time window -- unlimited queries allowed,
         # don't touch window_started_at (it must not extend the window).
@@ -112,10 +113,11 @@ def demo_analyze(ticker: str, request: Request):
         )
         conn.commit()
 
-    tech = get_technical_analysis(ticker)
+    tech = get_technical_analysis(ticker, lang=lang)
     if not tech or "error" in tech:
         conn.close()
-        raise HTTPException(status_code=404, detail=tech.get("error", "查唔到呢隻股票") if tech else "查唔到呢隻股票")
+        fallback = localized_text("demo_ticker_not_found_error", lang)
+        raise HTTPException(status_code=404, detail=tech.get("error", fallback) if tech else fallback)
 
     conn.close()
 

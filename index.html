@@ -2162,7 +2162,10 @@ async function runDemo() {
   errorBox.style.display = 'none';
 
   try {
-    const res = await fetch(`${API}/demo/analyze/${encodeURIComponent(ticker)}`);
+    // 2026-09-14 fix (site-wide lang-leak audit): this endpoint's 404/429
+    // messages used to be hardcoded Chinese regardless of UI language.
+    const _demoLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const res = await fetch(`${API}/demo/analyze/${encodeURIComponent(ticker)}` + (_demoLang ? `?lang=${encodeURIComponent(_demoLang)}` : ''));
     if (res.status === 429) {
       // 免費體驗時段完結 -- 直接去登入頁，唔再喺呢度顯示錯誤文字
       window.location.href = 'login.html';
@@ -2244,7 +2247,7 @@ async function submitFeedback() {
     const res = await fetch('https://api.xfinlab.com/api/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ type, message, email: email || null, token })
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
     });
     const data = await res.json();
     status.textContent = '✅ ' + data.message;

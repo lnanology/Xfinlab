@@ -132,7 +132,7 @@ def anomaly_search(ticker: str, lang: str = None):
 
 
 @router.get("/anomaly/history/{ticker}")
-def anomaly_history(ticker: str):
+def anomaly_history(ticker: str, lang: str = None):
     """
     Past 30 days of volume/price anomalies for a single ticker, with
     related news attached to each flagged day -- powers the "過去30日
@@ -142,10 +142,21 @@ def anomaly_history(ticker: str):
     batch watchlist scan (GET /anomaly above) would multiply the yfinance
     + NewsAPI workload by the watchlist size, and was intentionally left
     out of scope for this feature.
+
+    2026-09-14 fix (site-wide "hardcoded string ignores lang" audit): this
+    sibling of anomaly_search() above never accepted `lang` at all, even
+    though anomaly.html already sends I18N.currentLang to every OTHER
+    endpoint on this page. Reuses anomaly_search()'s already-all-47-
+    language `anom_ticker_format_error` key for the exact same message
+    (just phrased slightly differently in the original Chinese literal),
+    and threads `lang` into scan_last_30_days() for its own error/label
+    strings below.
     """
     require_feature_enabled("anomaly")
     ticker = (ticker or "").strip().upper()
     if not ticker or not _SYMBOL_RE.match(ticker):
-        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+        tr = get_translations(lang) if lang and lang not in ("zh-HK", "zh-TW") else None
+        msg = (tr or {}).get("anom_ticker_format_error") or "代號格式無效，請重新輸入。"
+        return {"status": "error", "message": msg}
 
-    return scan_last_30_days(ticker)
+    return scan_last_30_days(ticker, lang=lang)

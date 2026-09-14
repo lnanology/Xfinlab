@@ -3,6 +3,7 @@ import os
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import Optional
+from services.i18n import localized_text
 
 router = APIRouter()
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
@@ -38,6 +39,11 @@ class FeedbackRequest(BaseModel):
     message: str
     email: Optional[str] = None
     token: Optional[str] = None
+    # 2026-09-14 fix (site-wide lang-leak audit): the confirmation message
+    # below was hardcoded Chinese regardless of UI language -- every other
+    # page-level form on the site already sends `lang`, this widget just
+    # never had a place to put it.
+    lang: Optional[str] = None
 
 
 @router.post("/feedback")
@@ -73,7 +79,7 @@ async def submit_feedback(body: FeedbackRequest):
     except Exception:
         pass
 
-    return {"status": "ok", "message": "感謝你的反饋！我們會盡快回覆。"}
+    return {"status": "ok", "message": localized_text("feedback_thanks_message", body.lang)}
 
 
 @router.get("/feedback/list")

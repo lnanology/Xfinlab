@@ -1338,7 +1338,12 @@ async function requestBacktestCompare(){
   btn.disabled = true;
   btn.textContent = t('ca_backtest_loading','回測緊...');
   try {
-    const response = await fetch(`${API}/backtest/${encodeURIComponent(currentSearchSymbol)}/compare`);
+    // 2026-09-14 fix (site-wide lang-leak audit): sibling regime-router
+    // call below already sends lang -- this one never did, so an invalid-
+    // ticker rejection here always came back Chinese regardless of UI
+    // language.
+    const _btLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/backtest/${encodeURIComponent(currentSearchSymbol)}/compare${_btLang ? '?lang=' + encodeURIComponent(_btLang) : ''}`);
     const json = await response.json();
     if(json.status !== 'ok'){
       throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
@@ -1562,7 +1567,7 @@ async function submitFeedback() {
     const res = await fetch('https://api.xfinlab.com/api/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ type, message, email: email || null, token })
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
     });
     const data = await res.json();
     status.textContent = '✅ ' + data.message;

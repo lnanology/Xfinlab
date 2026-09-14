@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 from ai.ai_router import get_ai_response
-from services.i18n import ai_language_instruction
+from services.i18n import ai_language_instruction, localized_text
 from services.rate_limiter import limiter
 
 router = APIRouter()
@@ -44,10 +44,11 @@ async def news_denoise(request: Request, body: dict):
             }
         }
     except Exception:
+        msg = localized_text("news_denoise_service_unavailable", lang)
         return {
             "status": "ok",
             "data": {
-                "analysis": "新聞分析服務暫時不可用，請稍後再試。",
-                "conclusion": "新聞分析服務暫時不可用，請稍後再試。"
+                "analysis": msg,
+                "conclusion": msg
             }
         }

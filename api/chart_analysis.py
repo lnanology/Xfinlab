@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from ai.ai_router import get_ai_response
 from services.technical_analysis_service import get_technical_analysis, get_multi_timeframe_analysis
-from services.i18n import ai_language_instruction
+from services.i18n import ai_language_instruction, localized_text
 from services.feature_flags_service import require_feature_enabled
 
 router = APIRouter()
@@ -94,7 +94,7 @@ def chart_search(symbol: str, period: str = "6mo", interval: str = "1d", lang: s
     require_feature_enabled("chart_analysis")
     symbol = (symbol or "").strip().upper()
     if not symbol or not _SYMBOL_RE.match(symbol):
-        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+        return {"status": "error", "message": localized_text("anom_ticker_format_error", lang)}
 
     # 2026-07-25 fix (task #409): cache key includes lang so an English
     # request never serves back a Chinese-cached response (or vice versa)
@@ -108,7 +108,12 @@ def chart_search(symbol: str, period: str = "6mo", interval: str = "1d", lang: s
 
     tech = get_technical_analysis(symbol, period, interval, lang=lang)
     if not tech or "error" in tech:
-        return {"status": "error", "message": (tech or {}).get("error") or f"攞唔到 {symbol} 嘅數據"}
+        # 2026-09-14 fix (lang-leak audit): the fallback message below (used
+        # whenever tech itself has no "error" text of its own) used to be a
+        # hardcoded Chinese literal despite `lang` being in scope and
+        # already forwarded to get_technical_analysis() above.
+        fallback = localized_text("chart_no_data_error", lang).replace("{ticker}", symbol)
+        return {"status": "error", "message": (tech or {}).get("error") or fallback}
 
     _ttl_cache_set(_CHART_SEARCH_CACHE, cache_key, tech, _CHART_SEARCH_CACHE_MAX_ENTRIES)
     return {"status": "ok", "data": {**tech, "cached": False}}
@@ -143,7 +148,7 @@ def chart_search_commentary(
     require_feature_enabled("chart_analysis")
     symbol = (symbol or "").strip().upper()
     if not symbol or not _SYMBOL_RE.match(symbol):
-        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+        return {"status": "error", "message": localized_text("anom_ticker_format_error", lang)}
 
     cache_key = f"{symbol}|{period}|{interval}|{lang or ''}"
     cached = _ttl_cache_get(_COMMENTARY_CACHE, cache_key, _COMMENTARY_CACHE_TTL_SECONDS)
@@ -152,7 +157,8 @@ def chart_search_commentary(
 
     tech = get_technical_analysis(symbol, period, interval)
     if not tech or "error" in tech:
-        return {"status": "error", "message": (tech or {}).get("error") or f"攞唔到 {symbol} 嘅數據"}
+        fallback = localized_text("chart_no_data_error", lang).replace("{ticker}", symbol)
+        return {"status": "error", "message": (tech or {}).get("error") or fallback}
 
     c = tech["confluence"]
     prompt = (
@@ -180,7 +186,8 @@ def chart_search_commentary(
         commentary = get_ai_response(prompt, max_tokens=400).strip()
         record_ai_token_usage(user_id)
     except Exception as e:
-        return {"status": "error", "message": f"AI解讀生成失敗，請重試：{str(e)}"}
+        msg = localized_text("chart_ai_commentary_failed_error", lang).replace("{error}", str(e))
+        return {"status": "error", "message": msg}
 
     _ttl_cache_set(_COMMENTARY_CACHE, cache_key, commentary, _COMMENTARY_CACHE_MAX_ENTRIES)
     return {"status": "ok", "data": {"commentary": commentary, "cached": False}}
@@ -206,7 +213,7 @@ def chart_search_multi_timeframe(symbol: str, lang: str = None):
     require_feature_enabled("chart_analysis")
     symbol = (symbol or "").strip().upper()
     if not symbol or not _SYMBOL_RE.match(symbol):
-        return {"status": "error", "message": "代號格式無效，請重新輸入。"}
+        return {"status": "error", "message": localized_text("anom_ticker_format_error", lang)}
 
     cache_key = f"{symbol}|{lang or ''}"
     cached = _ttl_cache_get(_MTF_CACHE, cache_key, _MTF_CACHE_TTL_SECONDS)
@@ -215,7 +222,8 @@ def chart_search_multi_timeframe(symbol: str, lang: str = None):
 
     result = get_multi_timeframe_analysis(symbol, lang=lang)
     if not result:
-        return {"status": "error", "message": f"攞唔到 {symbol} 嘅多時間框架數據"}
+        msg = localized_text("chart_no_data_multi_tf_error", lang).replace("{ticker}", symbol)
+        return {"status": "error", "message": msg}
 
     _ttl_cache_set(_MTF_CACHE, symbol, result, _MTF_CACHE_MAX_ENTRIES)
     return {"status": "ok", "data": {**result, "cached": False}}

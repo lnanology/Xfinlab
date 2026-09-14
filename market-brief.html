@@ -182,6 +182,50 @@ function toggleNav(){
 const DIR_CLASS = { '偏多': 'dir-up', '偏空': 'dir-down' };
 function dirClass(dir) { return DIR_CLASS[dir] || 'dir-neutral'; }
 
+// 2026-09-14 fix (site-wide lang-leak audit): api/market_pulse.py's
+// /free-signals endpoint deliberately takes no `lang` param and always
+// returns raw Chinese label/asset_class_label/confluence_direction strings
+// (same NOTE as api/market_pulse.py's _PULSE_LABELS comment explains for
+// the sibling /market-pulse endpoint) -- the established site-wide pattern
+// for this exact data is index.html's PULSE_LABEL_KEYS/trPulseLabel(),
+// TOPOPP_CLASS_KEYS and DIRECTION_KEYS/trDirection(), which already map
+// every label string market_pulse.py's _TICKER_LABELS/_ASSET_CLASS_LABELS
+// dicts can produce to an i18n key translated across all 47 languages.
+// This page was the one place still rendering `.label`/`.asset_class_label`/
+// `.confluence_direction` raw instead of through that existing mapping --
+// reusing the SAME keys (not inventing a second translation table) so this
+// stays in sync with index.html's Top Opportunity section, which sources
+// its labels from the identical _TICKER_LABELS dict.
+const PULSE_LABEL_KEYS = {
+  '美股大盤':'pulse1','科技股':'pulse2','道瓊工業':'pulse3','小型股':'pulse4',
+  '科技板塊':'pulse5','金融板塊':'pulse6','能源板塊':'pulse7','加密貨幣':'pulse8',
+  '標普500':'tl_spy500','納指100':'tl_qqq100','羅素2000小型股':'tl_iwm_smallcap',
+  '標普500期貨':'tl_es_futures','原油期貨':'tl_cl_futures','黃金期貨':'tl_gc_futures',
+  '比特幣':'tl_btc','以太幣':'tl_eth',
+  'Schwab美股高股息ETF':'tl_schd','Vanguard高股息ETF':'tl_vym','JPMorgan股息收益ETF':'tl_jepi',
+  '埃克森美孚':'tl_xom','強生':'tl_jnj','可口可樂':'tl_ko','輝瑞':'tl_pfe','奧馳亞':'tl_mo',
+};
+function trPulseLabel(label) {
+  const key = PULSE_LABEL_KEYS[label];
+  if (key && typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) return I18N.translations[key];
+  return label;
+}
+const TOPOPP_CLASS_KEYS = {'stock': 'topopp_class_stock', 'futures': 'topopp_class_futures', 'crypto': 'topopp_class_crypto'};
+function trAssetClassLabel(assetClass, fallbackLabel) {
+  const key = TOPOPP_CLASS_KEYS[assetClass];
+  return key ? t(key, fallbackLabel) : fallbackLabel;
+}
+const DIRECTION_KEYS = {
+  '偏多': 'idx_dir_bull',
+  '偏空': 'idx_dir_bear',
+  '訊號分歧，中性': 'idx_dir_neutral',
+  '數據不足': 'idx_dir_insufficient',
+};
+function trDirection(raw) {
+  const key = DIRECTION_KEYS[raw];
+  return key ? t(key, raw) : raw;
+}
+
 async function loadFreeSignals() {
   const listEl = document.getElementById('signalsList');
   const dateEl = document.getElementById('signalsDate');
@@ -205,11 +249,11 @@ async function loadFreeSignals() {
       <div class="signal-item">
         <div class="signal-rank">#${s.rank}</div>
         <div class="signal-main">
-          <span class="signal-ticker">${s.ticker}</span><span class="signal-class">${s.asset_class_label}</span>
-          <div class="signal-name">${s.label}</div>
+          <span class="signal-ticker">${s.ticker}</span><span class="signal-class">${trAssetClassLabel(s.asset_class, s.asset_class_label)}</span>
+          <div class="signal-name">${trPulseLabel(s.label)}</div>
         </div>
         <div class="signal-stats">
-          <div class="signal-direction ${dirClass(s.confluence_direction)}">${s.confluence_direction || '-'}</div>
+          <div class="signal-direction ${dirClass(s.confluence_direction)}">${trDirection(s.confluence_direction) || '-'}</div>
           <div class="signal-confidence">${t('freesig_confidence_label','信心度')} ${s.confluence_confidence_pct != null ? Math.round(s.confluence_confidence_pct) + '%' : '-'}</div>
           <div class="signal-price">${s.price != null ? '$' + Number(s.price).toFixed(2) : ''}</div>
         </div>
@@ -364,7 +408,7 @@ async function submitFeedback() {
     const res = await fetch('https://api.xfinlab.com/api/feedback', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ type, message, email: email || null, token })
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
     });
     const data = await res.json();
     status.textContent = '✅ ' + data.message;
