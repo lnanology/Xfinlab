@@ -257,8 +257,47 @@ function renderAnomalyResult(ticker, result) {
     </div>${sparkHtml ? `<div style="max-width:180px;margin-bottom:10px">${sparkHtml}</div>` : ''}${items}`;
 }
 
+function renderContractionBreakouts(data) {
+  // 2026-09-14 addition (AJ: "量縮至量放，怎表達？"): services/anomaly_
+  // history_service.py's contraction_breakouts is a separate top-level
+  // field (not part of `flagged`, since a breakout signal spans a DATE
+  // RANGE -- the quiet period plus the breakout day -- not one day's
+  // reading). Rendered as its own small block above the day-by-day
+  // history list so it reads as "here's the pattern", not just another
+  // day card.
+  const signals = data.contraction_breakouts || [];
+  if (!signals.length) return '';
+
+  const heading = `<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:18px 0 10px">${t('anom_contraction_breakout_title', '量縮後放量突破訊號')}</div>`;
+  const template = t('anom_contraction_breakout_summary', '{quiet_start} 至 {quiet_end}（{quiet_days}日量縮）之後，{breakout_date} 放量 {ratio}x，價格{dir} {pct}%');
+  const upLabel = t('anom_direction_up', '上升');
+  const downLabel = t('anom_direction_down', '下跌');
+
+  const items = signals.map(s => {
+    const summary = template
+      .replace('{quiet_start}', s.quiet_period_start)
+      .replace('{quiet_end}', s.quiet_period_end)
+      .replace('{quiet_days}', s.quiet_days)
+      .replace('{breakout_date}', s.breakout_date)
+      .replace('{ratio}', s.breakout_volume_ratio)
+      .replace('{dir}', s.direction === 'up' ? upLabel : downLabel)
+      .replace('{pct}', Math.abs(s.breakout_price_change_pct));
+    return `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">${s.direction === 'up' ? '🚀' : '📉'}</div>
+        <div style="flex:1">
+          <div class="anomaly-type severity-HIGH">${s.breakout_date}</div>
+          <div class="anomaly-detail">${summary}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `${heading}<div class="anomaly-list">${items}</div>`;
+}
+
 function renderAnomalyHistory(ticker, data) {
   const flagged = data.flagged || [];
+  const breakoutBlock = renderContractionBreakouts(data);
   // 2026-07-25 fix (task #414): these had data-i18n tags but were never
   // actually translated -- I18N.apply() only scans [data-i18n] elements
   // ONCE, right after i18n.js's initial fetch resolves (see js/i18n.js's
@@ -277,7 +316,12 @@ function renderAnomalyHistory(ticker, data) {
   const histSparkBlock = histSparkHtml ? `<div style="max-width:180px;margin-bottom:6px">${histSparkHtml}</div>` : '';
 
   if (!flagged.length) {
-    return `${heading}${histSparkBlock}<div class="empty-box">${t('anom_history_empty', '過去30日未發現明顯成交量或價格異常')}</div>`;
+    // A contraction-breakout can fire on a day that never trips
+    // AnomalyEngine's own flagged-day thresholds (breakout_ratio_min=1.5
+    // is deliberately looser than volume_spike's 2.0x) -- so still show
+    // it even when `flagged` itself is empty, instead of contradicting
+    // it with a "nothing found" message right above it.
+    return `${heading}${histSparkBlock}${breakoutBlock}${breakoutBlock ? '' : `<div class="empty-box">${t('anom_history_empty', '過去30日未發現明顯成交量或價格異常')}</div>`}`;
   }
 
   // 2026-07-25 fix (task #414, "duplicated bilingual event descriptions"):
@@ -320,7 +364,7 @@ function renderAnomalyHistory(ticker, data) {
       </div>`;
   }).join('');
 
-  return `${heading}${histSparkBlock}<div class="anomaly-list">${days}</div>`;
+  return `${heading}${histSparkBlock}${breakoutBlock}<div class="anomaly-list">${days}</div>`;
 }
 
 async function runAnomalyHistory(ticker) {
