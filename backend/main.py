@@ -59,6 +59,7 @@ from api.watchlist import router as watchlist_router
 from api.admin import router as admin_router
 from api.pipeline_api import router as pipeline_router
 from api.feedback import router as feedback_router
+from api.recall_alerts import router as recall_alerts_router
 from api.onboarding import router as onboarding_router
 from api.i18n import router as i18n_router
 from auth.email_verification import router as email_verification_router
@@ -312,6 +313,7 @@ app.include_router(watchlist_router, prefix="/api", tags=["Watchlist"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
 app.include_router(pipeline_router, prefix="/api", tags=["Pipeline"])
 app.include_router(feedback_router, prefix="/api", tags=["Feedback"])
+app.include_router(recall_alerts_router, prefix="/api", tags=["Recall Alerts"])
 app.include_router(onboarding_router, prefix="/api", tags=["Onboarding"])
 app.include_router(i18n_router, prefix="/api", tags=["i18n"])
 app.include_router(email_verification_router, prefix="/api", tags=["Email Verification"])
@@ -962,19 +964,53 @@ def _run_recall_alert_scan_job():
     whatever brand/product names sellers actually subscribe with. Runs
     AFTER cpsc_refresh (7:15) so it doesn't compete with that job for
     CPSC's rate limit, and only touches keywords that actually have an
-    active recall_match subscription (services.webhook_service.
-    list_active_tickers_for_event) -- never scans the whole internet's
-    worth of possible brand names."""
+    active subscription on EITHER channel below -- never scans the whole
+    internet's worth of possible brand names.
+
+    2026-09-15 (Recall Alert v2, "combination strategy" + no-code email
+    layer -- see services/recall_alert_service.py's module docstring for
+    the full story): two changes from the 2026-09-14 version --
+      1. Uses services.recall_alert_service.get_merged_recalls_for_keyword()
+         (CPSC + FDA food/drug/device combined) instead of CPSC alone, so
+         a webhook subscriber who subscribed before this change also
+         benefits from the wider FDA coverage with no action needed.
+      2. Checks the UNION of webhook keywords (services.webhook_service.
+         list_active_tickers_for_event) and email keywords (services.
+         recall_alert_service.list_active_keywords) -- both channels now
+         store keywords uppercased the same way, so the union naturally
+         dedupes a keyword watched on both channels into ONE diff/search
+         per run. check_and_deliver_recall_matches() below still owns the
+         single get_state()/set_state() diff for that keyword (fires
+         webhooks itself AND returns new_items); this job then fans
+         new_items out to email subscribers separately -- never a second
+         independent diff for the same keyword in the same run, which
+         would always see zero new items since the first diff already
+         advanced the baseline (see that function's docstring)."""
     try:
         from services.webhook_service import list_active_tickers_for_event, check_and_deliver_recall_matches
-        from services.cpsc_service import search_recalls_by_keyword
+        from services import recall_alert_service
+        from services.email_service import EmailService
 
-        for keyword in list_active_tickers_for_event("recall_match"):
+        webhook_keywords = set(list_active_tickers_for_event("recall_match"))
+        email_keywords = set(recall_alert_service.list_active_keywords())
+        all_keywords = webhook_keywords | email_keywords
+
+        for keyword in all_keywords:
             try:
-                result = search_recalls_by_keyword(keyword)
+                result = recall_alert_service.get_merged_recalls_for_keyword(keyword)
                 if result.get("fetch_error"):
                     continue  # don't diff against a failed fetch -- would look like every recall vanished
-                check_and_deliver_recall_matches(keyword, result.get("recent") or [])
+                diff = check_and_deliver_recall_matches(keyword, result.get("recent") or [])
+                new_items = (diff or {}).get("new_items") or []
+                if not new_items:
+                    continue
+
+                for sub in recall_alert_service.list_active_subscriptions_for_keyword(keyword):
+                    try:
+                        unsubscribe_url = f"https://www.xfinlab.com/api/recall-alerts/unsubscribe?token={sub['unsubscribe_token']}"
+                        EmailService.send_recall_alert(sub["email"], keyword, new_items, unsubscribe_url)
+                    except Exception:
+                        pass
             except Exception:
                 pass
     except Exception:

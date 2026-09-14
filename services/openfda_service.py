@@ -344,6 +344,89 @@ def get_consumer_safety_context_for_ticker(ticker: str) -> Optional[Dict]:
     return result
 
 
+_KEYWORD_CACHE_TTL_SECONDS = 6 * 3600
+_keyword_cache: Dict[str, Dict] = {}
+
+# 2026-09-14 (AJ: "開條賺錢新路" combination-strategy follow-up -- Recall
+# Alert v2, extending the CPSC-only version to also cover FDA-regulated
+# products): _search_dataset() above was already free-text/general-
+# purpose per-keyword under the hood (same discovery as cpsc_service.py's
+# _search()), just never exposed past the ticker-keyword map until now.
+# Deliberately excludes food_adverse_events -- that dataset is individual
+# consumer-submitted reports, not a recall/enforcement action, and mixing
+# the two into one "recall" alert would misrepresent what fired.
+_RECALL_DATASETS = ("food_recalls", "drug_recalls", "device_recalls")
+
+
+def search_food_drug_device_recalls_by_keyword(keyword: str, limit: int = 10) -> Dict:
+    """
+    Free-text keyword search across FDA food/drug/device enforcement
+    (recall) datasets, NOT restricted to _TICKER_TO_KEYWORDS above --
+    same shape/contract as cpsc_service.search_recalls_by_keyword(), so
+    the two can be merged behind one combined "recall alert" product
+    (see services/recall_alert_service.py).
+
+    Returns {"keyword", "attribution", "lookback_days", "count",
+    "recent": [...], "fetch_error": bool}. "recent" items are shaped via
+    _shape_result() and tagged with a "source" field so a merged CPSC+FDA
+    list can still show which agency each item came from.
+    """
+    keyword = (keyword or "").strip()
+    empty = {
+        "keyword": keyword, "attribution": ATTRIBUTION, "lookback_days": _LOOKBACK_DAYS,
+        "count": 0, "recent": [], "fetch_error": False,
+    }
+    if not keyword:
+        return empty
+
+    if not is_source_enabled(SOURCE_KEY):
+        return {"keyword": keyword, "available": False, "message": "openFDA source暫時停用。"}
+
+    cache_key = keyword.lower()
+    now = datetime.now(timezone.utc).timestamp()
+    cached = _keyword_cache.get(cache_key)
+    if cached and (now - cached["fetched_at"]) < _KEYWORD_CACHE_TTL_SECONDS:
+        return cached["result"]
+
+    merged: List[Dict] = []
+    any_call_failed = False
+    for dataset_key in _RECALL_DATASETS:
+        results = _search_dataset(dataset_key, keyword, limit=limit)
+        if results is None:
+            any_call_failed = True
+            continue
+        for r in results:
+            shaped = _shape_result(dataset_key, r)
+            shaped["source"] = dataset_key
+            # Normalize to "recall_id" (CPSC's cpsc_service.py._shape_result
+            # field name) so a merged CPSC+FDA list can be deduped/diffed
+            # by one consistent key downstream (see
+            # services/recall_alert_service.py) -- prefixed with the
+            # dataset since FDA's own recall_number is not guaranteed
+            # globally unique across food/drug/device.
+            shaped["recall_id"] = f"fda_{dataset_key}_{shaped.get('recall_number')}"
+            merged.append(shaped)
+
+    if not merged and any_call_failed:
+        if cached:
+            return {**cached["result"], "fetch_error": True}
+        return {**empty, "fetch_error": True}
+
+    merged.sort(key=lambda r: r.get("date") or "", reverse=True)
+    merged = merged[:limit]
+
+    result = {
+        "keyword": keyword,
+        "attribution": ATTRIBUTION,
+        "lookback_days": _LOOKBACK_DAYS,
+        "count": len(merged),
+        "recent": merged,
+        "fetch_error": False,
+    }
+    _keyword_cache[cache_key] = {"fetched_at": now, "result": result}
+    return result
+
+
 if __name__ == "__main__":
     import json
     print(json.dumps(get_consumer_safety_context_for_ticker("KHC"), indent=2, ensure_ascii=False))
