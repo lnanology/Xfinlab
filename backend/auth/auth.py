@@ -3,7 +3,7 @@ import sqlite3
 import os
 from fastapi import APIRouter, HTTPException, Request
 from auth.user_model import UserRegister, UserLogin, UserResponse, ProfileUpdate
-from auth.password import hash_password, verify_password
+from auth.password import hash_password, verify_and_update_password
 # 2026-07-11 fix: 呢度之前用緊短路徑 `from auth.jwt_handler import ...`，
 # 但codebase入面第9個地方（quota_middleware/referral/quota/analytics/
 # onboarding/feedback/admin/watchlist）全部用緊長路徑
@@ -249,14 +249,30 @@ def login(user: UserLogin, request: Request):
 
     conn = get_db()
     row = conn.execute("SELECT * FROM users WHERE email = ?", (user.email,)).fetchone()
-    conn.close()
-    if not row or not verify_password(user.password, row["password"]):
+    if not row:
+        conn.close()
+        log_action(None, f"login_failed:{user.email}", get_client_ip(request))
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # 2026-09-14 (security audit gap #4 -- bcrypt migration): verify_and_
+    # update_password() checks the password exactly like verify_password()
+    # did, but also transparently rehashes a still-on-file sha256_crypt
+    # hash to bcrypt the moment its owner successfully logs in (see
+    # backend/auth/password.py) -- no forced password reset, no visible
+    # change for the user, just a stronger hash on file from here on.
+    is_valid, new_hash = verify_and_update_password(user.password, row["password"])
+    if not is_valid:
+        conn.close()
         # user_id=None is now allowed (see services/db_migration.py --
         # audit_logs.user_id nullable migration) so failed attempts are
         # visible for brute-force/credential-stuffing monitoring, not just
         # successful logins.
         log_action(None, f"login_failed:{user.email}", get_client_ip(request))
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    if new_hash:
+        conn.execute("UPDATE users SET password = ? WHERE id = ?", (new_hash, row["id"]))
+        conn.commit()
+    conn.close()
     # 2026-07-24 anti-abuse batch: a risk-flagged account (services/
     # risk_score_service.py's "flag" tier at registration -- see
     # register()) never got a usable token at signup time; it can only
@@ -296,6 +312,25 @@ def get_me(token: str):
         "avatar_gender": _safe_col(row, "avatar_gender"), "oauth_provider": _safe_col(row, "oauth_provider"),
         "name_is_custom": bool(_safe_col(row, "name_is_custom", 0)),
     }
+
+# 2026-09-14 addition (security audit gap #2 -- JWT revocation): the
+# frontend's logout() (dashboard.html/index.html/admin.html etc.) has always
+# been purely client-side -- localStorage.removeItem + redirect -- and stays
+# that way; this endpoint is optional and additive, not a required step for
+# logout to keep working. Calling it just also kills the token server-side
+# (via its jti, see backend/auth/token_revocation.py) so a token copied out
+# of localStorage before logout can't keep being used elsewhere for the rest
+# of its 7-day life. Same token-as-query-param convention as /auth/me above.
+@router.post("/auth/logout")
+def logout(token: str):
+    from backend.auth.jwt_handler import verify_token
+    from backend.auth.token_revocation import revoke_jti
+    payload = verify_token(token)
+    if payload:
+        revoke_jti(payload.get("jti"), payload.get("exp"))
+    # Always 200 even for an already-invalid/expired token -- logout is
+    # idempotent from the caller's point of view either way.
+    return {"status": "ok"}
 
 # 2026-08-10 (task #761, AJ: "也可改名" / "加可改名字" -- both the mail-
 # derived name and the LINE display name need to be user-editable, plus

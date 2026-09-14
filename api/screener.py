@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from engines.screener_engine import ScreenerEngine
 from services.dashboard_snapshot_service import get_dashboard_tickers, compute_snapshots
+from services.feature_flags_service import require_feature_enabled
 
 router = APIRouter()
 
@@ -15,6 +16,9 @@ def screener(token: str = None):
     + news data, then ranks/filters through the existing
     ScreenerEngine formula.
     """
+    # 2026-09-14: enforce admin.html's "screener" toggle (previously
+    # persisted but never checked -- see services/feature_flags_service.py).
+    require_feature_enabled("screener")
     tickers = get_dashboard_tickers(token)
     stocks = compute_snapshots(tickers)
     return ScreenerEngine.screen(stocks)

@@ -55,6 +55,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from services.sql_where_builder import build_equality_where
+
 from services.backtest_service import (
     DEFAULT_COMMISSION_PCT,
     DEFAULT_SLIPPAGE_PCT,
@@ -376,11 +378,12 @@ def get_leaderboard(symbol: Optional[str] = None, limit: int = 20) -> List[Dict]
     (returns its last scan's full 35-candidate table, best first)."""
     conn = _get_db()
     try:
-        where = ""
-        params: List = []
-        if symbol:
-            where = "WHERE symbol = ?"
-            params.append(symbol.upper().strip())
+        # 2026-09-14 hardening (security audit gap #5): see services/
+        # sql_where_builder.py's docstring -- same fix applied to
+        # prediction_ledger_service.py's equivalent WHERE-clause pattern.
+        where, params = build_equality_where({
+            "symbol": symbol.upper().strip() if symbol else None,
+        })
         rows = conn.execute(
             f"""SELECT * FROM formula_composer_candidates {where}
                 ORDER BY (oos_avg_return_pct IS NULL), oos_avg_return_pct DESC, scanned_at DESC

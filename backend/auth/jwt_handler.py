@@ -16,6 +16,8 @@ from datetime import datetime, timedelta
 # exception type changed (jwt.PyJWTError instead of jose's JWTError).
 import jwt
 
+from backend.auth.token_revocation import is_jti_revoked, is_issued_before_invalidation
+
 logger = logging.getLogger(__name__)
 
 # SECURITY: never fall back to a hardcoded secret. A hardcoded fallback here
@@ -45,13 +47,36 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    now = datetime.utcnow()
+    expire = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # 2026-09-14 addition (security audit gap #2 -- JWT revocation): `jti`
+    # gives POST /auth/logout something unique to revoke without touching
+    # any other session for the same user; `iat` lets a password reset
+    # invalidate every token issued before the reset in one shot (see
+    # backend/auth/token_revocation.py). Both are purely additive claims --
+    # no existing caller reads or depends on them, so this changes nothing
+    # for any code that just does verify_token(token)["sub"]/["id"].
+    to_encode.update({
+        "exp": expire,
+        "iat": now,
+        "jti": secrets.token_hex(16),
+    })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def verify_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
     except jwt.PyJWTError:
         return None
+
+    # 2026-09-14 addition: reject a token that was explicitly logged out
+    # (by jti) or whose owner has since reset their password (by iat vs.
+    # that email's invalidation cutoff). Tokens issued before this change
+    # have no jti/iat and simply skip both checks -- treated as not
+    # revoked, same as always, until they expire naturally.
+    if is_jti_revoked(payload.get("jti")):
+        return None
+    if is_issued_before_invalidation(payload.get("sub"), payload.get("iat")):
+        return None
+
+    return payload

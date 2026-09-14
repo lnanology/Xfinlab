@@ -1,11 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from services.referral_service import ReferralService
 from backend.auth.jwt_handler import verify_token
+from services.feature_flags_service import require_feature_enabled
 
 router = APIRouter()
 
 @router.get("/referral/code")
 def get_referral_code(token: str):
+    # 2026-09-14: enforce admin.html's "referral" toggle (previously
+    # persisted but never checked -- see services/feature_flags_service.py).
+    require_feature_enabled("referral")
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -21,6 +25,7 @@ def get_referral_code(token: str):
 
 @router.post("/referral/use/{code}")
 def use_referral(code: str, token: str):
+    require_feature_enabled("referral")
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -28,6 +33,7 @@ def use_referral(code: str, token: str):
 
 @router.get("/referral/stats")
 def get_stats(token: str):
+    require_feature_enabled("referral")
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")

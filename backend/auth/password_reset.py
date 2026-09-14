@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from services.email_service import EmailService
 from auth.password import hash_password
+from backend.auth.token_revocation import revoke_all_for_email
 
 router = APIRouter()
 # See backend/auth/auth.py for why this needs ".." twice (backend/auth/ ->
@@ -109,5 +110,15 @@ def reset_password(body: ResetPasswordRequest):
     conn.execute("UPDATE password_resets SET used=1 WHERE token=?", (body.token,))
     conn.commit()
     conn.close()
+
+    # 2026-09-14 addition (security audit gap #2 -- JWT revocation): a
+    # password reset used to leave every previously-issued token for this
+    # account valid for the rest of its 7-day life -- if the password was
+    # reset because a token/session was compromised, the attacker's token
+    # kept working right through the reset. Now invalidates every token
+    # issued before this moment in one shot (see
+    # backend/auth/token_revocation.py); the user's own next login issues a
+    # fresh token as normal, so this doesn't affect the reset flow itself.
+    revoke_all_for_email(reset["email"])
 
     return {"status": "ok", "message": "密碼已成功重設，請使用新密碼登入"}
