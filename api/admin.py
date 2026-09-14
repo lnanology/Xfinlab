@@ -284,6 +284,36 @@ def get_health(token: str, request: Request):
 
     return results
 
+
+# 2026-09-14 addition (AJ: "有事會通知我，後台可見到嗎" -- after the
+# reliability fixes added services/error_alert_service.py's email alerts,
+# he asked whether the same errors are also visible in the admin panel, not
+# just his inbox). They weren't -- the error_alerts table existed purely to
+# dedupe/cooldown outgoing emails, with no read endpoint. This exposes that
+# same table read-only so admin.html's System Health page can show a
+# history, not just "an email went out at some point."
+@router.get("/admin/error-alerts")
+def get_error_alerts(token: str, request: Request):
+    verify_admin(token, "get_error_alerts", request)
+    # Importing this (rather than assuming the table already exists) runs
+    # its module-level CREATE TABLE IF NOT EXISTS -- so this endpoint works
+    # correctly even on a fresh deploy that hasn't hit its first unhandled
+    # exception yet (error_alert_service.py is otherwise only imported
+    # lazily, from inside backend/main.py's exception handler).
+    import services.error_alert_service  # noqa: F401
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT signature, route, exception_type, occurrence_count,
+               last_seen_at, last_notified_at
+        FROM error_alerts
+        ORDER BY last_seen_at DESC
+        LIMIT 30
+        """
+    ).fetchall()
+    conn.close()
+    return {"errors": [dict(r) for r in rows]}
+
 @router.get("/admin/users")
 def get_users(token: str, request: Request, page: int = 1, limit: int = 20):
     verify_admin(token, "get_users", request)

@@ -277,6 +277,16 @@
         <div id="healthList"><div class="empty"><span class="spinner"></span> Checking services...</div></div>
         <button class="btn btn-sm btn-purple" onclick="loadHealth()" style="margin-top:12px">🔄 Refresh</button>
       </div>
+      <!-- 2026-09-14 addition: services/error_alert_service.py already
+           emails AJ on any unhandled production exception; this surfaces
+           the same history in the panel too, per his "後台可見到嗎" ask,
+           instead of that being email-only. -->
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-title">Recent Errors</div>
+        <div class="page-sub" style="margin:-8px 0 12px">Unhandled exceptions caught by the global error handler. Each one also emails you (at most once per hour per route+error type).</div>
+        <div id="errorAlertsList"><div class="empty"><span class="spinner"></span> Loading...</div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadErrorAlerts()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
     </div>
 
     <!-- Users -->
@@ -1324,6 +1334,37 @@ async function loadHealth() {
   }
 }
 
+async function loadErrorAlerts() {
+  document.getElementById('errorAlertsList').innerHTML = '<div class="empty"><span class="spinner"></span> Loading...</div>';
+  try {
+    const res = await fetch(`${API}/admin/error-alerts?token=${adminToken}`);
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('errorAlertsList').innerHTML = `<div class="empty">Failed to load errors (HTTP ${res.status})</div>`;
+      return;
+    }
+    const errors = data.errors || [];
+    if (errors.length === 0) {
+      document.getElementById('errorAlertsList').innerHTML = '<div class="empty">No unhandled errors recorded. ✅</div>';
+      return;
+    }
+    document.getElementById('errorAlertsList').innerHTML = `
+      <table>
+        <thead><tr><th>Route</th><th>Type</th><th>Count</th><th>Last Seen</th><th>Last Emailed</th></tr></thead>
+        <tbody>${errors.map(e => `
+          <tr>
+            <td style="font-family:monospace;font-size:0.8rem">${e.route || ''}</td>
+            <td style="color:var(--red)">${e.exception_type || ''}</td>
+            <td>${e.occurrence_count}</td>
+            <td style="font-size:0.8rem">${e.last_seen_at || ''}</td>
+            <td style="font-size:0.8rem">${e.last_notified_at || 'never'}</td>
+          </tr>`).join('')}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('errorAlertsList').innerHTML = '<div class="empty">Failed to load errors</div>';
+  }
+}
+
 async function loadUsers(page = 1) {
   currentPage = page;
   document.getElementById('usersTable').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
@@ -1527,7 +1568,7 @@ function showPage(name) {
   document.getElementById(`page-${name}`).classList.add('active');
   event.currentTarget.classList.add('active');
 
-  if (name === 'health') loadHealth();
+  if (name === 'health') { loadHealth(); loadErrorAlerts(); }
   if (name === 'users') loadUsers(1);
   if (name === 'trending') loadStats();
   if (name === 'flags') { loadFlags(); loadEarlyAccessRequests(); }
