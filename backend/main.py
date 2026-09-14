@@ -953,6 +953,44 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+
+def _run_recall_alert_scan_job():
+    """2026-09-14 (AJ: "開條賺錢新路" -- Recall Alert API for e-commerce
+    sellers): unlike vix_regime_change/new_13d_filing/opportunity_radar_
+    shift above, recall_match had no existing daily job to piggyback on
+    -- the keywords worth checking aren't known in advance, they're
+    whatever brand/product names sellers actually subscribe with. Runs
+    AFTER cpsc_refresh (7:15) so it doesn't compete with that job for
+    CPSC's rate limit, and only touches keywords that actually have an
+    active recall_match subscription (services.webhook_service.
+    list_active_tickers_for_event) -- never scans the whole internet's
+    worth of possible brand names."""
+    try:
+        from services.webhook_service import list_active_tickers_for_event, check_and_deliver_recall_matches
+        from services.cpsc_service import search_recalls_by_keyword
+
+        for keyword in list_active_tickers_for_event("recall_match"):
+            try:
+                result = search_recalls_by_keyword(keyword)
+                if result.get("fetch_error"):
+                    continue  # don't diff against a failed fetch -- would look like every recall vanished
+                check_and_deliver_recall_matches(keyword, result.get("recent") or [])
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+# 30 minutes after cpsc_refresh (7:15) -- generous gap so a slow CPSC
+# response on the fixed-ticker job never delays this one, and vice versa.
+_push_scheduler.add_job(
+    _run_recall_alert_scan_job,
+    "cron",
+    hour=7,
+    minute=45,
+    id="recall_alert_scan",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

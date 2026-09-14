@@ -55,6 +55,16 @@ VALID_EVENT_TYPES = {
     # market-wide, no ticker (Opportunity Radar itself has no ticker
     # concept). See check_and_deliver_opportunity_radar_shift() below.
     "opportunity_radar_shift": {"per_ticker": False, "label": "An Opportunity Radar industry's net improving/worsening lean flipped"},
+    # 2026-09-14 (AJ: "開條賺錢新路" -- Recall Alert API for e-commerce
+    # sellers): reuses this table's existing per_ticker=True machinery,
+    # but the `ticker` column here holds a free-text brand/product
+    # keyword (e.g. "Acme Toys"), not a stock ticker -- see services/
+    # cpsc_service.py's search_recalls_by_keyword() for why a seller's
+    # own brand almost never IS a stock ticker. Backed by a NEW scheduled
+    # job (backend/main.py's recall_alert_scan), since -- unlike the 3
+    # event types above -- there was no existing daily job already
+    # computing this; see check_and_deliver_recall_matches() below.
+    "recall_match": {"per_ticker": True, "label": "A new CPSC recall matched a watched brand/product keyword"},
 }
 
 _MAX_CONSECUTIVE_FAILURES = 5  # auto-deactivate after this many delivery failures in a row
@@ -189,6 +199,23 @@ def list_for_key(api_key: str) -> List[dict]:
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def list_active_tickers_for_event(event_type: str) -> List[str]:
+    """Distinct, non-null `ticker` column values with at least one
+    active subscription for this event_type -- lets a scheduled job
+    know exactly which per-ticker values it actually needs to check this
+    run, instead of scanning every ticker/keyword that has ever existed.
+    2026-09-14 addition for recall_match (see check_and_deliver_
+    recall_matches() below), but generic -- any future per-ticker event
+    type can reuse this instead of writing its own SELECT DISTINCT."""
+    conn = _get_db()
+    rows = conn.execute(
+        "SELECT DISTINCT ticker FROM intelligence_webhooks WHERE event_type=? AND active=1 AND ticker IS NOT NULL",
+        (event_type,),
+    ).fetchall()
+    conn.close()
+    return [r["ticker"] for r in rows]
 
 
 def deliver(event_type: str, payload: dict, ticker: Optional[str] = None) -> Dict[str, int]:
@@ -376,3 +403,42 @@ def check_and_deliver_opportunity_radar_shift(industries: Dict[str, Dict]) -> Di
     if fired:
         logger.info("webhook_service: opportunity_radar_shift fired for industries: %s", sorted(fired))
     return fired
+
+
+def check_and_deliver_recall_matches(keyword: str, current_items: List[Dict]) -> Optional[Dict]:
+    """Call this from backend/main.py's recall_alert_scan job with the
+    watched keyword (== the `ticker` column value a recall_match
+    subscription was stored under, already uppercased by subscribe() --
+    see VALID_EVENT_TYPES' comment above for why a free-text brand
+    keyword lives in that column) and services.cpsc_service.
+    search_recalls_by_keyword(keyword)["recent"] for that same keyword.
+
+    Fires recall_match ONLY for recall_id values not seen on a previous
+    run for this exact keyword -- first-ever observation records the
+    baseline without firing, same no-spurious-first-fire rule as the 3
+    event types above (a brand's existing/older recalls shouldn't all
+    fire the moment someone subscribes). Delivers one webhook POST per
+    NEW recall (not one batched POST listing all of them), so a
+    subscriber's receiver gets one clean, self-contained event per real
+    recall rather than having to diff a list itself."""
+    state_key = f"recall_seen:{keyword.lower()}"
+    previous_raw = _get_state(state_key)
+    previous_ids = set(previous_raw.split(",")) if previous_raw else None
+
+    current_items = current_items or []
+    current_ids = {str(item.get("recall_id")) for item in current_items if item.get("recall_id")}
+    _set_state(state_key, ",".join(sorted(current_ids)))
+
+    if previous_ids is None:
+        return None  # baseline only, first time this keyword was ever checked
+
+    new_ids = current_ids - previous_ids
+    if not new_ids:
+        return None
+
+    fired = []
+    for item in current_items:
+        if str(item.get("recall_id")) in new_ids:
+            fired.append(deliver("recall_match", item, ticker=keyword))
+    logger.info("webhook_service: recall_match fired %s new recall(s) for keyword=%r", len(fired), keyword)
+    return {"new_count": len(fired), "results": fired}

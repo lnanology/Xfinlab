@@ -288,6 +288,75 @@ def get_recall_context_for_ticker(ticker: str) -> Optional[Dict]:
     return result
 
 
+_KEYWORD_CACHE_TTL_SECONDS = 6 * 3600
+_keyword_cache: Dict[str, Dict] = {}
+
+
+def search_recalls_by_keyword(keyword: str, limit: int = 10) -> Dict:
+    """
+    2026-09-14 (AJ: "開條賺錢新路" -- Recall Alert API for e-commerce
+    sellers, following the site-wide "have money on the table, go get
+    it" session): general-purpose free-text search against CPSC's own
+    live Manufacturer= wildcard match, deliberately NOT restricted to
+    _TICKER_TO_KEYWORDS above. That map exists to answer "does this
+    PUBLIC COMPANY have consumer-product recalls" (an investor-relevant
+    signal, keyed by stock ticker); this function answers a different
+    question for a different customer -- "does THIS brand/product name
+    have recalls" -- for a seller who doesn't think in stock tickers at
+    all (an Amazon/Shopify seller's own brand is almost never a public
+    company). Reuses the exact same live _search()/_shape_result()
+    machinery as get_recall_context_for_ticker() above, just keyed by
+    the caller's own free-text keyword instead of a pre-mapped ticker's
+    keyword list -- same data source, same honesty posture, new query
+    surface for a new audience.
+
+    Returns {"keyword", "attribution", "lookback_days", "count",
+    "recent": [...], "fetch_error"} -- never raises; a genuine CPSC
+    outage (see module docstring's live-reliability note) surfaces as
+    fetch_error=true against a stale in-memory cache (or an honest empty
+    `recent` if nothing was ever cached for this keyword), never a
+    fabricated "no recalls found".
+    """
+    keyword = (keyword or "").strip()
+    empty = {
+        "keyword": keyword, "attribution": ATTRIBUTION, "lookback_days": _LOOKBACK_DAYS,
+        "count": 0, "recent": [], "fetch_error": False,
+    }
+    if not keyword:
+        return empty
+
+    if not is_source_enabled(SOURCE_KEY):
+        return {"keyword": keyword, "available": False, "message": "CPSC source暫時停用。"}
+
+    cache_key = keyword.lower()
+    now = datetime.now(timezone.utc).timestamp()
+    cached = _keyword_cache.get(cache_key)
+    if cached and (now - cached["fetched_at"]) < _KEYWORD_CACHE_TTL_SECONDS:
+        return cached["result"]
+
+    results = _search(keyword, limit=limit)
+    if results is None:
+        # Live fetch failed (or CPSC's own provider-error quirk -- see
+        # module docstring) -- fall back to the last successfully cached
+        # result for this exact keyword if there is one, flagged
+        # fetch_error=true rather than silently serving a stale result
+        # as if it were fresh, or fabricating an empty "no recalls".
+        if cached:
+            return {**cached["result"], "fetch_error": True}
+        return {**empty, "fetch_error": True}
+
+    result = {
+        "keyword": keyword,
+        "attribution": ATTRIBUTION,
+        "lookback_days": _LOOKBACK_DAYS,
+        "count": len(results),
+        "recent": [_shape_result(r) for r in results],
+        "fetch_error": False,
+    }
+    _keyword_cache[cache_key] = {"fetched_at": now, "result": result}
+    return result
+
+
 if __name__ == "__main__":
     import json
     print(json.dumps(get_recall_context_for_ticker("WMT"), indent=2, ensure_ascii=False))
