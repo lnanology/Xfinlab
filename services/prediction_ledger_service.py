@@ -48,6 +48,8 @@ import sqlite3
 from datetime import date, datetime, timezone
 from typing import Dict, List, Optional
 
+from services.sql_where_builder import build_equality_where
+
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
 
 logger = logging.getLogger(__name__)
@@ -259,24 +261,19 @@ def get_ledger_stats(symbol: Optional[str] = None, source: Optional[str] = None)
     number."""
     conn = _get_db()
     try:
-        where = "WHERE graded = 1"
-        params: List = []
-        if symbol:
-            where += " AND symbol = ?"
-            params.append(symbol.upper().strip())
-        if source:
-            where += " AND source = ?"
-            params.append(source.strip())
-        rows = conn.execute(f"SELECT * FROM prediction_ledger {where}", params).fetchall()
+        # 2026-09-14 hardening (security audit gap #5): WHERE clause now
+        # built via build_equality_where() instead of a hand-rolled
+        # f-string -- same behavior (symbol/source were always bound
+        # through `?` placeholders, never spliced into the SQL text
+        # directly), just without the f-string-built-SQL shape that
+        # security scanners flag on sight. See services/sql_where_
+        # builder.py's docstring for the full rationale.
+        filters = {"symbol": symbol.upper().strip() if symbol else None,
+                   "source": source.strip() if source else None}
+        graded_where, graded_params = build_equality_where({"graded": 1, **filters})
+        rows = conn.execute(f"SELECT * FROM prediction_ledger {graded_where}", graded_params).fetchall()
 
-        pending_where = "WHERE graded = 0"
-        pending_params: List = []
-        if symbol:
-            pending_where += " AND symbol = ?"
-            pending_params.append(symbol.upper().strip())
-        if source:
-            pending_where += " AND source = ?"
-            pending_params.append(source.strip())
+        pending_where, pending_params = build_equality_where({"graded": 0, **filters})
         pending_count = conn.execute(
             f"SELECT COUNT(*) as c FROM prediction_ledger {pending_where}", pending_params
         ).fetchone()["c"]
@@ -314,15 +311,13 @@ def get_ledger_stats(symbol: Optional[str] = None, source: Optional[str] = None)
 def get_recent_predictions(limit: int = 50, symbol: Optional[str] = None, source: Optional[str] = None) -> List[Dict]:
     conn = _get_db()
     try:
-        clauses: List[str] = []
-        params: List = []
-        if symbol:
-            clauses.append("symbol = ?")
-            params.append(symbol.upper().strip())
-        if source:
-            clauses.append("source = ?")
-            params.append(source.strip())
-        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        # 2026-09-14 hardening (security audit gap #5): see get_ledger_
+        # stats() above / services/sql_where_builder.py for why this no
+        # longer hand-assembles the WHERE clause.
+        where, params = build_equality_where({
+            "symbol": symbol.upper().strip() if symbol else None,
+            "source": source.strip() if source else None,
+        })
         rows = conn.execute(
             f"SELECT * FROM prediction_ledger {where} ORDER BY predicted_at DESC, id DESC LIMIT ?",
             params + [limit],

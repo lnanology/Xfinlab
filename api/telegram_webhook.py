@@ -21,8 +21,10 @@ told where to send updates. After this deploys, call (once):
 Optionally set TELEGRAM_WEBHOOK_SECRET too and pass &secret_token=<value> in
 that same setWebhook call -- if set, this endpoint checks Telegram's
 X-Telegram-Bot-Api-Secret-Token header matches before doing any work.
-growth/telegram_bot.py is left in place (not deleted) as the original
-polling-mode prototype, but is no longer the live path.
+growth/telegram_bot.py (the original polling-mode prototype) was removed
+2026-09-14 as part of a dead-code cleanup pass -- it was never reachable in
+production (see above) and this webhook version had already fully replaced
+it, so keeping both around was pure duplication risk with no live benefit.
 """
 import os
 import logging
@@ -30,6 +32,7 @@ import logging
 from fastapi import APIRouter, Request
 
 from services.telegram_push_service import send_telegram_message
+from services.feature_flags_service import is_feature_enabled
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -114,6 +117,15 @@ _HELP_TEXT = (
 
 @router.post("/telegram/webhook")
 async def telegram_webhook(request: Request):
+    # 2026-09-14: enforce admin.html's "telegram_bot" toggle (previously
+    # persisted but never checked -- see services/feature_flags_service.py).
+    # Uses is_feature_enabled() (not require_feature_enabled()'s 503) so a
+    # disabled flag still returns 200 -- Telegram disables webhooks that
+    # don't respond 200, so this silently drops instead, same pattern as
+    # the secret-mismatch branch just below.
+    if not is_feature_enabled("telegram_bot"):
+        return {"ok": True}
+
     # Optional shared-secret check (mirrors the admin-panel IP-allowlist
     # pattern: best-effort, only enforced if the operator configured it).
     expected_secret = os.getenv("TELEGRAM_WEBHOOK_SECRET")

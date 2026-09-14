@@ -5,6 +5,7 @@ from engines.anomaly_engine import AnomalyEngine
 from services.dashboard_snapshot_service import get_dashboard_tickers, compute_snapshots
 from services.anomaly_history_service import scan_last_30_days
 from services.i18n import get_translations
+from services.feature_flags_service import require_feature_enabled
 
 router = APIRouter()
 
@@ -30,6 +31,9 @@ def anomaly(token: str = None):
     instead of one fixed one - dashboard.html's loadAnomaly() was
     updated to match.
     """
+    # 2026-09-14: enforce admin.html's "anomaly" toggle (previously
+    # persisted but never checked -- see services/feature_flags_service.py).
+    require_feature_enabled("anomaly")
     tickers = get_dashboard_tickers(token)
     snapshots = compute_snapshots(tickers)
 
@@ -85,6 +89,7 @@ def anomaly_search(ticker: str, lang: str = None):
     reliable here than the ai_language_instruction() prompt-steering
     pattern used for LLM endpoints elsewhere.
     """
+    require_feature_enabled("anomaly")
     ticker = (ticker or "").strip().upper()
     tr = get_translations(lang) if lang and lang not in ("zh-HK", "zh-TW") else None
 
@@ -124,6 +129,7 @@ def anomaly_history(ticker: str):
     + NewsAPI workload by the watchlist size, and was intentionally left
     out of scope for this feature.
     """
+    require_feature_enabled("anomaly")
     ticker = (ticker or "").strip().upper()
     if not ticker or not _SYMBOL_RE.match(ticker):
         return {"status": "error", "message": "代號格式無效，請重新輸入。"}

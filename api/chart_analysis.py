@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from ai.ai_router import get_ai_response
 from services.technical_analysis_service import get_technical_analysis, get_multi_timeframe_analysis
 from services.i18n import ai_language_instruction
+from services.feature_flags_service import require_feature_enabled
 
 router = APIRouter()
 
@@ -90,6 +91,7 @@ def chart_search(symbol: str, period: str = "6mo", interval: str = "1d", lang: s
     look at, and the numeric levels already come straight from real
     historical data, same as always.
     """
+    require_feature_enabled("chart_analysis")
     symbol = (symbol or "").strip().upper()
     if not symbol or not _SYMBOL_RE.match(symbol):
         return {"status": "error", "message": "代號格式無效，請重新輸入。"}
@@ -138,6 +140,7 @@ def chart_search_commentary(
     api/ai_analysis.py's screener prompt already use, so this doesn't
     invent a second translation mechanism for the same concept.
     """
+    require_feature_enabled("chart_analysis")
     symbol = (symbol or "").strip().upper()
     if not symbol or not _SYMBOL_RE.match(symbol):
         return {"status": "error", "message": "代號格式無效，請重新輸入。"}
@@ -200,6 +203,7 @@ def chart_search_multi_timeframe(symbol: str, lang: str = None):
     Not called automatically on every search since it costs 3x the
     historical-data fetches of a normal /chart-search call.
     """
+    require_feature_enabled("chart_analysis")
     symbol = (symbol or "").strip().upper()
     if not symbol or not _SYMBOL_RE.match(symbol):
         return {"status": "error", "message": "代號格式無效，請重新輸入。"}

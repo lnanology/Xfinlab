@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from engines.portfolio_engine import PortfolioEngine
 from services.dashboard_snapshot_service import get_dashboard_tickers, compute_snapshots
+from services.feature_flags_service import require_feature_enabled
 
 router = APIRouter()
 
@@ -15,6 +16,9 @@ def portfolio(token: str = None):
     basket if logged out / no watchlist yet), weighted by each
     ticker's real market_score computed from live data.
     """
+    # 2026-09-14: enforce admin.html's "portfolio" toggle (previously
+    # persisted but never checked -- see services/feature_flags_service.py).
+    require_feature_enabled("portfolio")
     tickers = get_dashboard_tickers(token)
     snapshots = compute_snapshots(tickers)
     screener_results = [
