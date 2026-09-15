@@ -180,58 +180,116 @@ def _load_ticker_cik_map() -> dict:
         return cached or {}
 
 
+_TRUE_FORM4_TERMS = {"4", "4/A"}  # Form 4 itself, or its amendment -- the ONLY two values that mean "this is actually a Form 4"
+
+# 2026-09-15 (AJ: "check" on a "Data source failing" alert for SPY, then
+# "你搞好佢就得" -- fix confirmed by live-querying SEC EDGAR directly):
+# browse-edgar's own `type` parameter is NOT an exact-match filter --
+# passing type=4 got back real entries for SPY (CIK 0000884394) whose own
+# <category label="form type" term="..."> was "497" and "485BPOS" (fund
+# prospectus/post-effective-amendment filings, which happen to start with
+# the digit "4"), and SEC's own pagination "next" link for that exact
+# response literally rewrote the param to `type=4%25` (URL-encoded "4%")
+# -- i.e. SEC's own system treats a bare "4" as a SQL-LIKE prefix
+# wildcard, not an exact form-type match. This module was trusting the
+# URL param alone and treating every returned entry as a real Form 4,
+# which is why SPY (a trust with no genuine Section-16 insiders) came
+# back with "10 candidates, 0 parsed" -- all 10 were 497/485BPOS noise,
+# not failed parses of real filings. The fix below re-checks each entry's
+# own <category term=...> and only accepts "4"/"4/A" -- this isn't SPY-
+# specific: any operating company that ALSO files 424B-series shelf-
+# offering prospectuses (which also start with "4") around the same time
+# as a real insider trade could have had that real Form 4 silently
+# crowded out of the top _LOOKBACK_FILINGS results by this same wildcard
+# noise, so this is a real data-quality fix, not just a cosmetic one for
+# ETFs.
+_MAX_ATOM_PAGES = 3  # SEC's own `count` param was also confirmed unreliable here (count=5 and count=10
+# returned the byte-identical 10-entry response for CIK 884394) -- rather than trust it to size the
+# first fetch correctly, page forward (via `start=`) until `limit` true Form 4/4-A entries are found or
+# this page cap is hit, so a heavily-wildcard-polluted issuer (funds, or an operating company mid shelf
+# offering) doesn't lose real candidates to noise on page one. Capped at 3 pages (~30 raw atom entries)
+# so a ticker with zero real Form 4s (like SPY) fails fast instead of paginating indefinitely.
+
+
 def _list_recent_form4_filings(cik: str, limit: int = _LOOKBACK_FILINGS) -> List[dict]:
     """Returns [{"accession_nodash": "...", "insider_name": "...",
     "insider_cik": "...", "filed_date": "YYYY-MM-DD"}, ...] for the most
-    recent Form 4 filings cross-indexed under this ISSUER's CIK
+    recent GENUINE Form 4 filings cross-indexed under this ISSUER's CIK
     (owner=include is what makes browse-edgar return insider filings
     about a company, not just filings the company itself made -- see
     module docstring). Atom entries are parsed defensively (regex over
     <title>/<id>/<summary> text, tag-matched namespace-agnostically) since
-    this exact feed shape could not be live-verified from this sandbox."""
-    params = {
-        "action": "getcompany", "CIK": cik, "type": "4",
-        "dateb": "", "owner": "include", "count": limit, "output": "atom",
-    }
-    res = get_with_backoff(BROWSE_EDGAR_URL, params=params, headers={"User-Agent": SEC_USER_AGENT}, timeout=20)
-    if res.status_code != 200:
-        raise RuntimeError(f"HTTP {res.status_code} for browse-edgar (CIK {cik})")
+    this exact feed shape could not be live-verified from this sandbox --
+    but each entry's <category term=...> IS now checked against
+    _TRUE_FORM4_TERMS before being trusted as a real Form 4 (see the
+    2026-09-15 note above for why the type=4 URL param alone isn't
+    enough)."""
+    filings: List[dict] = []
+    seen_accessions = set()
+    start = 0
+    for _page in range(_MAX_ATOM_PAGES):
+        params = {
+            "action": "getcompany", "CIK": cik, "type": "4",
+            "dateb": "", "owner": "include", "count": limit, "start": start, "output": "atom",
+        }
+        res = get_with_backoff(BROWSE_EDGAR_URL, params=params, headers={"User-Agent": SEC_USER_AGENT}, timeout=20)
+        if res.status_code != 200:
+            if start == 0:
+                raise RuntimeError(f"HTTP {res.status_code} for browse-edgar (CIK {cik})")
+            break  # first page already succeeded -- a later page failing just means "stop paginating"
 
-    root = ET.fromstring(res.content)
-    filings = []
-    for entry in root:
-        if _strip_ns(entry.tag) != "entry":
-            continue
-        title_text, id_text, summary_text, updated_text = "", "", "", ""
-        for child in entry:
-            local = _strip_ns(child.tag)
-            if local == "title":
-                title_text = child.text or ""
-            elif local == "id":
-                id_text = child.text or ""
-            elif local == "summary":
-                summary_text = child.text or ""
-            elif local == "updated":
-                updated_text = child.text or ""
+        root = ET.fromstring(res.content)
+        entries_this_page = 0
+        for entry in root:
+            if _strip_ns(entry.tag) != "entry":
+                continue
+            entries_this_page += 1
 
-        accession_match = re.search(r"accession-number=([\d-]+)", id_text)
-        if not accession_match:
-            continue  # can't do anything without an accession number -- skip this entry rather than guess
-        accession_nodash = accession_match.group(1).replace("-", "")
+            category_term, title_text, id_text, summary_text, updated_text = "", "", "", "", ""
+            for child in entry:
+                local = _strip_ns(child.tag)
+                if local == "category":
+                    category_term = child.attrib.get("term", "")
+                elif local == "title":
+                    title_text = child.text or ""
+                elif local == "id":
+                    id_text = child.text or ""
+                elif local == "summary":
+                    summary_text = child.text or ""
+                elif local == "updated":
+                    updated_text = child.text or ""
 
-        name_match = re.match(r"^4\s*-\s*(.+?)\s*\((\d+)\)", title_text.strip())
-        insider_name = name_match.group(1).strip() if name_match else None
-        insider_cik = name_match.group(2) if name_match else None
+            if category_term not in _TRUE_FORM4_TERMS:
+                continue  # the real fix -- reject browse-edgar's wildcard-matched non-Form-4 noise (497, 485BPOS, 424B*, etc.)
 
-        date_match = re.search(r"(\d{4}-\d{2}-\d{2})", summary_text) or re.search(r"(\d{4}-\d{2}-\d{2})", updated_text)
-        filed_date = date_match.group(1) if date_match else None
+            accession_match = re.search(r"accession-number=([\d-]+)", id_text)
+            if not accession_match:
+                continue  # can't do anything without an accession number -- skip this entry rather than guess
+            accession_nodash = accession_match.group(1).replace("-", "")
+            if accession_nodash in seen_accessions:
+                continue  # some issuers (e.g. dual Securities-Act/Investment-Company-Act filers) cross-list the same accession twice
+            seen_accessions.add(accession_nodash)
 
-        filings.append({
-            "accession_nodash": accession_nodash,
-            "insider_name": insider_name,
-            "insider_cik": insider_cik,
-            "filed_date": filed_date,
-        })
+            name_match = re.match(r"^4(?:/A)?\s*-\s*(.+?)\s*\((\d+)\)", title_text.strip())
+            insider_name = name_match.group(1).strip() if name_match else None
+            insider_cik = name_match.group(2) if name_match else None
+
+            date_match = re.search(r"(\d{4}-\d{2}-\d{2})", summary_text) or re.search(r"(\d{4}-\d{2}-\d{2})", updated_text)
+            filed_date = date_match.group(1) if date_match else None
+
+            filings.append({
+                "accession_nodash": accession_nodash,
+                "insider_name": insider_name,
+                "insider_cik": insider_cik,
+                "filed_date": filed_date,
+            })
+            if len(filings) >= limit:
+                return filings
+
+        if entries_this_page == 0:
+            break  # nothing left at all -- stop paginating rather than loop on empty pages
+        start += entries_this_page
+
     return filings
 
 
