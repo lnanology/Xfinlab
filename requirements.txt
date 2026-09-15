@@ -22,5 +22,5 @@ Pillow==12.3.0
 dnspython==2.8.0
 QuantLib==1.43
 sympy==1.14.0
-stripe==15.5.1
+stripe==15.6.1
 mcp-marketplace-license==1.1.0
