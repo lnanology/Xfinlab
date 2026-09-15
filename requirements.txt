@@ -12,7 +12,7 @@ PyJWT==2.13.0
 passlib==1.7.4
 bcrypt==3.2.0
 python-multipart==0.0.32
-reportlab==4.5.1
+reportlab==5.0.1
 apscheduler==3.11.3
 python-telegram-bot==22.8
 pywebpush==2.3.0
