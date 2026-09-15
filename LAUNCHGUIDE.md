@@ -12,6 +12,7 @@ Built for developers and AI-agent builders who want financial market context in 
 
 ## Setup Requirements
 - `X-API-Key` (required): An XFINLAB Intelligence API key. Get a free one at https://www.xfinlab.com/intelligence-api.html#access — no credit card required for the free tier. Supply it as an HTTP header on the MCP connection (preferred, works with Claude Desktop's custom-header config) or as an `api_key` argument on each tool call for clients that can't set custom headers.
+- `X-Marketplace-License-Key` (optional): a license key for this listing's paid tier on mcp-marketplace.io. When present and valid, it upgrades a free-tier XFINLAB key to Pro-tier daily quota (5,000 calls/day) for that call — no separate XFINLAB Pro subscription needed. Supply it as an HTTP header (preferred) or a `marketplace_license_key` tool argument.
 
 ## Category
 Finance
