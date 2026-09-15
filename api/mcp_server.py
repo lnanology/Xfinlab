@@ -383,12 +383,24 @@ async def mcp_endpoint(request: Request):
 @router.get("/mcp")
 def mcp_info():
     """Human-facing info page for anyone who opens the MCP URL directly in a
-    browser instead of connecting an MCP client to it."""
+    browser instead of connecting an MCP client to it.
+
+    2026-09-15 (AJ: MCP Marketplace listing follow-up): added a `pricing`
+    field. This server was already a "remote hosted" MCP server per MCP
+    Marketplace's own two-model taxonomy (auth/quota handled server-side,
+    same X-API-Key + tier system as the REST API -- no separate MCP-only
+    gating needed), so listing it there needs no new access-control code,
+    just a clear pricing summary for anyone landing on this URL directly
+    from the marketplace listing. Numbers must stay in sync with
+    services/intelligence_quota_service.py's TIER_LIMITS and intelligence-
+    api.html's plan cards -- same "recommendation, not hardcoded truth
+    elsewhere" caveat as that module's own docstring."""
     return {
         "name": _SERVER_INFO["name"],
         "description": "XFINLAB Intelligence API exposed as an MCP server. POST JSON-RPC 2.0 requests here.",
         "protocolVersion": _PROTOCOL_VERSION,
         "tools": [t["name"] for t in _TOOLS],
         "auth": "X-API-Key header or 'api_key' tool argument -- get a free key at https://www.xfinlab.com/intelligence-api.html",
+        "pricing": "Free tier: 300 calls/day, no credit card. Pro tier: 5,000 calls/day, $49/month. Same key and quota as the REST Intelligence API -- one key works everywhere.",
         "docs": "https://www.xfinlab.com/intelligence-api.html",
     }
