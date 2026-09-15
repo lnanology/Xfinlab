@@ -24,6 +24,14 @@ support "remote server with custom headers" configs, e.g. Claude Desktop,
 can set this once) or as an `api_key` argument on the tool call itself,
 for clients that can't set custom headers.
 
+2026-09-15: a caller may additionally present an mcp-marketplace.io
+license key for this listing (`X-Marketplace-License-Key` header or a
+`marketplace_license_key`/`license_key` tool argument or query param --
+see _resolve_marketplace_license_key() below). If it verifies against the
+mcp-marketplace-license SDK, the caller's free-tier XFINLAB key is treated
+as Pro-tier for that call's quota check only -- this is additive only, it
+can never block or downgrade a request that was already valid.
+
 Implementation note: hand-rolled JSON-RPC 2.0 over a single stateless
 POST endpoint (the MCP "Streamable HTTP" transport's non-SSE mode)
 instead of adding the `mcp` PyPI SDK as a new dependency -- consistent
@@ -43,6 +51,7 @@ Streamable HTTP spec is sufficient. No Mcp-Session-Id session tracking is
 needed for a stateless server like this one.
 """
 import json
+import os
 from typing import Any, Optional
 
 from fastapi import APIRouter, Request
@@ -52,6 +61,29 @@ from services import api_key_service, intelligence_quota_service
 from services import rss_news_service
 from services.finbert_sentiment_service import is_available as finbert_available, analyze_batch
 from services.intelligence_pipeline_service import build_intelligence_feed
+
+# 2026-09-15 (AJ: "你做左先" -- go ahead and wire up the real license-key
+# gating now, so a future "Monthly" price on the mcp-marketplace.io listing
+# actually means something instead of charging for what a free XFINLAB key
+# already unlocks). Import is best-effort: the whole point of this SDK
+# integration is additive (it can only ever UPGRADE a caller's effective
+# tier, never block one that's already valid) so a missing package or a
+# network hiccup against the marketplace's verification API must never
+# break the existing X-API-Key auth path this server already had. Same
+# "dormant until configured" posture as EIA_API_KEY/RESEND_API_KEY
+# elsewhere in this codebase.
+try:
+    from mcp_marketplace_license import verify_license as _verify_marketplace_license
+except Exception:
+    _verify_marketplace_license = None
+
+# The slug mcp-marketplace.io assigned to this listing. Defaults to the
+# server's own name (what was actually submitted in the Submit form's
+# Source step) but is overridable via env var without a redeploy, since
+# the real assigned slug wasn't confirmed at integration time -- if it
+# turns out to differ, set MCP_MARKETPLACE_SLUG in Railway rather than
+# editing this file.
+_MARKETPLACE_SLUG = os.getenv("MCP_MARKETPLACE_SLUG", "xfinlab-intelligence")
 
 router = APIRouter()
 
@@ -75,6 +107,7 @@ _TOOLS = [
             "type": "object",
             "properties": {
                 "api_key": {"type": "string", "description": "XFINLAB Intelligence API key (X-API-Key). Omit if supplied via HTTP header instead."},
+                "marketplace_license_key": {"type": "string", "description": "Optional: an mcp-marketplace.io license key for this listing's paid tier. If valid, upgrades a free XFINLAB API key's daily quota to Pro for this call. Omit if supplied via the X-Marketplace-License-Key header instead, or if not using a marketplace license."},
                 "ticker": {"type": "string", "description": "Optional ticker or company name to filter by, e.g. 'NVDA'."},
                 "limit": {"type": "integer", "description": "Max results, 1-100.", "default": 20},
             },
@@ -92,6 +125,7 @@ _TOOLS = [
             "type": "object",
             "properties": {
                 "api_key": {"type": "string", "description": "XFINLAB Intelligence API key (X-API-Key). Omit if supplied via HTTP header instead."},
+                "marketplace_license_key": {"type": "string", "description": "Optional: an mcp-marketplace.io license key for this listing's paid tier. If valid, upgrades a free XFINLAB API key's daily quota to Pro for this call. Omit if supplied via the X-Marketplace-License-Key header instead, or if not using a marketplace license."},
                 "ticker": {"type": "string", "description": "Ticker to analyze, e.g. 'AAPL'."},
                 "limit": {"type": "integer", "description": "Number of recent headlines to analyze, 1-25.", "default": 10},
             },
@@ -111,6 +145,7 @@ _TOOLS = [
             "type": "object",
             "properties": {
                 "api_key": {"type": "string", "description": "XFINLAB Intelligence API key (X-API-Key). Omit if supplied via HTTP header instead."},
+                "marketplace_license_key": {"type": "string", "description": "Optional: an mcp-marketplace.io license key for this listing's paid tier. If valid, upgrades a free XFINLAB API key's daily quota to Pro for this call. Omit if supplied via the X-Marketplace-License-Key header instead, or if not using a marketplace license."},
                 "ticker": {"type": "string", "description": "Ticker to analyze, e.g. 'TSLA', '0700.HK'."},
                 "period": {"type": "string", "description": "History window, e.g. '6mo', '1y'.", "default": "6mo"},
                 "interval": {"type": "string", "description": "Candle interval, e.g. '1d'.", "default": "1d"},
@@ -133,6 +168,7 @@ _TOOLS = [
             "type": "object",
             "properties": {
                 "api_key": {"type": "string", "description": "XFINLAB Intelligence API key (X-API-Key). Omit if supplied via HTTP header instead."},
+                "marketplace_license_key": {"type": "string", "description": "Optional: an mcp-marketplace.io license key for this listing's paid tier. If valid, upgrades a free XFINLAB API key's daily quota to Pro for this call. Omit if supplied via the X-Marketplace-License-Key header instead, or if not using a marketplace license."},
                 "ticker": {"type": "string", "description": "Optional ticker to scope the feed to, e.g. 'MSFT'."},
                 "limit": {"type": "integer", "description": "Max event clusters, 1-10.", "default": 5},
                 "lang": {"type": "string", "description": "Language for the narrative summary.", "default": "en"},
@@ -155,6 +191,7 @@ _TOOLS = [
             "type": "object",
             "properties": {
                 "api_key": {"type": "string", "description": "XFINLAB Intelligence API key (X-API-Key). Omit if supplied via HTTP header instead."},
+                "marketplace_license_key": {"type": "string", "description": "Optional: an mcp-marketplace.io license key for this listing's paid tier. If valid, upgrades a free XFINLAB API key's daily quota to Pro for this call. Omit if supplied via the X-Marketplace-License-Key header instead, or if not using a marketplace license."},
                 "regions": {"type": "string", "description": "Comma-separated region keys, e.g. 'us,hk,china'. Omit for all 10 regions."},
                 "news_limit": {"type": "integer", "description": "Headlines per region, 1-20.", "default": 6},
                 "include_sentiment": {"type": "boolean", "description": "Whether to run FinBERT sentiment on each region's headlines.", "default": True},
@@ -188,24 +225,86 @@ def _resolve_api_key(request: Request, arguments: dict) -> Optional[str]:
     return None
 
 
+def _resolve_marketplace_license_key(request: Request, arguments: dict) -> Optional[str]:
+    """Mirrors _resolve_api_key()'s header -> tool-arg -> query-param
+    fallback chain exactly, for the same reason: this is a shared remote
+    multi-tenant server, so there's no process-wide env var that could
+    identify one caller's license the way the SDK's own MCP_LICENSE_KEY
+    default assumes for a local single-tenant server -- the key has to be
+    pulled off each individual request instead."""
+    header_key = request.headers.get("x-marketplace-license-key") or request.headers.get("x-license-key")
+    if header_key:
+        return header_key
+    arg_key = arguments.get("marketplace_license_key") or arguments.get("license_key")
+    if arg_key:
+        return arg_key
+    for param_name in ("marketplace_license_key", "license_key", "licenseKey"):
+        q_key = request.query_params.get(param_name)
+        if q_key:
+            return q_key
+    return None
+
+
+def _has_valid_marketplace_license(request: Request, arguments: dict) -> bool:
+    """Best-effort, never raises: a missing package, an unreachable
+    verification API, a missing key, or an invalid key all just mean "no"
+    here. This can only ever upgrade a caller's effective tier for quota
+    purposes below -- it never blocks or downgrades a caller who already
+    has a valid XFINLAB X-API-Key, so failing closed on any error is safe."""
+    if _verify_marketplace_license is None:
+        return False
+    license_key = _resolve_marketplace_license_key(request, arguments)
+    if not license_key:
+        return False
+    try:
+        result = _verify_marketplace_license(slug=_MARKETPLACE_SLUG, key=license_key)
+        return bool(result and result.get("valid"))
+    except Exception:
+        return False
+
+
 def _auth_and_quota(request: Request, arguments: dict, endpoint: str) -> dict:
     """Returns {"ok": True, "tier": ...} or {"ok": False, "message": ...} --
     deliberately never raises, since tool-call errors must be reported as
     MCP tool content (isError: true), not as JSON-RPC/HTTP-level failures
     (an invalid key is a normal, expected outcome for a tool call, not a
-    protocol error)."""
+    protocol error).
+
+    2026-09-15: `tier` used for the quota check is now the EFFECTIVE tier,
+    which is upgraded free->pro when a valid mcp-marketplace.io license key
+    is also presented on the same request (see _has_valid_marketplace_
+    license() above). Deliberately applied uniformly across every tool
+    here rather than hand-picking specific "pro-gated" tools: this whole
+    server already prices access purely by tier (see intelligence_quota_
+    service.TIER_LIMITS + the pricing string in mcp_info() below), and a
+    marketplace license is meant to stand in for a paid XFINLAB Pro key,
+    not a separate, narrower entitlement -- singling out a subset of tools
+    would say something about the product this server doesn't actually
+    have (no tool here is Pro-only; the difference between tiers has
+    always been quota, not feature access), and would drift out of sync
+    with TIER_LIMITS the moment either changes independently. An
+    already-Pro or Enterprise XFINLAB key is left untouched either way --
+    this can only ever raise a free caller's ceiling, never lower anyone
+    else's."""
     api_key = _resolve_api_key(request, arguments)
     if not api_key:
         return {"ok": False, "message": "Missing API key -- supply it via the X-API-Key header or an 'api_key' argument. Get a free key at https://www.xfinlab.com/intelligence-api.html"}
     auth = api_key_service.verify_key(api_key)
     if not auth["valid"]:
         return {"ok": False, "message": "Invalid or expired API key."}
+
+    effective_tier = auth["tier"]
+    marketplace_licensed = False
+    if effective_tier == "free" and _has_valid_marketplace_license(request, arguments):
+        effective_tier = "pro"
+        marketplace_licensed = True
+
     weight = intelligence_quota_service.weight_for(endpoint)
-    quota = intelligence_quota_service.check(api_key, auth["tier"])
+    quota = intelligence_quota_service.check(api_key, effective_tier)
     if not quota["allowed"]:
-        return {"ok": False, "message": f"Daily quota exceeded ({quota['used']}/{quota['limit']} calls used today for tier '{auth['tier']}')."}
+        return {"ok": False, "message": f"Daily quota exceeded ({quota['used']}/{quota['limit']} calls used today for tier '{effective_tier}')."}
     intelligence_quota_service.increment(api_key, weight=weight)
-    return {"ok": True, "tier": auth["tier"]}
+    return {"ok": True, "tier": effective_tier, "marketplace_licensed": marketplace_licensed}
 
 
 def _tool_result(data: Any, is_error: bool = False) -> dict:
@@ -394,13 +493,21 @@ def mcp_info():
     from the marketplace listing. Numbers must stay in sync with
     services/intelligence_quota_service.py's TIER_LIMITS and intelligence-
     api.html's plan cards -- same "recommendation, not hardcoded truth
-    elsewhere" caveat as that module's own docstring."""
+    elsewhere" caveat as that module's own docstring.
+
+    2026-09-15 (follow-up, same day): a valid mcp-marketplace.io license
+    key (see _has_valid_marketplace_license() above) is now real -- it
+    upgrades a free XFINLAB key's quota to Pro for every tool call it's
+    presented on. This was NOT true when the listing was first submitted
+    (it was deliberately left on the "Free" pricing tier for exactly this
+    reason -- see git history). Once a "Monthly" price is set on the
+    listing to match, this text should be updated to say so explicitly."""
     return {
         "name": _SERVER_INFO["name"],
         "description": "XFINLAB Intelligence API exposed as an MCP server. POST JSON-RPC 2.0 requests here.",
         "protocolVersion": _PROTOCOL_VERSION,
         "tools": [t["name"] for t in _TOOLS],
         "auth": "X-API-Key header or 'api_key' tool argument -- get a free key at https://www.xfinlab.com/intelligence-api.html",
-        "pricing": "Free tier: 300 calls/day, no credit card. Pro tier: 5,000 calls/day, $49/month. Same key and quota as the REST Intelligence API -- one key works everywhere.",
+        "pricing": "Free tier: 300 calls/day, no credit card. Pro tier: 5,000 calls/day, $49/month. Same key and quota as the REST Intelligence API -- one key works everywhere. An mcp-marketplace.io license key (X-Marketplace-License-Key header or 'marketplace_license_key' tool argument) upgrades a free key to Pro-tier quota for the call it's presented on.",
         "docs": "https://www.xfinlab.com/intelligence-api.html",
     }
