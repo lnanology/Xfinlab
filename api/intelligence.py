@@ -1673,6 +1673,19 @@ def intelligence_webhooks_unsubscribe(
 # rather than a per-endpoint Pydantic model), so response schemas in the
 # generated doc are intentionally generic; the value here is accurate
 # paths/params/auth/request-body docs a codegen tool or Postman can import.
+#
+# 2026-09-17 (real bug caught via an inbound cold-outreach email that
+# happened to be technically correct -- AJ asked to verify before acting
+# on it): PUBLIC_INTEL_PATHS is hand-maintained and drifts from the router
+# whenever a new endpoint ships without a matching entry here -- that's
+# exactly what happened to /forecast/{ticker} and /world/market-map,
+# /world/regions (both live, both documented in llms.txt and the
+# changelog, both silently absent from openapi.json/postman.json until
+# now). Added those three, plus /fundamentals/{ticker}/as-of (this
+# session's own new endpoint -- would have shipped the identical bug).
+# No general fix for the drift itself yet (e.g. defaulting to "every
+# router.routes path minus an explicit exclude-list" instead of an
+# include-list) -- flagged here rather than silently deferred.
 # ---------------------------------------------------------------------------
 PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/events",
@@ -1682,6 +1695,10 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/intel/{ticker}",
     "/intelligence/v1/technical/{ticker}",
     "/intelligence/v1/stress-test",
+    "/intelligence/v1/forecast/{ticker}",
+    "/intelligence/v1/fundamentals/{ticker}/as-of",
+    "/intelligence/v1/world/market-map",
+    "/intelligence/v1/world/regions",
     "/intelligence/v1/regime-signal/{ticker}",
     "/intelligence/v1/insider/{ticker}",
     "/intelligence/v1/company-network/{ticker}",
