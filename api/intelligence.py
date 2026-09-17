@@ -1406,6 +1406,41 @@ def intelligence_fundamentals(
     return _envelope(data=result, meta={"ticker": ticker})
 
 
+@router.get("/intelligence/v1/fundamentals/{ticker}/as-of")
+def intelligence_fundamentals_as_of(
+    response: Response,
+    ticker: str,
+    as_of_date: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """Point-in-time-correct fundamentals: what was ACTUALLY KNOWN for
+    `ticker` as of `as_of_date` (YYYY-MM-DD), not the current/latest
+    value (services/point_in_time_store.py, piloted on
+    sec_xbrl_service.py -- 2026-09-17, direct response to backtesting
+    look-ahead-bias feedback on r/quant). Each returned concept reflects
+    only vintages that were already filed and past a small availability
+    buffer by that date; a restated figure that only became known later
+    is never leaked back into an earlier as_of_date.
+
+    Requires the ticker to have been ingested at least once via the
+    regular /fundamentals/{ticker} endpoint or the daily SEC XBRL
+    refresh job first -- this endpoint only reads accumulated
+    point-in-time history, it never makes a live SEC fetch (a fetch
+    today cannot tell you what was knowable on a past date)."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "fundamentals", response, ticker=ticker.upper())
+
+    from services.sec_xbrl_service import get_company_facts_as_of
+
+    ticker = ticker.upper().strip()
+    result = get_company_facts_as_of(ticker, as_of_date)
+    if not result or not result.get("available"):
+        message = (result or {}).get("message", f"No point-in-time fundamentals data available for {ticker} as of {as_of_date}")
+        return _envelope(data=None, error=message)
+
+    return _envelope(data=result, meta={"ticker": ticker, "as_of_date": as_of_date})
+
+
 @router.get("/intelligence/v1/vix-term-structure")
 def intelligence_vix_term_structure(
     response: Response,
