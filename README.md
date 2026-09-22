@@ -54,6 +54,21 @@ Already live in production — no setup needed, just point an MCP-compatible cli
 
 Server source: [`api/mcp_server.py`](./api/mcp_server.py). Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`. Same auth and free tier as the REST API. Docs: [intelligence-api.html#mcp](https://www.xfinlab.com/intelligence-api.html#mcp).
 
+## Production usage
+
+*Early-stage, honest numbers — pulled from the platform's own admin metrics on 2026-09-22, not curated for effect. Individual emails aren't published here even though they're visible in the admin panel — no reason to expose real people's addresses in a public README.*
+
+- **15 API keys issued** (14 active, 1 revoked) since the self-serve free tier launched, to roughly **13 distinct outside developers/researchers** — not counting the operator's own test key, which shows 0 calls, so none of the volume below is self-generated traffic.
+- **669 weighted API calls served all-time**, concentrated in a small number of real integrations: the single heaviest account alone accounts for more than half of all-time volume, the second-heaviest for roughly another fifth.
+- One signup used a `.edu` email address — an early, small signal of academic/research interest rather than only casual trials.
+- **5 organic accounts** on the consumer research site (xfinlab.com), separate from the API-only signups above. Of 7 total registered accounts, 2 are the operator's own account and an internal LINE-bot integration, not external users — excluded from that count.
+- No response-time or uptime SLA number is published here — it isn't actually measured yet, and this project holds itself to the same [zero-fabrication policy](https://www.xfinlab.com/trust.html) it markets to users, so an unmeasured number doesn't get invented for a case study either. Per-data-source status (not per-request latency) is live on that same page.
+
+**Two real bugs this surfaced, fixed the same day each was found:**
+
+- *SEC Form 4 false positives (Sept 2026).* SEC EDGAR's own `browse-edgar` `type` filter turned out to behave as a prefix wildcard, not an exact match — `type=4` was silently matching unrelated `424B`-series filings as "insider trading" activity. Caught by the platform's own data-source health alerting (not a user bug report), confirmed against SEC's live responses — its own pagination link rewrites `type=4` to `type=4%25`, which is what gave the bug away.
+- *Point-in-time/vintage data store (Sept 2026).* A quant researcher's comment on r/quant pointed out that treating a filing's period-end date as "known on that date" ignores real filing lag and later restatements — a classic look-ahead-bias source in backtests. Built a dedicated store ([`services/point_in_time_store.py`](./services/point_in_time_store.py)) where every fundamentals value carries a real filing-availability timestamp instead of the period it describes, and a restated value is stored as a new immutable row rather than overwriting the original — so "what did we know on date X" and "what's the latest known value" are two different, both-correct queries.
+
 ## SDKs & examples
 
 | | |
