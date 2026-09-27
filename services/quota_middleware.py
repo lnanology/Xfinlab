@@ -67,6 +67,13 @@ def check_and_increment(token: str, feature: str):
     if not user:
         return True
 
+    # 2026-09-27: record real usage for the achievement/streak badges
+    # (services/achievement_service.py) -- unconditional, BEFORE the
+    # free/paid branch below, so paid users get credit too (the points
+    # system a few lines down only ever tracks free users).
+    from services.achievement_service import record_activity
+    record_activity(user_id)
+
     plan = resolve_real_plan(user)
 
     from services.points_service import get_effective_plan, record_and_check
@@ -125,6 +132,13 @@ def check_token_budget(token: str):
 
     if not user:
         return None
+
+    # 2026-09-27: same unconditional activity record as check_and_increment()
+    # above -- this is the call site that covers Pro/Pro+/Professional users
+    # (check_and_increment()'s free/paid branch returns early for them
+    # without reaching the points system, but every plan reaches here).
+    from services.achievement_service import record_activity
+    record_activity(user_id)
 
     plan = resolve_real_plan(user)
     from services.points_service import get_effective_plan, record_and_check
