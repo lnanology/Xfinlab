@@ -1645,6 +1645,17 @@ def _generate_video_background(topic: str, width: int, height: int) -> Optional[
         return None
 
 
+# 2026-09-28: matches a leading AI meta-commentary line (never actual
+# narration) so _ai_write_custom_script() can safely drop it before the
+# exact-line-count check -- subtractive only, see that function's
+# docstring for why this doesn't weaken the anti-fabrication guarantee.
+_PREAMBLE_LINE_RE = re.compile(
+    r"^(here'?s?\s|here\s+is\s|sure[,.]?\s|certainly[,.]?\s|okay[,.]?\s|narration:?$|script:?$|"
+    r"note:|disclaimer:$)",
+    re.IGNORECASE,
+)
+
+
 def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[List[str]]:
     """2026-08-09 (admin chat-to-video feature): asks the site's AI router
     to write narration for an ADMIN-SUPPLIED arbitrary topic, not today's
@@ -1709,7 +1720,17 @@ def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[
     # for why a retry, not a looser check) -- identical prompt each time,
     # nothing adaptive, so a pass on attempt 2 is exactly as trustworthy
     # as a pass on attempt 1.
-    for _attempt in range(2):
+    #
+    # 2026-09-28 (AJ hit this same error again on a 6-slide request):
+    # bumped to 3 attempts, and added a SUBTRACTIVE-only preamble filter
+    # below -- it only ever drops a leading line that looks like AI
+    # meta-commentary ("Here's the script:", "Sure, here is...", a bare
+    # "Narration:" label) rather than actual narration, never invents or
+    # pads content. This directly targets the exact failure mode this
+    # function's docstring already describes (a stray preamble line
+    # breaking the 1:1 line-to-slide mapping) without loosening the
+    # anti-fabrication guarantee the exact-count check exists for.
+    for _attempt in range(3):
         try:
             response = get_ai_response(prompt, max_tokens=500, reasoning_effort="high")
         except Exception:
@@ -1717,6 +1738,8 @@ def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[
         if not response:
             continue
         lines = [ln.strip(" \t\"'") for ln in response.strip().split("\n") if ln.strip()]
+        while len(lines) > num_slides and _PREAMBLE_LINE_RE.match(lines[0]):
+            lines = lines[1:]
         if len(lines) == num_slides:
             return lines
     return None
