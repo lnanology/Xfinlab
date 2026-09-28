@@ -682,6 +682,76 @@
       </div>
 
       <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Most Active (stocks, futures, crypto, forex, commodities, indices)</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
+          2026-09-28: look up a curated basket ranked by real trailing volume -- handy for picking
+          tickers to paste into the Custom Video chat prompt below. For "Stocks", Country/Sector apply
+          (only the US basket has full 5-tickers-per-sector coverage). For every other asset class,
+          Country/Sector are ignored and a fixed real-instrument basket is ranked instead -- see
+          services/trending_stocks_service.py's ASSET_CLASS_BASKETS for exactly which tickers (e.g.
+          Forex uses currency ETFs, not spot pairs, since spot FX has no real reported volume).
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Asset class</label>
+            <select id="trendingAssetClass" class="btn btn-sm" style="cursor:pointer" onchange="onTrendingAssetClassChange()">
+              <option value="Stocks" selected>Stocks</option>
+              <option value="Futures">Futures</option>
+              <option value="Crypto">Crypto</option>
+              <option value="Forex">Forex</option>
+              <option value="Commodities">Commodities</option>
+              <option value="Indices">Indices</option>
+            </select>
+          </div>
+          <div id="trendingCountryWrap">
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Country</label>
+            <select id="trendingCountry" class="btn btn-sm" style="cursor:pointer">
+              <option value="US" selected>US</option>
+              <option value="HK">HK</option>
+              <option value="TW">TW</option>
+              <option value="CN">CN</option>
+              <option value="JP">JP</option>
+              <option value="KR">KR</option>
+              <option value="GB">GB</option>
+              <option value="DE">DE</option>
+              <option value="FR">FR</option>
+              <option value="IN">IN</option>
+              <option value="AU">AU</option>
+              <option value="CA">CA</option>
+            </select>
+          </div>
+          <div id="trendingSectorWrap">
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Sector</label>
+            <select id="trendingSector" class="btn btn-sm" style="cursor:pointer">
+              <option value="" selected>All sectors</option>
+              <option value="Technology">Technology</option>
+              <option value="Communication Services">Communication Services</option>
+              <option value="Consumer Discretionary">Consumer Discretionary</option>
+              <option value="Consumer Staples">Consumer Staples</option>
+              <option value="Financials">Financials</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Energy">Energy</option>
+              <option value="Industrials">Industrials</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Real Estate">Real Estate</option>
+              <option value="Materials">Materials</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Trailing window</label>
+            <select id="trendingDays" class="btn btn-sm" style="cursor:pointer">
+              <option value="3">Last 3 days</option>
+              <option value="7" selected>Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="lookupTrendingStocks()" id="trendingLookupBtn">▶ Look up</button>
+        <div id="trendingLookupResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
         <div class="panel-title">Custom Video (chat)</div>
         <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
           2026-08-09: type a free-text request instead of using the fixed daily-signals format above --
@@ -1990,6 +2060,51 @@ async function generateVideoNow() {
       result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides${aiNote}${tgNote}</span>${_youtubeResultNote(data)}`;
     }
     loadVideoStatus();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function onTrendingAssetClassChange() {
+  const assetClass = document.getElementById('trendingAssetClass').value;
+  const isStocks = assetClass === 'Stocks';
+  document.getElementById('trendingCountryWrap').style.display = isStocks ? '' : 'none';
+  document.getElementById('trendingSectorWrap').style.display = isStocks ? '' : 'none';
+}
+
+async function lookupTrendingStocks() {
+  const btn = document.getElementById('trendingLookupBtn');
+  const result = document.getElementById('trendingLookupResult');
+  const assetClass = document.getElementById('trendingAssetClass').value;
+  const isStocks = assetClass === 'Stocks';
+  const country = document.getElementById('trendingCountry').value;
+  const sector = document.getElementById('trendingSector').value;
+  const days = document.getElementById('trendingDays').value;
+  btn.disabled = true;
+  result.innerHTML = 'Looking up...';
+  try {
+    const params = new URLSearchParams({days, asset_class: assetClass});
+    if (isStocks) {
+      params.set('country', country);
+      if (sector) params.set('sector', sector);
+    }
+    const res = await fetch(`${API}/trending-stocks?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    const stocks = data.stocks || [];
+    const scopeLabel = isStocks ? escapeHtml(country) : escapeHtml(assetClass);
+    if (!stocks.length) {
+      result.innerHTML = `<span style="color:var(--muted)">No matches${sector && isStocks ? ` for ${escapeHtml(sector)}` : ''} in the ${scopeLabel} basket.</span>`;
+      return;
+    }
+    const sourceNote = data.source === 'official_twse' ? ' (official TWSE ranking, sector/days filters not applied)'
+      : data.source === 'default_fallback' ? ` (no ${escapeHtml(country)} basket -- showing US)` : '';
+    const rows = stocks.map((s, i) =>
+      `<div style="padding:4px 0;border-bottom:1px solid var(--border)">${i + 1}. <strong>${escapeHtml(s.symbol)}</strong> ${escapeHtml(s.name)}${s.sector ? ` <span style="color:var(--muted)">· ${escapeHtml(s.sector)}</span>` : ''} -- volume (last ${escapeHtml(String(s.days || days))}d): ${s.volume ? s.volume.toLocaleString() : 'n/a'}</div>`
+    ).join('');
+    result.innerHTML = `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">${scopeLabel}${sector && isStocks ? ` · ${escapeHtml(sector)}` : ''}${sourceNote}</div>${rows}`;
   } catch (e) {
     result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
   } finally {
