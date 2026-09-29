@@ -97,12 +97,21 @@ def _init_table():
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_webhooks_event_ticker ON intelligence_webhooks(event_type, ticker, active)")
-    # Tiny generic key->value state store, scoped to this module -- lets
-    # the two check_and_deliver_* functions below remember "what did we
-    # see last time" (last VIX structure, last 13D filing count per
-    # ticker) without needing a shared KV table (this codebase doesn't
-    # have one) or pushing scheduler-job state into cboe_vix_service.py/
-    # sec_13d_13g_service.py, which have no reason to know webhooks exist.
+    # Tiny generic key->value state store -- lets the check_and_deliver_*
+    # functions below remember "what did we see last time" (last VIX
+    # structure, last 13D filing count per ticker) without needing a
+    # shared KV table (this codebase doesn't have one) or pushing
+    # scheduler-job state into cboe_vix_service.py/sec_13d_13g_service.py,
+    # which have no reason to know webhooks exist.
+    #
+    # 2026-09-14: get_state()/set_state() below were promoted from
+    # module-private (_get_state/_set_state) to public, same "promote
+    # when a second module needs it" move as services/i18n.py's
+    # localized_text() -- services/recall_alert_service.py's email-alert
+    # diff-check (new, same day) needed the exact same per-keyword "what
+    # did we see last time" state as this module's own recall_match
+    # webhook check, and duplicating a second KV table for the same
+    # concept would let the two drift out of sync for one shared keyword.
     conn.execute("""
         CREATE TABLE IF NOT EXISTS webhook_event_state (
             state_key TEXT PRIMARY KEY,
@@ -117,14 +126,14 @@ def _init_table():
 _init_table()
 
 
-def _get_state(state_key: str) -> Optional[str]:
+def get_state(state_key: str) -> Optional[str]:
     conn = _get_db()
     row = conn.execute("SELECT value FROM webhook_event_state WHERE state_key=?", (state_key,)).fetchone()
     conn.close()
     return row["value"] if row else None
 
 
-def _set_state(state_key: str, value: str):
+def set_state(state_key: str, value: str):
     conn = _get_db()
     conn.execute(
         """
@@ -296,8 +305,8 @@ def check_and_deliver_vix_regime_change(current_structure: Optional[str]) -> Opt
     None if nothing fired this run."""
     if not current_structure:
         return None
-    previous = _get_state("vix_structure")
-    _set_state("vix_structure", current_structure)
+    previous = get_state("vix_structure")
+    set_state("vix_structure", current_structure)
     if previous is None or previous == current_structure:
         return None
     result = deliver(
@@ -324,8 +333,8 @@ def check_and_deliver_new_13d_filings(ticker_filing_counts: Dict[str, int]) -> D
         if count is None or count < 0:
             continue  # -1 sentinel = this ticker's fetch failed this run, not a real "0 filings"
         state_key = f"13d_count:{ticker}"
-        previous_raw = _get_state(state_key)
-        _set_state(state_key, str(count))
+        previous_raw = get_state(state_key)
+        set_state(state_key, str(count))
         if previous_raw is None:
             continue  # baseline only, first time seeing this ticker
         try:
@@ -380,8 +389,8 @@ def check_and_deliver_opportunity_radar_shift(industries: Dict[str, Dict]) -> Di
             lean = "mixed"
 
         state_key = f"opportunity_radar_lean:{industry_key}"
-        previous = _get_state(state_key)
-        _set_state(state_key, lean)
+        previous = get_state(state_key)
+        set_state(state_key, lean)
 
         if previous is None or previous == lean:
             continue  # baseline-only, or genuinely unchanged
@@ -420,14 +429,24 @@ def check_and_deliver_recall_matches(keyword: str, current_items: List[Dict]) ->
     fire the moment someone subscribes). Delivers one webhook POST per
     NEW recall (not one batched POST listing all of them), so a
     subscriber's receiver gets one clean, self-contained event per real
-    recall rather than having to diff a list itself."""
+    recall rather than having to diff a list itself.
+
+    2026-09-14 (Recall Alert v2, no-code email layer): the returned dict
+    now also includes "new_items" -- the same NEW item dicts that fired
+    webhooks, not just the delivery results. backend/main.py's scheduled
+    job passes THIS list on to services.recall_alert_service's email
+    fan-out, rather than calling get_new_recall_items()/diffing again --
+    the diff here already consumed (advanced) the state via set_state(),
+    so a second diff call for the same keyword in the same run would
+    always see zero new items. One diff per keyword per run, fanned out
+    to both delivery channels from its single result."""
     state_key = f"recall_seen:{keyword.lower()}"
-    previous_raw = _get_state(state_key)
+    previous_raw = get_state(state_key)
     previous_ids = set(previous_raw.split(",")) if previous_raw else None
 
     current_items = current_items or []
     current_ids = {str(item.get("recall_id")) for item in current_items if item.get("recall_id")}
-    _set_state(state_key, ",".join(sorted(current_ids)))
+    set_state(state_key, ",".join(sorted(current_ids)))
 
     if previous_ids is None:
         return None  # baseline only, first time this keyword was ever checked
@@ -436,9 +455,7 @@ def check_and_deliver_recall_matches(keyword: str, current_items: List[Dict]) ->
     if not new_ids:
         return None
 
-    fired = []
-    for item in current_items:
-        if str(item.get("recall_id")) in new_ids:
-            fired.append(deliver("recall_match", item, ticker=keyword))
+    new_items = [item for item in current_items if str(item.get("recall_id")) in new_ids]
+    fired = [deliver("recall_match", item, ticker=keyword) for item in new_items]
     logger.info("webhook_service: recall_match fired %s new recall(s) for keyword=%r", len(fired), keyword)
-    return {"new_count": len(fired), "results": fired}
+    return {"new_count": len(fired), "results": fired, "new_items": new_items}

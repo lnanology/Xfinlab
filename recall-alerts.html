@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recall Alerts — Free CPSC &amp; FDA recall monitoring for your brand — XFINLAB</title>
+<meta name="description" content="Get a free email alert the moment a new CPSC or FDA recall matches your brand or product name. No signup, no API key, no code — just your email and a keyword.">
+<link rel="canonical" href="https://www.xfinlab.com/recall-alerts.html">
+<meta name="robots" content="index, follow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="js/theme-toggle.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface2: #F8FAFC;
+    --border: #000000;
+    --accent: #D35400;
+    --green: #16A34A;
+    --red: #DC2626;
+    --text: #000000;
+    --muted: #666666;
+    --label: #333333;
+    --nav-bg: rgba(255,255,255,0.95);
+  }
+  [data-theme="dark"] {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --surface2: #111d30;
+    --border: #1e2d45;
+    --accent: #F97316;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+    --nav-bg: rgba(8,12,20,0.95);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--nav-bg); backdrop-filter: blur(12px); z-index: 100; }
+  .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .nav-brand span { color: var(--text); }
+  .nav-links { display: flex; gap: 24px; align-items: center; }
+  .nav-links a { color: var(--label); text-decoration: none; font-size: 0.875rem; }
+  .nav-links a:hover { color: var(--text); }
+
+  main { max-width: 720px; margin: 0 auto; padding: 72px 24px 96px; }
+
+  .hero { text-align: center; margin-bottom: 48px; }
+  .hero-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  .hero h1 { font-size: 2.4rem; font-weight: 700; margin-bottom: 16px; line-height: 1.25; }
+  .hero h1 .accent-word { color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.6; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; margin-bottom: 32px; }
+
+  .signup-form label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--label); margin-bottom: 6px; }
+  .signup-form input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); color: var(--text); font-size: 0.95rem; font-family: inherit; margin-bottom: 18px; }
+  .signup-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .signup-form button { width: 100%; background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer; font-family: inherit; }
+  .signup-form button:disabled { opacity: 0.6; cursor: default; }
+  .form-msg { margin-top: 14px; font-size: 0.85rem; text-align: center; min-height: 1.2em; }
+  .form-msg.ok { color: var(--green); }
+  .form-msg.err { color: var(--red); }
+
+  .how-it-works { display: grid; gap: 20px; margin-bottom: 32px; }
+  .step { display: flex; gap: 16px; align-items: flex-start; }
+  .step-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--accent); font-size: 0.9rem; }
+  .step-text h3 { font-size: 0.95rem; margin-bottom: 4px; }
+  .step-text p { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+
+  .who-for { color: var(--muted); font-size: 0.9rem; line-height: 1.7; }
+  .who-for strong { color: var(--text); }
+
+  .section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+
+  .dev-note { text-align: center; font-size: 0.82rem; color: var(--muted); }
+  .dev-note a { color: var(--accent); text-decoration: none; }
+
+  footer { text-align: center; padding: 32px; color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 48px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<span>FIN</span>LAB</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="intelligence-api.html">Developer API</a>
+  </div>
+</nav>
+
+<main>
+  <div class="hero">
+    <div class="hero-label">Free &middot; No signup &middot; No code</div>
+    <h1>Know the moment your brand gets <span class="accent-word">recalled</span> — before your customers ask you about it</h1>
+    <p>Free email alerts sourced straight from the U.S. Consumer Product Safety Commission (CPSC) and FDA public recall databases. Enter your email and your brand or product name — that's it.</p>
+  </div>
+
+  <div class="card">
+    <form class="signup-form" id="recallForm" autocomplete="off">
+      <label for="rEmail">Your email</label>
+      <input type="email" id="rEmail" placeholder="you@yourstore.com" required>
+      <label for="rKeyword">Brand or product name to watch</label>
+      <input type="text" id="rKeyword" placeholder="e.g. Acme Toys, or your store/brand name" required>
+      <button type="submit" id="rSubmitBtn">Get free alerts</button>
+      <div class="form-msg" id="rFormMsg"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="section-label">How it works</div>
+    <div class="how-it-works">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <h3>Tell us what to watch</h3>
+          <p>Your brand name, product line, or store name — whatever you'd search for if you were worried about a recall.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <h3>We check CPSC + FDA every day</h3>
+          <p>Consumer products (toys, electronics, furniture, tools) via CPSC, and food/drug/medical device recalls via the FDA's openFDA database — one keyword, both agencies.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <h3>You get an email — only when there's something new</h3>
+          <p>No daily digest noise. You only hear from us when a genuinely new recall matches, with a link to the official record.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Who this is for</div>
+    <p class="who-for">
+      Small sellers on <strong>Amazon, Shopify, Etsy, or your own store</strong> who sell (or resell) physical products, food, supplements, cosmetics, or devices — and want to know immediately if something in your supply chain gets recalled, without checking government websites by hand or hiring a compliance tool built for enterprises with a legal department.
+    </p>
+  </div>
+
+  <p class="dev-note">Building your own tooling? A developer-facing API + webhook version of this exists too — see the <a href="intelligence-api.html#access">Intelligence API</a>.</p>
+</main>
+
+<footer>
+  &copy; 2026 XFINLAB. Data sourced from the U.S. CPSC (saferproducts.gov) and FDA (openFDA). Not an endorsement or official government communication.
+</footer>
+
+<script>
+(function () {
+  var form = document.getElementById('recallForm');
+  var btn = document.getElementById('rSubmitBtn');
+  var msg = document.getElementById('rFormMsg');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = document.getElementById('rEmail').value.trim();
+    var keyword = document.getElementById('rKeyword').value.trim();
+    if (!email || !keyword) return;
+
+    btn.disabled = true;
+    msg.textContent = '';
+    msg.className = 'form-msg';
+
+    fetch('/api/recall-alerts/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, keyword: keyword })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        btn.disabled = false;
+        if (data && data.ok) {
+          msg.textContent = data.message || "You're subscribed.";
+          msg.className = 'form-msg ok';
+          form.reset();
+        } else {
+          msg.textContent = (data && data.error) ? 'Something went wrong (' + data.error + '). Please check your details and try again.' : 'Something went wrong. Please try again.';
+          msg.className = 'form-msg err';
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        msg.textContent = 'Network error. Please try again in a moment.';
+        msg.className = 'form-msg err';
+      });
+  });
+})();
+</script>
+
+</body>
+</html>

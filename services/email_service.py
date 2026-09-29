@@ -209,3 +209,52 @@ class EmailService:
         </div>
         """
         return EmailService.send(to_email, f"{ticker} 市場異動提醒 - XFINLAB", html)
+
+    @staticmethod
+    def send_recall_alert(to_email: str, keyword: str, items: list, unsubscribe_url: str) -> bool:
+        """2026-09-15 (Recall Alert v2, no-code email layer -- see
+        services/recall_alert_service.py). English by default, unlike
+        send_price_alert/send_welcome above -- this product's actual
+        customer (a small Amazon/Shopify/food/supplement seller
+        checking their own brand name) is a different, mostly
+        English-speaking audience from XFINLAB's core Chinese-speaking
+        user base, same reasoning already flagged as a known i18n gap
+        on the API+webhook version of this product (intelligence-api.
+        html's ia_ep24_* labels).
+
+        `items` is the list of NEW recall dicts (CPSC- or FDA-shaped,
+        see services/recall_alert_service.py's get_merged_recalls_for_
+        keyword()) that triggered this send -- never the full history,
+        so the email always reads as "here's what's new", not a dump.
+        """
+        rows_html = ""
+        for item in items[:10]:
+            title = item.get("title") or item.get("product_description") or "Recall"
+            # openfda_service.search_food_drug_device_recalls_by_keyword()
+            # always prefixes its normalized recall_id with "fda_" (see
+            # that function's comment on why); CPSC's own recall_id
+            # (RecallID) never does, so this is a reliable source tag
+            # without needing a separate "source" field on every item.
+            source = "FDA" if str(item.get("recall_id") or "").startswith("fda_") else "CPSC"
+            date = item.get("date") or ""
+            url = item.get("url") or "https://www.saferproducts.gov/"
+            reason = item.get("hazard") or item.get("reason_for_recall") or ""
+            rows_html += f"""
+            <div style="background:#0d1525;border:1px solid #1e2d45;border-radius:8px;padding:16px;margin:12px 0;">
+                <div style="color:#64748b;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;">{source} &middot; {date}</div>
+                <div style="font-weight:bold;color:#e2e8f0;margin:6px 0;">{title}</div>
+                {f'<div style="color:#94a3b8;font-size:0.85rem;">{reason}</div>' if reason else ''}
+                <a href="{url}" style="color:#00d4ff;font-size:0.85rem;text-decoration:none;">View official record &rarr;</a>
+            </div>
+            """
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#080c14;color:#e2e8f0;padding:40px;border-radius:12px;">
+            <h1 style="color:#00d4ff;font-size:1.4rem;">New recall alert for "{keyword}"</h1>
+            <p>We found {len(items)} new recall{'s' if len(items) != 1 else ''} matching the brand/product keyword you're watching:</p>
+            {rows_html}
+            <p style="color:#64748b;font-size:0.82rem;margin-top:24px;">Sourced from the U.S. CPSC (saferproducts.gov) and FDA (openFDA) public recall databases. Not an endorsement or official government communication.</p>
+            <a href="{unsubscribe_url}" style="color:#475569;font-size:0.75rem;text-decoration:underline;">Unsubscribe from alerts for "{keyword}"</a>
+        </div>
+        """
+        return EmailService.send(to_email, f'New recall alert: "{keyword}" -- XFINLAB Recall Alerts', html)
