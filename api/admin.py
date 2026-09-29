@@ -774,8 +774,16 @@ async def video_engine_generate_custom(token: str, request: Request, body: dict 
     # parse_video_chat_request() keep guessing from the prompt text", so
     # only pass through a real value.
     lang_override = (body or {}).get("lang") or None
+    # 2026-09-29 (AJ: "重有咩可選好" -- what other real data points can the
+    # narration cite): checkbox keys from admin.html's new "Data points"
+    # row (sr_indicator/fundamentals/volume_ma/institutional). Passed
+    # through as-is; video_engine_service.generate_custom_video() itself
+    # validates against _VIDEO_DATA_POINT_CHOICES, so an unrecognized or
+    # empty list here just means no data block gets built -- same
+    # fully-generic narration as before this feature existed.
+    data_points = (body or {}).get("data_points") or []
     from services.video_engine_service import generate_custom_video
-    result = generate_custom_video(prompt, num_slides=num_slides, lang_override=lang_override)
+    result = generate_custom_video(prompt, num_slides=num_slides, lang_override=lang_override, data_points=data_points)
     if post_to_telegram and result.get("available"):
         try:
             from services.telegram_push_service import push_video_to_telegram
