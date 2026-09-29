@@ -1645,6 +1645,17 @@ def _generate_video_background(topic: str, width: int, height: int) -> Optional[
         return None
 
 
+# 2026-09-28: matches a leading AI meta-commentary line (never actual
+# narration) so _ai_write_custom_script() can safely drop it before the
+# exact-line-count check -- subtractive only, see that function's
+# docstring for why this doesn't weaken the anti-fabrication guarantee.
+_PREAMBLE_LINE_RE = re.compile(
+    r"^(here'?s?\s|here\s+is\s|sure[,.]?\s|certainly[,.]?\s|okay[,.]?\s|narration:?$|script:?$|"
+    r"note:|disclaimer:$)",
+    re.IGNORECASE,
+)
+
+
 def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[List[str]]:
     """2026-08-09 (admin chat-to-video feature): asks the site's AI router
     to write narration for an ADMIN-SUPPLIED arbitrary topic, not today's
@@ -1709,7 +1720,17 @@ def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[
     # for why a retry, not a looser check) -- identical prompt each time,
     # nothing adaptive, so a pass on attempt 2 is exactly as trustworthy
     # as a pass on attempt 1.
-    for _attempt in range(2):
+    #
+    # 2026-09-28 (AJ hit this same error again on a 6-slide request):
+    # bumped to 3 attempts, and added a SUBTRACTIVE-only preamble filter
+    # below -- it only ever drops a leading line that looks like AI
+    # meta-commentary ("Here's the script:", "Sure, here is...", a bare
+    # "Narration:" label) rather than actual narration, never invents or
+    # pads content. This directly targets the exact failure mode this
+    # function's docstring already describes (a stray preamble line
+    # breaking the 1:1 line-to-slide mapping) without loosening the
+    # anti-fabrication guarantee the exact-count check exists for.
+    for _attempt in range(3):
         try:
             response = get_ai_response(prompt, max_tokens=500, reasoning_effort="high")
         except Exception:
@@ -1717,6 +1738,8 @@ def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[
         if not response:
             continue
         lines = [ln.strip(" \t\"'") for ln in response.strip().split("\n") if ln.strip()]
+        while len(lines) > num_slides and _PREAMBLE_LINE_RE.match(lines[0]):
+            lines = lines[1:]
         if len(lines) == num_slides:
             return lines
     return None
@@ -1882,7 +1905,16 @@ def _ai_extract_extra_tickers(topic: str, exclude: List[str], max_count: int) ->
             if not isinstance(t, str):
                 continue
             t = t.strip().upper()
-            if t and t not in seen and _re.match(r"^[A-Z][A-Z0-9.\-]{0,9}$", t):
+            # 2026-09-29 fix (AJ: TW tickers like 2330.TW / 2317.TW never
+            # got a chart -- this regex required a LEADING LETTER, which
+            # silently rejected every numeric-code market: Taiwan
+            # (2330.TW), Hong Kong (0700.HK, 9988.HK), Korea (005930.KS)
+            # all use digit-first tickers that are already real, valid
+            # entries in COUNTRY_BASKETS above. Now allows a leading
+            # digit too -- still requires the AI's own output to look
+            # ticker-shaped (letters/digits/./- only, <=10 chars), just
+            # no longer assumes US-style letter-first format.
+            if t and t not in seen and _re.match(r"^[A-Z0-9][A-Z0-9.\-]{0,9}$", t):
                 seen.add(t)
                 result.append(t)
             if len(result) >= max_count:
