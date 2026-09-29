@@ -1441,6 +1441,35 @@ def intelligence_fundamentals_as_of(
     return _envelope(data=result, meta={"ticker": ticker, "as_of_date": as_of_date})
 
 
+@router.get("/intelligence/v1/evidence-scorecard/{ticker}")
+def intelligence_evidence_scorecard(
+    response: Response,
+    ticker: str,
+    asset_class: str = "Stocks",
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """2026-09-29: multi-dimensional support/oppose/neutral evidence
+    scorecard (services/evidence_scorecard_service.py) -- up to 11
+    independent real data sources (technical confluence, fundamentals,
+    13F/13D-G/Form-4, VIX term structure, CFTC COT, capital flow, the
+    shipping proxy, news sentiment, and the backtested direction-
+    probability model) checked and tallied, with disagreement between
+    them explicitly flagged rather than averaged away. `asset_class` is
+    one of Stocks/Futures/Crypto/Forex/Commodities/Indices (see
+    services/trending_stocks_service.py's ASSET_CLASSES) -- the four
+    SEC-filing-based dimensions only apply to Stocks (that data doesn't
+    exist for other asset classes; see the service module's docstring
+    for why a smaller dimension count there is honest, not a gap)."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "evidence_scorecard", response, ticker=ticker.upper())
+
+    from services.evidence_scorecard_service import get_evidence_scorecard
+
+    ticker = ticker.upper().strip()
+    result = get_evidence_scorecard(ticker, asset_class=asset_class)
+    return _envelope(data=result, meta={"ticker": ticker, "asset_class": asset_class})
+
+
 @router.get("/intelligence/v1/vix-term-structure")
 def intelligence_vix_term_structure(
     response: Response,
@@ -1706,6 +1735,7 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/energy/{ticker}",
     "/intelligence/v1/exchange/{ticker}",
     "/intelligence/v1/fundamentals/{ticker}",
+    "/intelligence/v1/evidence-scorecard/{ticker}",
     "/intelligence/v1/vix-term-structure",
     "/intelligence/v1/bank-health/{ticker}",
     "/intelligence/v1/agriculture/{ticker}",
