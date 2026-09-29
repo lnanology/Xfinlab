@@ -1656,7 +1656,142 @@ _PREAMBLE_LINE_RE = re.compile(
 )
 
 
-def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[List[str]]:
+# 2026-09-29 (AJ: "重有咩可選好" -- admin asked what else the Custom Video
+# chat prompt can pull in, beyond support/resistance/PE/volume, which
+# turned out to be words the narration never actually cited with real
+# numbers before this). Four checkbox-selectable categories, each
+# best-effort and independently optional -- a category with no data for
+# a given ticker just contributes nothing, never a guess.
+_VIDEO_DATA_POINT_CHOICES = {"sr_indicator", "fundamentals", "volume_ma", "institutional"}
+
+
+def _fetch_video_data_context(
+    chart_slides_data: list, requested_indicator: Optional[str], data_points: Optional[List[str]]
+) -> Optional[str]:
+    """Builds a short, factual text block of REAL numbers for up to the
+    first 2 tickers already resolved for this video's chart slides (2
+    tickers keeps the AI prompt short and matches the common "compare A
+    vs B" case; a video rarely has body slots for more distinct tickers
+    than that anyway). `chart_slides_data` is the same
+    (ticker, candles, sr, indicator) list generate_custom_video() already
+    builds for the chart renderer -- support/resistance and RSI/MACD are
+    REUSED from there, not re-fetched, so this can never drift from what
+    the chart slide visually shows. `data_points` is the list of
+    checkbox keys the admin selected in admin.html (see
+    _VIDEO_DATA_POINT_CHOICES); an empty/None selection or no resolved
+    ticker returns None, and the caller (_ai_write_custom_script) then
+    falls back to its original fully-generic narration -- this is a
+    strict opt-in, never changes narration for a topic that named no
+    real ticker or that the admin didn't check any boxes for. Every
+    individual sub-fetch is try/except-wrapped so one source being down
+    (SEC EDGAR, FINRA) never blocks the others or the video overall."""
+    if not chart_slides_data:
+        return None
+    wanted = set(data_points or []) & _VIDEO_DATA_POINT_CHOICES
+    if not wanted:
+        return None
+
+    blocks = []
+    for ticker, candles, sr, indicator in chart_slides_data[:2]:
+        lines = []
+
+        if "sr_indicator" in wanted:
+            if sr:
+                support = [v for v in (sr.get("support") or []) if isinstance(v, (int, float))]
+                resistance = [v for v in (sr.get("resistance") or []) if isinstance(v, (int, float))]
+                if support:
+                    lines.append(f"Support level(s): {', '.join(f'{v:.2f}' for v in support[:2])}")
+                if resistance:
+                    lines.append(f"Resistance level(s): {', '.join(f'{v:.2f}' for v in resistance[:2])}")
+            if indicator:
+                if indicator.get("kind") == "rsi" and indicator.get("values"):
+                    lines.append(f"Current RSI(14): {indicator['values'][-1]}")
+                elif indicator.get("kind") == "macd" and indicator.get("histogram"):
+                    lines.append(f"Current MACD histogram: {indicator['histogram'][-1]}")
+            elif requested_indicator:
+                # topic named an indicator but this ticker's series failed
+                # to compute -- say nothing rather than guess, per this
+                # function's own docstring.
+                pass
+
+        if "fundamentals" in wanted:
+            try:
+                from services.fundamentals_service import get_fundamentals
+
+                current_price = candles[-1]["close"] if candles else None
+                f = get_fundamentals(ticker, current_price)
+                if f and f.get("available"):
+                    if f.get("pe_ratio") is not None:
+                        lines.append(f"PE ratio: {f['pe_ratio']:.1f}x")
+                    eps = f.get("eps")
+                    if eps and eps.get("value") is not None:
+                        lines.append(f"EPS: {eps['value']:.2f} (FY{eps.get('fiscal_year')})")
+                    if f.get("revenue_growth_pct") is not None:
+                        lines.append(f"Revenue growth YoY: {f['revenue_growth_pct']:.1f}%")
+            except Exception:
+                pass
+
+        if "volume_ma" in wanted:
+            try:
+                from services.technical_analysis_service import fetch_ohlc_history
+
+                hist = fetch_ohlc_history(ticker, period="1y")
+                if hist is not None and not hist.empty:
+                    volumes = hist["Volume"].dropna()
+                    if len(volumes):
+                        lines.append(f"Latest daily volume: {int(volumes.iloc[-1]):,} shares")
+                    highs = hist["High"].dropna()
+                    lows = hist["Low"].dropna()
+                    if len(highs) and len(lows):
+                        lines.append(
+                            f"52-week range: {lows.tail(252).min():.2f} - {highs.tail(252).max():.2f}"
+                        )
+                    closes = hist["Close"].dropna()
+                    if len(closes) >= 50:
+                        ma50 = closes.rolling(50).mean().iloc[-1]
+                        if ma50 == ma50:  # NaN check
+                            lines.append(f"50-day moving average: {ma50:.2f}")
+                    if len(closes) >= 200:
+                        ma200 = closes.rolling(200).mean().iloc[-1]
+                        if ma200 == ma200:
+                            lines.append(f"200-day moving average: {ma200:.2f}")
+            except Exception:
+                pass
+
+        if "institutional" in wanted:
+            try:
+                from services.sec_ownership_service import get_ownership_summary
+
+                own = get_ownership_summary(ticker)
+                if own and own.get("available") and own.get("holders"):
+                    names = ", ".join(h["filer_name"] for h in own["holders"][:3])
+                    lines.append(f"Tracked 13F institutional holder(s): {names}")
+            except Exception:
+                pass
+            try:
+                from services.finra_short_interest_service import get_short_interest_for_ticker
+
+                short = get_short_interest_for_ticker(ticker)
+                if short and short.get("available"):
+                    if short.get("current_short_shares") is not None:
+                        lines.append(
+                            f"Short interest: {int(short['current_short_shares']):,} shares "
+                            f"as of {short.get('settlement_date')}"
+                        )
+                    if short.get("days_to_cover") is not None:
+                        lines.append(f"Days to cover: {short['days_to_cover']:.1f}")
+            except Exception:
+                pass
+
+        if lines:
+            blocks.append(f"{ticker}:\n" + "\n".join(f"- {l}" for l in lines))
+
+    return "\n\n".join(blocks) if blocks else None
+
+
+def _ai_write_custom_script(
+    topic: str, num_slides: int, lang: str, data_context: Optional[str] = None
+) -> Optional[List[str]]:
     """2026-08-09 (admin chat-to-video feature): asks the site's AI router
     to write narration for an ADMIN-SUPPLIED arbitrary topic, not today's
     real signals -- so unlike _ai_rewrite_narration() above, there is no
@@ -1687,17 +1822,46 @@ def _ai_write_custom_script(topic: str, num_slides: int, lang: str) -> Optional[
     lang_name = _AI_LANG_NAMES.get(lang, "English")
     body_lines = max(1, num_slides - 2)
 
+    # 2026-09-29 (AJ: "重有咩可選好" -- what other real data points can the
+    # narration cite): previously this prompt unconditionally forbade any
+    # specific number not already in the topic text, which was correct
+    # (nothing else was fetched) but meant checking "PE" or "volume" in
+    # the admin's request never actually produced a narrated figure -- the
+    # video's chart slide might show real support/resistance lines, but
+    # the SPOKEN script stayed generic. `data_context`, when the caller
+    # supplies it (built by _fetch_video_data_context() below from
+    # data_points the admin explicitly checked), is a short block of
+    # REAL, already-fetched numbers the model is allowed to cite. The
+    # anti-fabrication rule doesn't loosen -- it narrows from "no numbers
+    # at all" to "only these specific, real numbers", so a checked data
+    # point either gets a true figure or (if that source had no data for
+    # this ticker) stays unmentioned, never guessed.
+    if data_context:
+        numbers_clause = (
+            f"You MAY cite the specific real figures given in the REAL DATA block below where "
+            f"naturally relevant to the topic, but do NOT invent, round differently, or add any "
+            f"other specific prices, percentages, dates, or return figures beyond what is given "
+            f"there or in the topic text."
+        )
+    else:
+        numbers_clause = (
+            f"Do NOT invent specific prices, percentages, dates, or return figures that are not "
+            f"explicitly given in the topic text -- describe concepts, context, and publicly "
+            f"known facts only."
+        )
+
+    data_block = f"\n\nREAL DATA you may cite (verified, fetched just now):\n{data_context}\n" if data_context else ""
+
     prompt = (
         f"You are writing a SHORT spoken video-narration script in {lang_name} for XFINLAB, a "
         f"financial data/research platform. Output EXACTLY {num_slides} lines, one sentence per "
         f"line, no numbering, no markdown, no quotation marks:\n"
         f"Line 1: a 1-sentence intro naming XFINLAB and the topic below.\n"
         f"Lines 2 through {num_slides - 1}: {body_lines} sentence(s) of general, factual "
-        f"commentary on the topic, professional financial-news tone. Do NOT invent specific "
-        f"prices, percentages, dates, or return figures that are not explicitly given in the "
-        f"topic text -- describe concepts, context, and publicly known facts only.\n"
+        f"commentary on the topic, professional financial-news tone. {numbers_clause}\n"
         f"Line {num_slides}: a 1-sentence closing disclaimer that this is general information "
-        f"only, not investment advice, mentioning xfinlab.com.\n\n"
+        f"only, not investment advice, mentioning xfinlab.com.\n"
+        f"{data_block}\n"
         f"IMPORTANT: the 'Topic' text below is an instruction describing what the video should "
         f"be about -- it is NOT a script to read aloud. Do not copy, quote, or lightly reword the "
         f"topic text back as narration. Write original spoken sentences ABOUT the topic, in your "
@@ -1941,7 +2105,9 @@ def _detect_multiple_tickers(topic: str, max_count: int) -> List[str]:
     return tickers[:max_count]
 
 
-def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: str = None) -> dict:
+def generate_custom_video(
+    prompt_text: str, num_slides: int = 4, lang_override: str = None, data_points: Optional[List[str]] = None
+) -> dict:
     """2026-08-09 (admin chat-to-video feature, requested as "Video Engine
     可以加個CHAT更彈性做任何影片嗎"): admin-only, free-text-driven video
     generation, separate from generate_daily_video()'s fixed
@@ -1957,7 +2123,20 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: 
     parse_video_chat_request()'s keyword-guessed language -- lets the
     admin just pick a dropdown instead of having to phrase the prompt so
     the guesser catches it (e.g. non-English topic text that doesn't
-    literally name its own language)."""
+    literally name its own language).
+
+    2026-09-29 (AJ: "重有咩可選好"): data_points, if given, is a list of
+    admin.html checkbox keys (see _VIDEO_DATA_POINT_CHOICES) selecting
+    which REAL data categories the spoken narration is allowed to cite
+    for whatever ticker(s) the topic resolves to -- support/resistance
+    +RSI/MACD, fundamentals, volume/52-week/moving-averages, or
+    institutional/short-interest. Ticker/chart detection now runs BEFORE
+    the AI script-writer (it used to run after, so real fetched numbers
+    were never available to feed into the narration prompt at all) so
+    _fetch_video_data_context() can hand _ai_write_custom_script() a real
+    data block when the admin asked for one. None/empty (the default)
+    reproduces the exact prior behavior: fully generic narration, no
+    numbers cited."""
     if not is_available():
         msg = "Video Engine unavailable: " + (
             "GOOGLE_TTS_API_KEY not set" if not tts_service.is_available() else "ffmpeg/ffprobe not found on PATH"
@@ -1979,11 +2158,6 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: 
     theme = parsed["theme"] if parsed["theme"] in _THEMES else _DEFAULT_THEME
     width, height = _ASPECT_RATIOS[aspect_ratio]
     colors = _THEMES[theme]
-
-    narration_texts = _ai_write_custom_script(parsed["topic"], num_slides, lang)
-    if narration_texts is None:
-        _log_generation("error", f"AI script-writer failed for custom topic: {parsed['topic'][:80]!r}")
-        return {"available": False, "message": "AI could not write a script for this request -- try rephrasing it."}
 
     # 2026-08-09, extended 2026-09-07 for multiple chart slides (AJ's
     # upgrade #2, "1-4可以全做"): if the admin's topic names one or more
@@ -2026,6 +2200,20 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: 
 
     n_charts = min(len(chart_slides_data), n_body)
     chart_ticker = chart_slides_data[0][0] if chart_slides_data else None  # back-compat: first chart's ticker
+
+    # 2026-09-29 (AJ: "重有咩可選好"): now that ticker/chart detection runs
+    # BEFORE the AI script-writer (moved up from after it), a real data
+    # block can be built from chart_slides_data and handed to
+    # _ai_write_custom_script() -- see that function and
+    # _fetch_video_data_context()'s docstrings. None when the admin
+    # checked no data-point boxes or the topic resolved no ticker, which
+    # reproduces the pre-existing fully-generic-narration behavior exactly.
+    data_context = _fetch_video_data_context(chart_slides_data, requested_indicator, data_points)
+
+    narration_texts = _ai_write_custom_script(parsed["topic"], num_slides, lang, data_context=data_context)
+    if narration_texts is None:
+        _log_generation("error", f"AI script-writer failed for custom topic: {parsed['topic'][:80]!r}")
+        return {"available": False, "message": "AI could not write a script for this request -- try rephrasing it."}
 
     # 2026-09-07 (upgrade #4, chart placement control): chart slide(s)
     # used to always land at the FRONT of the body slots regardless of
@@ -2091,4 +2279,6 @@ def generate_custom_video(prompt_text: str, num_slides: int = 4, lang_override: 
             result["chart_tickers"] = [t for (t, _, _, _) in chart_slides_data[:n_charts]]
         if requested_indicator and n_charts:
             result["indicator"] = requested_indicator
+        if data_context:
+            result["data_points_cited"] = sorted(set(data_points or []) & _VIDEO_DATA_POINT_CHOICES)
     return result
