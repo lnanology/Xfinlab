@@ -471,6 +471,37 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+# 2026-09-29 (AJ: "一次過起晒" -- step 3 of the prediction-ledger/
+# learning-loop request, "定期重新訓練基建" the Stage 2 roadmap called
+# for): monthly retrain of every direction-probability model, matching
+# services/direction_probability_service.py's MODEL_MAX_AGE_DAYS=30 --
+# without this, a model just silently stops being served once it turns
+# stale (predict() honestly returns unavailable rather than serving an
+# outdated one) and stays that way until someone manually runs
+# scripts/train_direction_models.py. Scheduled for day=1 (first of each
+# month) at an off-peak hour -- this fetches ~2y of OHLCV per watchlist
+# symbol and re-runs the walk-forward backtest gate, which is real work,
+# so it shouldn't overlap with the busier daily jobs. Logs via
+# logger.info (not print()) so results land in Railway's log stream --
+# see retrain_all()'s `log` parameter in that script.
+def _run_direction_model_retrain_job():
+    _job_logger = logging.getLogger("direction_model_retrain")
+    try:
+        from scripts.train_direction_models import retrain_all
+        retrain_all(log=_job_logger.info)
+    except Exception:
+        _job_logger.exception("direction_model_retrain job failed")
+
+_push_scheduler.add_job(
+    _run_direction_model_retrain_job,
+    "cron",
+    day=1,
+    hour=4,
+    minute=0,
+    id="direction_model_retrain",
+    replace_existing=True,
+)
+
 # 2026-08-24 (referral redesign, "5友付BASIC" 浮動式解鎖 -- full reasoning
 # in chat history): re-affirms services/referral_service.py's floating
 # Basic referral grant daily. Deliberately its own cron, not folded into

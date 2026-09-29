@@ -548,6 +548,24 @@ async def ai_analysis(request: Request, body: dict):
         except Exception:
             pass
 
+        # 2026-09-29 (step 2 of the same request, "一次過起晒"): a
+        # confidence-band calibration check -- "when this exact model
+        # said it was this sure before, was it actually right that
+        # often?" -- see prediction_ledger_service.get_calibration_note()
+        # for the honesty gate (returns None rather than a number under
+        # min_samples). Deliberately does NOT alter up_probability_pct
+        # itself: this codebase never silently replaces a real model
+        # output, it only ever adds transparent context next to it.
+        try:
+            from services.prediction_ledger_service import get_calibration_note
+            note = get_calibration_note(
+                "direction_probability_service", direction_probability["up_probability_pct"]
+            )
+            if note:
+                direction_probability["calibration_note"] = note
+        except Exception:
+            pass
+
     # Stage 3 roadmap (2026-07-20): real market-based shipping/supply-chain
     # proxy (BDRY/BOAT ETF prices) -- see services/shipping_proxy_service.py
     # for why this is a labeled proxy, not the official Baltic Dry Index.
