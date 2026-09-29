@@ -1905,7 +1905,16 @@ def _ai_extract_extra_tickers(topic: str, exclude: List[str], max_count: int) ->
             if not isinstance(t, str):
                 continue
             t = t.strip().upper()
-            if t and t not in seen and _re.match(r"^[A-Z][A-Z0-9.\-]{0,9}$", t):
+            # 2026-09-29 fix (AJ: TW tickers like 2330.TW / 2317.TW never
+            # got a chart -- this regex required a LEADING LETTER, which
+            # silently rejected every numeric-code market: Taiwan
+            # (2330.TW), Hong Kong (0700.HK, 9988.HK), Korea (005930.KS)
+            # all use digit-first tickers that are already real, valid
+            # entries in COUNTRY_BASKETS above. Now allows a leading
+            # digit too -- still requires the AI's own output to look
+            # ticker-shaped (letters/digits/./- only, <=10 chars), just
+            # no longer assumes US-style letter-first format.
+            if t and t not in seen and _re.match(r"^[A-Z0-9][A-Z0-9.\-]{0,9}$", t):
                 seen.add(t)
                 result.append(t)
             if len(result) >= max_count:
