@@ -134,12 +134,19 @@
   .more-plans-btn { background: none; border: 1px solid var(--border); color: var(--label); padding: 10px 22px; border-radius: 99px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
   .more-plans-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  .btn-plan { width: 100%; padding: 12px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.2s; margin-bottom: 28px; }
+  .btn-plan { width: 100%; padding: 12px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; margin-bottom: 28px;
+    /* 2026-09-29 (AJ: 按鈕3D效果): zero-dependency CSS-only depth --
+       a raised shadow that lifts higher on hover and flattens on
+       press (:active), pure box-shadow/transform, no library. */
+    box-shadow: 0 2px 0 rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.12);
+    transform: translateY(0);
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.15s; }
   .btn-free { background: var(--surface2); color: var(--label); border: 1px solid var(--border); }
   .btn-starter { background: var(--accent); color: #000; }
   .btn-pro { background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; }
   .btn-enterprise { background: var(--surface2); color: var(--text); border: 1px solid var(--purple); }
-  .btn-plan:hover { opacity: 0.85; }
+  .btn-plan:hover { opacity: 0.85; transform: translateY(-2px); box-shadow: 0 4px 0 rgba(0,0,0,0.18), 0 6px 10px rgba(0,0,0,0.15); }
+  .btn-plan:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.1); }
 
   .features-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
   .feature { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.82rem; color: var(--label); }
@@ -168,8 +175,16 @@
   .faq-q { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 500; }
   .faq-a { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-top: 12px; display: none; }
   .faq-item.open .faq-a { display: block; }
-  .faq-item.open .arrow { transform: rotate(180deg); }
-  .arrow { transition: transform 0.2s; color: var(--muted); }
+  .faq-item.open .arrow { transform: rotate(180deg); background: var(--surface2); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+  /* 2026-09-29 (AJ: 打開按鍵3D效果): the arrow becomes a small raised
+     circular "button" affordance -- outward shadow when closed (looks
+     pressable), inset shadow when open (looks pressed-in). Pure CSS,
+     zero dependency, same native onclick toggle as before. */
+  .arrow { transition: transform 0.2s, box-shadow 0.2s, background 0.2s; color: var(--muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.05) inset; }
+  .faq-q:hover .arrow { box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
   /* CTA */
   .cta-section { text-align: center; margin-top: 80px; padding: 48px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
@@ -650,5 +665,23 @@ async function submitEnterpriseInquiry() {
 <script src="js/support-widget.js"></script>
 <script src="js/mobile-widget-dock.js"></script>
 <script src="js/quick-ask-bubble.js"></script>
+<!-- 2026-09-29 (AJ: "有咩開源MIT...UI/UX...4D效果"): vanilla-tilt.js
+     (MIT, https://github.com/micku7zu/vanilla-tilt.js) -- subtle 3D
+     mouse-hover tilt on the plan cards only. Kept deliberately
+     restrained (max 6deg, no glare sweep) rather than a flashy demo
+     effect -- this is a pricing page for a financial platform, not a
+     product-hunt landing page; a light depth cue reads as polish,
+     a strong one reads as gimmicky. Respects prefers-reduced-motion
+     and gyroscope is off (mouse-hover only, no device-orientation
+     permission prompt on mobile Safari -- and a no-op there anyway
+     since there's no mouse to hover with). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+<script>
+  if (window.VanillaTilt && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    VanillaTilt.init(document.querySelectorAll('.plan'), {
+      max: 6, speed: 400, glare: false, gyroscope: false, scale: 1.015,
+    });
+  }
+</script>
 </body>
 </html>
