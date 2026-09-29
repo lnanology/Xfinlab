@@ -308,6 +308,92 @@ def get_ledger_stats(symbol: Optional[str] = None, source: Optional[str] = None)
     }
 
 
+# 2026-09-29 (AJ: "一次過起晒" -- step 2 of the prediction-ledger/
+# learning-loop request): confidence bands the model's own stated
+# probability gets bucketed into, and the honesty question calibration
+# actually asks -- "when this model said it was THIS sure, was it
+# actually right that often?" A well-calibrated model's 80%-confidence
+# predictions should come true roughly 80% of the time; if this codebase
+# ever finds a bucket where that's badly off, that's a real, evidence-
+# based finding, not a guess. Buckets are by DISTANCE from a 50/50 coin
+# flip (not raw up_probability_pct) since confidence is symmetric --
+# 20% up-probability is exactly as confident a "down" call as 80% is an
+# "up" call.
+_CALIBRATION_BANDS = [
+    ("low_confidence", 0.0, 10.0),    # 40-60% up_probability_pct
+    ("medium_confidence", 10.0, 25.0),  # 25-40% or 60-75%
+    ("high_confidence", 25.0, 100.0),   # <25% or >75%
+]
+
+
+def _band_for_probability(up_probability_pct: float) -> str:
+    distance = abs(up_probability_pct - 50.0)
+    for name, lo, hi in _CALIBRATION_BANDS:
+        if lo <= distance < hi:
+            return name
+    return _CALIBRATION_BANDS[-1][0]
+
+
+def get_calibration_by_confidence(source: str, min_samples: int = 15) -> Dict:
+    """Empirical accuracy per confidence band, over all GRADED rows for
+    `source` (pooled across every symbol -- a single symbol's graded
+    count is almost always too small to bucket further, see
+    get_ledger_stats()'s own sample-size caution). A band with fewer
+    than `min_samples` graded rows is reported as insufficient rather
+    than shown with a misleadingly precise percentage -- the whole point
+    of this function is to be honest about calibration, so it can't
+    itself be the thing that overstates confidence from a small sample.
+    Never raises; returns an all-insufficient dict on any DB error."""
+    bands = {name: {"correct": 0, "total": 0} for name, _, _ in _CALIBRATION_BANDS}
+    try:
+        conn = _get_db()
+        try:
+            where, params = build_equality_where({"graded": 1, "source": source})
+            rows = conn.execute(f"SELECT up_probability_pct, correct FROM prediction_ledger {where}", params).fetchall()
+        finally:
+            conn.close()
+        for r in rows:
+            if r["correct"] is None or r["up_probability_pct"] is None:
+                continue
+            band = _band_for_probability(r["up_probability_pct"])
+            bands[band]["total"] += 1
+            bands[band]["correct"] += r["correct"]
+    except Exception:
+        logger.exception("prediction_ledger.get_calibration_by_confidence failed for source=%s", source)
+
+    result = {}
+    for name, _, _ in _CALIBRATION_BANDS:
+        total = bands[name]["total"]
+        if total >= min_samples:
+            result[name] = {
+                "sample_count": total,
+                "actual_accuracy_pct": round(bands[name]["correct"] / total * 100, 1),
+            }
+        else:
+            result[name] = {"sample_count": total, "actual_accuracy_pct": None, "message": f"樣本不足（{total} < {min_samples}），未夠可靠去判斷呢個信心區間校準得準唔準"}
+    return result
+
+
+def get_calibration_note(source: str, up_probability_pct: float, min_samples: int = 15) -> Optional[str]:
+    """One-line, plain-language calibration check for a SPECIFIC fresh
+    prediction's confidence band -- e.g. attached alongside a live
+    direction_probability response so a user sees not just today's
+    number, but whether predictions at this confidence level have
+    historically been trustworthy. Returns None (never a fabricated
+    claim) when that band doesn't have enough graded history yet."""
+    try:
+        band = _band_for_probability(up_probability_pct)
+        stats = get_calibration_by_confidence(source, min_samples=min_samples)[band]
+        if stats["actual_accuracy_pct"] is None:
+            return None
+        return (
+            f"呢個信心區間（{band}）過去{stats['sample_count']}次已評分預測，"
+            f"實際命中率{stats['actual_accuracy_pct']}%。"
+        )
+    except Exception:
+        return None
+
+
 def get_recent_predictions(limit: int = 50, symbol: Optional[str] = None, source: Optional[str] = None) -> List[Dict]:
     conn = _get_db()
     try:
