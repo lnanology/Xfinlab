@@ -525,6 +525,29 @@ async def ai_analysis(request: Request, body: dict):
     except Exception:
         pass
 
+    # 2026-09-29 (AJ: "拉嘢返嚟學習進化" -- step 1 of closing the loop):
+    # direction_probability's own `holdout_accuracy_pct` above is a
+    # static, one-time backtest number from whenever this symbol's model
+    # was last trained. It never updates between retrains, so it can't
+    # tell a user "is this model still working NOW" if the market regime
+    # has drifted since training. The prediction_ledger (this exact
+    # model's real graded track record, updated daily as predictions
+    # come due) is the live complement to that -- attaching it here
+    # doesn't change the model's output at all, just makes the existing
+    # probability number honestly self-aware of its own recent real
+    # accuracy, for this symbol specifically and across all symbols this
+    # model has ever predicted on. Best-effort: never lets a ledger-read
+    # failure affect the live direction_probability response.
+    if direction_probability and direction_probability.get("available"):
+        try:
+            from services.prediction_ledger_service import get_ledger_stats
+            direction_probability["live_track_record"] = {
+                "this_symbol": get_ledger_stats(symbol=symbol, source="direction_probability_service"),
+                "all_symbols": get_ledger_stats(source="direction_probability_service"),
+            }
+        except Exception:
+            pass
+
     # Stage 3 roadmap (2026-07-20): real market-based shipping/supply-chain
     # proxy (BDRY/BOAT ETF prices) -- see services/shipping_proxy_service.py
     # for why this is a labeled proxy, not the official Baltic Dry Index.
