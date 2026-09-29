@@ -50,6 +50,7 @@ from api.achievements import router as achievements_router
 from api.referral import router as referral_router
 from api.analytics import router as analytics_router
 from api.ai_analysis import router as ai_analysis_router
+from api.evidence_scorecard import router as evidence_scorecard_router
 from api.news_denoise import router as news_denoise_router
 from api.company_compare import router as company_compare_router
 from api.stress_lab import router as stress_lab_router
@@ -305,6 +306,7 @@ app.include_router(achievements_router, prefix="/api", tags=["Achievements"])
 app.include_router(referral_router, prefix="/api", tags=["Referral"])
 app.include_router(analytics_router, prefix="/api", tags=["Analytics"])
 app.include_router(ai_analysis_router, prefix="/api", tags=["AI Analysis"])
+app.include_router(evidence_scorecard_router, prefix="/api", tags=["Evidence Scorecard"])
 app.include_router(news_denoise_router, prefix="/api", tags=["News"])
 app.include_router(company_compare_router, prefix="/api", tags=["Compare"])
 app.include_router(stress_lab_router, prefix="/api", tags=["Stress Lab"])
