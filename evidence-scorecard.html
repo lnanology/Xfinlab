@@ -82,17 +82,17 @@
 
 <div class="container">
   <div class="page-tag">Evidence Scorecard</div>
-  <h1 class="page-title">多維度反證計分卡</h1>
-  <p class="page-sub">11個獨立真實數據維度（技術面、基本面、機構持倉、內部人交易、VIX、CFTC持倉、資金流向、航運指標、新聞情緒、ML方向機率），明確標示邊啲維度互相矛盾——唔係淨係計一個分數呃自己。</p>
+  <h1 class="page-title" data-i18n="es_title">多維度反證計分卡</h1>
+  <p class="page-sub" data-i18n="es_subtitle">11個獨立真實數據維度（技術面、基本面、機構持倉、內部人交易、VIX、CFTC持倉、資金流向、航運指標、新聞情緒、ML方向機率），明確標示邊啲維度互相矛盾——唔係淨係計一個分數呃自己。</p>
 
   <div class="panel" id="searchPanel">
     <div class="es-search-row">
       <div class="es-field" style="flex:1;min-width:180px">
-        <label for="esTickerInput" class="input-label">代號</label>
-        <input id="esTickerInput" type="text" placeholder="例如 AAPL、2330.TW、BTC-USD">
+        <label for="esTickerInput" class="input-label" data-i18n="es_ticker_label">代號</label>
+        <input id="esTickerInput" type="text" placeholder="例如 AAPL、2330.TW、BTC-USD" data-i18n-placeholder="es_ticker_placeholder">
       </div>
       <div class="es-field">
-        <label for="esAssetClass" class="input-label">資產類別</label>
+        <label for="esAssetClass" class="input-label" data-i18n="es_asset_class_label">資產類別</label>
         <select id="esAssetClass">
           <option value="Stocks" selected>Stocks</option>
           <option value="Futures">Futures</option>
@@ -102,58 +102,63 @@
           <option value="Indices">Indices</option>
         </select>
       </div>
-      <button class="primary-btn" id="esRunBtn" onclick="runEvidenceScorecard()">🔍 分析</button>
+      <button class="primary-btn" id="esRunBtn" onclick="runEvidenceScorecard()" data-i18n="es_analyze_btn">🔍 分析</button>
     </div>
-    <div class="upload-hint" style="margin-top:0.5rem">Stocks通常有8-11個維度可用；其他資產類別通常有5-7個（少咗嘅係因為SEC 13F/內部人交易呢類數據本身只係stock先有，誠實反映，唔係漏做）。</div>
+    <div class="upload-hint" style="margin-top:0.5rem" data-i18n="es_coverage_hint">Stocks通常有8-11個維度可用；其他資產類別通常有5-7個（少咗嘅係因為SEC 13F/內部人交易呢類數據本身只係stock先有，誠實反映，唔係漏做）。</div>
   </div>
 
   <div id="esErrorBanner" style="display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid var(--accent-red,#DC2626);color:var(--accent-red,#DC2626);font-size:0.85rem"></div>
 
   <div id="esResultPanel" style="display:none">
     <div class="panel" style="margin-top:1rem">
-      <h3 style="margin-top:0" id="esResultTitle">分析結果</h3>
+      <h3 style="margin-top:0" id="esResultTitle" data-i18n="es_result_title_default">分析結果</h3>
 
       <div class="es-summary-grid">
-        <div class="es-stat"><div class="es-stat-num" id="esAvailableCount">-</div><div class="es-stat-label">可用維度 / 總數</div></div>
-        <div class="es-stat"><div class="es-stat-num support" id="esSupportCount">-</div><div class="es-stat-label">支持</div></div>
-        <div class="es-stat"><div class="es-stat-num oppose" id="esOpposeCount">-</div><div class="es-stat-label">反對</div></div>
-        <div class="es-stat"><div class="es-stat-num" id="esNeutralCount">-</div><div class="es-stat-label">中性</div></div>
+        <div class="es-stat"><div class="es-stat-num" id="esAvailableCount">-</div><div class="es-stat-label" data-i18n="es_stat_available">可用維度 / 總數</div></div>
+        <div class="es-stat"><div class="es-stat-num support" id="esSupportCount">-</div><div class="es-stat-label" data-i18n="es_stat_support">支持</div></div>
+        <div class="es-stat"><div class="es-stat-num oppose" id="esOpposeCount">-</div><div class="es-stat-label" data-i18n="es_stat_oppose">反對</div></div>
+        <div class="es-stat"><div class="es-stat-num" id="esNeutralCount">-</div><div class="es-stat-label" data-i18n="es_stat_neutral">中性</div></div>
       </div>
 
       <div style="margin-top:1rem">
         <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text3)">
-          <span>Confluence（支持 vs 反對）</span><span id="esConfluencePct">-</span>
+          <span data-i18n="es_confluence_label">Confluence（支持 vs 反對）</span><span id="esConfluencePct">-</span>
         </div>
         <div class="es-confluence-bar"><div class="es-confluence-bar-fill" id="esConfluenceFill" style="width:0%"></div></div>
       </div>
 
-      <div class="es-disagreement-banner" id="esDisagreementBanner">⚠️ 呢隻資產出現獨立維度矛盾訊號——唔同真實數據來源得出唔同結論，值得留意，唔應該只信一面之詞。</div>
+      <div class="es-disagreement-banner" id="esDisagreementBanner" data-i18n="es_disagreement_banner">⚠️ 呢隻資產出現獨立維度矛盾訊號——唔同真實數據來源得出唔同結論，值得留意，唔應該只信一面之詞。</div>
 
       <div id="esDimGrid" class="es-dim-grid"></div>
 
       <div class="es-lock-panel" id="esLockPanel" style="display:none">
         <div class="lock-icon">🔒</div>
-        <p>逐個維度嘅詳細訊號（邊個source支持、邊個反對）係Pro功能。免費計劃睇到上面嘅總數同confluence，升級睇齊全部11個維度嘅詳情。</p>
-        <a href="pricing.html" class="primary-btn" style="text-decoration:none;display:inline-block">升級睇齊全部維度</a>
+        <p data-i18n="es_lock_text">逐個維度嘅詳細訊號（邊個source支持、邊個反對）係Pro功能。免費計劃睇到上面嘅總數同confluence，升級睇齊全部11個維度嘅詳情。</p>
+        <a href="pricing.html" class="primary-btn" style="text-decoration:none;display:inline-block" data-i18n="es_lock_btn">升級睇齊全部維度</a>
       </div>
 
       <p class="upload-hint" style="margin-top:1rem" id="esNote"></p>
     </div>
   </div>
 
-  <div class="es-empty-hint" id="esEmptyHint">打入代號，睇下唔同真實數據來源對呢隻資產嘅睇法係咪一致。</div>
+  <div class="es-empty-hint" id="esEmptyHint" data-i18n="es_empty_hint">打入代號，睇下唔同真實數據來源對呢隻資產嘅睇法係咪一致。</div>
 
 </div>
 
 <div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
 <footer>
-  <div class="footer-note">XFINLAB © 2026 · <span>多維度反證計分卡</span> · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none">Methodology</a></div>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="es_title">多維度反證計分卡</span> · <a href="privacy.html" style="color:var(--blue);text-decoration:none">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none">Methodology</a></div>
 </footer>
 
 <script>
 const API = 'https://api.xfinlab.com/api';
 
-const ES_SIGNAL_LABEL = {support: '支持', oppose: '反對', neutral: '中性'};
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+function esSignalLabel(signal){
+  const map = {support: t('es_stat_support', '支持'), oppose: t('es_stat_oppose', '反對'), neutral: t('es_stat_neutral', '中性')};
+  return map[signal] || signal;
+}
 
 async function runEvidenceScorecard(){
   const tickerInput = document.getElementById('esTickerInput');
@@ -163,7 +168,7 @@ async function runEvidenceScorecard(){
   errBanner.style.display = 'none';
 
   if (!symbol) {
-    errBanner.textContent = '請輸入代號';
+    errBanner.textContent = t('es_err_enter_ticker', '請輸入代號');
     errBanner.style.display = 'block';
     return;
   }
@@ -171,7 +176,7 @@ async function runEvidenceScorecard(){
   const btn = document.getElementById('esRunBtn');
   btn.disabled = true;
   const originalText = btn.textContent;
-  btn.textContent = '分析中...';
+  btn.textContent = t('es_analyzing', '分析中...');
   if (typeof window.startAiLoading === 'function') window.startAiLoading();
   document.getElementById('esEmptyHint').style.display = 'none';
 
@@ -186,14 +191,14 @@ async function runEvidenceScorecard(){
     if (!res.ok) throw new Error((json && json.detail) || res.status);
     const data = json.data;
     if (!data || !data.symbol) {
-      errBanner.textContent = '搵唔到呢個代號嘅數據，試下第二個代號。';
+      errBanner.textContent = t('es_err_not_found', '搵唔到呢個代號嘅數據，試下第二個代號。');
       errBanner.style.display = 'block';
       document.getElementById('esResultPanel').style.display = 'none';
       return;
     }
     renderEvidenceScorecard(data);
   } catch (e) {
-    errBanner.textContent = '分析失敗：' + (e.message || e);
+    errBanner.textContent = t('es_err_failed_prefix', '分析失敗：') + (e.message || e);
     errBanner.style.display = 'block';
   } finally {
     btn.disabled = false;
@@ -211,7 +216,7 @@ function renderEvidenceScorecard(data){
   document.getElementById('esNeutralCount').textContent = data.neutral_count;
 
   const pct = data.confluence_pct;
-  document.getElementById('esConfluencePct').textContent = pct === null || pct === undefined ? '不適用（冇明確方向訊號）' : `${pct}%`;
+  document.getElementById('esConfluencePct').textContent = pct === null || pct === undefined ? t('es_confluence_na', '不適用（冇明確方向訊號）') : `${pct}%`;
   document.getElementById('esConfluenceFill').style.width = (pct === null || pct === undefined ? 0 : pct) + '%';
 
   document.getElementById('esDisagreementBanner').style.display = data.has_disagreement ? 'block' : 'none';
@@ -229,12 +234,12 @@ function renderEvidenceScorecard(data){
 
   const dims = data.dimensions || [];
   if (!dims.length) {
-    grid.innerHTML = '<div class="es-empty-hint">呢個代號暫時冇任何維度有可用數據。</div>';
+    grid.innerHTML = `<div class="es-empty-hint">${escapeHtmlEs(t('es_no_dimensions', '呢個代號暫時冇任何維度有可用數據。'))}</div>`;
     return;
   }
   grid.innerHTML = dims.map(d => `
     <div class="es-dim-card ${d.signal}">
-      <span class="es-dim-badge ${d.signal}">${ES_SIGNAL_LABEL[d.signal] || d.signal}</span>
+      <span class="es-dim-badge ${d.signal}">${escapeHtmlEs(esSignalLabel(d.signal))}</span>
       <div class="es-dim-label">${escapeHtmlEs(d.label)}</div>
       <div class="es-dim-detail">${escapeHtmlEs(d.detail || '')}</div>
     </div>
