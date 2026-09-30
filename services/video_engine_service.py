@@ -342,6 +342,235 @@ def _init_log_table():
 _init_log_table()
 
 
+# 2026-09-30 (AJ: "build一個可抽取本機卓面照片及影片加入的選項" -- let the
+# admin upload their own photos/videos from their own computer as slide
+# backgrounds, for more visual variety than the single AI-generated
+# background image _generate_video_background() produces per video).
+# Scope decision (confirmed with AJ via AskUserQuestion): a real MOVING
+# video background would require rebuilding _render_video_pipeline()'s
+# entire still-image concat-demuxer assembly around per-slide video
+# segments -- a large, hard-to-fully-test change. Extracting a single
+# frame from an uploaded video and using it exactly like an uploaded
+# photo (both become a plain PIL background image via the EXISTING
+# bg_image mechanism _render_slide() already has) is the safe choice:
+# zero changes to the render pipeline itself, same "a nicer background
+# is a bonus, never a requirement" contract as the AI-generated one.
+_MEDIA_LIBRARY_DIR = os.path.join(_OUTPUT_DIR, "media_library")
+_ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+_ALLOWED_VIDEO_EXT = {".mp4", ".mov", ".webm", ".m4v"}
+_MAX_IMAGE_UPLOAD_BYTES = 20 * 1024 * 1024   # 20MB -- generous for a photo
+_MAX_VIDEO_UPLOAD_BYTES = 200 * 1024 * 1024  # 200MB -- generous for a short clip
+# How long a SOURCE video is allowed to be. We only ever pull ONE still
+# frame out of it (see scope decision above), so this isn't a rendering
+# cost limit -- it's a sane upper bound on what an admin should be
+# uploading through a browser file input at all before ffprobe/ffmpeg
+# even need to touch it.
+_MAX_SOURCE_VIDEO_SECONDS = 600  # 10 minutes
+
+
+def _init_media_library_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS video_media_library (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL,
+            label TEXT,
+            source_kind TEXT NOT NULL,
+            source_filename TEXT,
+            frame_second REAL,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_media_library_table()
+
+
+def _ffprobe_video_duration(path: str) -> Optional[float]:
+    """Same ffprobe pattern as _ffprobe_duration() (used for TTS clip
+    durations below) but callable standalone before any render pipeline
+    exists, for validating an uploaded video's length at upload time.
+    Returns None on any failure -- caller must reject the upload rather
+    than guess a duration."""
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", path],
+            capture_output=True, text=True, timeout=30, check=True,
+        )
+        return float(result.stdout.strip())
+    except Exception:
+        return None
+
+
+def save_media_upload(file_bytes: bytes, original_filename: str, frame_second: Optional[float] = None) -> dict:
+    """Validates and stores one admin-uploaded photo or video, returning
+    {"id", "filename", "kind", "label", "frame_second"} on success.
+    Unlike the best-effort fetch helpers elsewhere in this file, this
+    RAISES ValueError with a human-readable message on any validation
+    failure (bad extension, too large, unreadable/corrupt file, source
+    video too long) -- an upload is a direct admin action with an
+    immediate response, not a background best-effort fetch, so the
+    caller (api/admin.py) should surface the real reason rather than
+    silently do nothing.
+
+    A video upload is converted to a single JPEG frame at `frame_second`
+    (clamped into the video's actual duration; defaults to the midpoint
+    if not given) -- see the scope-decision comment above
+    _init_media_library_table() for why this is a still frame, not a
+    moving clip. A photo upload is just re-encoded to JPEG (via PIL,
+    which also validates it's actually a real, decodable image) so
+    every stored asset in the library is the same simple format
+    regardless of source."""
+    import uuid
+
+    ext = os.path.splitext(original_filename or "")[1].lower()
+    os.makedirs(_MEDIA_LIBRARY_DIR, exist_ok=True)
+    stored_name = f"{uuid.uuid4().hex}.jpg"
+    stored_path = os.path.join(_MEDIA_LIBRARY_DIR, stored_name)
+
+    if ext in _ALLOWED_IMAGE_EXT:
+        if len(file_bytes) > _MAX_IMAGE_UPLOAD_BYTES:
+            raise ValueError(f"Image too large (max {_MAX_IMAGE_UPLOAD_BYTES // (1024*1024)}MB)")
+        try:
+            from io import BytesIO
+
+            img = Image.open(BytesIO(file_bytes))
+            img.load()
+            img.convert("RGB").save(stored_path, "JPEG", quality=90)
+        except Exception as e:
+            raise ValueError(f"Could not read this as an image: {e}")
+        source_kind = "photo"
+        used_frame_second = None
+
+    elif ext in _ALLOWED_VIDEO_EXT:
+        if len(file_bytes) > _MAX_VIDEO_UPLOAD_BYTES:
+            raise ValueError(f"Video too large (max {_MAX_VIDEO_UPLOAD_BYTES // (1024*1024)}MB)")
+        if not _ffmpeg_available():
+            raise ValueError("Video Engine unavailable: ffmpeg/ffprobe not found on PATH")
+        tmp_path = os.path.join(tempfile.gettempdir(), f"xfl_upload_{uuid.uuid4().hex}{ext}")
+        try:
+            with open(tmp_path, "wb") as f:
+                f.write(file_bytes)
+            duration = _ffprobe_video_duration(tmp_path)
+            if duration is None:
+                raise ValueError("Could not read this video file (corrupt or unsupported codec)")
+            if duration > _MAX_SOURCE_VIDEO_SECONDS:
+                raise ValueError(
+                    f"Video too long ({duration:.0f}s) -- max {_MAX_SOURCE_VIDEO_SECONDS}s "
+                    f"(only one frame is extracted, but the file itself still has to be reasonable to upload)"
+                )
+            used_frame_second = frame_second if frame_second is not None else duration / 2
+            used_frame_second = max(0.0, min(used_frame_second, max(0.0, duration - 0.1)))
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-ss", str(used_frame_second), "-i", tmp_path,
+                 "-frames:v", "1", "-q:v", "2", stored_path],
+                capture_output=True, timeout=60,
+            )
+            if result.returncode != 0 or not os.path.exists(stored_path):
+                raise ValueError(f"Frame extraction failed: {result.stderr[-300:].decode('utf-8', 'ignore')}")
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        source_kind = "video_frame"
+
+    else:
+        allowed = sorted(_ALLOWED_IMAGE_EXT | _ALLOWED_VIDEO_EXT)
+        raise ValueError(f"Unsupported file type {ext!r} -- allowed: {', '.join(allowed)}")
+
+    conn = _get_db()
+    cur = conn.execute(
+        "INSERT INTO video_media_library (filename, label, source_kind, source_filename, frame_second) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (stored_name, original_filename, source_kind, original_filename, used_frame_second),
+    )
+    conn.commit()
+    asset_id = cur.lastrowid
+    conn.close()
+    return {
+        "id": asset_id, "filename": stored_name, "kind": source_kind,
+        "label": original_filename, "frame_second": used_frame_second,
+    }
+
+
+def list_media_library() -> List[dict]:
+    """Best-effort (returns [] on any DB error, never raises) -- this
+    feeds an admin UI list, not a render, so degrading to an empty
+    library on a transient DB issue is preferable to a 500."""
+    try:
+        conn = _get_db()
+        rows = conn.execute(
+            "SELECT id, filename, label, source_kind, source_filename, frame_second, created_at "
+            "FROM video_media_library ORDER BY created_at DESC"
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+def get_media_asset_filepath(asset_id: int) -> Optional[str]:
+    """Returns the absolute stored-file path for one library asset, or
+    None if it doesn't exist (deleted, bad id, or the file is missing on
+    disk despite a DB row -- treated the same as "not found" rather than
+    raising, since every caller of this already has a best-effort/404
+    fallback path)."""
+    try:
+        conn = _get_db()
+        row = conn.execute("SELECT filename FROM video_media_library WHERE id = ?", (asset_id,)).fetchone()
+        conn.close()
+        if not row:
+            return None
+        path = os.path.join(_MEDIA_LIBRARY_DIR, row["filename"])
+        return path if os.path.exists(path) else None
+    except Exception:
+        return None
+
+
+def delete_media_asset(asset_id: int) -> bool:
+    try:
+        conn = _get_db()
+        row = conn.execute("SELECT filename FROM video_media_library WHERE id = ?", (asset_id,)).fetchone()
+        if not row:
+            conn.close()
+            return False
+        path = os.path.join(_MEDIA_LIBRARY_DIR, row["filename"])
+        conn.execute("DELETE FROM video_media_library WHERE id = ?", (asset_id,))
+        conn.commit()
+        conn.close()
+        if os.path.exists(path):
+            os.remove(path)
+        return True
+    except Exception:
+        return False
+
+
+def _load_media_library_images(asset_ids: Optional[List[int]], width: int, height: int) -> List["Image.Image"]:
+    """Loads whichever of the admin-selected library asset ids still
+    exist, each fit-cover-resized to the video's exact (width, height)
+    -- the same _fit_cover() helper _generate_video_background() uses,
+    so a hand-picked photo composites identically to an AI-generated
+    one. Best-effort per-asset (a since-deleted id, or a file that
+    somehow fails to open, is just skipped, never raises) -- the caller
+    treats an empty result the same as "admin didn't pick any assets",
+    falling back to the existing AI-generated-background path."""
+    if not asset_ids:
+        return []
+    images = []
+    for asset_id in asset_ids:
+        path = get_media_asset_filepath(asset_id)
+        if not path:
+            continue
+        try:
+            img = Image.open(path).convert("RGB")
+            images.append(_fit_cover(img, width, height))
+        except Exception:
+            continue
+    return images
+
+
 def _ffmpeg_available() -> bool:
     return shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
 
@@ -2106,7 +2335,8 @@ def _detect_multiple_tickers(topic: str, max_count: int) -> List[str]:
 
 
 def generate_custom_video(
-    prompt_text: str, num_slides: int = 4, lang_override: str = None, data_points: Optional[List[str]] = None
+    prompt_text: str, num_slides: int = 4, lang_override: str = None, data_points: Optional[List[str]] = None,
+    media_asset_ids: Optional[List[int]] = None,
 ) -> dict:
     """2026-08-09 (admin chat-to-video feature, requested as "Video Engine
     可以加個CHAT更彈性做任何影片嗎"): admin-only, free-text-driven video
@@ -2136,7 +2366,20 @@ def generate_custom_video(
     _fetch_video_data_context() can hand _ai_write_custom_script() a real
     data block when the admin asked for one. None/empty (the default)
     reproduces the exact prior behavior: fully generic narration, no
-    numbers cited."""
+    numbers cited.
+
+    2026-09-30 (AJ: "build一個可抽取本機卓面照片及影片加入的選項...呢樣可
+    以令變化更多"): media_asset_ids, if given, is a list of ids from the
+    admin's uploaded media library (see save_media_upload() /
+    list_media_library() above) -- photos used directly, videos already
+    reduced to one extracted still frame at upload time. When any load
+    successfully, they REPLACE the single AI-generated background
+    (_generate_video_background()) entirely for this render (saves the
+    DeepInfra call too), cycling through the selected images across
+    intro/body/outro slides one-per-slide for variety instead of the
+    prior single-repeated-image behavior. None/empty, or every id
+    failing to load (deleted since selection, etc.), falls straight
+    back to the exact prior AI-generated-background behavior."""
     if not is_available():
         msg = "Video Engine unavailable: " + (
             "GOOGLE_TTS_API_KEY not set" if not tts_service.is_available() else "ffmpeg/ffprobe not found on PATH"
@@ -2242,21 +2485,40 @@ def generate_custom_video(
             body_kinds[i] = "chart"
 
     # 2026-09-06 (AJ asked "GEN出來可以有相關圖片做背景嗎" -- can the
-    # generated video have a relevant background image): ONE AI-generated
-    # image per video (not per slide) applied to intro/outro/"custom" text
-    # slides only -- "chart" slides keep their plain background since a
-    # real candlestick chart is already the real-data visual for that
-    # slide and doesn't need a decorative photo competing with it. Best-
-    # effort: bg_image stays None on any failure, same as the chart path
-    # just above -- a nicer background is a bonus, never a requirement.
-    bg_image = _generate_video_background(parsed["topic"], width, height)
-    bg_payload = {"_bg_image": bg_image} if bg_image is not None else None
+    # generated video have a relevant background image), applied to
+    # intro/outro/"custom" text slides only -- "chart" slides keep their
+    # plain background since a real candlestick chart is already the
+    # real-data visual for that slide and doesn't need a decorative
+    # photo competing with it.
+    #
+    # 2026-09-30 (AJ: admin-uploaded media library, see this function's
+    # own docstring): if any selected library assets loaded, they
+    # entirely REPLACE the single AI-generated background and cycle one-
+    # per-slide across intro/body/outro for variety; otherwise falls
+    # back to the original single-AI-image-for-the-whole-video behavior
+    # unchanged. Either way this is still best-effort -- an empty
+    # bg_cycle (AI generation also failed/unconfigured) means every
+    # slide just gets None, exactly as before this feature existed.
+    custom_bg_images = _load_media_library_images(media_asset_ids, width, height)
+    if custom_bg_images:
+        bg_cycle = custom_bg_images
+    else:
+        single_bg = _generate_video_background(parsed["topic"], width, height)
+        bg_cycle = [single_bg] if single_bg is not None else [None]
+
+    _bg_cycle_pos = [0]
+
+    def _next_bg_payload():
+        img = bg_cycle[_bg_cycle_pos[0] % len(bg_cycle)]
+        _bg_cycle_pos[0] += 1
+        return {"_bg_image": img} if img is not None else None
 
     # body_kinds may now place "chart" slots anywhere (not just the
     # front) per the placement logic above, so build payloads by walking
     # body_kinds in order and pulling the next chart's data whenever a
     # "chart" slot is hit, rather than assuming charts are a fixed
     # leading prefix.
+    intro_payload = _next_bg_payload()
     chart_data_iter = iter(chart_slides_data[:n_charts])
     body_payloads = []
     for k in body_kinds:
@@ -2264,8 +2526,9 @@ def generate_custom_video(
             t, candles, sr, indicator = next(chart_data_iter)
             body_payloads.append({"ticker": t, "_candles": candles, "_sr": sr, "_indicator": indicator})
         else:
-            body_payloads.append(bg_payload)
-    slides = [("intro", bg_payload)] + list(zip(body_kinds, body_payloads)) + [("outro", bg_payload)]
+            body_payloads.append(_next_bg_payload())
+    outro_payload = _next_bg_payload()
+    slides = [("intro", intro_payload)] + list(zip(body_kinds, body_payloads)) + [("outro", outro_payload)]
 
     result = _render_video_pipeline(
         slides, narration_texts, lang, aspect_ratio, width, height, colors,
@@ -2281,4 +2544,6 @@ def generate_custom_video(
             result["indicator"] = requested_indicator
         if data_context:
             result["data_points_cited"] = sorted(set(data_points or []) & _VIDEO_DATA_POINT_CHOICES)
+        if custom_bg_images:
+            result["media_assets_used"] = len(custom_bg_images)
     return result

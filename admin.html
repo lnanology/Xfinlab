@@ -828,6 +828,25 @@
             </label>
           </div>
         </div>
+        <div style="margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:8px">
+          <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:6px">
+            Your own photos/videos as slide backgrounds (instead of the AI-generated one) -- pick which
+            uploaded assets to use below, cycled one-per-slide for variety. A video upload is reduced to
+            ONE still frame at the second you choose (max 10 min / 200MB source; only a frame is used, not
+            motion). Leave nothing checked to keep the default AI-generated background.
+          </label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <input type="file" id="videoMediaFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="font-size:0.78rem">
+            <label style="display:flex;align-items:center;gap:5px;font-size:0.78rem" id="videoMediaFrameSecondWrap" title="Only used for a video upload">
+              frame at
+              <input type="number" id="videoMediaFrameSecond" min="0" step="0.5" placeholder="auto (midpoint)" style="width:110px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:0.78rem">
+              sec
+            </label>
+            <button class="btn btn-sm" onclick="uploadVideoMedia()" id="videoMediaUploadBtn">⬆ Upload</button>
+          </div>
+          <div id="videoMediaUploadResult" style="font-size:0.78rem;margin-bottom:8px"></div>
+          <div id="videoMediaLibraryGrid" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
         <button class="btn btn-sm btn-purple" onclick="generateCustomVideo()" id="videoChatGenerateBtn">▶ Generate from Chat</button>
         <div id="videoChatGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
       </div>
@@ -1678,7 +1697,7 @@ function showPage(name) {
   if (name === 'widgets') loadWidgetStats();
   if (name === 'apiusage') loadApiUsage();
   if (name === 'referral') loadReferralStats();
-  if (name === 'video') loadVideoStatus();
+  if (name === 'video') { loadVideoStatus(); loadVideoMediaLibrary(); }
   if (name === 'predledger') loadPredictionLedger();
   if (name === 'composer') loadFormulaComposerLeaderboard();
 }
@@ -2135,6 +2154,79 @@ async function lookupTrendingStocks() {
   }
 }
 
+async function uploadVideoMedia() {
+  const btn = document.getElementById('videoMediaUploadBtn');
+  const result = document.getElementById('videoMediaUploadResult');
+  const fileInput = document.getElementById('videoMediaFileInput');
+  const frameSecondInput = document.getElementById('videoMediaFrameSecond');
+  const file = fileInput.files[0];
+  if (!file) {
+    result.innerHTML = '<span style="color:var(--red)">Pick a file first.</span>';
+    return;
+  }
+  btn.disabled = true;
+  result.innerHTML = '<span class="spinner"></span> Uploading...';
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    let url = `${API}/admin/video/upload-media?token=${adminToken}`;
+    if (frameSecondInput.value.trim()) {
+      url += `&frame_second=${encodeURIComponent(frameSecondInput.value.trim())}`;
+    }
+    const res = await fetch(url, {method: 'POST', body: form});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Uploaded: ${escapeHtml(data.label)} (${escapeHtml(data.kind)})</span>`;
+    fileInput.value = '';
+    frameSecondInput.value = '';
+    loadVideoMediaLibrary();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadVideoMediaLibrary() {
+  const grid = document.getElementById('videoMediaLibraryGrid');
+  if (!grid) return;
+  try {
+    const res = await fetch(`${API}/admin/video/media-library?token=${adminToken}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    const assets = data.assets || [];
+    if (!assets.length) {
+      grid.innerHTML = '<span style="font-size:0.75rem;color:var(--muted)">No uploads yet.</span>';
+      return;
+    }
+    grid.innerHTML = assets.map(a => `
+      <div style="position:relative;width:90px">
+        <label style="cursor:pointer;display:block">
+          <input type="checkbox" class="videoMediaAssetCheck" value="${a.id}" style="position:absolute;top:2px;left:2px;z-index:1">
+          <img src="${API}/admin/video/media/${a.id}/thumbnail?token=${adminToken}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" title="${escapeHtml(a.label || '')}">
+        </label>
+        <div style="font-size:0.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(a.label || '')}">${escapeHtml(a.kind === 'video_frame' ? '🎬 ' + (a.label || '') : '🖼 ' + (a.label || ''))}</div>
+        <button onclick="deleteVideoMediaAsset(${a.id})" title="Delete" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:4px;width:18px;height:18px;font-size:0.65rem;cursor:pointer;line-height:1">✕</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    grid.innerHTML = `<span style="font-size:0.75rem;color:var(--red)">Could not load media library: ${escapeHtml(String(e.message || e))}</span>`;
+  }
+}
+
+async function deleteVideoMediaAsset(id) {
+  try {
+    const res = await fetch(`${API}/admin/video/media/${id}?token=${adminToken}`, {method: 'DELETE'});
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || res.status);
+    }
+    loadVideoMediaLibrary();
+  } catch (e) {
+    alert('Delete failed: ' + (e.message || e));
+  }
+}
+
 async function generateCustomVideo() {
   const btn = document.getElementById('videoChatGenerateBtn');
   const result = document.getElementById('videoChatGenerateResult');
@@ -2149,6 +2241,7 @@ async function generateCustomVideo() {
     ['videoChatDataVolumeMa', 'volume_ma'],
     ['videoChatDataInstitutional', 'institutional'],
   ].filter(([id]) => document.getElementById(id).checked).map(([, key]) => key);
+  const mediaAssetIds = Array.from(document.querySelectorAll('.videoMediaAssetCheck:checked')).map(el => parseInt(el.value, 10));
   if (!prompt) {
     result.innerHTML = '<span style="color:var(--red)">Type a request first.</span>';
     return;
@@ -2159,7 +2252,7 @@ async function generateCustomVideo() {
     const res = await fetch(`${API}/admin/video/generate-custom?token=${adminToken}`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({prompt, num_slides: numSlides, lang: langOverride, post_to_telegram: postTelegram, upload_to_youtube: uploadYoutube, data_points: dataPoints}),
+      body: JSON.stringify({prompt, num_slides: numSlides, lang: langOverride, post_to_telegram: postTelegram, upload_to_youtube: uploadYoutube, data_points: dataPoints, media_asset_ids: mediaAssetIds}),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.status);
@@ -2170,7 +2263,8 @@ async function generateCustomVideo() {
       const chartTickers = (data.chart_tickers && data.chart_tickers.length) ? data.chart_tickers : (data.chart_ticker ? [data.chart_ticker] : []);
       const chartNote = chartTickers.length ? ` · chart${chartTickers.length > 1 ? 's' : ''}: ${escapeHtml(chartTickers.join(', '))}` : '';
       const dataNote = (data.data_points_cited && data.data_points_cited.length) ? ` · narrated real data: ${escapeHtml(data.data_points_cited.join(', '))}` : (dataPoints.length ? ' · data points checked but no real numbers found for this topic' : '');
-      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides · ${escapeHtml(data.lang || '')} · ${escapeHtml(data.aspect_ratio || '')}${chartNote}${dataNote}${tgNote}</span>${_youtubeResultNote(data)}`;
+      const mediaNote = data.media_assets_used ? ` · your media: ${data.media_assets_used} asset(s) used` : '';
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides · ${escapeHtml(data.lang || '')} · ${escapeHtml(data.aspect_ratio || '')}${chartNote}${dataNote}${mediaNote}${tgNote}</span>${_youtubeResultNote(data)}`;
     }
     loadVideoStatus();
   } catch (e) {
