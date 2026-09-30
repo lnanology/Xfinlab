@@ -40,5 +40,14 @@ async def evidence_scorecard(request: Request, body: dict):
         result["dimensions_locked"] = True
         result["required_plan"] = "pro"
         result["upgrade_url"] = "https://xfinlab.com/pricing.html"
+        # 2026-09-30 (audit-trail addition): what_changed.dimension_changes
+        # is the same per-dimension detail as `dimensions` above (which
+        # specific source flipped, and how) -- redact it the same way for
+        # non-Pro, keep the aggregate deltas (confluence_pct_delta etc.)
+        # visible as part of the same "taste, not detail" contract.
+        wc = result.get("what_changed")
+        if isinstance(wc, dict) and "dimension_changes" in wc:
+            wc["dimension_changes"] = None
+            wc["dimension_changes_locked"] = True
 
     return {"status": "ok", "data": result}

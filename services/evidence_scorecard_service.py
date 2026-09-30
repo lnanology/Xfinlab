@@ -51,10 +51,151 @@ contract every other service in this codebase already follows) --
 one dimension's data outage never breaks the other ten.
 """
 
+import json
 import logging
+import os
+import sqlite3
+from datetime import date
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# 2026-09-30 (AJ: monetization gap-analysis session -- "Research Verification
+# /Audit Trail" was the second concrete gap identified, after the
+# Relationship/Impact API. Exact same day-over-day snapshot+diff pattern
+# services/company_network_service.py already established for its own
+# `what_changed` field (INSERT...ON CONFLICT upsert, most-recent-prior-date
+# lookup, pure mechanical delta computation, no AI, best-effort/never-raise).
+# Reused here rather than reinvented so both services behave identically to
+# an integrator who's already seen one of them.
+#
+# What this adds beyond company_network's numeric-only deltas: since each
+# evidence-scorecard dimension carries a categorical signal (support/oppose/
+# neutral), the diff also surfaces WHICH specific dimensions flipped and
+# how (dimension_changes) -- e.g. "news_sentiment flipped oppose->support
+# since yesterday" -- not just that the aggregate confluence_pct moved. This
+# is the literal answer to "did AI's research verdict change, and why" that
+# a plain re-run of the same endpoint can't show on its own.
+# ---------------------------------------------------------------------------
+_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "xfinlab.db")
+
+
+def _get_db():
+    conn = sqlite3.connect(_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _init_snapshot_table():
+    conn = _get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS evidence_scorecard_snapshots (
+            symbol TEXT NOT NULL,
+            asset_class TEXT NOT NULL,
+            snapshot_date TEXT NOT NULL,
+            confluence_pct REAL,
+            support_count INTEGER,
+            oppose_count INTEGER,
+            neutral_count INTEGER,
+            dimensions_available INTEGER,
+            has_disagreement INTEGER,
+            dimensions_json TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (symbol, asset_class, snapshot_date)
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+
+_init_snapshot_table()
+
+
+def _save_snapshot_and_diff(symbol: str, asset_class: str, result: Dict) -> Dict:
+    """Upserts today's scorecard as a snapshot row, then diffs it against
+    the most recent PRIOR date's snapshot for the same (symbol,
+    asset_class) -- same "most recent strictly-before-today row" lookup
+    company_network_service.py's _save_snapshot_and_diff() uses. Returns
+    {"available": False, "message": "..."} if there's no prior snapshot
+    yet (first time this symbol/asset_class was ever scored, or it was
+    already scored once today with nothing to compare against) or on
+    any DB error -- never raises, so a persistence hiccup can only ever
+    cost the `what_changed` field, never break the scorecard response
+    itself."""
+    try:
+        conn = _get_db()
+        today = date.today().isoformat()
+        dims_json = json.dumps(result.get("dimensions") or [])
+        conn.execute(
+            """INSERT INTO evidence_scorecard_snapshots
+               (symbol, asset_class, snapshot_date, confluence_pct, support_count, oppose_count,
+                neutral_count, dimensions_available, has_disagreement, dimensions_json)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(symbol, asset_class, snapshot_date) DO UPDATE SET
+                 confluence_pct=excluded.confluence_pct,
+                 support_count=excluded.support_count,
+                 oppose_count=excluded.oppose_count,
+                 neutral_count=excluded.neutral_count,
+                 dimensions_available=excluded.dimensions_available,
+                 has_disagreement=excluded.has_disagreement,
+                 dimensions_json=excluded.dimensions_json""",
+            (symbol, asset_class, today, result.get("confluence_pct"), result.get("support_count"),
+             result.get("oppose_count"), result.get("neutral_count"), result.get("dimensions_available"),
+             int(bool(result.get("has_disagreement"))), dims_json),
+        )
+        conn.commit()
+
+        prior = conn.execute(
+            """SELECT * FROM evidence_scorecard_snapshots
+               WHERE symbol=? AND asset_class=? AND snapshot_date<?
+               ORDER BY snapshot_date DESC LIMIT 1""",
+            (symbol, asset_class, today),
+        ).fetchone()
+        conn.close()
+
+        if not prior:
+            return {
+                "available": False,
+                "message": "No prior snapshot to compare against yet -- first time this "
+                            "symbol/asset_class combination was checked (or already checked "
+                            "once today, with nothing new to diff against).",
+            }
+
+        def _delta(new_v, old_v):
+            if new_v is None or old_v is None:
+                return None
+            d = new_v - old_v
+            return round(d, 2) if isinstance(d, float) else d
+
+        prior_dims = {d["dimension"]: d["signal"] for d in json.loads(prior["dimensions_json"] or "[]")}
+        now_dims_list = result.get("dimensions") or []
+        now_dims = {d["dimension"]: d["signal"] for d in now_dims_list}
+        label_lookup = {d["dimension"]: d["label"] for d in now_dims_list}
+
+        dimension_changes = []
+        for dim_key in sorted(set(prior_dims) | set(now_dims)):
+            was, now = prior_dims.get(dim_key), now_dims.get(dim_key)
+            if was != now:
+                dimension_changes.append({
+                    "dimension": dim_key,
+                    "label": label_lookup.get(dim_key, dim_key),
+                    "was_signal": was,   # None means this dimension wasn't available yesterday
+                    "now_signal": now,   # None means it's no longer available today
+                })
+
+        return {
+            "available": True,
+            "compared_to_date": prior["snapshot_date"],
+            "confluence_pct_delta": _delta(result.get("confluence_pct"), prior["confluence_pct"]),
+            "support_count_delta": _delta(result.get("support_count"), prior["support_count"]),
+            "oppose_count_delta": _delta(result.get("oppose_count"), prior["oppose_count"]),
+            "neutral_count_delta": _delta(result.get("neutral_count"), prior["neutral_count"]),
+            "has_disagreement_changed": bool(result.get("has_disagreement")) != bool(prior["has_disagreement"]),
+            "dimension_changes": dimension_changes,
+        }
+    except Exception:
+        return {"available": False, "message": "Snapshot/diff unavailable this run."}
 
 STOCK_ONLY_DIMENSIONS = {"fundamentals", "institutional_conviction", "activist_filings", "insider_trading"}
 
@@ -368,7 +509,7 @@ def get_evidence_scorecard(symbol: str, asset_class: str = "Stocks", display_nam
     neutral = [c for c in available if c["signal"] == "neutral"]
     directional_total = len(support) + len(oppose)
 
-    return {
+    scorecard = {
         "symbol": symbol,
         "asset_class": asset_class,
         "dimensions_checked": len(checks),
@@ -388,3 +529,11 @@ def get_evidence_scorecard(symbol: str, asset_class: str = "Stocks", display_nam
             "訊號，呢個先至係「反證」嘅重點——唔應該用嚟做投資決定，僅供參考。"
         ),
     }
+    # 2026-09-30: day-over-day audit trail -- see _save_snapshot_and_diff()'s
+    # docstring above. Persists this call's result as today's snapshot and
+    # diffs it against the most recent prior day, so a repeat caller can see
+    # not just today's scorecard but WHAT CHANGED (and which specific
+    # dimensions flipped) since last time, without maintaining their own
+    # history. Wrapped by _save_snapshot_and_diff itself, never raises.
+    scorecard["what_changed"] = _save_snapshot_and_diff(symbol, asset_class, scorecard)
+    return scorecard
