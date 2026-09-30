@@ -187,6 +187,13 @@ ENDPOINT_WEIGHT = {
     # 7 since an individual industry here can be a fast no-op (empty
     # indicators dict) when that source's own key isn't configured.
     "opportunity_radar": 6,
+    # 2026-09-30 (Relationship/Impact API): a hand-curated dict lookup
+    # (no network call) plus two already-cached/cheap reads
+    # (capital_flow_engine's in-memory cache peek, cftc_cot_service's
+    # small persisted-row lookup) -- cheaper than company_network's 7
+    # (which parses multiple live SEC filing sets), priced closer to
+    # fundamentals' 3.
+    "impact": 3,
     # 2026-08-31 (openFDA/CPSC consumer-safety expansion): unlike the
     # FRED-shape modules above (one fetch per series against a warm
     # cache), these run a live multi-keyword search per ticker across

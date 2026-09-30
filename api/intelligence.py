@@ -270,6 +270,7 @@ def intelligence_status():
         "product_recalls": True,  # never 503s -- CPSC needs no key, returns data: null for no mapping (fetch_error:true in-body if CPSC's own backend is down)
         "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
         "recall_search": True,  # never 503s -- same CPSC source as product_recalls, keyed by free-text keyword instead of ticker
+        "impact": True,  # never 503s -- curated-dict lookup, capital_flow/cftc sub-fields degrade individually to null
     })
 
 
@@ -1470,6 +1471,40 @@ def intelligence_evidence_scorecard(
     return _envelope(data=result, meta={"ticker": ticker, "asset_class": asset_class})
 
 
+@router.get("/intelligence/v1/impact/{ticker}")
+def intelligence_impact(
+    response: Response,
+    ticker: str,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """2026-09-30 (AJ: monetization gap-analysis session -- asked "重有咩
+    有差距的可收費", identified relationship/impact data as the one
+    genuinely missing, genuinely buildable, genuinely differentiated
+    layer vs. generic financial data APIs that only sell price +
+    fundamentals): given a ticker, who is upstream (suppliers),
+    downstream (customers), same-sector (peers), and directly competing
+    (competitors) -- plus market-wide capital flow and this ticker's
+    CFTC futures-positioning context if applicable, composed from
+    services/relationship_graph_service.py, services/capital_flow_
+    engine.py, and services/cftc_cot_service.py (all pre-existing, real
+    data sources -- nothing new fetched here, just a new composition).
+
+    Supplier/customer/competitor relationships are a hand-curated
+    STARTING set (see relationship_graph_service.py's module docstring
+    for sourcing and scope) -- a ticker outside that set returns an
+    honest empty list for those three fields (never a guess), while
+    sector_peers still populates from the existing sector-tagged US
+    basket for any US large-cap ticker."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "impact", response, ticker=ticker.upper())
+
+    from services.relationship_graph_service import get_impact_analysis
+
+    ticker = ticker.upper().strip()
+    result = get_impact_analysis(ticker)
+    return _envelope(data=result, meta={"ticker": ticker})
+
+
 @router.get("/intelligence/v1/vix-term-structure")
 def intelligence_vix_term_structure(
     response: Response,
@@ -1736,6 +1771,7 @@ PUBLIC_INTEL_PATHS = {
     "/intelligence/v1/exchange/{ticker}",
     "/intelligence/v1/fundamentals/{ticker}",
     "/intelligence/v1/evidence-scorecard/{ticker}",
+    "/intelligence/v1/impact/{ticker}",
     "/intelligence/v1/vix-term-structure",
     "/intelligence/v1/bank-health/{ticker}",
     "/intelligence/v1/agriculture/{ticker}",
