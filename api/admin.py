@@ -2,7 +2,8 @@ import sqlite3
 import os
 import requests
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from backend.auth.jwt_handler import verify_token
 from services.audit_log_service import log_action, get_recent_logs
 from services.request_ip import get_client_ip
@@ -782,8 +783,15 @@ async def video_engine_generate_custom(token: str, request: Request, body: dict 
     # empty list here just means no data block gets built -- same
     # fully-generic narration as before this feature existed.
     data_points = (body or {}).get("data_points") or []
+    # 2026-09-30 (AJ: "build一個可抽取本機卓面照片及影片加入的選項"): ids of
+    # previously-uploaded assets from the new media library endpoints
+    # below, admin-picked in admin.html's Custom Video panel.
+    media_asset_ids = (body or {}).get("media_asset_ids") or []
     from services.video_engine_service import generate_custom_video
-    result = generate_custom_video(prompt, num_slides=num_slides, lang_override=lang_override, data_points=data_points)
+    result = generate_custom_video(
+        prompt, num_slides=num_slides, lang_override=lang_override,
+        data_points=data_points, media_asset_ids=media_asset_ids,
+    )
     if post_to_telegram and result.get("available"):
         try:
             from services.telegram_push_service import push_video_to_telegram
@@ -798,6 +806,71 @@ async def video_engine_generate_custom(token: str, request: Request, body: dict 
         except Exception as e:
             result["youtube"] = {"available": False, "message": str(e)}
     return result
+
+# 2026-09-30 (AJ: "build一個可抽取本機卓面照片及影片加入的選項" -- let the
+# admin upload their own photos/videos as Custom Video slide backgrounds
+# for more variety than the single AI-generated background). Four
+# endpoints: upload one asset (photo used directly, video reduced to one
+# extracted frame via services/video_engine_service.py's
+# save_media_upload() -- see that function's docstring for the scope
+# decision on why a still frame, not a moving clip), list the library,
+# serve one asset's stored JPEG for the admin panel's thumbnail grid,
+# and delete one. Same admin-token + video_engine feature-flag gating as
+# the generate-custom endpoint above -- this touches the same feature.
+
+def _require_video_engine_flag():
+    flags = {r["key"]: r["enabled"] for r in get_db().execute(
+        "SELECT key, enabled FROM feature_flags WHERE key='video_engine'"
+    ).fetchall()}
+    if not flags.get("video_engine", 0):
+        raise HTTPException(status_code=403, detail="video_engine feature flag is off")
+
+@router.post("/admin/video/upload-media")
+async def video_engine_upload_media(
+    token: str, request: Request, file: UploadFile = File(...), frame_second: float = Form(None)
+):
+    """Multipart upload -- `file` is the raw photo/video from the
+    admin's own computer, `frame_second` (optional, video only) is which
+    second to extract a still frame from (defaults to the video's
+    midpoint if omitted). Max sizes/duration and allowed extensions are
+    enforced inside save_media_upload() itself; a rejection there
+    becomes a 400 with the real reason, not a silent failure."""
+    verify_admin(token, "video_engine_upload_media", request)
+    _require_video_engine_flag()
+    file_bytes = await file.read()
+    from services.video_engine_service import save_media_upload
+    try:
+        return save_media_upload(file_bytes, file.filename or "upload", frame_second=frame_second)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/admin/video/media-library")
+def video_engine_media_library(token: str, request: Request):
+    verify_admin(token, "video_engine_media_library", request)
+    from services.video_engine_service import list_media_library
+    return {"assets": list_media_library()}
+
+@router.get("/admin/video/media/{asset_id}/thumbnail")
+def video_engine_media_thumbnail(asset_id: int, token: str, request: Request):
+    """A plain GET with the admin token as a query param (same pattern
+    api/video.py's public /video/latest uses for FileResponse) so this
+    URL can go straight into an <img src="..."> tag in admin.html
+    without extra JS fetch/blob plumbing."""
+    verify_admin(token, "video_engine_media_thumbnail", request)
+    from services.video_engine_service import get_media_asset_filepath
+    path = get_media_asset_filepath(asset_id)
+    if not path:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return FileResponse(path, media_type="image/jpeg")
+
+@router.delete("/admin/video/media/{asset_id}")
+def video_engine_delete_media(asset_id: int, token: str, request: Request):
+    verify_admin(token, f"video_engine_delete_media:{asset_id}", request)
+    from services.video_engine_service import delete_media_asset
+    ok = delete_media_asset(asset_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return {"deleted": True, "id": asset_id}
 
 @router.post("/admin/widgets/branding")
 def set_widget_branding(token: str, request: Request, body: dict = {}):
