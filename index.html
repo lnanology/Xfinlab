@@ -274,6 +274,12 @@
   .ai-result-stat-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
   .ai-result-stat-val { font-size: 1.05rem; font-weight: 700; color: var(--text); }
   @media (max-width: 860px) { .hero { grid-template-columns: 1fr; padding-top: 60px; } .hero-left { text-align: center; } .hero p { margin-left: auto; margin-right: auto; } .hero-btns { justify-content: center; } .search-bar { margin: 22px auto 0; } }
+  /* 2026-09-30 (AJ: "CHECK全網手機...語言" QA pass found the "分析 →"
+     button sitting right under js/mobile-widget-dock.js's fixed
+     bottom-right icon column on narrow phones, at the exact scroll
+     position where the hero search bar happens to land): reserve that
+     column's width so the button never lands underneath it. */
+  @media (max-width: 480px) { .search-bar { padding-right: 56px; } }
 
   /* Stats / Trust Numbers */
   .stats { display: flex; justify-content: center; gap: 48px; margin-top: 60px; flex-wrap: wrap; }
@@ -1180,7 +1186,7 @@
   </div>
   <div class="faq-item">
     <div class="faq-q" data-i18n="faq4_q">AI如何分析？Research Score™點計出嚟？</div>
-    <div class="faq-a" data-i18n="faq4_a">每個Engine™嘅數值指標（趨勢/RSI/MACD/支撐阻力）100%基於真實數據計算；AI負責型態辨識同文字解讀。Research Score™係將多個真實技術因子嘅一致程度轉化做0-100分，僅供研究參考，唔構成投資建議。詳見<a href="methodology.html">Methodology</a>。</div>
+    <div class="faq-a" data-i18n="faq4_a">每個Engine™嘅數值指標（趨勢/RSI/MACD/支撐阻力）100%基於真實數據計算；AI負責型態辨識同文字解讀。Research Score™係將多個真實技術因子嘅一致程度轉化做0-100分，僅供研究參考，唔構成投資建議。詳見<a href="methodology.html" data-i18n="footer_methodology">Methodology</a>。</div>
   </div>
   <div class="faq-item">
     <div class="faq-q" data-i18n="faq5_q">會唔會直接推薦邊隻股票買賣？</div>
@@ -1206,15 +1212,15 @@
   <a href="tools.html">Free Tools</a>
   <a href="engines.html">AI Research Tools</a>
   <a href="pricing.html" data-i18n="nav_pricing">Pricing</a>
-  <a href="terms.html">Terms</a>
+  <a href="terms.html" data-i18n="footer_terms">Terms</a>
   <a href="privacy.html">Privacy</a>
-  <a href="risk-warning.html">Risk Warning</a>
-  <a href="ai-disclaimer.html">AI Disclaimer</a>
+  <a href="risk-warning.html" data-i18n="footer_risk_warning">Risk Warning</a>
+  <a href="ai-disclaimer.html" data-i18n="footer_ai_disclaimer">AI Disclaimer</a>
   <a href="methodology.html">Methodology</a>
   <a href="how-it-works.html">How It Works</a>
-  <a href="model-limitations.html">Model Limitations</a>
-  <a href="affiliate-disclosure.html">Affiliate Disclosure</a>
-  <a href="cookie-policy.html">Cookie Policy</a>
+  <a href="model-limitations.html" data-i18n="footer_model_limitations">Model Limitations</a>
+  <a href="affiliate-disclosure.html" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a>
+  <a href="cookie-policy.html" data-i18n="footer_cookie_policy">Cookie Policy</a>
 </footer>
 
 <script>

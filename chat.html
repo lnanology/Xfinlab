@@ -425,6 +425,12 @@ nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-
      auto-shrink/grow beside the two fixed-size round buttons instead. */
   .input-row{flex-direction:row;align-items:center;flex-wrap:nowrap}
   .input-box{flex:1;min-width:0}
+  /* 2026-09-30 (AJ: "CHECK全網手機...語言" QA pass found the send button
+     sitting right under js/mobile-widget-dock.js's fixed bottom-right
+     icon column on narrow viewports): reserve that column's width so the
+     row's own send button never lands underneath it. Matches the same
+     fix applied to index.html's hero search bar. */
+  .input-row{padding-right:56px}
 
   /* 2026-08-09 (task #731, AJ ref-image batch): chat.html used to run its
      own page-local copy of the widget-dock logic here (a 3x2 grid bar,
@@ -1617,7 +1623,7 @@ async function submitFeedback() {
   <div id="legalBarBody" style="display:none">
     <div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
     <footer>
-      <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_chat">Research Copilot</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none">Cookie Policy</a></div>
+      <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_chat">Research Copilot</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
     </footer>
   </div>
 </div>
