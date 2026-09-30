@@ -1585,7 +1585,7 @@ async function loadHeroResult() {
     heroIndex = 0;
     renderHeroItem(heroItems[0]);
   } catch(e) {
-    body.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;padding:20px 0;text-align:center">暫時無法載入即時結果</div>`;
+    body.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;padding:20px 0;text-align:center">${t('idx_hero_load_fail', '暫時無法載入即時結果')}</div>`;
     heroItems = [];
   }
 }
@@ -2106,7 +2106,7 @@ async function loadDailyExperience() {
       const items = anomalyData.items || [];
       radarEl.innerHTML = items.length
         ? items.slice(0, 4).map(it => {
-            const types = (it.anomalies || []).map(a => a.type).join('、') || '異常訊號';
+            const types = (it.anomalies || []).map(a => a.type).join('、') || t('idx_anomaly_signal_fallback', '異常訊號');
             return `<div class="pulse-personal-item"><span>${it.ticker}</span><span>${it.severity} · ${types}</span></div>`;
           }).join('')
         : `<div class="pulse-personal-empty">${t('idx_riskradar_empty','你嘅自選股暫時未偵測到異常波動')}</div>`;
@@ -2163,7 +2163,7 @@ async function runDemo() {
   // 按鈕按下時先顯示試用規則說明
   if (trialInfo) trialInfo.style.display = 'block';
 
-  btn.disabled = true; btn.textContent = '分析緊...';
+  btn.disabled = true; btn.textContent = t('idx_demo_analyzing', '分析緊...');
   resultBox.style.display = 'none';
   errorBox.style.display = 'none';
 
@@ -2184,20 +2184,20 @@ async function runDemo() {
       return;
     }
     resultBox.innerHTML = `
-      <div class="demo-result-row"><span>股票</span><strong>${data.ticker}</strong></div>
-      <div class="demo-result-row"><span>現價</span><strong>$${data.price}</strong></div>
-      <div class="demo-result-row"><span>趨勢</span><strong>${data.trend}</strong></div>
+      <div class="demo-result-row"><span>${t('idx_demo_ticker_label','股票')}</span><strong>${data.ticker}</strong></div>
+      <div class="demo-result-row"><span>${t('idx_demo_price_label','現價')}</span><strong>$${data.price}</strong></div>
+      <div class="demo-result-row"><span>${t('idx_demo_trend_label','趨勢')}</span><strong>${data.trend}</strong></div>
       <div class="demo-result-row"><span>RSI</span><strong>${data.rsi}</strong></div>
-      <div class="demo-result-row"><span>綜合訊號</span><strong>${data.confluence_direction}（信心${data.confluence_confidence}）</strong></div>
+      <div class="demo-result-row"><span>${t('idx_demo_confluence_label','綜合訊號')}</span><strong>${data.confluence_direction}（${t('idx_demo_confidence_label','信心')}${data.confluence_confidence}）</strong></div>
       <div class="demo-cta">${t('demo_cta_pre','這是精簡版 —— ')}<a href="login.html" style="color:var(--accent)">${t('demo_cta_signup','免費註冊')}</a>${t('demo_cta_post','解鎖辨識完整報告')}</div>
     `;
     resultBox.style.display = 'block';
     if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'demo', ticker});
   } catch(e) {
-    errorBox.textContent = '分析失敗，請重試';
+    errorBox.textContent = t('idx_demo_analyze_fail', '分析失敗，請重試');
     errorBox.style.display = 'block';
   } finally {
-    btn.disabled = false; btn.textContent = '立即體驗';
+    btn.disabled = false; btn.textContent = t('demo_btn', '立即體驗');
   }
 }
 document.getElementById('demoTicker').addEventListener('keydown', function(e){
