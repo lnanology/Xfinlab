@@ -98,7 +98,7 @@ COMPANY_RELATIONSHIPS: Dict[str, Dict[str, List[str]]] = {
         "competitors": ["AVGO", "MRVL"],
     },
     "TSLA": {
-        "suppliers": ["1211.HK"],  # BYD is both a battery supplier to some OEMs and a direct EV competitor -- listed under competitors below; battery cell suppliers are primarily Panasonic/CATL (not separately US-tradable tickers)
+        "suppliers": [],  # primary battery-cell suppliers are Panasonic/CATL, not separately US-tradable tickers -- left empty rather than approximated
         "customers": [],
         "competitors": ["1211.HK", "RIVN", "F", "GM"],  # BYD, Rivian, Ford, GM
     },
@@ -107,6 +107,42 @@ COMPANY_RELATIONSHIPS: Dict[str, Dict[str, List[str]]] = {
         "customers": [],
         "competitors": ["MSFT", "GOOGL", "AMZN"],
     },
+    # 2026-09-30 expansion (AJ: "起啦" -- broaden coverage beyond the initial
+    # AI/semiconductor-weighted 15). Non-tech sectors generally have far
+    # less publicly documented SUPPLIER/CUSTOMER granularity than
+    # semiconductors (where 10-K "customer concentration" disclosures are
+    # unusually explicit) -- rather than approximate a supply chain that
+    # isn't well-documented, most entries below are competitors-only,
+    # which is both the most reliably public and least disputable
+    # relationship type across any sector. Suppliers/customers are only
+    # added where a specific, well-known, easily-verifiable relationship
+    # exists (e.g. Visa/Mastercard's card networks, UNH's PBM).
+    "F": {"suppliers": [], "customers": [], "competitors": ["GM", "TSLA", "RIVN", "1211.HK"]},
+    "GM": {"suppliers": [], "customers": [], "competitors": ["F", "TSLA", "RIVN", "1211.HK"]},
+    "RIVN": {"suppliers": [], "customers": [], "competitors": ["TSLA", "F", "GM"]},
+    "JPM": {"suppliers": [], "customers": [], "competitors": ["BAC", "WFC", "GS", "C"]},
+    "BAC": {"suppliers": [], "customers": [], "competitors": ["JPM", "WFC", "GS", "C"]},
+    "WFC": {"suppliers": [], "customers": [], "competitors": ["JPM", "BAC", "GS", "C"]},
+    "GS": {"suppliers": [], "customers": [], "competitors": ["JPM", "MS", "BAC"]},
+    "MS": {"suppliers": [], "customers": [], "competitors": ["GS", "JPM"]},
+    "V": {"suppliers": [], "customers": [], "competitors": ["MA", "AXP"]},  # card network rivals
+    "MA": {"suppliers": [], "customers": [], "competitors": ["V", "AXP"]},
+    "WMT": {"suppliers": [], "customers": [], "competitors": ["COST", "TGT", "AMZN"]},
+    "COST": {"suppliers": [], "customers": [], "competitors": ["WMT", "TGT"]},
+    "TGT": {"suppliers": [], "customers": [], "competitors": ["WMT", "COST"]},
+    "HD": {"suppliers": [], "customers": [], "competitors": ["LOW"]},
+    "LOW": {"suppliers": [], "customers": [], "competitors": ["HD"]},
+    "XOM": {"suppliers": [], "customers": [], "competitors": ["CVX"]},
+    "CVX": {"suppliers": [], "customers": [], "competitors": ["XOM"]},
+    "JNJ": {"suppliers": [], "customers": [], "competitors": ["PFE", "MRK", "ABBV"]},
+    "PFE": {"suppliers": [], "customers": [], "competitors": ["JNJ", "MRK", "ABBV"]},
+    "MRK": {"suppliers": [], "customers": [], "competitors": ["JNJ", "PFE", "ABBV"]},
+    "UNH": {"suppliers": [], "customers": [], "competitors": ["CVS", "CI", "ELV"]},  # managed care / PBM peers
+    "KO": {"suppliers": [], "customers": [], "competitors": ["PEP"]},
+    "PEP": {"suppliers": [], "customers": [], "competitors": ["KO"]},
+    "NFLX": {"suppliers": [], "customers": [], "competitors": ["DIS", "AMZN"]},  # streaming rivals
+    "DIS": {"suppliers": [], "customers": [], "competitors": ["NFLX"]},
+    "1211.HK": {"suppliers": [], "customers": [], "competitors": ["TSLA", "F", "GM", "RIVN"]},  # BYD
 }
 
 

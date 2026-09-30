@@ -44,7 +44,7 @@ URL for the first line is `https://api.xfinlab.com/api/intelligence/v1/events`)
 - GET /api/intelligence/v1/short-interest/{ticker} — FINRA equity short interest
 - GET /api/intelligence/v1/fundamentals/{ticker} — SEC XBRL 10-K company facts
 - GET /api/intelligence/v1/fundamentals/{ticker}/as-of?as_of_date=YYYY-MM-DD — point-in-time-correct fundamentals (no look-ahead)
-- GET /api/intelligence/v1/evidence-scorecard/{ticker}?asset_class=Stocks — up to 11 independent support/oppose/neutral evidence dimensions, disagreement flagged explicitly (asset_class one of Stocks/Futures/Crypto/Forex/Commodities/Indices)
+- GET /api/intelligence/v1/evidence-scorecard/{ticker}?asset_class=Stocks — up to 11 independent support/oppose/neutral evidence dimensions, disagreement flagged explicitly (asset_class one of Stocks/Futures/Crypto/Forex/Commodities/Indices); response includes `what_changed`, a day-over-day audit-trail diff against the prior snapshot (which specific dimensions flipped signal, and by how much the aggregate moved)
 - GET /api/intelligence/v1/impact/{ticker} — hand-curated supplier/customer/competitor relationships (starting set, AI/semiconductor supply chain), same-sector peers, market-wide capital flow context, and CFTC futures positioning if applicable — "if something happens to this company, who else does it touch"
 - GET /api/intelligence/v1/vix-term-structure — CBOE VIX9D/VIX/VIX3M/VIX6M term structure
 - GET /api/intelligence/v1/bank-health/{ticker} — FDIC bank health (major US banks)
