@@ -699,7 +699,8 @@ def _youtube_video_metadata(lang: str, topic: str = None) -> dict:
 @router.post("/admin/video/generate")
 def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "9:16",
                            theme: str = "dark", post_to_telegram: bool = False,
-                           upload_to_youtube: bool = False, request: Request = None):
+                           upload_to_youtube: bool = False, tickers: str = "",
+                           request: Request = None):
     """Growth OS Phase 7 -- on-demand "Generate Now" trigger for the admin
     panel, so this can be tested/verified before wiring any automatic
     daily schedule. Gated by the video_engine flag (default OFF) on top
@@ -715,7 +716,17 @@ def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "
     post_to_telegram defaults to False and is an explicit per-click admin
     opt-in, not automatic -- repeatedly clicking Generate Now while
     testing shouldn't quietly spam a live public channel every time;
-    the admin has to tick the box each time they actually want that."""
+    the admin has to tick the box each time they actually want that.
+
+    2026-10-01 (AJ: "加可選GEN不同資產，佢日日都一樣果3隻" -- the daily video
+    always used whatever _compute_free_signals() auto-ranked top today,
+    which on a quiet market can repeat the same handful of tickers for
+    days): `tickers` is an optional comma-separated list (e.g.
+    "NVDA,BTC-USD,GC=F"). Blank (the default, and what the unattended
+    daily schedule still passes) keeps the original auto-picked
+    today's-top-signals behavior unchanged -- see
+    services/video_engine_service.py's generate_daily_video()/
+    _build_custom_signals() docstrings."""
     verify_admin(token, "video_engine_generate", request)
     flags = {r["key"]: r["enabled"] for r in get_db().execute(
         "SELECT key, enabled FROM feature_flags WHERE key='video_engine'"
@@ -723,7 +734,8 @@ def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "
     if not flags.get("video_engine", 0):
         raise HTTPException(status_code=403, detail="video_engine feature flag is off")
     from services.video_engine_service import generate_daily_video
-    result = generate_daily_video(lang=lang, aspect_ratio=aspect_ratio, theme=theme)
+    ticker_list = [t for t in tickers.split(",")] if tickers else None
+    result = generate_daily_video(lang=lang, aspect_ratio=aspect_ratio, theme=theme, tickers=ticker_list)
     if post_to_telegram and result.get("available"):
         try:
             # 2026-08-08 fix: used to hard-code caption="XFINLAB Daily AI

@@ -1417,13 +1417,66 @@ def _ffprobe_duration(path: str) -> float:
         return 3.0  # safe fallback slide length if ffprobe's own output is ever unparseable
 
 
+def _build_custom_signals(tickers: List[str]) -> List[dict]:
+    """2026-10-01 (AJ: "GEN引擎...日日都一樣果3隻" -- the daily video always
+    picked whatever _compute_free_signals() ranked top today, which on a
+    quiet/stable day can be the same handful of tickers for days in a
+    row). Builds the same signal-dict shape _compute_all_signals() in
+    api/market_pulse.py produces (ticker/label/confluence_direction/
+    confluence_confidence_pct/asset_class_label), but for an EXPLICIT
+    admin-chosen ticker list instead of the auto-ranked basket -- so the
+    admin can point the daily video at whichever assets they actually
+    want today. Reuses the same live get_technical_analysis() call and
+    _TICKER_LABELS/_ASSET_CLASS_LABELS lookups as the auto-picked path
+    (falls back to the raw ticker as its own label for anything outside
+    the known basket -- honest, not a fabricated name). Tickers that
+    fail to fetch are silently skipped (same fail-open principle as
+    _compute_all_signals()'s own try/except), not treated as a hard
+    error, so one bad symbol in a typed list doesn't sink the whole
+    render."""
+    from api.market_pulse import _TICKER_LABELS, _ASSET_CLASS_LABELS
+    from services.technical_analysis_service import get_technical_analysis
+
+    out = []
+    for raw in tickers:
+        ticker = raw.strip().upper()
+        if not ticker:
+            continue
+        try:
+            tech = get_technical_analysis(ticker, period="3mo")
+        except Exception:
+            tech = None
+        if not tech or "error" in tech:
+            continue
+        confluence = tech.get("confluence", {})
+        out.append({
+            "asset_class": "custom",
+            "asset_class_label": _ASSET_CLASS_LABELS.get("stock", ""),
+            "ticker": ticker,
+            "label": _TICKER_LABELS.get(ticker, ticker),
+            "price": tech.get("last_close"),
+            "confluence_direction": confluence.get("direction"),
+            "confluence_confidence_pct": confluence.get("confidence_pct"),
+            "volume_desc": tech.get("volume_desc"),
+        })
+    return out
+
+
 def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
-                          aspect_ratio: str = _DEFAULT_ASPECT, theme: str = _DEFAULT_THEME) -> dict:
+                          aspect_ratio: str = _DEFAULT_ASPECT, theme: str = _DEFAULT_THEME,
+                          tickers: Optional[List[str]] = None) -> dict:
     """Real end-to-end render. Returns {"available": False, "message":
     ...} immediately if TTS or ffmpeg aren't configured -- never
     attempts a partial render. On success returns {"available": True,
     "path": ..., "duration_sec": ..., "slides_count": ..., "lang": ...,
-    "aspect_ratio": ..., "theme": ..., "used_ai_script": bool}."""
+    "aspect_ratio": ..., "theme": ..., "used_ai_script": bool}.
+
+    `tickers` (2026-10-01): optional explicit ticker list from the admin
+    panel's "Generate Now" form. When given (non-empty after stripping
+    blanks), these REPLACE the auto-ranked today's-top-signals basket --
+    see _build_custom_signals() above. Omitted/empty keeps the original
+    automatic behavior unchanged, so the existing daily-schedule caller
+    (no tickers param) is unaffected."""
     if not is_available():
         msg = "Video Engine unavailable: " + (
             "GOOGLE_TTS_API_KEY not set" if not tts_service.is_available() else "ffmpeg/ffprobe not found on PATH"
@@ -1438,18 +1491,28 @@ def generate_daily_video(lang: str = "zh-HK", max_signals: int = 3,
     colors = _THEMES.get(theme, _THEMES[_DEFAULT_THEME])
     theme = theme if theme in _THEMES else _DEFAULT_THEME
 
+    clean_tickers = [t.strip() for t in (tickers or []) if t and t.strip()]
     try:
-        from api.market_pulse import _compute_free_signals
+        if clean_tickers:
+            # Explicit admin picks are capped at 8 (not max_signals, which
+            # only governs the auto-ranked path's default of 3) -- enough
+            # room for a real custom basket without producing an
+            # unreasonably long single video.
+            signals = _build_custom_signals(clean_tickers[:8])
+        else:
+            from api.market_pulse import _compute_free_signals
 
-        cache = _compute_free_signals()
-        signals = (cache.get("signals") or [])[:max_signals]
+            cache = _compute_free_signals()
+            signals = (cache.get("signals") or [])[:max_signals]
     except Exception as e:
         _log_generation("error", f"Failed to fetch signals: {e}")
         return {"available": False, "message": f"Failed to fetch today's signals: {e}"}
 
     if not signals:
-        _log_generation("error", "No signals available today")
-        return {"available": False, "message": "No signals available today"}
+        msg = ("Could not fetch data for any of the requested tickers"
+               if clean_tickers else "No signals available today")
+        _log_generation("error", msg)
+        return {"available": False, "message": msg}
 
     for s in signals:
         s["_candles"] = _fetch_candles(s["ticker"])
