@@ -631,6 +631,17 @@
           set in Railway's environment variables. AI script rewrite is attempted automatically (falls back to
           the honest template script if it fails) -- no toggle needed.
         </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">
+            Custom tickers (optional, comma-separated -- e.g. NVDA,BTC-USD,GC=F)
+          </label>
+          <input type="text" id="videoTickersInput" class="btn btn-sm" placeholder="Leave blank to use today's auto-ranked top signals"
+                 style="width:100%;max-width:480px;cursor:text;text-align:left">
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:3px">
+            Blank = today's top-ranked signals (same basket every day the market's quiet). Fill this in to point
+            the video at whichever assets you actually want instead.
+          </div>
+        </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
           <div>
             <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Language</label>
@@ -2083,6 +2094,7 @@ async function generateVideoNow() {
   const theme = document.getElementById('videoThemeSelect').value;
   const postTelegram = document.getElementById('videoPostTelegram').checked;
   const uploadYoutube = document.getElementById('videoUploadYoutube').checked;
+  const tickers = document.getElementById('videoTickersInput').value.trim();
   btn.disabled = true;
   result.innerHTML = '<span class="spinner"></span> Generating (this can take up to ~1-2 minutes)...';
   try {
@@ -2091,6 +2103,7 @@ async function generateVideoNow() {
       post_to_telegram: postTelegram ? 'true' : 'false',
       upload_to_youtube: uploadYoutube ? 'true' : 'false',
     });
+    if (tickers) params.set('tickers', tickers);
     const res = await fetch(`${API}/admin/video/generate?${params.toString()}`, {method: 'POST'});
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.status);
