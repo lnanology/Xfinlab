@@ -1062,6 +1062,41 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+
+def _run_watch_digest_scan_job():
+    """2026-10-01 (AJ: "找出未做的賺錢路線" -- Research Memory API
+    follow-up #2, "What Changed?" entity monitoring): only computes a
+    snapshot for tickers that actually have an active watch_digest
+    webhook subscription (services.webhook_service.
+    list_active_tickers_for_event) -- never a fixed/guessed universe.
+    Runs after recall_alert_scan (7:45) so it doesn't compete with CPSC's
+    rate limit; this job's own sources (technical_analysis_service,
+    rss_news_service, sec_form4_service, finra_short_interest_service)
+    are all already-cached/rate-limit-safe for other reasons."""
+    try:
+        from services.webhook_service import list_active_tickers_for_event
+        from services.watch_service import check_and_deliver_watch_digest
+
+        tickers = list_active_tickers_for_event("watch_digest")
+        for ticker in tickers:
+            try:
+                check_and_deliver_watch_digest(ticker)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+# 15 minutes after recall_alert_scan (7:45) -- generous gap, same
+# reasoning as that job's own comment relative to cpsc_refresh.
+_push_scheduler.add_job(
+    _run_watch_digest_scan_job,
+    "cron",
+    hour=8,
+    minute=0,
+    id="watch_digest_scan",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

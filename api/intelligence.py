@@ -290,6 +290,7 @@ INTELLIGENCE_CHANGELOG = [
     {
         "date": "2026-10-01",
         "changes": [
+            {"type": "added", "text": "Webhooks: watch_digest event type -- \"What Changed?\" general entity monitoring. Subscribe to a ticker (event_type=\"watch_digest\") and get pushed only when its price moves 2%+, confluence direction flips, headline count shifts, insider-transaction count changes, or short interest moves 5%+ -- a daily composite diff instead of polling 4-5 separate endpoints yourself. Same delivery mechanics as the other event types."},
             {"type": "added", "text": "POST /v1/hypotheses, GET /v1/hypotheses, GET /v1/hypotheses/{id}, PATCH /v1/hypotheses/{id}, POST /v1/hypotheses/{id}/evidence -- Research Memory API. Persist a hypothesis about a ticker (your own freeform statement + confidence score), attach evidence/counter_evidence over time, and every update is versioned with a full audit trail -- re-running research later starts from what you believed last time, not from zero. Private per API key, not a shared feed."},
         ],
     },

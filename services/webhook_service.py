@@ -65,6 +65,16 @@ VALID_EVENT_TYPES = {
     # event types above -- there was no existing daily job already
     # computing this; see check_and_deliver_recall_matches() below.
     "recall_match": {"per_ticker": True, "label": "A new CPSC recall matched a watched brand/product keyword"},
+    # 2026-10-01 (AJ: "找出未做的賺錢路線" -- Research Memory API follow-up):
+    # "What Changed?" general entity monitoring. Unlike the 4 event types
+    # above (each backed by one specific signal), this one diffs a small
+    # composite snapshot (price, confluence direction, headline count,
+    # insider-transaction count, short interest) per watched ticker --
+    # see services/watch_service.py for the full field list and per-field
+    # noise thresholds. Backed by a NEW scheduled job (backend/main.py's
+    # watch_digest_scan), same shape as recall_match's job since there was
+    # no existing daily job already computing this composite.
+    "watch_digest": {"per_ticker": True, "label": "A watched ticker's price, confluence, headline count, insider activity, or short interest changed meaningfully"},
 }
 
 _MAX_CONSECUTIVE_FAILURES = 5  # auto-deactivate after this many delivery failures in a row
