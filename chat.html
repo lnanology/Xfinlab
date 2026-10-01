@@ -730,7 +730,7 @@ function splitTableRow(line) {
 const TICKER_PAREN_RE_SRC = '[\\(（]\\s*([A-Z]{1,6}(?:\\.[A-Z]{1,3})?)\\s*[\\)）]';
 function analyzeTickerMention(ticker) {
   if (typeof isLoading !== 'undefined' && isLoading) return;
-  sendQuick(`分析 ${ticker}`);
+  sendQuick(`${t('chat_quick_analyze_prefix','分析')} ${ticker}`);
 }
 
 // 2026-07-30 (Paddle compliance): "用戶按卡片或CHAT發問先出" -- an on-demand
@@ -906,7 +906,7 @@ function analyzeTermMention(term) {
   if (typeof isLoading !== 'undefined' && isLoading) return;
   const navUrl = resolveNavTarget(term);
   if (navUrl) { window.location.href = navUrl; return; }
-  sendQuick(`分析 ${term}`);
+  sendQuick(`${t('chat_quick_analyze_prefix','分析')} ${term}`);
 }
 // 2026-07-23 follow-up: "CHAT 回答 所有橙色 藍色都可導航" -- ticker
 // linkification originally only ran inside the **bold** callback (orange
@@ -975,8 +975,8 @@ function renderCompareCard(name, prosCell, consCell) {
   return `<div class="cc-card">
     <div class="cc-card-title">${inlineFormat(name)}</div>
     <div class="cc-card-grid">
-      <div class="cc-col cc-col-pro"><div class="cc-col-label">優勢</div><ul class="cc-list">${pros}</ul></div>
-      <div class="cc-col cc-col-con"><div class="cc-col-label">留意</div><ul class="cc-list">${cons}</ul></div>
+      <div class="cc-col cc-col-pro"><div class="cc-col-label">${t('chat_compare_pros_label','優勢')}</div><ul class="cc-list">${pros}</ul></div>
+      <div class="cc-col cc-col-con"><div class="cc-col-label">${t('chat_compare_cons_label','留意')}</div><ul class="cc-list">${cons}</ul></div>
     </div>
   </div>`;
 }
@@ -1342,7 +1342,7 @@ async function sendMessage() {
     // prepare payload: text + optional base64 image
     const imageBase64 = imageUrl || null;
     const payload = {
-      query: text || '請分析這張圖表，識別支撐阻力位、圖形形態及技術指標，給出短中期展望',
+      query: text || t('chat_default_chart_query', '請分析這張圖表，識別支撐阻力位、圖形形態及技術指標，給出短中期展望'),
       conversation_id: conversationId,
       user: 'xfinlab-user',
       image: imageBase64,
