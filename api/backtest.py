@@ -49,7 +49,7 @@ def track_record():
 def backtest_ticker(ticker: str, strategy: str = "confluence_trend", period: str = "2y", lang: str = None):
     if not _SYMBOL_RE.match(ticker):
         return _invalid_ticker(lang)
-    result = BacktestService.run(ticker, strategy=strategy, period=period)
+    result = BacktestService.run(ticker, strategy=strategy, period=period, lang=lang)
     if "error" in result:
         return {"status": "error", "message": result["error"]}
     return {"status": "ok", "data": result}
@@ -59,7 +59,7 @@ def backtest_ticker(ticker: str, strategy: str = "confluence_trend", period: str
 def backtest_compare(ticker: str, period: str = "2y", lang: str = None):
     if not _SYMBOL_RE.match(ticker):
         return _invalid_ticker(lang)
-    result = BacktestService.compare(ticker, period=period)
+    result = BacktestService.compare(ticker, period=period, lang=lang)
     if "error" in result:
         return {"status": "error", "message": result["error"]}
     return {"status": "ok", "data": result}
@@ -76,7 +76,7 @@ def backtest_walk_forward(ticker: str, strategy: str = "confluence_trend",
     if not _SYMBOL_RE.match(ticker):
         return _invalid_ticker(lang)
     n_folds = max(2, min(12, n_folds))  # sane bounds -- too many folds on 2y of daily bars leaves each fold with almost no trades
-    result = BacktestService.run_walk_forward(ticker, strategy=strategy, period=period, n_folds=n_folds)
+    result = BacktestService.run_walk_forward(ticker, strategy=strategy, period=period, n_folds=n_folds, lang=lang)
     if "error" in result:
         return {"status": "error", "message": result["error"]}
     return {"status": "ok", "data": result}
