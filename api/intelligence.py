@@ -271,6 +271,8 @@ def intelligence_status():
         "webhooks": True,  # management endpoints, never 503 -- Pro-tier gated (403 for free keys), see services/webhook_service.py
         "recall_search": True,  # never 503s -- same CPSC source as product_recalls, keyed by free-text keyword instead of ticker
         "impact": True,  # never 503s -- curated-dict lookup, capital_flow/cftc sub-fields degrade individually to null
+        "evidence_scorecard": True,  # never 503s -- some dimensions null for non-Stocks asset classes, by design
+        "hypothesis": True,  # plain sqlite CRUD, no external gate
     })
 
 
@@ -285,6 +287,12 @@ def intelligence_status():
 # changes programmatically) and rendered on intelligence-api.html#changelog.
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
+    {
+        "date": "2026-10-01",
+        "changes": [
+            {"type": "added", "text": "POST /v1/hypotheses, GET /v1/hypotheses, GET /v1/hypotheses/{id}, PATCH /v1/hypotheses/{id}, POST /v1/hypotheses/{id}/evidence -- Research Memory API. Persist a hypothesis about a ticker (your own freeform statement + confidence score), attach evidence/counter_evidence over time, and every update is versioned with a full audit trail -- re-running research later starts from what you believed last time, not from zero. Private per API key, not a shared feed."},
+        ],
+    },
     {
         "date": "2026-09-14",
         "changes": [
@@ -1503,6 +1511,145 @@ def intelligence_impact(
     ticker = ticker.upper().strip()
     result = get_impact_analysis(ticker)
     return _envelope(data=result, meta={"ticker": ticker})
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-01 (AJ: "找出未做的賺錢路線, 開發更新穎賺錢機會" -- follow-up to
+# the 2026-09-30 monetization gap-analysis session): Research Memory /
+# Hypothesis API. Every other endpoint in this router answers one query in
+# isolation; this one lets a developer's Agent persist the QUESTION it's
+# investigating -- a hypothesis about a ticker, the evidence for/against
+# it, and a confidence score -- so re-running research later starts from
+# "here's what we believed last time and why" instead of from zero. Full
+# version history on every update (services/research_memory_service.py's
+# research_hypothesis_versions table), same "reproducibility" spirit as
+# /v1/fundamentals/{ticker}/as-of above but for the Agent's own reasoning,
+# not XFINLAB's underlying data.
+#
+# Scoped per API key (private, not a shared/public research feed) -- same
+# ownership convention as the webhooks endpoints below (api_key stored as
+# the plaintext header value, matched on every read/write).
+# ---------------------------------------------------------------------------
+
+class CreateHypothesisRequest(BaseModel):
+    ticker: str
+    statement: str
+    confidence: Optional[float] = None
+
+
+class UpdateHypothesisRequest(BaseModel):
+    statement: Optional[str] = None
+    confidence: Optional[float] = None
+    status: Optional[str] = None  # active / confirmed / invalidated
+
+
+class AddEvidenceRequest(BaseModel):
+    kind: str  # "evidence" or "counter_evidence"
+    text: str
+    source: Optional[str] = None
+
+
+@router.post("/intelligence/v1/hypotheses")
+def create_hypothesis_endpoint(
+    body: CreateHypothesisRequest,
+    response: Response,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "hypothesis", response, ticker=body.ticker.upper())
+
+    if body.confidence is not None and not (0.0 <= body.confidence <= 1.0):
+        raise HTTPException(status_code=422, detail="confidence must be between 0.0 and 1.0")
+    if not body.statement.strip():
+        raise HTTPException(status_code=422, detail="statement is required")
+
+    from services.research_memory_service import create_hypothesis
+
+    result = create_hypothesis(x_api_key, body.ticker, body.statement, confidence=body.confidence)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return _envelope(data=result)
+
+
+@router.get("/intelligence/v1/hypotheses")
+def list_hypotheses_endpoint(
+    response: Response,
+    ticker: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 50,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "hypothesis", response, ticker=ticker)
+
+    from services.research_memory_service import list_hypotheses
+
+    result = list_hypotheses(x_api_key, ticker=ticker, status=status, limit=limit)
+    return _envelope(data=result, meta={"count": len(result)})
+
+
+@router.get("/intelligence/v1/hypotheses/{hypothesis_id}")
+def get_hypothesis_endpoint(
+    hypothesis_id: int,
+    response: Response,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "hypothesis", response)
+
+    from services.research_memory_service import get_hypothesis
+
+    result = get_hypothesis(x_api_key, hypothesis_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Hypothesis not found")
+    return _envelope(data=result)
+
+
+@router.patch("/intelligence/v1/hypotheses/{hypothesis_id}")
+def update_hypothesis_endpoint(
+    hypothesis_id: int,
+    body: UpdateHypothesisRequest,
+    response: Response,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "hypothesis", response)
+
+    if body.confidence is not None and not (0.0 <= body.confidence <= 1.0):
+        raise HTTPException(status_code=422, detail="confidence must be between 0.0 and 1.0")
+
+    from services.research_memory_service import update_hypothesis
+
+    result = update_hypothesis(
+        x_api_key, hypothesis_id, statement=body.statement, confidence=body.confidence, status=body.status
+    )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Hypothesis not found")
+    if "error" in result:
+        raise HTTPException(status_code=422, detail=result["error"])
+    return _envelope(data=result)
+
+
+@router.post("/intelligence/v1/hypotheses/{hypothesis_id}/evidence")
+def add_hypothesis_evidence_endpoint(
+    hypothesis_id: int,
+    body: AddEvidenceRequest,
+    response: Response,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "hypothesis", response)
+
+    if not body.text.strip():
+        raise HTTPException(status_code=422, detail="text is required")
+
+    from services.research_memory_service import add_evidence
+
+    result = add_evidence(x_api_key, hypothesis_id, body.kind, body.text, source=body.source)
+    if "error" in result:
+        status_code = 404 if result["error"] == "Hypothesis not found" else 422
+        raise HTTPException(status_code=status_code, detail=result["error"])
+    return _envelope(data=result)
 
 
 @router.get("/intelligence/v1/vix-term-structure")

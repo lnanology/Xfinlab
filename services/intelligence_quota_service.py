@@ -208,6 +208,13 @@ ENDPOINT_WEIGHT = {
     # free-text keyword instead of a pre-mapped ticker -- same real cost,
     # same weight.
     "recall_search": 2,
+    # 2026-10-01 (Research Memory / Hypothesis API): plain sqlite CRUD
+    # against research_hypotheses/research_hypothesis_evidence (services/
+    # research_memory_service.py) -- no network fetch, no AI call, cheapest
+    # possible shape in this dict. Reads and writes share one weight since
+    # neither does meaningfully more work than the other (a handful of
+    # indexed SELECT/INSERT statements either way).
+    "hypothesis": 1,
 }
 
 
