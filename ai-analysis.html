@@ -1596,9 +1596,11 @@ async function runAnalysis(){
     if (symbols.length) {
       qa.style.display = 'flex';
       document.getElementById('qaCompare').href = `company-compare.html?a=${encodeURIComponent(symbols[0])}`;
+      const askAiQTplRated = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_ask_ai_q_rated'])||'我啱啱睇咗 {symbol} 嘅AI分析，評級係「{rating}」，可唔可以用簡單啲嘅講法再解釋一次點解係咁評級？';
+      const askAiQTplUnrated = (typeof I18N!=='undefined'&&I18N.translations&&I18N.translations['aa_ask_ai_q_unrated'])||'我啱啱搵咗 {symbol} 嘅AI分析，可唔可以再簡單解釋一次依家嘅情況？';
       const askAiQ = hero.rating
-        ? `我啱啱睇咗 ${symbols[0]} 嘅AI分析，評級係「${hero.rating}」，可唔可以用簡單啲嘅講法再解釋一次點解係咁評級？`
-        : `我啱啱搵咗 ${symbols[0]} 嘅AI分析，可唔可以再簡單解釋一次依家嘅情況？`;
+        ? askAiQTplRated.replace('{symbol}', symbols[0]).replace('{rating}', hero.rating)
+        : askAiQTplUnrated.replace('{symbol}', symbols[0]);
       document.getElementById('qaAskAi').href = `chat.html?q=${encodeURIComponent(askAiQ)}`;
       const qaWatchlist = document.getElementById('qaWatchlist');
       qaWatchlist.onclick = () => {

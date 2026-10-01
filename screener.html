@@ -259,7 +259,8 @@ async function doScreen(){
       resultContentEl.innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
       scAttachSparklines(resultContentEl);
 
-      const scAskQ = `我啱啱用篩選器搵咗呢啲條件：市場${market}、行業${sector}、市值${cap}、增長率${growth}、估值${value}、風險${risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？`;
+      const scAskQ = t('sc_ask_ai_q','我啱啱用篩選器搵咗呢啲條件：市場{market}、行業{sector}、市值{cap}、增長率{growth}、估值{value}、風險{risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？')
+        .replace('{market}', market).replace('{sector}', sector).replace('{cap}', cap).replace('{growth}', growth).replace('{value}', value).replace('{risk}', risk);
       document.getElementById('scAskAi').href = `chat.html?q=${encodeURIComponent(scAskQ)}`;
       document.getElementById('scAskAiRow').style.display = 'block';
 
