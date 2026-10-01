@@ -280,6 +280,8 @@ details.schema-details[open] summary::after{content:" ▴"}
           <option value="consumer-safety" data-i18n="ia_ep22_name">Consumer Safety (openFDA)</option>
           <option value="product-recalls" data-i18n="ia_ep23_name">Product Recalls (CPSC)</option>
           <option value="recall-search" data-i18n="ia_ep24_name">Recall Search by Brand/Product (CPSC)</option>
+          <option value="impact" data-i18n="ia_ep25_name">Relationship &amp; Impact</option>
+          <option value="evidence-scorecard" data-i18n="ia_ep26_name">Evidence Scorecard</option>
         </select>
         <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
       </div>
@@ -705,11 +707,11 @@ details.schema-details[open] summary::after{content:" ▴"}
         </div>
         <span class="ep-tag">POST /v1/webhooks/subscribe · GET /v1/webhooks · DELETE /v1/webhooks/{id}</span>
         <div class="ep-name" data-i18n="ia_ep17_name">Webhooks (Push Notifications)</div>
-        <div class="ep-desc" data-i18n="ia_ep17_desc">Get notified the moment a real event happens instead of polling. Three event types today: vix_regime_change (market-wide contango/backwardation flip), new_13d_filing (per-ticker, fires when a watched ticker's activist-filing count increases), and opportunity_radar_shift (market-wide, fires when an Opportunity Radar industry's net improving/worsening lean flips). All three are backed by daily scheduled refresh jobs, so delivery is same-day, never a fabricated "real-time" claim. Pro-tier only -- a free-tier key gets a 403.</div>
+        <div class="ep-desc" data-i18n="ia_ep17_desc">Get notified the moment a real event happens instead of polling. Five event types today: vix_regime_change (market-wide contango/backwardation flip), new_13d_filing (per-ticker, fires when a watched ticker's activist-filing count increases), opportunity_radar_shift (market-wide, fires when an Opportunity Radar industry's net improving/worsening lean flips), recall_match (per keyword, fires on a new CPSC/FDA recall matching a watched brand/product), and watch_digest (per-ticker, fires on a meaningful daily change in price, confluence direction, headline count, insider activity, or short interest). All five are backed by daily scheduled jobs, so delivery is same-day, never a fabricated "real-time" claim. Pro-tier only -- a free-tier key gets a 403.</div>
         <details class="schema-details">
           <summary data-i18n="ia_schema_toggle">Response fields</summary>
           <div class="schema-fields">
-            <div class="schema-field"><code>POST /subscribe</code> body: <code>event_type</code> <span class="schema-type">string</span>, <code>url</code> <span class="schema-type">string</span> (must start with https://), <code>ticker</code> <span class="schema-type">string, required for new_13d_filing only</span></div>
+            <div class="schema-field"><code>POST /subscribe</code> body: <code>event_type</code> <span class="schema-type">string</span>, <code>url</code> <span class="schema-type">string</span> (must start with https://), <code>ticker</code> <span class="schema-type">string, required for all event types except vix_regime_change/opportunity_radar_shift (market-wide)</span></div>
             <div class="schema-field"><code>data.id</code> <span class="schema-type">number</span> -- your new subscription's id, used to unsubscribe</div>
             <div class="schema-field"><code>GET /webhooks</code> returns <code>data.webhooks</code> <span class="schema-type">array</span> -- every subscription on your own key, with <code>fail_count</code>/<code>last_delivered_at</code>/<code>last_status_code</code></div>
             <div class="schema-field">Delivered payload: <code>{"event", "ticker", "data", "delivered_at"}</code> POSTed to your URL</div>
@@ -877,6 +879,82 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field"><code>data.recent</code> <span class="schema-type">array</span> -- <code>recall_id</code>, <code>recall_number</code>, <code>date</code>, <code>title</code>, <code>product_name</code>, <code>manufacturer</code>, <code>hazard</code>, <code>remedy</code>, <code>url</code></div>
           </div>
           <p class="schema-note" data-i18n="ia_schema_note_recall_search">Same live CPSC source as Product Recalls, same honesty posture -- fetch_error:true on a genuine upstream failure, never a fabricated zero-recalls reading. An empty keyword returns count:0 rather than an error.</p>
+        </details>
+      </div>
+      <!-- 2026-09-30 (AJ: monetization gap-analysis session -- "重有咩有
+           差距的可收費", identified relationship/impact data as the one
+           genuinely missing, genuinely differentiated layer vs. generic
+           price+fundamentals APIs): supplier/customer/competitor/peer
+           relationships composed from services/relationship_graph_
+           service.py, plus capital flow and CFTC positioning context. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M6 9v2a4 4 0 0 0 4 4M18 9v2a4 4 0 0 0-4 4"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/impact/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep25_name">Relationship &amp; Impact</div>
+        <div class="ep-desc" data-i18n="ia_ep25_desc">Given a ticker: who is upstream (suppliers), downstream (customers), same-sector (peers), and directly competing -- plus market-wide capital flow and this ticker's CFTC futures-positioning context if applicable. Supplier/customer/competitor data is a hand-curated starting set; a ticker outside that set honestly returns an empty list for those three fields rather than a guess, while sector_peers still populates for any US large-cap ticker.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.suppliers</code>, <code>data.customers</code>, <code>data.competitors</code> <span class="schema-type">array</span> -- each {ticker, name}, empty if this ticker isn't in the curated set yet</div>
+            <div class="schema-field"><code>data.sector_peers</code> <span class="schema-type">array</span> -- same-sector US large-cap tickers</div>
+            <div class="schema-field"><code>data.capital_flow</code> <span class="schema-type">object|null</span> -- market-wide {score, direction} from the capital flow engine's cache</div>
+            <div class="schema-field"><code>data.cftc_positioning</code> <span class="schema-type">object|null</span> -- only when this ticker has a directly linked CFTC futures contract</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+        </details>
+      </div>
+      <!-- 2026-09-30 (same monetization session, shipped alongside Impact
+           above): multi-dimensional evidence tallying across up to 11
+           independent real data sources, built on services/evidence_
+           scorecard_service.py -- the same engine evidence-scorecard.html
+           already shows end users. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">GET /v1/evidence-scorecard/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep26_name">Evidence Scorecard</div>
+        <div class="ep-desc" data-i18n="ia_ep26_desc">Up to 11 independent real data sources (technical confluence, fundamentals, 13F/13D-G/Form-4, VIX term structure, CFTC COT, capital flow, a shipping proxy, news sentiment, and the backtested direction-probability model) checked and tallied into support/oppose/neutral -- disagreement between sources is explicitly flagged, never averaged away. asset_class query param (default Stocks) is one of Stocks/Futures/Crypto/Forex/Commodities/Indices; the four SEC-filing-based dimensions only apply to Stocks.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.dimensions</code> <span class="schema-type">array</span> -- one per checked source: {name, stance (support/oppose/neutral), detail}</div>
+            <div class="schema-field"><code>data.tally</code> <span class="schema-type">object</span> -- {support, oppose, neutral} counts</div>
+            <div class="schema-field"><code>data.disagreement_flagged</code> <span class="schema-type">boolean</span> -- true when sources meaningfully conflict</div>
+            <div class="schema-field"><code>meta.ticker</code>, <code>meta.asset_class</code></div>
+          </div>
+        </details>
+      </div>
+      <!-- 2026-10-01 (AJ: "找出未做的賺錢路線" -- monetization follow-up):
+           Research Memory API. Unlike every other card on this page, this
+           is a persistent, versioned object the DEVELOPER writes to, not
+           a read-only XFINLAB data source -- see services/research_memory_
+           service.py's module docstring. 5 endpoints, documented as one
+           card (same convention as the Webhooks card above) since the
+           Try-It console above is GET/ticker-shaped and this is a real
+           CRUD surface. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">POST/GET/PATCH /v1/hypotheses, POST /v1/hypotheses/{id}/evidence</span>
+        <div class="ep-name" data-i18n="ia_ep27_name">Research Memory (Hypotheses)</div>
+        <div class="ep-desc" data-i18n="ia_ep27_desc">Persist a hypothesis about a ticker -- your own freeform statement plus a confidence score -- then attach evidence and counter_evidence to it over time. Every update to statement/confidence/status is versioned with a full snapshot history, so re-running research later starts from what you believed last time instead of from zero. Private per API key -- there is no shared/public hypothesis feed.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>POST /hypotheses</code> body: <code>ticker</code>, <code>statement</code> <span class="schema-type">string</span>, <code>confidence</code> <span class="schema-type">number 0.0-1.0, optional</span></div>
+            <div class="schema-field"><code>GET /hypotheses?ticker=&amp;status=</code> -- lists your own key's hypotheses, newest-updated first</div>
+            <div class="schema-field"><code>GET /hypotheses/{id}</code> -- full detail incl. <code>data.evidence</code>, <code>data.counter_evidence</code>, <code>data.version_history</code> <span class="schema-type">array</span></div>
+            <div class="schema-field"><code>PATCH /hypotheses/{id}</code> body: any of <code>statement</code>, <code>confidence</code>, <code>status</code> (active/confirmed/invalidated) -- bumps <code>version</code>, snapshots the prior state</div>
+            <div class="schema-field"><code>POST /hypotheses/{id}/evidence</code> body: <code>kind</code> (evidence/counter_evidence), <code>text</code>, <code>source</code> <span class="schema-type">optional URL</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_hypotheses">Scoped to the API key that created each hypothesis -- a different key can never read or modify it, even by guessing its id.</p>
         </details>
       </div>
     </div>
@@ -1267,6 +1345,14 @@ const TRY_ENDPOINTS = {
   // is a minor UX rough edge worth a dedicated input/label in a follow-up
   // pass, not a functional bug.
   'recall-search':     { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/recall-search?keyword=' + encodeURIComponent(tk); } },
+  // 2026-09-30 (Relationship/Impact API + Evidence Scorecard): simple
+  // GET-by-ticker, same shape as insider/short-interest/energy above.
+  // evidence-scorecard's optional asset_class query param is left at its
+  // server-side default (Stocks) here -- same "don't add console UI for
+  // every optional param" posture as fundamentals/as-of not having its
+  // own Try-It entry either.
+  'impact':             { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/impact/' + encodeURIComponent(tk); } },
+  'evidence-scorecard': { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/evidence-scorecard/' + encodeURIComponent(tk); } },
 };
 
 function tryUpdateFields() {

@@ -39,6 +39,13 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "ia_ep25_name": "Relationship & Impact",
+        "ia_ep25_desc": "Given a ticker: who is upstream (suppliers), downstream (customers), same-sector (peers), and directly competing -- plus market-wide capital flow and this ticker's CFTC futures-positioning context if applicable. Supplier/customer/competitor data is a hand-curated starting set; a ticker outside that set honestly returns an empty list for those three fields rather than a guess, while sector_peers still populates for any US large-cap ticker.",
+        "ia_ep26_name": "Evidence Scorecard",
+        "ia_ep26_desc": "Up to 11 independent real data sources (technical confluence, fundamentals, 13F/13D-G/Form-4, VIX term structure, CFTC COT, capital flow, a shipping proxy, news sentiment, and the backtested direction-probability model) checked and tallied into support/oppose/neutral -- disagreement between sources is explicitly flagged, never averaged away. asset_class query param (default Stocks) is one of Stocks/Futures/Crypto/Forex/Commodities/Indices; the four SEC-filing-based dimensions only apply to Stocks.",
+        "ia_ep27_name": "Research Memory (Hypotheses)",
+        "ia_ep27_desc": "Persist a hypothesis about a ticker -- your own freeform statement plus a confidence score -- then attach evidence and counter_evidence to it over time. Every update to statement/confidence/status is versioned with a full snapshot history, so re-running research later starts from what you believed last time instead of from zero. Private per API key -- there is no shared/public hypothesis feed.",
+        "ia_schema_note_hypotheses": "Scoped to the API key that created each hypothesis -- a different key can never read or modify it, even by guessing its id.",
         "bt_err_unknown_strategy": "Unknown strategy: {strategy}, available: {list}",
         "bt_err_fetch_failed": "Could not fetch historical data for {symbol}: {error}",
         "bt_err_insufficient_data": "{symbol} has insufficient historical data to backtest (need at least {n} bars)",
