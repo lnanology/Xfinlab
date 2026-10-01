@@ -39,6 +39,9 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "aa_ask_ai_q_rated": "I just looked at the AI analysis for {symbol} -- the rating is \"{rating}\". Can you explain in simpler terms why it got this rating?",
+        "aa_ask_ai_q_unrated": "I just looked up the AI analysis for {symbol} -- can you explain the current situation again in simpler terms?",
+        "sc_ask_ai_q": "I just used the screener with these criteria: market {market}, sector {sector}, market cap {cap}, growth rate {growth}, valuation {value}, risk {risk} -- can you explain again why these were recommended?",
         "chat_compare_pros_label": "Pros",
         "chat_compare_cons_label": "Watch Out",
         "chat_quick_analyze_prefix": "Analyze",
@@ -1913,6 +1916,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verify Email",
     },
     "es": {
+        "aa_ask_ai_q_rated": "Acabo de ver el análisis de IA de {symbol} -- la calificación es \"{rating}\". ¿Puedes explicar en términos más sencillos por qué recibió esta calificación?",
+        "aa_ask_ai_q_unrated": "Acabo de buscar el análisis de IA de {symbol} -- ¿puedes explicar de nuevo la situación actual de forma más sencilla?",
+        "sc_ask_ai_q": "Acabo de usar el filtro con estos criterios: mercado {market}, sector {sector}, capitalización {cap}, tasa de crecimiento {growth}, valoración {value}, riesgo {risk} -- ¿puedes explicar de nuevo por qué se recomendaron estos?",
         "chat_compare_pros_label": "Ventajas",
         "chat_compare_cons_label": "A Tener en Cuenta",
         "chat_quick_analyze_prefix": "Analizar",
@@ -3759,6 +3765,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar correo",
     },
     "fr": {
+        "aa_ask_ai_q_rated": "Je viens de consulter l'analyse IA de {symbol} -- la note est « {rating} ». Peux-tu expliquer plus simplement pourquoi cette note a été attribuée ?",
+        "aa_ask_ai_q_unrated": "Je viens de consulter l'analyse IA de {symbol} -- peux-tu réexpliquer la situation actuelle plus simplement ?",
+        "sc_ask_ai_q": "Je viens d'utiliser le filtre avec ces critères : marché {market}, secteur {sector}, capitalisation {cap}, taux de croissance {growth}, valorisation {value}, risque {risk} -- peux-tu réexpliquer pourquoi ceux-ci ont été recommandés ?",
         "chat_compare_pros_label": "Avantages",
         "chat_compare_cons_label": "À Surveiller",
         "chat_quick_analyze_prefix": "Analyser",
@@ -5605,6 +5614,9 @@ TRANSLATIONS = {
         "ve_page_name": "Vérifier l'e-mail",
     },
     "de": {
+        "aa_ask_ai_q_rated": "Ich habe mir gerade die KI-Analyse für {symbol} angesehen -- die Bewertung lautet \"{rating}\". Kannst du in einfacheren Worten erklären, warum diese Bewertung zustande kam?",
+        "aa_ask_ai_q_unrated": "Ich habe gerade die KI-Analyse für {symbol} aufgerufen -- kannst du die aktuelle Situation noch einmal einfacher erklären?",
+        "sc_ask_ai_q": "Ich habe gerade den Screener mit diesen Kriterien verwendet: Markt {market}, Sektor {sector}, Marktkapitalisierung {cap}, Wachstumsrate {growth}, Bewertung {value}, Risiko {risk} -- kannst du nochmal erklären, warum diese empfohlen wurden?",
         "chat_compare_pros_label": "Vorteile",
         "chat_compare_cons_label": "Zu Beachten",
         "chat_quick_analyze_prefix": "Analysiere",
@@ -9252,6 +9264,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifica email",
     },
     "pt": {
+        "aa_ask_ai_q_rated": "Acabei de ver a análise de IA de {symbol} -- a classificação é \"{rating}\". Pode explicar de forma mais simples por que recebeu essa classificação?",
+        "aa_ask_ai_q_unrated": "Acabei de consultar a análise de IA de {symbol} -- pode explicar a situação atual novamente de forma mais simples?",
+        "sc_ask_ai_q": "Acabei de usar o filtro com estes critérios: mercado {market}, setor {sector}, capitalização {cap}, taxa de crescimento {growth}, avaliação {value}, risco {risk} -- pode explicar novamente por que estes foram recomendados?",
         "chat_compare_pros_label": "Vantagens",
         "chat_compare_cons_label": "Atenção",
         "chat_quick_analyze_prefix": "Analisar",
@@ -11098,6 +11113,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verificar email",
     },
     "ru": {
+        "aa_ask_ai_q_rated": "Я только что посмотрел ИИ-анализ {symbol} -- рейтинг \"{rating}\". Можешь объяснить проще, почему был дан такой рейтинг?",
+        "aa_ask_ai_q_unrated": "Я только что посмотрел ИИ-анализ {symbol} -- можешь ещё раз проще объяснить текущую ситуацию?",
+        "sc_ask_ai_q": "Я только что использовал скринер со следующими критериями: рынок {market}, сектор {sector}, капитализация {cap}, темп роста {growth}, оценка {value}, риск {risk} -- можешь объяснить, почему это было рекомендовано?",
         "chat_compare_pros_label": "Преимущества",
         "chat_compare_cons_label": "На что обратить внимание",
         "chat_quick_analyze_prefix": "Анализ",
@@ -21949,6 +21967,9 @@ TRANSLATIONS = {
         "ve_page_name": "Verifikacija email-a",
     },
     "zh-TW": {
+        "aa_ask_ai_q_rated": "我啱啱睇咗 {symbol} 嘅AI分析，評級係「{rating}」，可唔可以用簡單啲嘅講法再解釋一次點解係咁評級？",
+        "aa_ask_ai_q_unrated": "我啱啱搵咗 {symbol} 嘅AI分析，可唔可以再簡單解釋一次依家嘅情況？",
+        "sc_ask_ai_q": "我啱啱用篩選器搵咗呢啲條件：市場{market}、行業{sector}、市值{cap}、增長率{growth}、估值{value}、風險{risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？",
         "chat_compare_pros_label": "優勢",
         "chat_compare_cons_label": "留意",
         "chat_quick_analyze_prefix": "分析",
@@ -23823,6 +23844,9 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-HK": {
+        "aa_ask_ai_q_rated": "我啱啱睇咗 {symbol} 嘅AI分析，評級係「{rating}」，可唔可以用簡單啲嘅講法再解釋一次點解係咁評級？",
+        "aa_ask_ai_q_unrated": "我啱啱搵咗 {symbol} 嘅AI分析，可唔可以再簡單解釋一次依家嘅情況？",
+        "sc_ask_ai_q": "我啱啱用篩選器搵咗呢啲條件：市場{market}、行業{sector}、市值{cap}、增長率{growth}、估值{value}、風險{risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？",
         "chat_compare_pros_label": "優勢",
         "chat_compare_cons_label": "留意",
         "chat_quick_analyze_prefix": "分析",
@@ -25697,6 +25721,9 @@ TRANSLATIONS = {
         "ve_page_name": "驗證電郵",
     },
     "zh-CN": {
+        "aa_ask_ai_q_rated": "我刚看了 {symbol} 的AI分析，评级是「{rating}」，可不可以用简单点的说法再解释一次为什么是这个评级？",
+        "aa_ask_ai_q_unrated": "我刚搜了 {symbol} 的AI分析，可不可以再简单解释一次现在的情况？",
+        "sc_ask_ai_q": "我刚用筛选器找了这些条件：市场{market}、行业{sector}、市值{cap}、增长率{growth}、估值{value}、风险{risk}，可不可以再简单解释一次为什么会选这些推荐？",
         "chat_compare_pros_label": "优势",
         "chat_compare_cons_label": "留意",
         "chat_quick_analyze_prefix": "分析",
@@ -27571,6 +27598,9 @@ TRANSLATIONS = {
         "ve_page_name": "验证邮箱",
     },
     "ja": {
+        "aa_ask_ai_q_rated": "{symbol}のAI分析を見たところ、評価は「{rating}」でした。なぜこの評価になったのか、もう少し簡単に説明してもらえますか？",
+        "aa_ask_ai_q_unrated": "{symbol}のAI分析を調べたところです。現在の状況をもう少し簡単に説明してもらえますか？",
+        "sc_ask_ai_q": "次の条件でスクリーナーを使いました：市場{market}、セクター{sector}、時価総額{cap}、成長率{growth}、バリュエーション{value}、リスク{risk}。なぜこれらが推奨されたのか、もう一度説明してもらえますか？",
         "chat_compare_pros_label": "強み",
         "chat_compare_cons_label": "注意点",
         "chat_quick_analyze_prefix": "分析",
@@ -29417,6 +29447,9 @@ TRANSLATIONS = {
         "ve_page_name": "メール確認",
     },
     "ko": {
+        "aa_ask_ai_q_rated": "방금 {symbol}의 AI 분석을 봤는데, 등급이 \"{rating}\"이네요. 왜 이런 등급이 나왔는지 더 쉽게 설명해 주실 수 있나요?",
+        "aa_ask_ai_q_unrated": "방금 {symbol}의 AI 분석을 찾아봤는데, 현재 상황을 더 쉽게 다시 설명해 주실 수 있나요?",
+        "sc_ask_ai_q": "방금 다음 조건으로 스크리너를 사용했습니다: 시장 {market}, 섹터 {sector}, 시가총액 {cap}, 성장률 {growth}, 밸류에이션 {value}, 리스크 {risk} -- 이것들이 왜 추천되었는지 다시 설명해 주실 수 있나요?",
         "chat_compare_pros_label": "장점",
         "chat_compare_cons_label": "주의사항",
         "chat_quick_analyze_prefix": "분석",
@@ -31263,6 +31296,9 @@ TRANSLATIONS = {
         "ve_page_name": "이메일 확인",
     },
     "hi": {
+        "aa_ask_ai_q_rated": "मैंने अभी {symbol} का AI विश्लेषण देखा -- रेटिंग \"{rating}\" है। क्या आप सरल शब्दों में समझा सकते हैं कि यह रेटिंग क्यों मिली?",
+        "aa_ask_ai_q_unrated": "मैंने अभी {symbol} का AI विश्लेषण देखा -- क्या आप मौजूदा स्थिति को फिर से सरल शब्दों में समझा सकते हैं?",
+        "sc_ask_ai_q": "मैंने अभी इन मापदंडों के साथ स्क्रीनर का उपयोग किया: बाज़ार {market}, क्षेत्र {sector}, मार्केट कैप {cap}, वृद्धि दर {growth}, मूल्यांकन {value}, जोखिम {risk} -- क्या आप फिर से समझा सकते हैं कि इनकी सिफारिश क्यों की गई?",
         "chat_compare_pros_label": "फ़ायदे",
         "chat_compare_cons_label": "ध्यान दें",
         "chat_quick_analyze_prefix": "विश्लेषण करें",
@@ -33109,6 +33145,9 @@ TRANSLATIONS = {
         "ve_page_name": "ईमेल सत्यापित करें",
     },
     "ar": {
+        "aa_ask_ai_q_rated": "لقد اطلعت للتو على تحليل الذكاء الاصطناعي لـ {symbol} -- التقييم هو \"{rating}\". هل يمكنك أن تشرح بعبارات أبسط لماذا حصل على هذا التقييم؟",
+        "aa_ask_ai_q_unrated": "لقد بحثت للتو عن تحليل الذكاء الاصطناعي لـ {symbol} -- هل يمكنك شرح الوضع الحالي مرة أخرى بعبارات أبسط؟",
+        "sc_ask_ai_q": "لقد استخدمت للتو أداة الفرز بهذه المعايير: السوق {market}، القطاع {sector}، القيمة السوقية {cap}، معدل النمو {growth}، التقييم {value}، المخاطرة {risk} -- هل يمكنك أن تشرح مرة أخرى لماذا تم التوصية بهذه؟",
         "chat_compare_pros_label": "المزايا",
         "chat_compare_cons_label": "تنبيه",
         "chat_quick_analyze_prefix": "تحليل",
@@ -34955,6 +34994,9 @@ TRANSLATIONS = {
         "ve_page_name": "التحقق من البريد الإلكتروني",
     },
     "id": {
+        "aa_ask_ai_q_rated": "Saya baru saja melihat analisis AI untuk {symbol} -- peringkatnya adalah \"{rating}\". Bisakah Anda jelaskan dengan lebih sederhana mengapa mendapat peringkat ini?",
+        "aa_ask_ai_q_unrated": "Saya baru saja mencari analisis AI untuk {symbol} -- bisakah Anda menjelaskan lagi situasi saat ini dengan lebih sederhana?",
+        "sc_ask_ai_q": "Saya baru saja menggunakan screener dengan kriteria ini: pasar {market}, sektor {sector}, kapitalisasi pasar {cap}, tingkat pertumbuhan {growth}, valuasi {value}, risiko {risk} -- bisakah Anda jelaskan lagi mengapa ini direkomendasikan?",
         "chat_compare_pros_label": "Kelebihan",
         "chat_compare_cons_label": "Perhatikan",
         "chat_quick_analyze_prefix": "Analisis",
@@ -40403,6 +40445,9 @@ TRANSLATIONS = {
         "ve_page_name": "Xác minh email",
     },
     "tr": {
+        "aa_ask_ai_q_rated": "{symbol} için yapay zeka analizine az önce baktım -- derecelendirme \"{rating}\". Bu derecelendirmenin nedenini daha basit terimlerle açıklayabilir misin?",
+        "aa_ask_ai_q_unrated": "{symbol} için yapay zeka analizine az önce baktım -- mevcut durumu daha basit terimlerle tekrar açıklayabilir misin?",
+        "sc_ask_ai_q": "Az önce şu kriterlerle tarayıcıyı kullandım: piyasa {market}, sektör {sector}, piyasa değeri {cap}, büyüme oranı {growth}, değerleme {value}, risk {risk} -- bunların neden önerildiğini tekrar açıklayabilir misin?",
         "chat_compare_pros_label": "Artılar",
         "chat_compare_cons_label": "Dikkat Edilmesi Gerekenler",
         "chat_quick_analyze_prefix": "Analiz Et",
