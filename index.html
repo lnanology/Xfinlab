@@ -326,6 +326,17 @@
   @keyframes live-core-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   @keyframes live-ring { 0% { transform: scale(0.75); opacity: 0.55; } 100% { transform: scale(1.7); opacity: 0; } }
   .live-see-all { display: block; text-align: center; margin-top: 16px; font-size: 0.82rem; color: var(--muted); text-decoration: none; }
+  .hero-browse-tools-link { display: inline-block; margin: 8px 0 14px; font-size: 0.82rem; color: var(--accent); text-decoration: none; font-weight: 600; }
+  .hero-browse-tools-link:hover { text-decoration: underline; }
+  /* 2026-10-01 (AJ homepage UX audit: 新手話呢堆數字"好複習" -- jargon like
+     confluence score/confidence%/direction with zero explanation). A
+     native `title` tooltip (set via JS below, not data-i18n-title which
+     js/i18n.js's apply() doesn't actually implement -- see this same
+     session's other i18n fixes for that exact silent-no-op bug class) on
+     a small ⓘ next to each "market overview" section's heading, so a
+     first-time visitor can hover/tap to learn what the numbers mean
+     without needing it explained inline every time. */
+  .info-tip { display: inline-flex; align-items: center; justify-content: center; margin-left: 6px; font-size: 0.72em; color: var(--muted); cursor: help; vertical-align: middle; }
   .live-see-all:hover { color: var(--accent); }
   @media (prefers-reduced-motion: reduce) {
     .live-hero-pulse, .live-hero-pulse::before, .live-hero-pulse::after,
@@ -856,6 +867,21 @@
          happens -- reusing only real, verifiable facts about this
          platform (no fabricated user/country counts). -->
     <p class="hero-trust-chip" data-i18n="hero_trust_chip">No credit card required · Real backtested data · 46 languages</p>
+    <!-- 2026-10-01 (AJ homepage UX audit: "有經驗投資用戶唔知邊度撳" --
+         experienced users couldn't find XFINLAB's actual 11 AI tools from
+         the homepage). The full tool launcher already existed -- the nav
+         bar's "功能" flyout (see #idxNavFeatPanel below) and engines.html
+         both already list all 11 -- but neither is visible above the
+         fold; the flyout is a small text label in the nav, and
+         engines.html's only homepage link ("See all 11 AI research
+         tools") previously sat several sections down inside the Live AI
+         Result block. This puts the SAME engines.html link directly under
+         the hero's primary CTA instead, so a returning user sees it
+         within the first screenful without having to discover the nav
+         flyout or scroll past Trust Numbers/Track Record/Live AI Result
+         first. -->
+    <a href="engines.html" class="hero-browse-tools-link" data-i18n="hero_browse_tools"
+       onclick="trackEvent('homepage_browse_tools_click')">🔧 Browse all 11 AI tools →</a>
 
     <div class="search-bar">
       <div style="position:relative"><input class="search-input" id="heroTicker" data-i18n-placeholder="hero_search" placeholder="輸入股票代號 AAPL" maxlength="6"
@@ -885,17 +911,17 @@
      Research -> dashboard.html (the actual product), Build ->
      intelligence-api.html (API/MCP/SDKs, now fully documented). -->
 <div class="entry-fork" data-reveal>
-  <a href="formula-engine.html" class="entry-fork-card">
+  <a href="formula-engine.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'learn'})">
     <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
     <div class="entry-fork-title" data-i18n="entryfork_learn_title">Learn</div>
     <div class="entry-fork-desc" data-i18n="entryfork_learn_desc">70+ free finance formulas, explained</div>
   </a>
-  <a href="ai-analysis.html" class="entry-fork-card">
+  <a href="ai-analysis.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'research'})">
     <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
     <div class="entry-fork-title" data-i18n="entryfork_research_title">Research</div>
     <div class="entry-fork-desc" data-i18n="entryfork_research_desc">11 AI engines, real data, free to start</div>
   </a>
-  <a href="intelligence-api.html" class="entry-fork-card">
+  <a href="intelligence-api.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'build'})">
     <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4 3 12l5 8M16 4l5 8-5 8M13 3l-2 18"/></svg></div>
     <div class="entry-fork-title" data-i18n="entryfork_build_title">Build</div>
     <div class="entry-fork-desc" data-i18n="entryfork_build_desc">API, MCP server &amp; SDKs for developers</div>
@@ -1018,7 +1044,7 @@
      一樣用真實Confluence Engine計，唔係AI估。放喺Outlook上面，等訪客
      一開始就見到「而家邊隻最強」。 -->
 <div class="top-opp-section" data-reveal>
-  <div class="section-label topopp-label" data-i18n="topopp_label">🏆 Today's Research Highlights</div>
+  <div class="section-label topopp-label"><span data-i18n="topopp_label">🏆 Today's Research Highlights</span><span class="info-tip" id="tipTopOpp" tabindex="0">ⓘ</span></div>
   <div class="top-opp-grid" id="topOppGrid" data-reveal-stagger>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_stock">股票</div><div class="top-opp-ticker">--</div></div>
     <div class="top-opp-card"><div class="top-opp-class" data-i18n="topopp_class_futures">期貨</div><div class="top-opp-ticker">--</div></div>
@@ -1030,7 +1056,7 @@
      sits below Top Opportunity, does not replace it. See
      api/market_pulse.py's /api/opportunity-categories. -->
 <div class="nine-cat-section" data-reveal>
-  <div class="section-label" data-i18n="nine_section_label">🌐 Market Opportunity Board</div>
+  <div class="section-label"><span data-i18n="nine_section_label">🌐 Market Opportunity Board</span><span class="info-tip" id="tipNineCat" tabindex="0">ⓘ</span></div>
   <div class="section-title" style="font-size:1.3rem" data-i18n="nine_section_title">邊度而家有機會？</div>
   <div class="nine-cat-grid" id="nineCatGrid" data-reveal-stagger>
     <div class="nine-cat-card"><div class="nine-cat-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-0.15em" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5c4 5 7 8.6 7 12.5a7 7 0 1 1-14 0c0-3.9 3-7.5 7-12.5z"/></svg></div><div class="nine-cat-title" data-i18n="nine_flow_title">市場資金流向</div><div class="nine-cat-empty">--</div></div>
@@ -1049,7 +1075,7 @@
 <div class="pulse-section" data-reveal>
   <div class="pulse-box">
     <div class="pulse-head">
-      <div class="pulse-title"><span class="pulse-dot"></span><span data-i18n="outlook_title">今日重點</span></div>
+      <div class="pulse-title"><span class="pulse-dot"></span><span data-i18n="outlook_title">今日重點</span><span class="info-tip" id="tipOutlook" tabindex="0">ⓘ</span></div>
       <div class="pulse-overall" id="pulseOverall" data-i18n="outlook_loading">載入緊...</div>
     </div>
     <div class="pulse-top" id="pulseBottom" style="display:none"></div>
@@ -1226,6 +1252,68 @@
 <script>
 const API = "https://api.xfinlab.com/api";
 function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+// 2026-10-01 (AJ: 新手話複雜，資深用戶唔知邊度撳 -- homepage UX audit):
+// index.html had `if (typeof trackEvent === 'function')` guards at two
+// call sites already, but no trackEvent() definition of its own, so BOTH
+// silently no-op'd -- the homepage, XFINLAB's highest-traffic page, sent
+// ZERO analytics events. Same pattern as chart-analysis.html/dashboard.html
+// (page:'index' here), so admin dashboard's DAU/trending stats and this
+// audit's section-engagement check both have real homepage data to look
+// at, instead of guessing which sections people actually scroll to/click.
+const SESSION_ID = Math.random().toString(36).substring(2);
+async function trackEvent(event_type, event_data = null) {
+  if (typeof window.XFLConsent === 'object' && !window.XFLConsent.hasAnalyticsConsent()) return;
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    await fetch(`${API}/analytics/track`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ event_type, event_data, token, session_id: SESSION_ID, page: 'index' })
+    });
+  } catch(e) {}
+}
+
+// Section-view tracking: fires once per section per pageview, the first
+// time it enters the viewport -- reuses the `data-reveal`/`data-reveal-
+// stagger` attributes every homepage section already carries for the
+// scroll-fade-in animation (js/scroll-reveal.js), so no new markup is
+// needed. This is read-only (separate IntersectionObserver instance, own
+// callback) -- it does not touch or depend on scroll-reveal.js's own
+// reveal-animation observer, so this can be removed later without
+// affecting that animation at all. Section name = the element's own
+// class (e.g. "top-opp-section"), falls back to its id.
+(function() {
+  const seen = new Set();
+  const sections = document.querySelectorAll('[data-reveal], [data-reveal-stagger]');
+  if (!sections.length || typeof IntersectionObserver === 'undefined') return;
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const name = (el.className || '').toString().split(' ').find(c => c.endsWith('-section')) || el.id || el.tagName.toLowerCase();
+      if (seen.has(name)) return;
+      seen.add(name);
+      trackEvent('homepage_section_viewed', {section: name});
+    });
+  }, {threshold: 0.3});
+  sections.forEach(el => obs.observe(el));
+})();
+
+// Info-tip tooltips (see .info-tip CSS comment above for why these use a
+// JS-set native `title` instead of data-i18n-title). Re-synced on every
+// i18nApplied so switching language updates the tooltip text too, same
+// as every other t()-driven dynamic string on this page.
+function syncInfoTips() {
+  const tipTopOpp = document.getElementById('tipTopOpp');
+  if (tipTopOpp) tipTopOpp.title = t('topopp_tooltip', "Ranked by a real multi-indicator technical score (trend + RSI + MACD + support/resistance) on each asset class's most-traded instruments -- not an AI guess or a curated pick.");
+  const tipNineCat = document.getElementById('tipNineCat');
+  if (tipNineCat) tipNineCat.title = t('nine_tooltip', 'Nine different lenses on the same real market data -- fund flow, sentiment, trending, fastest-growing, best-opportunity, highest-yield, and 3 holding-period picks. Each card is independently computed, not a single opinion repeated 9 times.');
+  const tipOutlook = document.getElementById('tipOutlook');
+  if (tipOutlook) tipOutlook.title = t('outlook_tooltip', "A snapshot of major indices/sectors' technical direction right now, refreshed every 90 seconds. \"Confidence %\" reflects how strongly the underlying indicators agree with each other, not a prediction of how sure you should be.");
+}
+syncInfoTips();
+document.addEventListener('i18nApplied', syncInfoTips);
 
 // 自動識別全球代號：純數字自動加返啱嘅交易所後綴，常見加密貨幣代號自動加
 // -USD，已經有後綴（.HK/.SS/.SZ/-USD/期貨=F等）或者其他格式就原樣使用 --
