@@ -68,6 +68,7 @@ import numpy as np
 import pandas as pd
 
 from services.technical_analysis_service import TechnicalAnalysisService
+from services.i18n import localized_text
 
 logger = logging.getLogger(__name__)
 
@@ -120,17 +121,17 @@ class BacktestService:
     def run(cls, symbol: str, strategy: str = "confluence_trend",
             period: str = "2y", interval: str = "1d",
             commission_pct: float = DEFAULT_COMMISSION_PCT,
-            slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
+            slippage_pct: float = DEFAULT_SLIPPAGE_PCT, lang: str = None) -> Dict:
         if strategy not in cls.STRATEGIES:
-            return {"error": f"未知策略：{strategy}，可用：{', '.join(cls.STRATEGIES)}"}
+            return {"error": localized_text("bt_err_unknown_strategy", lang).replace("{strategy}", strategy).replace("{list}", ', '.join(cls.STRATEGIES))}
 
         try:
             df = _svc._fetch_history(symbol, period, interval)
         except Exception as e:
-            return {"error": f"攞唔到 {symbol} 嘅歷史數據：{str(e)}"}
+            return {"error": localized_text("bt_err_fetch_failed", lang).replace("{symbol}", symbol).replace("{error}", str(e))}
 
         if df is None or df.empty or len(df) < WARMUP_BARS + 10:
-            return {"error": f"{symbol} 歷史數據不足，無法回測（需要至少 {WARMUP_BARS + 10} 條K線）"}
+            return {"error": localized_text("bt_err_insufficient_data", lang).replace("{symbol}", symbol).replace("{n}", str(WARMUP_BARS + 10))}
 
         df = df.dropna()
         closes, highs, lows, volume = df["Close"], df["High"], df["Low"], df["Volume"]
@@ -162,23 +163,18 @@ class BacktestService:
                 "commission_pct_per_side": commission_pct,
                 "slippage_pct_per_side": slippage_pct,
                 "round_trip_cost_pct_approx": round_trip_cost_pct,
-                "note": (
-                    f"return_pct/avg_return_pct 已經扣除以上假設嘅手續費+滑點（每邊各計一次，"
-                    f"即一買一賣合共約 {round_trip_cost_pct}%）；return_pct_gross/"
-                    f"avg_return_pct_gross 係未扣成本嘅原始數字，供對照。呢個係通用保守假設，"
-                    f"並非某個特定券商/交易所嘅真實收費，實際成本因人而異。"
-                ),
+                "note": localized_text("bt_cost_model_note", lang).replace("{pct}", str(round_trip_cost_pct)),
             },
             "caveats": [
-                "支撐/阻力型訊號（依賴未來K棒確認嘅fractal swing point）刻意冇加入呢個回測，避免未來數據滲入歷史判斷。",
-                "細樣本（交易次數少）嘅勝率統計學上唔可靠，請留意 stats.trade_count。",
-                "呢個回測用固定規則，冇任何參數擬合/優化——唔存在「過度擬合去遷就呢段歷史」嘅風險，但都唔代表未來會重複同樣表現。",
-                "過去表現不代表未來結果，呢個唔係投資建議。建議搭配 run_walk_forward() 睇唔同時間段嘅穩定性。",
+                localized_text("bt_caveat_sr_excluded", lang),
+                localized_text("bt_caveat_small_sample", lang),
+                localized_text("bt_caveat_no_overfitting", lang),
+                localized_text("bt_caveat_past_performance", lang),
             ],
         }
 
     @classmethod
-    def compare(cls, symbol: str, period: str = "2y", interval: str = "1d") -> Dict:
+    def compare(cls, symbol: str, period: str = "2y", interval: str = "1d", lang: str = None) -> Dict:
         """
         Runs every registered strategy for the same symbol/period and
         sorts by win rate (sharpe_like as tiebreaker) -- purely an
@@ -188,11 +184,11 @@ class BacktestService:
         """
         results = []
         for strat in cls.STRATEGIES:
-            r = cls.run(symbol, strategy=strat, period=period, interval=interval)
+            r = cls.run(symbol, strategy=strat, period=period, interval=interval, lang=lang)
             if "error" not in r:
                 results.append(r)
         if not results:
-            return {"error": f"{symbol.upper()} 無法完成任何策略回測（歷史數據不足或攞唔到）"}
+            return {"error": localized_text("bt_err_compare_failed", lang).replace("{symbol}", symbol.upper())}
 
         def sort_key(r):
             s = r["stats"]
@@ -214,7 +210,7 @@ class BacktestService:
             # strategy result but was never rendered anywhere.
             "data_points": results[0].get("data_points"),
             "strategies": results,
-            "disclaimer": "以上排名純粹基於歷史回測勝率排序，並非投資建議，亦不保證未來表現。",
+            "disclaimer": localized_text("bt_compare_disclaimer", lang),
         }
 
     @classmethod
@@ -222,7 +218,7 @@ class BacktestService:
                           period: str = "2y", interval: str = "1d",
                           n_folds: int = 4,
                           commission_pct: float = DEFAULT_COMMISSION_PCT,
-                          slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
+                          slippage_pct: float = DEFAULT_SLIPPAGE_PCT, lang: str = None) -> Dict:
         """
         Out-of-sample validation for `strategy` on `symbol` -- see the
         module docstring's item 2 for why this exists. Two views of the
@@ -254,7 +250,7 @@ class BacktestService:
         not proof that a "low"-risk result will actually hold up live.
         """
         if strategy not in cls.STRATEGIES:
-            return {"error": f"未知策略：{strategy}，可用：{', '.join(cls.STRATEGIES)}"}
+            return {"error": localized_text("bt_err_unknown_strategy", lang).replace("{strategy}", strategy).replace("{list}", ', '.join(cls.STRATEGIES))}
         n_folds = max(2, int(n_folds))
         signal_fn = {
             "confluence_trend": cls._signal_confluence_trend,
@@ -267,7 +263,7 @@ class BacktestService:
         }[strategy]
         return cls._walk_forward_with_signal_fn(
             symbol, strategy, signal_fn, period=period, interval=interval, n_folds=n_folds,
-            commission_pct=commission_pct, slippage_pct=slippage_pct,
+            commission_pct=commission_pct, slippage_pct=slippage_pct, lang=lang,
         )
 
     @classmethod
@@ -275,7 +271,7 @@ class BacktestService:
                                       period: str = "2y", interval: str = "1d",
                                       n_folds: int = 4,
                                       commission_pct: float = DEFAULT_COMMISSION_PCT,
-                                      slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
+                                      slippage_pct: float = DEFAULT_SLIPPAGE_PCT, lang: str = None) -> Dict:
         """
         2026-08-10 (P2 of the Quant Research Factory roadmap): the actual
         walk-forward mechanics extracted out of run_walk_forward() above so
@@ -291,11 +287,11 @@ class BacktestService:
         try:
             df = _svc._fetch_history(symbol, period, interval)
         except Exception as e:
-            return {"error": f"攞唔到 {symbol} 嘅歷史數據：{str(e)}"}
+            return {"error": localized_text("bt_err_fetch_failed", lang).replace("{symbol}", symbol).replace("{error}", str(e))}
 
         min_bars = WARMUP_BARS + 10 * n_folds
         if df is None or df.empty or len(df) < min_bars:
-            return {"error": f"{symbol} 歷史數據不足，無法做 {n_folds} 段walk-forward驗證（需要至少 {min_bars} 條K線，可以縮短 n_folds 或加長 period）"}
+            return {"error": localized_text("bt_err_wf_insufficient_data", lang).replace("{symbol}", symbol).replace("{n_folds}", str(n_folds)).replace("{n}", str(min_bars))}
 
         df = df.dropna()
         closes, highs, lows, volume = df["Close"], df["High"], df["Low"], df["Volume"]
@@ -303,7 +299,7 @@ class BacktestService:
 
         return cls._walk_forward_core(
             df, ind, signal_fn, strategy_label, symbol, period=period, interval=interval,
-            n_folds=n_folds, commission_pct=commission_pct, slippage_pct=slippage_pct,
+            n_folds=n_folds, commission_pct=commission_pct, slippage_pct=slippage_pct, lang=lang,
         )
 
     @classmethod
@@ -311,7 +307,7 @@ class BacktestService:
                             symbol: str, period: str = "2y", interval: str = "1d",
                             n_folds: int = 4,
                             commission_pct: float = DEFAULT_COMMISSION_PCT,
-                            slippage_pct: float = DEFAULT_SLIPPAGE_PCT) -> Dict:
+                            slippage_pct: float = DEFAULT_SLIPPAGE_PCT, lang: str = None) -> Dict:
         """
         2026-08-10 (P2): the fold/OOS/overfitting-heuristic math itself,
         taking an ALREADY-fetched df + ALREADY-computed ind dict. Split out
@@ -361,16 +357,16 @@ class BacktestService:
 
         if wr_gap is not None and wr_gap > 15:
             risk = "high"
-            risk_reason = f"樣本內勝率（{is_wr}%）比樣本外（{oos_wr}%）高出 {round(wr_gap, 1)} 個百分點，落差偏大，有overfit跡象。"
+            risk_reason = localized_text("bt_wf_risk_reason_high_gap", lang).replace("{is_wr}", str(is_wr)).replace("{oos_wr}", str(oos_wr)).replace("{gap}", str(round(wr_gap, 1)))
         elif tested_folds == 0:
             risk = "unknown"
-            risk_reason = "各段觸發嘅交易訊號太少，無法評估穩定性。"
+            risk_reason = localized_text("bt_wf_risk_reason_unknown", lang)
         elif profitable_folds / tested_folds < 0.5:
             risk = "high"
-            risk_reason = f"只有 {profitable_folds}/{tested_folds} 段時間錄得正平均回報，跨時段穩定性存疑。"
+            risk_reason = localized_text("bt_wf_risk_reason_low_profitable", lang).replace("{profitable}", str(profitable_folds)).replace("{tested}", str(tested_folds))
         else:
             risk = "low"
-            risk_reason = "樣本內外表現大致一致，各段亦多數錄得正回報，冇明顯過度擬合跡象——但呢個只係啟發式檢查，唔係統計證明，亦唔保證未來表現。"
+            risk_reason = localized_text("bt_wf_risk_reason_low_risk", lang)
 
         return {
             "symbol": symbol.upper(),
@@ -390,9 +386,9 @@ class BacktestService:
             "overfitting_risk": risk,
             "overfitting_risk_reason": risk_reason,
             "caveats": [
-                "呢個係fixed-rule策略嘅樣本內/樣本外穩定性檢查，唔係參數優化——呢類策略本身冇可擬合參數，所以「過擬合」喺呢度指嘅係「呢段特定歷史啱啱好啱條規則」，而唔係傳統意義嘅overfitting a fitted model。",
-                "分段令每段交易次數變少，統計參考價值進一步降低，請留意各段 stats.trade_count。",
-                "過去任何時段嘅表現都不代表未來結果，呢個唔係投資建議。",
+                localized_text("bt_wf_caveat_1", lang),
+                localized_text("bt_wf_caveat_2", lang),
+                localized_text("bt_wf_caveat_3", lang),
             ],
         }
 
