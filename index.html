@@ -310,13 +310,10 @@
   }
   .level-option:hover::before, .level-option:focus-visible::before { opacity:1; }
   .level-option.picked { transform:scale(0.94) translateZ(0) !important; box-shadow:0 0 0 2px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.6); transition:transform .18s ease, box-shadow .18s ease; }
-  .level-option-icon {
-    display:flex; align-items:center; justify-content:center; width:46px; height:46px; border-radius:50%;
-    background:linear-gradient(155deg, rgba(var(--card-accent-rgb,var(--accent-rgb)),0.22), rgba(var(--card-accent-rgb,var(--accent-rgb)),0.06));
-    margin-bottom:6px; transition:transform .35s cubic-bezier(.22,1,.36,1); transform:translateZ(24px);
-  }
-  .level-option:hover .level-option-icon { transform:translateZ(36px) scale(1.08); }
-  .level-option-emoji { font-size:1.35rem; transform:translateZ(1px); }
+  /* 2026-10-02 (AJ, after seeing it live: "個按位同個圖ICON混一埋，唔要
+     ICON，個框包住字得啦" -- the icon badge was overlapping the card
+     border/text at the 3D tilt's resting pose; removed the icon
+     entirely, card is just the border box around label+desc now). */
   .level-option-label { font-weight:700; font-size:0.88rem; color:var(--text); transform:translateZ(18px); }
   .level-option-desc { font-size:0.73rem; color:var(--muted); transform:translateZ(12px); max-width:160px; }
   .level-select-skip { display:block; margin:18px auto 0; background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; text-decoration:underline; font-family:inherit; transition:color .2s ease; }
@@ -945,17 +942,14 @@
     <div class="level-select-heading" id="levelSelectHeading" data-i18n="level_select_heading">邊個最似你現在的情況？</div>
     <div class="level-select-options" data-reveal-stagger>
       <button type="button" class="level-option" style="--card-accent-rgb:34,197,94" onclick="selectUserLevel('beginner', this)">
-        <span class="level-option-icon"><span class="level-option-emoji">🌱</span></span>
         <span class="level-option-label" data-i18n="level_beginner_label">新手</span>
         <span class="level-option-desc" data-i18n="level_beginner_desc">第一次用投資研究工具</span>
       </button>
       <button type="button" class="level-option" style="--card-accent-rgb:59,130,246" onclick="selectUserLevel('intermediate', this)">
-        <span class="level-option-icon"><span class="level-option-emoji">📈</span></span>
         <span class="level-option-label" data-i18n="level_intermediate_label">淺經驗</span>
         <span class="level-option-desc" data-i18n="level_intermediate_desc">投資過，想睇多啲數據</span>
       </button>
       <button type="button" class="level-option" style="--card-accent-rgb:168,85,247" onclick="selectUserLevel('professional', this)">
-        <span class="level-option-icon"><span class="level-option-emoji">🎯</span></span>
         <span class="level-option-label" data-i18n="level_professional_label">專業</span>
         <span class="level-option-desc" data-i18n="level_professional_desc">想直接用進階工具同API</span>
       </button>
