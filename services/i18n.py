@@ -39,6 +39,16 @@ COUNTRY_LANGUAGE_MAP = {
 
 TRANSLATIONS = {
     "en": {
+        "level_select_heading": "Which best describes you right now?",
+        "level_beginner_label": "New",
+        "level_beginner_desc": "First time using investment research tools",
+        "level_intermediate_label": "Some experience",
+        "level_intermediate_desc": "I've invested before, want more data",
+        "level_professional_label": "Professional",
+        "level_professional_desc": "I want to go straight to advanced tools & API",
+        "level_select_skip": "Skip →",
+        "hero_hint_beginner": "New to investing? Start with the free education tools and learn how to read the data at your own pace.",
+        "hero_hint_professional": "Want to skip ahead? Backtest, Regime Router, Formula Composer, API and MCP are all here.",
         "ia_ep25_name": "Relationship & Impact",
         "ia_ep25_desc": "Given a ticker: who is upstream (suppliers), downstream (customers), same-sector (peers), and directly competing -- plus market-wide capital flow and this ticker's CFTC futures-positioning context if applicable. Supplier/customer/competitor data is a hand-curated starting set; a ticker outside that set honestly returns an empty list for those three fields rather than a guess, while sector_peers still populates for any US large-cap ticker.",
         "ia_ep26_name": "Evidence Scorecard",
