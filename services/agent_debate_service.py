@@ -77,10 +77,17 @@ def is_available() -> bool:
     return bool(os.getenv("DEEPINFRA_API_KEY"))
 
 
-def _context_summary(symbol: str, context: Dict) -> str:
+def _context_summary(symbol: str, context: Dict, data_personas: Dict = None) -> str:
     """Renders the real data every persona argues from into plain text --
     same numbers already shown elsewhere on the page (confluence signals,
-    regime, decision levels), never invented for this feature."""
+    regime, decision levels), never invented for this feature.
+
+    2026-10-02: now also folds in the zero-LLM data personas' real
+    numbers (fundamentals growth, impact-graph relationships, capital
+    flow) when available -- richer grounding for Bull/Bear/Risk Manager's
+    existing 3 LLM calls, same "never invented" posture as everything
+    else in this summary. `data_personas` is optional (defaults to None)
+    so this function's existing call sites/signature don't break."""
     confluence = context.get("confluence") or {}
     regime = context.get("regime") or {}
     decision_levels = context.get("decision_levels") or {}
@@ -96,6 +103,10 @@ def _context_summary(symbol: str, context: Dict) -> str:
             f"現有Entry/Stop/Target：{decision_levels.get('entry')}/"
             f"{decision_levels.get('stop_loss')}/{decision_levels.get('take_profits')}"
         )
+    for name, data in (data_personas or {}).items():
+        if data.get("signal") == "unavailable":
+            continue
+        lines.append(f"{name}資料：{data.get('summary', '')}")
     return "\n".join(lines)
 
 
@@ -104,6 +115,140 @@ _PERSONA_PROMPTS = {
     "bear": "你係一個睇淡嘅股票分析員（Bear）。淨係用返下面提供嘅真實數據，用2-3句講你點解睇淡，唔好引用未提供嘅數據或者捏造數字。",
     "risk_manager": "你係一個風控經理（Risk Manager）。淨係用返下面提供嘅真實數據，用2-3句指出最大嘅風險係咩，唔好引用未提供嘅數據或者捏造數字。",
 }
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-02 (AJ: "起" -- follow-up to a discussion of IG/Threads
+# "multi-agent trading team" posts, e.g. TauricResearch/TradingAgents).
+# The honest take given: "more agents" doesn't mean "more accurate" (2026
+# AI-trader benchmarks confirm LLM reasoning doesn't automatically
+# translate into trading skill), and this module already ships the exact
+# Bull/Bear/Risk-Manager debate those posts are built around -- it's the
+# single most expensive, highest-weighted endpoint in the Intelligence
+# API. So rather than bolting on 3 more EXPENSIVE LLM personas (doubling
+# latency/cost for a feature already priced at 5x quota), these three
+# "data personas" are zero-LLM, zero-added-cost: real numbers composed
+# from services already live elsewhere (evidence_scorecard_service's
+# fundamentals/capital-flow/news-sentiment dimension checks,
+# relationship_graph_service's Impact Graph) -- the exact differentiator
+# AJ's own analysis flagged (evidence lineage + impact graph) versus a
+# generic multi-LLM-persona clone.
+# ---------------------------------------------------------------------------
+
+def _build_data_personas(symbol: str) -> Dict[str, Dict]:
+    """Returns {"fundamental": {...}, "event": {...}, "flow": {...}},
+    each {"signal": support/oppose/neutral/unavailable, "summary": str,
+    "source": str}. Every sub-call is independently best-effort (never
+    raises) -- a missing data source for this symbol just means that
+    persona reports `signal: "unavailable"`, never a guessed opinion
+    standing in for real data (same honesty posture evidence_scorecard_
+    service.py's own dimension checks already follow)."""
+    personas: Dict[str, Dict] = {}
+
+    try:
+        from services.evidence_scorecard_service import _dim_fundamentals
+        dim = _dim_fundamentals(symbol)
+        personas["fundamental"] = (
+            {"signal": dim["signal"], "summary": dim["detail"], "source": "sec_xbrl/fundamentals_service"}
+            if dim else {"signal": "unavailable", "summary": "No fundamentals data available for this symbol.", "source": None}
+        )
+    except Exception:
+        personas["fundamental"] = {"signal": "unavailable", "summary": "No fundamentals data available for this symbol.", "source": None}
+
+    try:
+        from services.relationship_graph_service import get_impact_analysis
+        impact = get_impact_analysis(symbol)
+        rel_count = (
+            len(impact.get("known_suppliers") or []) + len(impact.get("known_customers") or [])
+            + len(impact.get("known_competitors") or [])
+        )
+        if rel_count > 0:
+            parts = []
+            if impact.get("known_suppliers"):
+                parts.append(f"suppliers: {', '.join(impact['known_suppliers'][:3])}")
+            if impact.get("known_customers"):
+                parts.append(f"customers: {', '.join(impact['known_customers'][:3])}")
+            if impact.get("known_competitors"):
+                parts.append(f"competitors: {', '.join(impact['known_competitors'][:3])}")
+            personas["event"] = {
+                "signal": "neutral",  # a relationship graph is context, not a directional opinion -- never force one
+                "summary": f"{rel_count} known relationships -- " + "; ".join(parts) + ". A material event at any of these could propagate here.",
+                "source": "relationship_graph_service",
+            }
+        else:
+            personas["event"] = {"signal": "unavailable", "summary": "No curated supplier/customer/competitor relationships for this symbol yet.", "source": None}
+    except Exception:
+        personas["event"] = {"signal": "unavailable", "summary": "No curated supplier/customer/competitor relationships for this symbol yet.", "source": None}
+
+    try:
+        from services.evidence_scorecard_service import _dim_capital_flow
+        dim = _dim_capital_flow()
+        personas["flow"] = (
+            {"signal": dim["signal"], "summary": dim["detail"], "source": "capital_flow_engine"}
+            if dim else {"signal": "unavailable", "summary": "No capital-flow signal available right now.", "source": None}
+        )
+    except Exception:
+        personas["flow"] = {"signal": "unavailable", "summary": "No capital-flow signal available right now.", "source": None}
+
+    return personas
+
+
+def build_shareable_card(symbol: str, debate_result: Dict, data_personas: Dict) -> Dict:
+    """Composes a short (X-length) and long (Reddit-style) shareable
+    summary of the full research team's output -- the "My N-agent
+    research team analyzed {symbol}" card from the growth-strategy
+    discussion. Deliberately counts agreement/disagreement mechanically
+    (never an LLM call) and never fabricates a verdict beyond what
+    run_debate()/the data personas actually produced. Returns
+    {"short_text": str, "long_text": str} or {"available": False} if
+    the debate itself wasn't available."""
+    if not debate_result or not debate_result.get("available") or debate_result.get("error"):
+        return {"available": False}
+
+    evidence_url = f"https://www.xfinlab.com/evidence-scorecard.html?ticker={symbol.upper()}"
+
+    directional = {
+        persona: data["signal"]
+        for persona, data in (data_personas or {}).items()
+        if data.get("signal") in ("support", "oppose")
+    }
+    support_n = sum(1 for s in directional.values() if s == "support")
+    oppose_n = sum(1 for s in directional.values() if s == "oppose")
+
+    total_agents = 3 + len(data_personas or {})  # Bull/Bear/Risk Manager + data personas
+    short_text = (
+        f"My {total_agents}-agent research team analyzed {symbol.upper()}. "
+        f"Bull, Bear, and a Risk Manager debated it ({debate_result.get('verdict', '')[:80]}...), "
+    )
+    if support_n or oppose_n:
+        short_text += f"plus {support_n} data sources leaning supportive and {oppose_n} leaning opposed. "
+    short_text += f"Full breakdown: {evidence_url}"
+
+    long_lines = [f"**My research team's take on {symbol.upper()}**", ""]
+    args = debate_result.get("arguments") or {}
+    if args.get("bull"):
+        long_lines.append(f"🐂 Bull: {args['bull']}")
+    if args.get("bear"):
+        long_lines.append(f"🐻 Bear: {args['bear']}")
+    if args.get("risk_manager"):
+        long_lines.append(f"🛡 Risk Manager: {args['risk_manager']}")
+    if debate_result.get("verdict"):
+        long_lines.append("")
+        long_lines.append(f"👔 Verdict: {debate_result['verdict']}")
+
+    long_lines.append("")
+    long_lines.append("Data agents (real numbers, no LLM opinion):")
+    for name, data in (data_personas or {}).items():
+        if data.get("signal") == "unavailable":
+            continue
+        long_lines.append(f"- {name.capitalize()}: {data.get('summary', '')}")
+
+    long_lines.append("")
+    long_lines.append(f"Full evidence + impact graph: {evidence_url}")
+    long_lines.append("")
+    long_lines.append("(AI role-play + real data, for reference only -- not investment advice.)")
+
+    return {"available": True, "short_text": short_text, "long_text": "\n".join(long_lines)}
 
 
 def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
@@ -174,7 +319,18 @@ def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
         ai_router.set_last_usage_tokens(0)
         return cached["result"]
 
-    summary = _context_summary(symbol, context)
+    # 2026-10-02: zero-LLM data personas computed before the summary is
+    # built, so their real numbers (fundamentals growth, impact-graph
+    # relationships, capital flow) can be folded into the SAME context
+    # text the Bull/Bear/Risk Manager prompts already read -- richer
+    # grounding for the existing 3 LLM calls, without adding a 4th/5th/6th
+    # expensive call. Best-effort: _build_data_personas() never raises.
+    try:
+        data_personas = _build_data_personas(symbol)
+    except Exception:
+        data_personas = {}
+
+    summary = _context_summary(symbol, context, data_personas)
     arguments = {}
     total_tokens = 0
 
@@ -210,7 +366,17 @@ def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
                 else "The above is AI role-play generated content, for reference only -- not investment advice."
             ),
             "error": None,
+            # 2026-10-02: non-breaking additions -- existing keys above are
+            # untouched, so callers that only read arguments/verdict/error
+            # keep working exactly as before. data_personas exposes the
+            # zero-LLM real-data signals (fundamentals/impact-graph/capital
+            # flow) that were already folded into the summary text above;
+            # shareable_card is the mechanically-composed "share this
+            # research team" text, built here (not lazily) so it's cached
+            # alongside the rest of the result.
+            "data_personas": data_personas,
         }
+        result["shareable_card"] = build_shareable_card(symbol, result, data_personas)
         # Only successful runs are cached -- see the cache block above's
         # docstring for why a mid-debate failure should retry fresh.
         _debate_cache[cache_key] = {"fetched_at": time.time(), "result": result}
@@ -218,4 +384,11 @@ def run_debate(symbol: str, context: Dict, lang: str = None) -> Dict:
     except Exception as e:
         ai_router.set_last_usage_tokens(total_tokens)
         logger.info("agent_debate_service: debate failed for %s: %s", symbol, e)
-        return {"available": True, "arguments": arguments or None, "verdict": None, "error": str(e)}
+        return {
+            "available": True,
+            "arguments": arguments or None,
+            "verdict": None,
+            "error": str(e),
+            "data_personas": data_personas,
+            "shareable_card": {"available": False},
+        }
