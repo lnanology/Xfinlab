@@ -267,18 +267,53 @@
      script block) so a returning visitor who already answered never
      sees this again, and this never hard-gates the rest of the page:
      everything below still renders while this banner is showing. */
-  .level-select { display:none; background:var(--surface); border-bottom:1px solid var(--border); padding:20px 20px 16px; }
+  .level-select { display:none; background:radial-gradient(circle at 50% 0%, rgba(var(--accent-rgb),0.07), transparent 60%), var(--surface); border-bottom:1px solid var(--border); padding:26px 20px 22px; overflow:hidden; }
   .level-select.visible { display:block; }
+  .level-select.leaving { animation: levelSelectLeave .38s ease forwards; }
+  @keyframes levelSelectLeave { to { opacity:0; transform:translateY(-10px); max-height:0; padding-top:0; padding-bottom:0; } }
   .level-select-inner { max-width:900px; margin:0 auto; text-align:center; }
-  .level-select-heading { font-size:0.95rem; font-weight:700; margin-bottom:14px; color:var(--text); }
-  .level-select-options { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-  .level-option { display:flex; flex-direction:column; align-items:center; gap:3px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px 22px; cursor:pointer; min-width:140px; transition:border-color .2s, transform .2s; font-family:inherit; }
-  .level-option:hover { border-color:var(--accent); transform:translateY(-2px); }
-  .level-option-emoji { font-size:1.4rem; }
-  .level-option-label { font-weight:700; font-size:0.85rem; color:var(--text); }
-  .level-option-desc { font-size:0.72rem; color:var(--muted); }
-  .level-select-skip { display:block; margin:12px auto 0; background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; text-decoration:underline; font-family:inherit; }
-  @media (max-width:700px) { .level-select-options { flex-direction:column; align-items:center; } }
+  .level-select-heading { font-size:0.98rem; font-weight:700; margin-bottom:18px; color:var(--text); }
+  .level-select-options { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; perspective:1200px; }
+  /* 2026-10-02 (AJ: "有無更好4D UI顯示"): each card carries its own
+     --card-accent custom property (set inline per button below) so the
+     glow/icon-badge/border colors differ per level without new global
+     theme variables -- falls back to the page's --accent if unset.
+     Tilt (rotateX/rotateY) is applied via inline style by the mousemove
+     handler in the script block; this CSS only defines the easing/
+     glow/resting state so the JS-driven transform blends smoothly. */
+  .level-option {
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:linear-gradient(165deg, var(--bg), rgba(var(--card-accent-rgb,var(--accent-rgb)),0.05));
+    border:1px solid var(--border); border-radius:16px; padding:22px 26px 20px; cursor:pointer;
+    min-width:160px; font-family:inherit; transform-style:preserve-3d; will-change:transform;
+    transition:transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease, border-color .25s ease;
+    box-shadow:0 1px 2px rgba(0,0,0,0.04);
+  }
+  .level-option::before {
+    content:''; position:absolute; inset:-1px; border-radius:17px; padding:1px; opacity:0;
+    background:linear-gradient(135deg, rgba(var(--card-accent-rgb,var(--accent-rgb)),0.9), transparent 60%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; transition:opacity .3s ease; pointer-events:none;
+  }
+  .level-option:hover, .level-option:focus-visible {
+    border-color:rgba(var(--card-accent-rgb,var(--accent-rgb)),0.55);
+    box-shadow:0 22px 40px -16px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.45), 0 0 0 1px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.12) inset;
+  }
+  .level-option:hover::before, .level-option:focus-visible::before { opacity:1; }
+  .level-option.picked { transform:scale(0.94) translateZ(0) !important; box-shadow:0 0 0 2px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.6); transition:transform .18s ease, box-shadow .18s ease; }
+  .level-option-icon {
+    display:flex; align-items:center; justify-content:center; width:46px; height:46px; border-radius:50%;
+    background:linear-gradient(155deg, rgba(var(--card-accent-rgb,var(--accent-rgb)),0.22), rgba(var(--card-accent-rgb,var(--accent-rgb)),0.06));
+    margin-bottom:6px; transition:transform .35s cubic-bezier(.22,1,.36,1); transform:translateZ(24px);
+  }
+  .level-option:hover .level-option-icon { transform:translateZ(36px) scale(1.08); }
+  .level-option-emoji { font-size:1.35rem; transform:translateZ(1px); }
+  .level-option-label { font-weight:700; font-size:0.88rem; color:var(--text); transform:translateZ(18px); }
+  .level-option-desc { font-size:0.73rem; color:var(--muted); transform:translateZ(12px); max-width:160px; }
+  .level-select-skip { display:block; margin:18px auto 0; background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; text-decoration:underline; font-family:inherit; transition:color .2s ease; }
+  .level-select-skip:hover { color:var(--accent); }
+  @media (max-width:700px) { .level-select-options { flex-direction:column; align-items:center; perspective:none; } .level-option { width:100%; max-width:280px; } }
+  @media (prefers-reduced-motion: reduce) { .level-option, .level-option-icon { transition:none !important; } .level-select.leaving { animation:none !important; opacity:0; } }
 
   /* Per-level hero micro-copy -- hidden by default, shown only for the
      matching body class (set by applyUserLevel()). Intermediate
@@ -899,19 +934,19 @@
 <div class="level-select" id="levelSelect" data-reveal>
   <div class="level-select-inner">
     <div class="level-select-heading" data-i18n="level_select_heading">邊個最似你現在的情況？</div>
-    <div class="level-select-options">
-      <button type="button" class="level-option" onclick="selectUserLevel('beginner')">
-        <span class="level-option-emoji">🌱</span>
+    <div class="level-select-options" data-reveal-stagger>
+      <button type="button" class="level-option" style="--card-accent-rgb:34,197,94" onclick="selectUserLevel('beginner', this)">
+        <span class="level-option-icon"><span class="level-option-emoji">🌱</span></span>
         <span class="level-option-label" data-i18n="level_beginner_label">新手</span>
         <span class="level-option-desc" data-i18n="level_beginner_desc">第一次用投資研究工具</span>
       </button>
-      <button type="button" class="level-option" onclick="selectUserLevel('intermediate')">
-        <span class="level-option-emoji">📈</span>
+      <button type="button" class="level-option" style="--card-accent-rgb:59,130,246" onclick="selectUserLevel('intermediate', this)">
+        <span class="level-option-icon"><span class="level-option-emoji">📈</span></span>
         <span class="level-option-label" data-i18n="level_intermediate_label">淺經驗</span>
         <span class="level-option-desc" data-i18n="level_intermediate_desc">投資過，想睇多啲數據</span>
       </button>
-      <button type="button" class="level-option" onclick="selectUserLevel('professional')">
-        <span class="level-option-emoji">🎯</span>
+      <button type="button" class="level-option" style="--card-accent-rgb:168,85,247" onclick="selectUserLevel('professional', this)">
+        <span class="level-option-icon"><span class="level-option-emoji">🎯</span></span>
         <span class="level-option-label" data-i18n="level_professional_label">專業</span>
         <span class="level-option-desc" data-i18n="level_professional_desc">想直接用進階工具同API</span>
       </button>
@@ -1362,12 +1397,25 @@ function applyUserLevel(level) {
   document.body.classList.remove('level-beginner', 'level-intermediate', 'level-professional');
   document.body.classList.add('level-' + level);
 }
-function selectUserLevel(level) {
+function selectUserLevel(level, btnEl) {
   localStorage.setItem('xfinlab_user_level', level);
   applyUserLevel(level);
-  const el = document.getElementById('levelSelect');
-  if (el) el.classList.remove('visible');
   trackEvent('homepage_level_selected', {level});
+  const el = document.getElementById('levelSelect');
+  if (!el) return;
+  // 2026-10-02 ("有無更好4D UI顯示"): brief pick-pulse on the clicked
+  // card (CSS .level-option.picked) then a fade+collapse on the whole
+  // banner (CSS .level-select.leaving), instead of the old instant
+  // display:none cut. Falls straight to the old behavior if btnEl isn't
+  // passed (e.g. called programmatically) or reduced-motion is on.
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (btnEl) btnEl.classList.add('picked');
+  if (reduceMotion) {
+    el.classList.remove('visible');
+    return;
+  }
+  el.classList.add('leaving');
+  setTimeout(() => { el.classList.remove('visible', 'leaving'); }, 400);
 }
 (function initUserLevel() {
   const saved = localStorage.getItem('xfinlab_user_level');
@@ -1377,6 +1425,24 @@ function selectUserLevel(level) {
     const el = document.getElementById('levelSelect');
     if (el) el.classList.add('visible');
   }
+})();
+// 2026-10-02: mouse-tracked 3D tilt on the level-select cards (the
+// "4D" pop AJ asked for) -- pure visual, no state change. Skipped
+// entirely for touch devices (no hover/fine pointer) and reduced-
+// motion users, both of whom get the plain CSS hover/resting state
+// from the stylesheet above instead.
+(function initLevelCardTilt() {
+  if (window.matchMedia && (!window.matchMedia('(hover: hover)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  document.querySelectorAll('.level-option').forEach((card) => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width - 0.5;
+      const py = (e.clientY - rect.top) / rect.height - 0.5;
+      const maxDeg = 9;
+      card.style.transform = `perspective(700px) rotateX(${(-py * maxDeg).toFixed(2)}deg) rotateY(${(px * maxDeg).toFixed(2)}deg) translateY(-4px) scale(1.03)`;
+    });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+  });
 })();
 
 // Section-view tracking: fires once per section per pageview, the first
