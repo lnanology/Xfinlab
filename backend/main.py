@@ -1097,6 +1097,32 @@ _push_scheduler.add_job(
     replace_existing=True,
 )
 
+
+def _run_content_drafts_daily_job():
+    """2026-10-02 (AJ: "快有效" growth-strategy discussion -- "起啦"):
+    auto-generates today's batch of social content drafts (see services/
+    content_engine_service.py) so AJ has a ready-to-review queue every
+    morning instead of needing to click "Generate Now" manually. Never
+    posts anywhere itself -- drafts sit as `pending` until reviewed via
+    the admin panel's content-drafts endpoints. Runs after watch_digest_
+    scan (8:00) so it doesn't compete for the same market-data fetches."""
+    try:
+        from services.content_engine_service import generate_daily_drafts
+        generate_daily_drafts(5)
+    except Exception:
+        pass
+
+# 30 minutes after watch_digest_scan (8:00) -- generous gap, same
+# reasoning as every other job spacing in this file.
+_push_scheduler.add_job(
+    _run_content_drafts_daily_job,
+    "cron",
+    hour=8,
+    minute=30,
+    id="content_drafts_daily",
+    replace_existing=True,
+)
+
 _push_scheduler.start()
 
 

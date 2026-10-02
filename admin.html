@@ -195,6 +195,7 @@
     <div class="nav-item" onclick="showPage('apiusage')"><span class="icon">🔑</span> <span data-i18n-admin="nav_apiusage">API Usage</span></div>
     <div class="nav-item" onclick="showPage('referral')"><span class="icon">🎁</span> <span data-i18n-admin="nav_referral">Referral Engine</span></div>
     <div class="nav-item" onclick="showPage('video')"><span class="icon">🎬</span> <span data-i18n-admin="nav_video">Video Engine</span></div>
+    <div class="nav-item" onclick="showPage('content-drafts')"><span class="icon">✨</span> Content Engine</div>
 
     <div class="nav-section" data-i18n-admin="ns_settings">Settings</div>
     <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> <span data-i18n-admin="nav_flags">Feature Flags</span></div>
@@ -860,6 +861,31 @@
         </div>
         <button class="btn btn-sm btn-purple" onclick="generateCustomVideo()" id="videoChatGenerateBtn">▶ Generate from Chat</button>
         <div id="videoChatGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+    </div>
+
+    <!-- 2026-10-02 (AJ: "快有效" growth-strategy discussion -- "起啦"):
+         Content Engine. Generates "why did it move" social post drafts
+         from already-existing engines (Impact Graph + Evidence Scorecard
+         + daily confluence signals) -- a daily job also auto-generates 5
+         at 8:30am. Deliberately draft-only: nothing here posts anywhere.
+         Approve/Reject just marks a draft reviewed; AJ copies the text
+         out himself to X/Reddit/wherever, same "human approves every
+         public post" posture this product requires everywhere else. -->
+    <div class="page" id="page-content-drafts">
+      <div class="page-title">Content Engine</div>
+      <div class="page-sub">"Why did it move" social post drafts, generated from Impact Graph + Evidence Scorecard (services/content_engine_service.py). Draft-only -- nothing here posts anywhere; copy the text out yourself once you approve it.</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Pending Review</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="loadContentDrafts()">🔄 Refresh</button>
+            <button class="btn btn-sm btn-purple" onclick="generateContentDrafts()" id="contentGenerateBtn">✨ Generate Now</button>
+          </div>
+        </div>
+        <div id="contentGenerateResult" style="font-size:0.8rem;margin-bottom:10px"></div>
+        <div id="contentDraftsList"><div class="empty"><span class="spinner"></span></div></div>
       </div>
     </div>
 
@@ -1703,6 +1729,7 @@ function showPage(name) {
   if (name === 'apitrending') loadApiTrendingTickers();
   if (name === 'datafactory') { loadDataSources(); loadCftcCot(); loadSec13fFilers(); loadBinanceExchange(); loadEiaEnergy(); loadTreasuryFiscal(); loadCoinbaseExchange(); loadCboeVix(); loadFdicBankHealth(); loadUsdaAgriculture(); }
   if (name === 'content') loadContentVariants();
+  if (name === 'content-drafts') loadContentDrafts();
   if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
   if (name === 'email') loadEmailStats();
   if (name === 'widgets') loadWidgetStats();
@@ -2115,6 +2142,84 @@ async function generateVideoNow() {
       result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides${aiNote}${tgNote}</span>${_youtubeResultNote(data)}`;
     }
     loadVideoStatus();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 2026-10-02 (AJ: "快有效" growth-strategy discussion -- "起啦"): Content
+// Engine review queue. loadContentDrafts() always re-fetches `pending`
+// only -- approved/rejected drafts drop out of view once reviewed so
+// this list never grows unbounded; the admin.html session has no need
+// to re-see something already decided on.
+async function loadContentDrafts() {
+  const list = document.getElementById('contentDraftsList');
+  list.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/content-drafts?token=${adminToken}&status=pending`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    const drafts = data.drafts || [];
+    if (!drafts.length) {
+      list.innerHTML = '<div class="empty">No pending drafts. Click "Generate Now" to create some.</div>';
+      return;
+    }
+    list.innerHTML = drafts.map(d => `
+      <div class="panel" style="margin-bottom:12px;background:var(--bg-2,rgba(255,255,255,0.03))">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <strong>${escapeHtml(d.ticker)}</strong>
+          <span style="font-size:0.72rem;color:var(--muted)">${escapeHtml(d.created_at || '')}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">SHORT (X / tweet-length)</div>
+        <textarea readonly style="width:100%;min-height:60px;font-size:0.82rem;margin-bottom:8px" id="draft-short-${d.id}">${escapeHtml(d.short_text)}</textarea>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">LONG (Reddit-style)</div>
+        <textarea readonly style="width:100%;min-height:140px;font-size:0.82rem;margin-bottom:8px" id="draft-long-${d.id}">${escapeHtml(d.long_text)}</textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="copyDraftText('draft-short-${d.id}')">📋 Copy Short</button>
+          <button class="btn btn-sm" onclick="copyDraftText('draft-long-${d.id}')">📋 Copy Long</button>
+          <button class="btn btn-sm btn-purple" onclick="reviewContentDraft(${d.id}, 'approve')">✅ Approve</button>
+          <button class="btn btn-sm" onclick="reviewContentDraft(${d.id}, 'reject')">✖ Reject</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="empty" style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</div>`;
+  }
+}
+
+function copyDraftText(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.select();
+  navigator.clipboard.writeText(el.value).catch(() => {});
+}
+
+async function reviewContentDraft(id, action) {
+  try {
+    const res = await fetch(`${API}/admin/content-drafts/${id}/${action}?token=${adminToken}`, {method: 'POST'});
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || res.status);
+    }
+    loadContentDrafts();
+  } catch (e) {
+    alert(`Failed to ${action} draft: ${e.message || e}`);
+  }
+}
+
+async function generateContentDrafts() {
+  const btn = document.getElementById('contentGenerateBtn');
+  const result = document.getElementById('contentGenerateResult');
+  btn.disabled = true;
+  result.innerHTML = '<span class="spinner"></span> Generating...';
+  try {
+    const res = await fetch(`${API}/admin/content-drafts/generate?token=${adminToken}&count=5`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Generated ${data.generated} draft(s)</span>`;
+    loadContentDrafts();
   } catch (e) {
     result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
   } finally {
