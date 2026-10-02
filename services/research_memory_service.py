@@ -31,7 +31,25 @@ counter_evidence are freeform caller-supplied text + an optional source
 URL, not auto-extracted from any XFINLAB data source (that composition
 is left to the caller, who already has /v1/evidence-scorecard, /v1/events,
 /v1/impact etc. available to inform what they write here).
+
+2026-10-02 (AJ: "起啦" -- follow-up to a "what's the single highest-
+leverage next step" discussion): added replay_hypothesis(), the
+Reproducibility/Verification extension flagged as the most defensible
+next increment -- it needs zero third-party agent adoption to be useful
+(unlike Agent Identity/Wallet/Marketplace, which only matter once other
+developers are actually plugging agents into XFINLAB). Every hypothesis
+now stores an `environment_snapshot` -- a real composite of price/
+confluence/headlines/insider activity/short interest at creation time,
+reusing services/watch_service.py's compute_snapshot() (built for
+watch_digest webhooks, zero new data source here either). Calling
+replay later diffs that frozen snapshot against a fresh one using the
+SAME per-field noise thresholds watch_digest already uses (imported, not
+reimplemented), answering "what's actually changed in the real world
+since I made this call" -- directly addresses the hallucination/
+reproducibility gap in the published research notes, without needing a
+single other agent in the ecosystem.
 """
+import json
 import os
 import sqlite3
 import time
@@ -90,6 +108,14 @@ def _init_tables():
     conn.execute("CREATE INDEX IF NOT EXISTS idx_research_hyp_key ON research_hypotheses(api_key)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_research_hyp_ticker ON research_hypotheses(ticker)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_research_ev_hyp ON research_hypothesis_evidence(hypothesis_id)")
+    # 2026-10-02 (replay/reproducibility follow-up): additive column on an
+    # already-possibly-deployed table, so ALTER TABLE rather than baked
+    # into the CREATE TABLE above -- wrapped in try/except since SQLite
+    # has no "ADD COLUMN IF NOT EXISTS" and this runs on every import.
+    try:
+        conn.execute("ALTER TABLE research_hypotheses ADD COLUMN environment_snapshot TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists from a prior run
     conn.commit()
     conn.close()
 
@@ -123,11 +149,24 @@ def create_hypothesis(api_key: str, ticker: str, statement: str, confidence: Opt
         conn.close()
         return {"error": f"Hypothesis limit reached ({_MAX_HYPOTHESES_PER_KEY} per key) -- invalidate or delete old ones first"}
 
+    ticker = ticker.upper().strip()
     now = _now()
+
+    # 2026-10-02: best-effort -- a snapshot source being briefly down must
+    # never block creating the hypothesis itself (same posture as every
+    # other best-effort composite in this codebase). An empty {} here just
+    # means replay_hypothesis() later has nothing to diff against, which
+    # it already handles honestly (see that function's docstring).
+    try:
+        from services.watch_service import compute_snapshot
+        environment_snapshot = compute_snapshot(ticker)
+    except Exception:
+        environment_snapshot = {}
+
     cur = conn.execute(
-        "INSERT INTO research_hypotheses (api_key, ticker, statement, confidence, status, version, created_at, updated_at) "
-        "VALUES (?, ?, ?, ?, 'active', 1, ?, ?)",
-        (api_key, ticker.upper().strip(), statement.strip(), confidence, now, now),
+        "INSERT INTO research_hypotheses (api_key, ticker, statement, confidence, status, version, created_at, updated_at, environment_snapshot) "
+        "VALUES (?, ?, ?, ?, 'active', 1, ?, ?, ?)",
+        (api_key, ticker, statement.strip(), confidence, now, now, json.dumps(environment_snapshot)),
     )
     hyp_id = cur.lastrowid
     conn.execute(
@@ -262,3 +301,80 @@ def add_evidence(api_key: str, hypothesis_id: int, kind: str, text: str, source:
     conn.commit()
     conn.close()
     return {"added": True, "kind": kind, "added_at": now}
+
+
+def replay_hypothesis(api_key: str, hypothesis_id: int) -> Optional[Dict]:
+    """The reproducibility/verification piece: "what's actually changed in
+    the real world since I made this call?" Diffs the environment_snapshot
+    frozen at creation time against a fresh compute_snapshot() right now,
+    reusing watch_service's own per-field noise thresholds (imported, not
+    duplicated) so "meaningful change" means the exact same thing here as
+    it does for watch_digest webhooks -- a $0.01 price tick doesn't count,
+    a 2%+ move does.
+
+    Returns None if the hypothesis doesn't exist (or belongs to a
+    different key). Returns {"available": False, "reason": ...} rather
+    than crashing for a hypothesis created before this field existed (no
+    stored snapshot to diff against) or when every live source fails this
+    run (same "never fabricate" posture as the rest of this codebase)."""
+    conn = _get_db()
+    row = conn.execute(
+        "SELECT * FROM research_hypotheses WHERE id=? AND api_key=?", (hypothesis_id, api_key)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return None
+
+    stored_raw = row["environment_snapshot"] if "environment_snapshot" in row.keys() else None
+    if not stored_raw:
+        return {
+            "available": False,
+            "reason": "No environment snapshot was recorded for this hypothesis (created before replay support, or every data source failed at creation time) -- nothing to diff against.",
+        }
+
+    try:
+        stored = json.loads(stored_raw)
+    except (ValueError, TypeError):
+        stored = {}
+    if not stored:
+        return {
+            "available": False,
+            "reason": "The recorded environment snapshot is empty -- every data source failed at creation time, so there is nothing to diff against.",
+        }
+
+    from services.watch_service import compute_snapshot, _has_meaningful_change, _TRACKED_FIELDS
+
+    current = compute_snapshot(row["ticker"])
+    if not current:
+        return {
+            "available": False,
+            "reason": "Could not compute a fresh snapshot right now (every live data source failed) -- try again later.",
+        }
+
+    changes: List[Dict] = []
+    for field in _TRACKED_FIELDS:
+        if field not in current or field not in stored:
+            continue  # can't honestly diff a field neither/either snapshot could compute
+        prev_val = stored.get(field)
+        cur_val = current.get(field)
+        if _has_meaningful_change(field, prev_val, cur_val):
+            changes.append({"field": field, "at_creation": prev_val, "now": cur_val})
+
+    created_at = row["created_at"]
+    try:
+        created_dt = time.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
+        days_elapsed = max(0, int((time.mktime(time.gmtime()) - time.mktime(created_dt)) // 86400))
+    except (ValueError, TypeError):
+        days_elapsed = None
+
+    return {
+        "available": True,
+        "hypothesis_id": hypothesis_id,
+        "ticker": row["ticker"],
+        "statement": row["statement"],
+        "created_at": created_at,
+        "days_elapsed": days_elapsed,
+        "environment_at_creation": stored,
+        "environment_now": current,
+        "changes": changes,
+    }

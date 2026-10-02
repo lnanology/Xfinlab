@@ -942,9 +942,9 @@ details.schema-details[open] summary::after{content:" ▴"}
           <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
           <span class="ep-weight">1x</span>
         </div>
-        <span class="ep-tag">POST/GET/PATCH /v1/hypotheses, POST /v1/hypotheses/{id}/evidence</span>
+        <span class="ep-tag">POST/GET/PATCH /v1/hypotheses, POST .../evidence, GET .../replay</span>
         <div class="ep-name" data-i18n="ia_ep27_name">Research Memory (Hypotheses)</div>
-        <div class="ep-desc" data-i18n="ia_ep27_desc">Persist a hypothesis about a ticker -- your own freeform statement plus a confidence score -- then attach evidence and counter_evidence to it over time. Every update to statement/confidence/status is versioned with a full snapshot history, so re-running research later starts from what you believed last time instead of from zero. Private per API key -- there is no shared/public hypothesis feed.</div>
+        <div class="ep-desc" data-i18n="ia_ep27_desc">Persist a hypothesis about a ticker -- your own freeform statement plus a confidence score -- then attach evidence and counter_evidence to it over time. Every update to statement/confidence/status is versioned with a full snapshot history, so re-running research later starts from what you believed last time instead of from zero. Private per API key -- there is no shared/public hypothesis feed. Replay diffs a real environment snapshot (price, confluence, headlines, insider activity, short interest) frozen at creation time against a fresh one now -- what's actually changed since you made this call.</div>
         <details class="schema-details">
           <summary data-i18n="ia_schema_toggle">Response fields</summary>
           <div class="schema-fields">
@@ -953,8 +953,9 @@ details.schema-details[open] summary::after{content:" ▴"}
             <div class="schema-field"><code>GET /hypotheses/{id}</code> -- full detail incl. <code>data.evidence</code>, <code>data.counter_evidence</code>, <code>data.version_history</code> <span class="schema-type">array</span></div>
             <div class="schema-field"><code>PATCH /hypotheses/{id}</code> body: any of <code>statement</code>, <code>confidence</code>, <code>status</code> (active/confirmed/invalidated) -- bumps <code>version</code>, snapshots the prior state</div>
             <div class="schema-field"><code>POST /hypotheses/{id}/evidence</code> body: <code>kind</code> (evidence/counter_evidence), <code>text</code>, <code>source</code> <span class="schema-type">optional URL</span></div>
+            <div class="schema-field"><code>GET /hypotheses/{id}/replay</code> -- <code>data.available</code> <span class="schema-type">bool</span>; when true: <code>data.changes</code> <span class="schema-type">array</span> {field, at_creation, now}, <code>data.environment_at_creation</code>, <code>data.environment_now</code>, <code>data.days_elapsed</code>; when false: <code>data.reason</code> <span class="schema-type">string</span></div>
           </div>
-          <p class="schema-note" data-i18n="ia_schema_note_hypotheses">Scoped to the API key that created each hypothesis -- a different key can never read or modify it, even by guessing its id.</p>
+          <p class="schema-note" data-i18n="ia_schema_note_hypotheses">Scoped to the API key that created each hypothesis -- a different key can never read or modify it, even by guessing its id. Replay costs more quota than plain CRUD (it does a real live data fetch).</p>
         </details>
       </div>
     </div>
