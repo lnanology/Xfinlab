@@ -266,13 +266,22 @@
      no stored level yet -- see applyUserLevel()/selectUserLevel() in the
      script block) so a returning visitor who already answered never
      sees this again, and this never hard-gates the rest of the page:
-     everything below still renders while this banner is showing. */
-  .level-select { display:none; background:radial-gradient(circle at 50% 0%, rgba(var(--accent-rgb),0.07), transparent 60%), var(--surface); border-bottom:1px solid var(--border); padding:26px 20px 22px; overflow:hidden; }
-  .level-select.visible { display:block; }
-  .level-select.leaving { animation: levelSelectLeave .38s ease forwards; }
-  @keyframes levelSelectLeave { to { opacity:0; transform:translateY(-10px); max-height:0; padding-top:0; padding-bottom:0; } }
-  .level-select-inner { max-width:900px; margin:0 auto; text-align:center; }
-  .level-select-heading { font-size:0.98rem; font-weight:700; margin-bottom:18px; color:var(--text); }
+     everything below still renders while this banner is showing.
+     2026-10-02 later same day (AJ, after seeing it live: "唔要咁顯示，
+     係頁面浮一板好似選語言咁比人選" -- don't push the page down, float
+     it over the page like a language picker): rebuilt from an inline
+     border-bottom banner into a fixed, centered overlay panel with a
+     dim backdrop -- same 3 buttons/JS/localStorage logic underneath,
+     purely a container + positioning change. Backdrop click or Escape
+     also dismisses it (same as "Skip" -- defaults to intermediate). */
+  body.level-select-open { overflow:hidden; }
+  .level-select { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); align-items:flex-start; justify-content:center; padding:9vh 20px 20px; opacity:0; transition:opacity .25s ease; }
+  .level-select.visible { display:flex; opacity:1; }
+  .level-select.leaving { opacity:0; }
+  .level-select.leaving .level-select-inner { transform:translateY(-10px) scale(0.97); }
+  .level-select-inner { max-width:760px; width:100%; margin:0 auto; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 28px 26px; box-shadow:0 30px 80px -20px rgba(0,0,0,0.55); transform:translateY(-16px) scale(0.96); transition:transform .3s cubic-bezier(.22,1,.36,1); max-height:80vh; overflow-y:auto; }
+  .level-select.visible .level-select-inner { transform:translateY(0) scale(1); }
+  .level-select-heading { font-size:1.02rem; font-weight:700; margin-bottom:20px; color:var(--text); }
   .level-select-options { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; perspective:1200px; }
   /* 2026-10-02 (AJ: "有無更好4D UI顯示"): each card carries its own
      --card-accent custom property (set inline per button below) so the
@@ -312,8 +321,8 @@
   .level-option-desc { font-size:0.73rem; color:var(--muted); transform:translateZ(12px); max-width:160px; }
   .level-select-skip { display:block; margin:18px auto 0; background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; text-decoration:underline; font-family:inherit; transition:color .2s ease; }
   .level-select-skip:hover { color:var(--accent); }
-  @media (max-width:700px) { .level-select-options { flex-direction:column; align-items:center; perspective:none; } .level-option { width:100%; max-width:280px; } }
-  @media (prefers-reduced-motion: reduce) { .level-option, .level-option-icon { transition:none !important; } .level-select.leaving { animation:none !important; opacity:0; } }
+  @media (max-width:700px) { .level-select { padding:6vh 14px 14px; } .level-select-inner { padding:26px 18px 20px; } .level-select-options { flex-direction:column; align-items:center; perspective:none; } .level-option { width:100%; max-width:280px; } }
+  @media (prefers-reduced-motion: reduce) { .level-option, .level-option-icon, .level-select, .level-select-inner { transition:none !important; } }
 
   /* Per-level hero micro-copy -- hidden by default, shown only for the
      matching body class (set by applyUserLevel()). Intermediate
@@ -931,9 +940,9 @@
      localStorage has no stored level yet, so a returning visitor who
      already answered never sees this again -- not a hard gate, the rest
      of the homepage renders identically underneath while this shows. -->
-<div class="level-select" id="levelSelect" data-reveal>
-  <div class="level-select-inner">
-    <div class="level-select-heading" data-i18n="level_select_heading">邊個最似你現在的情況？</div>
+<div class="level-select" id="levelSelect">
+  <div class="level-select-inner" role="dialog" aria-modal="true" aria-labelledby="levelSelectHeading">
+    <div class="level-select-heading" id="levelSelectHeading" data-i18n="level_select_heading">邊個最似你現在的情況？</div>
     <div class="level-select-options" data-reveal-stagger>
       <button type="button" class="level-option" style="--card-accent-rgb:34,197,94" onclick="selectUserLevel('beginner', this)">
         <span class="level-option-icon"><span class="level-option-emoji">🌱</span></span>
@@ -1405,17 +1414,19 @@ function selectUserLevel(level, btnEl) {
   if (!el) return;
   // 2026-10-02 ("有無更好4D UI顯示"): brief pick-pulse on the clicked
   // card (CSS .level-option.picked) then a fade+collapse on the whole
-  // banner (CSS .level-select.leaving), instead of the old instant
+  // overlay (CSS .level-select.leaving), instead of the old instant
   // display:none cut. Falls straight to the old behavior if btnEl isn't
-  // passed (e.g. called programmatically) or reduced-motion is on.
+  // passed (e.g. called programmatically, or the backdrop/Escape path
+  // below) or reduced-motion is on.
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (btnEl) btnEl.classList.add('picked');
+  document.body.classList.remove('level-select-open');
   if (reduceMotion) {
     el.classList.remove('visible');
     return;
   }
   el.classList.add('leaving');
-  setTimeout(() => { el.classList.remove('visible', 'leaving'); }, 400);
+  setTimeout(() => { el.classList.remove('visible', 'leaving'); }, 300);
 }
 (function initUserLevel() {
   const saved = localStorage.getItem('xfinlab_user_level');
@@ -1423,7 +1434,23 @@ function selectUserLevel(level, btnEl) {
     applyUserLevel(saved);
   } else {
     const el = document.getElementById('levelSelect');
-    if (el) el.classList.add('visible');
+    if (el) {
+      el.classList.add('visible');
+      document.body.classList.add('level-select-open');
+      // 2026-10-02 ("浮一板好似選語言咁"): now a floating overlay over
+      // the page rather than an inline banner, so it needs the usual
+      // modal dismiss paths -- clicking the dimmed backdrop (not the
+      // panel itself) or pressing Escape both act like "Skip" (defaults
+      // to 'intermediate', same safe no-visible-change choice the Skip
+      // button already uses).
+      el.addEventListener('click', (e) => { if (e.target === el) selectUserLevel('intermediate'); });
+      document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape' && el.classList.contains('visible')) {
+          selectUserLevel('intermediate');
+          document.removeEventListener('keydown', escHandler);
+        }
+      });
+    }
   }
 })();
 // 2026-10-02: mouse-tracked 3D tilt on the level-select cards (the
