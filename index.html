@@ -841,7 +841,25 @@
        auto-injector still correctly bails out via
        `if(document.getElementById("userTopbar"))return` -- see comment
        above this <nav>. Also dropped the old "👤 <name>" greeting span
-       (#userTopbarName) since it's redundant next to this "👤 帳戶" button. -->
+       (#userTopbarName) since it's redundant next to this "👤 帳戶" button.
+       2026-10-02 (AJ: "登入個按鍵放返右邊" -- the guest-facing 登入
+       button was centered under the nav instead of pinned right): the
+       page previously had NO guest-login element of its own in grid-
+       column:3 for signed-out visitors, so js/nav.js's shared
+       auto-injector (function n() in that file) found no existing
+       `a[href="login.html"]`/`.nav-cta` in <nav> and appended its own
+       `<a class="nav-cta">登入</a>` as the LAST CHILD of the whole
+       <nav> element -- outside #idxNavRow2's 3-column grid entirely, so
+       it just centered via the outer <nav>'s justify-content:center
+       instead of pinning right like #userTopbar does below. Adding this
+       guest-login anchor directly in the same grid-column:3 slot both
+       fixes the positioning AND satisfies nav.js's own
+       `!t.querySelector('a[href="login.html"]...')` bail-out check, so
+       it no longer double-injects its centered version either. Hidden
+       by default via JS below (shown unless isLoggedIn(), mirroring
+       #userTopbar's inverse condition) so exactly one of the two ever
+       shows. -->
+  <a href="login.html" id="guestLoginBtn" data-i18n="nav_login" style="grid-column:3;justify-self:end;background:var(--accent);color:var(--accent-text);padding:7px 18px;border-radius:8px;font-weight:700;font-size:0.82rem;text-decoration:none;white-space:nowrap">登入</a>
   <div class="user-topbar" id="userTopbar" style="grid-column:3;justify-self:end;display:none">
     <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
       <button type="button" class="user-topbar-btn" id="topbarSettingsBtn"><span id="topbarAvatarIcon"></span><span id="topbarAcctLabel" data-i18n="topbar_account">帳戶</span></button>
@@ -1580,6 +1598,13 @@ applyAuthAwareLinks();
 // 深淺色掣而家由js/theme-toggle.js自己插喺#topbarSettingsWrap前面，
 // 唔使呢度再管。
 function initUserTopbar() {
+  // 2026-10-02 ("登入個按鍵放返右邊"): #guestLoginBtn is visible by
+  // default (plain HTML, no inline display:none) for signed-out
+  // visitors; hide it the moment we know the visitor IS logged in, same
+  // gate as the #userTopbar reveal below so exactly one of the two ever
+  // shows regardless of which runs first.
+  const guestBtn = document.getElementById('guestLoginBtn');
+  if (isLoggedIn() && guestBtn) guestBtn.style.display = 'none';
   if (!isLoggedIn()) return;
   const bar = document.getElementById('userTopbar');
   if (bar) bar.style.display = 'block';
