@@ -279,22 +279,28 @@
   .level-select.visible { display:flex; opacity:1; }
   .level-select.leaving { opacity:0; }
   .level-select.leaving .level-select-inner { transform:translateY(-10px) scale(0.97); }
-  .level-select-inner { max-width:760px; width:100%; margin:0 auto; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 28px 26px; box-shadow:0 30px 80px -20px rgba(0,0,0,0.55); transform:translateY(-16px) scale(0.96); transition:transform .3s cubic-bezier(.22,1,.36,1); max-height:80vh; overflow-y:auto; }
+  .level-select-inner { max-width:560px; width:100%; margin:0 auto; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 28px 26px; box-shadow:0 30px 80px -20px rgba(0,0,0,0.55); transform:translateY(-16px) scale(0.96); transition:transform .3s cubic-bezier(.22,1,.36,1); max-height:80vh; overflow-y:auto; }
   .level-select.visible .level-select-inner { transform:translateY(0) scale(1); }
   .level-select-heading { font-size:1.02rem; font-weight:700; margin-bottom:20px; color:var(--text); }
-  .level-select-options { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; perspective:1200px; }
+  /* 2026-10-02 (AJ: "3個選擇 由上中下咁排3張大卡片，指住有浮動效果" --
+     stacked top/middle/bottom as 3 large cards instead of 3 side-by-side
+     small ones; the card under the cursor still gets the 3D-tilt lift
+     from initLevelCardTilt() in the script block, same mechanism as
+     before, just full-width rows now instead of a row of narrow cards). */
+  .level-select-options { display:flex; flex-direction:column; gap:14px; perspective:1200px; }
   /* 2026-10-02 (AJ: "有無更好4D UI顯示"): each card carries its own
      --card-accent custom property (set inline per button below) so the
-     glow/icon-badge/border colors differ per level without new global
-     theme variables -- falls back to the page's --accent if unset.
-     Tilt (rotateX/rotateY) is applied via inline style by the mousemove
+     glow/border colors differ per level without new global theme
+     variables -- falls back to the page's --accent if unset. Tilt
+     (rotateX/rotateY) is applied via inline style by the mousemove
      handler in the script block; this CSS only defines the easing/
      glow/resting state so the JS-driven transform blends smoothly. */
   .level-option {
-    position:relative; display:flex; flex-direction:column; align-items:center; gap:4px;
+    position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+    text-align:left; width:100%;
     background:linear-gradient(165deg, var(--bg), rgba(var(--card-accent-rgb,var(--accent-rgb)),0.05));
-    border:1px solid var(--border); border-radius:16px; padding:22px 26px 20px; cursor:pointer;
-    min-width:160px; font-family:inherit; transform-style:preserve-3d; will-change:transform;
+    border:1px solid var(--border); border-radius:16px; padding:22px 26px; cursor:pointer;
+    font-family:inherit; transform-style:preserve-3d; will-change:transform;
     transition:transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease, border-color .25s ease;
     box-shadow:0 1px 2px rgba(0,0,0,0.04);
   }
@@ -309,20 +315,13 @@
     box-shadow:0 22px 40px -16px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.45), 0 0 0 1px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.12) inset;
   }
   .level-option:hover::before, .level-option:focus-visible::before { opacity:1; }
-  .level-option.picked { transform:scale(0.94) translateZ(0) !important; box-shadow:0 0 0 2px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.6); transition:transform .18s ease, box-shadow .18s ease; }
-  .level-option-icon {
-    display:flex; align-items:center; justify-content:center; width:46px; height:46px; border-radius:50%;
-    background:linear-gradient(155deg, rgba(var(--card-accent-rgb,var(--accent-rgb)),0.22), rgba(var(--card-accent-rgb,var(--accent-rgb)),0.06));
-    margin-bottom:6px; transition:transform .35s cubic-bezier(.22,1,.36,1); transform:translateZ(24px);
-  }
-  .level-option:hover .level-option-icon { transform:translateZ(36px) scale(1.08); }
-  .level-option-emoji { font-size:1.35rem; transform:translateZ(1px); }
-  .level-option-label { font-weight:700; font-size:0.88rem; color:var(--text); transform:translateZ(18px); }
-  .level-option-desc { font-size:0.73rem; color:var(--muted); transform:translateZ(12px); max-width:160px; }
+  .level-option.picked { transform:scale(0.97) translateZ(0) !important; box-shadow:0 0 0 2px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.6); transition:transform .18s ease, box-shadow .18s ease; }
+  .level-option-label { font-weight:700; font-size:1rem; color:var(--text); transform:translateZ(18px); }
+  .level-option-desc { font-size:0.8rem; color:var(--muted); transform:translateZ(12px); }
   .level-select-skip { display:block; margin:18px auto 0; background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; text-decoration:underline; font-family:inherit; transition:color .2s ease; }
   .level-select-skip:hover { color:var(--accent); }
-  @media (max-width:700px) { .level-select { padding:6vh 14px 14px; } .level-select-inner { padding:26px 18px 20px; } .level-select-options { flex-direction:column; align-items:center; perspective:none; } .level-option { width:100%; max-width:280px; } }
-  @media (prefers-reduced-motion: reduce) { .level-option, .level-option-icon, .level-select, .level-select-inner { transition:none !important; } }
+  @media (max-width:700px) { .level-select { padding:6vh 14px 14px; } .level-select-inner { padding:26px 18px 20px; } .level-option { padding:18px 20px; } }
+  @media (prefers-reduced-motion: reduce) { .level-option, .level-select, .level-select-inner { transition:none !important; } }
 
   /* Per-level hero micro-copy -- hidden by default, shown only for the
      matching body class (set by applyUserLevel()). Intermediate
@@ -842,7 +841,25 @@
        auto-injector still correctly bails out via
        `if(document.getElementById("userTopbar"))return` -- see comment
        above this <nav>. Also dropped the old "👤 <name>" greeting span
-       (#userTopbarName) since it's redundant next to this "👤 帳戶" button. -->
+       (#userTopbarName) since it's redundant next to this "👤 帳戶" button.
+       2026-10-02 (AJ: "登入個按鍵放返右邊" -- the guest-facing 登入
+       button was centered under the nav instead of pinned right): the
+       page previously had NO guest-login element of its own in grid-
+       column:3 for signed-out visitors, so js/nav.js's shared
+       auto-injector (function n() in that file) found no existing
+       `a[href="login.html"]`/`.nav-cta` in <nav> and appended its own
+       `<a class="nav-cta">登入</a>` as the LAST CHILD of the whole
+       <nav> element -- outside #idxNavRow2's 3-column grid entirely, so
+       it just centered via the outer <nav>'s justify-content:center
+       instead of pinning right like #userTopbar does below. Adding this
+       guest-login anchor directly in the same grid-column:3 slot both
+       fixes the positioning AND satisfies nav.js's own
+       `!t.querySelector('a[href="login.html"]...')` bail-out check, so
+       it no longer double-injects its centered version either. Hidden
+       by default via JS below (shown unless isLoggedIn(), mirroring
+       #userTopbar's inverse condition) so exactly one of the two ever
+       shows. -->
+  <a href="login.html" id="guestLoginBtn" data-i18n="nav_login" style="grid-column:3;justify-self:end;background:var(--accent);color:var(--accent-text);padding:7px 18px;border-radius:8px;font-weight:700;font-size:0.82rem;text-decoration:none;white-space:nowrap">登入</a>
   <div class="user-topbar" id="userTopbar" style="grid-column:3;justify-self:end;display:none">
     <div class="user-topbar-settings-wrap" id="topbarSettingsWrap">
       <button type="button" class="user-topbar-btn" id="topbarSettingsBtn"><span id="topbarAvatarIcon"></span><span id="topbarAcctLabel" data-i18n="topbar_account">帳戶</span></button>
@@ -945,17 +962,14 @@
     <div class="level-select-heading" id="levelSelectHeading" data-i18n="level_select_heading">邊個最似你現在的情況？</div>
     <div class="level-select-options" data-reveal-stagger>
       <button type="button" class="level-option" style="--card-accent-rgb:34,197,94" onclick="selectUserLevel('beginner', this)">
-        <span class="level-option-icon"><span class="level-option-emoji">🌱</span></span>
         <span class="level-option-label" data-i18n="level_beginner_label">新手</span>
         <span class="level-option-desc" data-i18n="level_beginner_desc">第一次用投資研究工具</span>
       </button>
       <button type="button" class="level-option" style="--card-accent-rgb:59,130,246" onclick="selectUserLevel('intermediate', this)">
-        <span class="level-option-icon"><span class="level-option-emoji">📈</span></span>
         <span class="level-option-label" data-i18n="level_intermediate_label">淺經驗</span>
         <span class="level-option-desc" data-i18n="level_intermediate_desc">投資過，想睇多啲數據</span>
       </button>
       <button type="button" class="level-option" style="--card-accent-rgb:168,85,247" onclick="selectUserLevel('professional', this)">
-        <span class="level-option-icon"><span class="level-option-emoji">🎯</span></span>
         <span class="level-option-label" data-i18n="level_professional_label">專業</span>
         <span class="level-option-desc" data-i18n="level_professional_desc">想直接用進階工具同API</span>
       </button>
@@ -1584,6 +1598,13 @@ applyAuthAwareLinks();
 // 深淺色掣而家由js/theme-toggle.js自己插喺#topbarSettingsWrap前面，
 // 唔使呢度再管。
 function initUserTopbar() {
+  // 2026-10-02 ("登入個按鍵放返右邊"): #guestLoginBtn is visible by
+  // default (plain HTML, no inline display:none) for signed-out
+  // visitors; hide it the moment we know the visitor IS logged in, same
+  // gate as the #userTopbar reveal below so exactly one of the two ever
+  // shows regardless of which runs first.
+  const guestBtn = document.getElementById('guestLoginBtn');
+  if (isLoggedIn() && guestBtn) guestBtn.style.display = 'none';
   if (!isLoggedIn()) return;
   const bar = document.getElementById('userTopbar');
   if (bar) bar.style.display = 'block';
