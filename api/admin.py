@@ -757,6 +757,65 @@ def video_engine_generate(token: str, lang: str = "zh-HK", aspect_ratio: str = "
             result["youtube"] = {"available": False, "message": str(e)}
     return result
 
+
+# ---------------------------------------------------------------------------
+# 2026-10-02 (AJ: "快有效" growth-strategy discussion -- "起啦"): social
+# content draft generator. Deliberately stops at "draft, stored,
+# reviewable" -- this product's standing rule is that publishing public
+# content needs explicit per-action human approval, and an AI-authored
+# financial post is exactly the case where that matters most (a wrong
+# number or misleading framing has real reputational cost). So these
+# endpoints never post anywhere; "approve" just marks a draft as ready
+# for AJ to copy-paste out himself. See services/content_engine_service.py
+# for the generation logic (reuses existing Impact Graph + Evidence
+# Scorecard + daily confluence signals -- zero new data source).
+# ---------------------------------------------------------------------------
+
+@router.post("/admin/content-drafts/generate")
+def content_drafts_generate(token: str, count: int = 5, request: Request = None):
+    """On-demand "Generate Now" for content drafts, same convention as
+    video_engine_generate above. Safe to call more than once a day --
+    unwanted drafts just get rejected in the review queue."""
+    verify_admin(token, "content_drafts_generate", request)
+    from services.content_engine_service import generate_daily_drafts
+    drafts = generate_daily_drafts(count)
+    return {"generated": len(drafts), "drafts": drafts}
+
+
+@router.get("/admin/content-drafts")
+def content_drafts_list(token: str, status: str = None, limit: int = 50, request: Request = None):
+    verify_admin(token, "content_drafts_list", request)
+    from services.content_engine_service import list_drafts
+    drafts = list_drafts(status=status, limit=limit)
+    for d in drafts:
+        if d.get("signal_snapshot"):
+            import json as _json
+            try:
+                d["signal_snapshot"] = _json.loads(d["signal_snapshot"])
+            except (ValueError, TypeError):
+                pass
+    return {"drafts": drafts}
+
+
+@router.post("/admin/content-drafts/{draft_id}/approve")
+def content_drafts_approve(draft_id: int, token: str, request: Request = None):
+    verify_admin(token, "content_drafts_approve", request)
+    from services.content_engine_service import set_draft_status
+    result = set_draft_status(draft_id, "approved")
+    if result is None:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    return result
+
+
+@router.post("/admin/content-drafts/{draft_id}/reject")
+def content_drafts_reject(draft_id: int, token: str, request: Request = None):
+    verify_admin(token, "content_drafts_reject", request)
+    from services.content_engine_service import set_draft_status
+    result = set_draft_status(draft_id, "rejected")
+    if result is None:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    return result
+
 @router.post("/admin/video/generate-custom")
 async def video_engine_generate_custom(token: str, request: Request, body: dict = {}):
     """2026-08-09 (admin chat-to-video feature, requested as "Video Engine

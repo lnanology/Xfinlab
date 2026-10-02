@@ -258,6 +258,45 @@
   .entry-fork-icon svg { width:17px; height:17px; }
   .entry-fork-title { font-weight:700; font-size:0.95rem; margin-bottom:4px; }
   .entry-fork-desc { font-size:0.78rem; color:var(--muted); line-height:1.4; }
+
+  /* 2026-10-02 (AJ: "首頁而家先不用登入，改成一入平台導向 新手/淺經驗/
+     專業投資者" -- experience-level segmentation, layered ABOVE the
+     existing Learn/Research/Build goal-based entry-fork, not replacing
+     it). Hidden by default (JS adds .visible only when localStorage has
+     no stored level yet -- see applyUserLevel()/selectUserLevel() in the
+     script block) so a returning visitor who already answered never
+     sees this again, and this never hard-gates the rest of the page:
+     everything below still renders while this banner is showing. */
+  .level-select { display:none; background:var(--surface); border-bottom:1px solid var(--border); padding:20px 20px 16px; }
+  .level-select.visible { display:block; }
+  .level-select-inner { max-width:900px; margin:0 auto; text-align:center; }
+  .level-select-heading { font-size:0.95rem; font-weight:700; margin-bottom:14px; color:var(--text); }
+  .level-select-options { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .level-option { display:flex; flex-direction:column; align-items:center; gap:3px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px 22px; cursor:pointer; min-width:140px; transition:border-color .2s, transform .2s; font-family:inherit; }
+  .level-option:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .level-option-emoji { font-size:1.4rem; }
+  .level-option-label { font-weight:700; font-size:0.85rem; color:var(--text); }
+  .level-option-desc { font-size:0.72rem; color:var(--muted); }
+  .level-select-skip { display:block; margin:12px auto 0; background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; text-decoration:underline; font-family:inherit; }
+  @media (max-width:700px) { .level-select-options { flex-direction:column; align-items:center; } }
+
+  /* Per-level hero micro-copy -- hidden by default, shown only for the
+     matching body class (set by applyUserLevel()). Intermediate
+     deliberately has no extra line -- it's the existing default
+     experience, unchanged. */
+  .level-hint { display:none; font-size:0.82rem; color:var(--accent); margin:8px 0 0; line-height:1.4; }
+  body.level-beginner .level-hint-beginner { display:block; }
+  body.level-professional .level-hint-professional { display:block; }
+
+  /* Per-level entry-fork emphasis: reorder so the most relevant card
+     leads, plus a subtle accent border so it doesn't just move silently.
+     CSS grid items honor `order` the same way flex items do. */
+  body.level-beginner .entry-fork-card[href="formula-engine.html"],
+  body.level-professional .entry-fork-card[href="intelligence-api.html"] {
+    order: -1;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+  }
   .ai-result-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .ai-result-label { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
   .ai-result-ticker { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: #fff; }
@@ -850,12 +889,48 @@
 })();
 </script>
 
+<!-- 2026-10-02 (AJ: "首頁而家先不用登入，改成一入平台導向 新手/淺經驗/
+     專業投資者" -- experience-level segmentation, layered ABOVE the
+     existing Learn/Research/Build goal-based entry-fork below, not
+     replacing it). Hidden by default; JS shows it (.visible) only when
+     localStorage has no stored level yet, so a returning visitor who
+     already answered never sees this again -- not a hard gate, the rest
+     of the homepage renders identically underneath while this shows. -->
+<div class="level-select" id="levelSelect" data-reveal>
+  <div class="level-select-inner">
+    <div class="level-select-heading" data-i18n="level_select_heading">邊個最似你現在的情況？</div>
+    <div class="level-select-options">
+      <button type="button" class="level-option" onclick="selectUserLevel('beginner')">
+        <span class="level-option-emoji">🌱</span>
+        <span class="level-option-label" data-i18n="level_beginner_label">新手</span>
+        <span class="level-option-desc" data-i18n="level_beginner_desc">第一次用投資研究工具</span>
+      </button>
+      <button type="button" class="level-option" onclick="selectUserLevel('intermediate')">
+        <span class="level-option-emoji">📈</span>
+        <span class="level-option-label" data-i18n="level_intermediate_label">淺經驗</span>
+        <span class="level-option-desc" data-i18n="level_intermediate_desc">投資過，想睇多啲數據</span>
+      </button>
+      <button type="button" class="level-option" onclick="selectUserLevel('professional')">
+        <span class="level-option-emoji">🎯</span>
+        <span class="level-option-label" data-i18n="level_professional_label">專業</span>
+        <span class="level-option-desc" data-i18n="level_professional_desc">想直接用進階工具同API</span>
+      </button>
+    </div>
+    <button type="button" class="level-select-skip" onclick="selectUserLevel('intermediate')" data-i18n="level_select_skip">跳過 →</button>
+  </div>
+</div>
+
 <!-- Hero -->
 <div class="hero" data-reveal>
   <div class="hero-left">
     <div class="hero-badge" data-i18n="hero_badge">AI that flags the risk — and admits what it doesn't know</div>
     <h1><span data-i18n="hero_title_line1">Institutional-Grade <span>AI</span> Research Tools</span><br><span data-i18n="hero_title_line2">— Made for Everyone</span></h1>
     <p data-i18n="hero_subtitle">Real backtested history, transparent confidence scores, and an AI that tells you when it isn't sure — research tools for your own questions, not personalized investment advice.</p>
+    <!-- Per-level micro-copy -- hidden by default, shown only for the
+         matching body class. Intermediate deliberately has no extra
+         line here: it's the existing default experience, unchanged. -->
+    <p class="level-hint level-hint-beginner" data-i18n="hero_hint_beginner">啱啱接觸投資？由免費教學工具開始，一步步了解點樣睇數據，唔使心急。</p>
+    <p class="level-hint level-hint-professional" data-i18n="hero_hint_professional">想快啲用進階工具？Backtest、Regime Router、Formula Composer、API 同 MCP 全部喺呢度。</p>
 
     <div class="hero-btns">
       <a href="login.html?intent=register" data-real-href="dashboard.html" class="btn-primary" data-i18n="cta_start">Start Free</a>
@@ -911,17 +986,17 @@
      Research -> dashboard.html (the actual product), Build ->
      intelligence-api.html (API/MCP/SDKs, now fully documented). -->
 <div class="entry-fork" data-reveal>
-  <a href="formula-engine.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'learn'})">
+  <a href="formula-engine.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'learn', level: localStorage.getItem('xfinlab_user_level')})">
     <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
     <div class="entry-fork-title" data-i18n="entryfork_learn_title">Learn</div>
     <div class="entry-fork-desc" data-i18n="entryfork_learn_desc">70+ free finance formulas, explained</div>
   </a>
-  <a href="ai-analysis.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'research'})">
+  <a href="ai-analysis.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'research', level: localStorage.getItem('xfinlab_user_level')})">
     <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
     <div class="entry-fork-title" data-i18n="entryfork_research_title">Research</div>
     <div class="entry-fork-desc" data-i18n="entryfork_research_desc">11 AI engines, real data, free to start</div>
   </a>
-  <a href="intelligence-api.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'build'})">
+  <a href="intelligence-api.html" class="entry-fork-card" onclick="trackEvent('homepage_entryfork_click', {card: 'build', level: localStorage.getItem('xfinlab_user_level')})">
     <div class="entry-fork-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4 3 12l5 8M16 4l5 8-5 8M13 3l-2 18"/></svg></div>
     <div class="entry-fork-title" data-i18n="entryfork_build_title">Build</div>
     <div class="entry-fork-desc" data-i18n="entryfork_build_desc">API, MCP server &amp; SDKs for developers</div>
@@ -1273,6 +1348,36 @@ async function trackEvent(event_type, event_data = null) {
     });
   } catch(e) {}
 }
+
+// 2026-10-02 (AJ: "首頁而家先不用登入，改成一入平台導向 新手/淺經驗/
+// 專業投資者" -- experience-level segmentation): applyUserLevel() just
+// sets a body class the CSS above reads (reorders/highlights the
+// entry-fork card, shows the matching .level-hint line) -- it never
+// hides or blocks any other content. selectUserLevel() is the click
+// handler on #levelSelect's 3 buttons (+ skip, which defaults to
+// 'intermediate' -- the existing default experience, so skipping is a
+// safe no-visible-change choice). Persisted in localStorage so this
+// banner is asked once, not on every visit.
+function applyUserLevel(level) {
+  document.body.classList.remove('level-beginner', 'level-intermediate', 'level-professional');
+  document.body.classList.add('level-' + level);
+}
+function selectUserLevel(level) {
+  localStorage.setItem('xfinlab_user_level', level);
+  applyUserLevel(level);
+  const el = document.getElementById('levelSelect');
+  if (el) el.classList.remove('visible');
+  trackEvent('homepage_level_selected', {level});
+}
+(function initUserLevel() {
+  const saved = localStorage.getItem('xfinlab_user_level');
+  if (saved) {
+    applyUserLevel(saved);
+  } else {
+    const el = document.getElementById('levelSelect');
+    if (el) el.classList.add('visible');
+  }
+})();
 
 // Section-view tracking: fires once per section per pageview, the first
 // time it enters the viewport -- reuses the `data-reveal`/`data-reveal-

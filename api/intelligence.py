@@ -288,6 +288,12 @@ def intelligence_status():
 # ---------------------------------------------------------------------------
 INTELLIGENCE_CHANGELOG = [
     {
+        "date": "2026-10-02",
+        "changes": [
+            {"type": "added", "text": "GET /v1/hypotheses/{id}/replay -- Research Memory reproducibility extension. Every new hypothesis now freezes a real environment snapshot (price, confluence direction, headline count, insider activity, short interest) at creation time; replay diffs it against a fresh snapshot computed right now and reports exactly what's changed in the real world since you made that call. Costs more quota than plain hypothesis CRUD (live data fetch, same tier as /v1/technical)."},
+        ],
+    },
+    {
         "date": "2026-10-01",
         "changes": [
             {"type": "added", "text": "Webhooks: watch_digest event type -- \"What Changed?\" general entity monitoring. Subscribe to a ticker (event_type=\"watch_digest\") and get pushed only when its price moves 2%+, confluence direction flips, headline count shifts, insider-transaction count changes, or short interest moves 5%+ -- a daily composite diff instead of polling 4-5 separate endpoints yourself. Same delivery mechanics as the other event types."},
@@ -1650,6 +1656,34 @@ def add_hypothesis_evidence_endpoint(
     if "error" in result:
         status_code = 404 if result["error"] == "Hypothesis not found" else 422
         raise HTTPException(status_code=status_code, detail=result["error"])
+    return _envelope(data=result)
+
+
+@router.get("/intelligence/v1/hypotheses/{hypothesis_id}/replay")
+def replay_hypothesis_endpoint(
+    hypothesis_id: int,
+    response: Response,
+    x_api_key: str = Header(None, alias="X-API-Key"),
+):
+    """2026-10-02 (AJ: "起啦" -- follow-up to a "what's the single
+    highest-leverage next step" discussion): the reproducibility/
+    verification extension to Research Memory. Diffs the real-world
+    composite snapshot (price, confluence direction, headline count,
+    insider activity, short interest) frozen when this hypothesis was
+    created against a fresh one computed right now -- "what's actually
+    changed since I made this call", not another AI opinion about
+    whether the hypothesis still holds. Costs more quota than a plain
+    hypothesis CRUD call (see intelligence_quota_service.ENDPOINT_WEIGHT's
+    "hypothesis_replay" entry) since it does a real live fetch, same as
+    /v1/technical or /v1/regime-signal."""
+    auth = _require_api_key(x_api_key)
+    _check_and_spend_quota(x_api_key, auth["tier"], "hypothesis_replay", response)
+
+    from services.research_memory_service import replay_hypothesis
+
+    result = replay_hypothesis(x_api_key, hypothesis_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Hypothesis not found")
     return _envelope(data=result)
 
 

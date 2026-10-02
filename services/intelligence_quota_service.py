@@ -215,6 +215,13 @@ ENDPOINT_WEIGHT = {
     # neither does meaningfully more work than the other (a handful of
     # indexed SELECT/INSERT statements either way).
     "hypothesis": 1,
+    # 2026-10-02 (Research Memory replay/reproducibility follow-up):
+    # unlike the plain-CRUD "hypothesis" weight above, replay computes a
+    # LIVE compute_snapshot() (same 4-source fetch watch_digest's
+    # scheduled job does) on every call -- priced the same as
+    # technical/stress_test/regime (single real network fetch + compute,
+    # no fan-out, no AI call).
+    "hypothesis_replay": 3,
 }
 
 
