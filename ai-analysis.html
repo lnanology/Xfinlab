@@ -1907,13 +1907,49 @@ document.getElementById('debateRunBtn').addEventListener('click', async () => {
       body.innerHTML = `<div style="color:var(--accent-red)">${dbg('aa_debate_failed_prefix', 'Debate failed: ')}${d.error}</div>`;
     } else {
       const args = d.arguments || {};
+      // 2026-10-02 (AJ "起" -- data personas + shareable research-team
+      // card, see services/agent_debate_service.py's _build_data_personas/
+      // build_shareable_card): d.data_personas and d.shareable_card are
+      // new, additive fields on this same response -- a client that
+      // doesn't read them (e.g. an older cached page) sees no change, so
+      // this is rendered defensively (empty objects if the backend is an
+      // older deploy that hasn't shipped them yet).
+      const personas = d.data_personas || {};
+      const personaRows = Object.keys(personas)
+        .filter((name) => personas[name] && personas[name].signal !== 'unavailable')
+        .map((name) => {
+          const label = dbg(`aa_debate_persona_${name}`, name.charAt(0).toUpperCase() + name.slice(1));
+          return `<div style="margin-bottom:0.4rem;font-size:0.85rem"><strong>${label}：</strong>${personas[name].summary || ''}</div>`;
+        })
+        .join('');
+      const personasBlock = personaRows
+        ? `<div style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color)">
+             <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.4rem">${dbg('aa_debate_data_personas_label', 'Data Agents (real numbers, no LLM opinion)')}</div>
+             ${personaRows}
+           </div>`
+        : '';
+      const card = d.shareable_card || {};
+      const shareBtn = card.available
+        ? `<button type="button" id="debateShareBtn" class="primary-btn" style="height:32px;padding:0 12px;font-size:0.8rem;margin-top:0.6rem">${dbg('aa_debate_share_btn', '📋 Copy Share Text')}</button>`
+        : '';
       body.innerHTML = `
         <div style="margin-bottom:0.6rem"><strong>🐂 Bull：</strong>${args.bull || '-'}</div>
         <div style="margin-bottom:0.6rem"><strong>🐻 Bear：</strong>${args.bear || '-'}</div>
         <div style="margin-bottom:0.6rem"><strong>🛡️ Risk Manager：</strong>${args.risk_manager || '-'}</div>
         <div style="margin-bottom:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color)"><strong>⚖️ ${dbg('aa_debate_verdict_label', 'Verdict')}：</strong>${d.verdict || '-'}</div>
-        <div style="font-size:0.72rem;color:var(--text-muted)">${d.disclaimer || ''}</div>
+        ${personasBlock}
+        ${shareBtn}
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.6rem">${d.disclaimer || ''}</div>
       `;
+      if (card.available) {
+        const shareText = card.long_text || card.short_text || '';
+        document.getElementById('debateShareBtn').addEventListener('click', (ev) => {
+          navigator.clipboard.writeText(shareText).then(() => {
+            ev.target.textContent = dbg('aa_debate_share_copied', 'Copied!');
+            setTimeout(() => { ev.target.textContent = dbg('aa_debate_share_btn', '📋 Copy Share Text'); }, 1800);
+          });
+        });
+      }
     }
   } catch (e) {
     body.innerHTML = `<div style="color:var(--accent-red)">${dbg('aa_debate_failed_retry', 'Debate failed, please try again later.')}</div>`;
