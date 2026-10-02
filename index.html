@@ -719,6 +719,57 @@
 </head>
 <body>
 
+<!-- 2026-10-02 (AJ: "我要XFINLAB平台每一頁都有呢D視覺效果" -- after sharing
+     a Webflow SaaS template screen-recording where the whole page sits
+     inside a floating "browser window" card over a dark glowing
+     background, like a window floating over deep-space glass).
+     PROTOTYPE on index.html only, pending AJ's review before any
+     site-wide rollout to the other ~20 pages -- confirmed via
+     AskUserQuestion ("先喺首頁做個prototype畀你睇"). Implementation
+     (see buildBrowserFrame() near the end of <body>) moves every
+     non-fixed-position direct child of <body> into a rounded "window"
+     card with a mini browser-chrome bar (traffic-light dots + fake
+     address bar), leaving position:fixed overlays (the feedback/
+     Telegram widgets, mobile dock, the level-select modal) untouched
+     as direct <body> children so they still float correctly over the
+     whole viewport instead of being clipped by the window's
+     overflow:hidden rounded corners. The window's OWN background still
+     uses the page's normal --bg/--surface vars (light/dark theme
+     toggle keeps working exactly as before for the actual site
+     content) -- only the OUTER frame around it is always-dark, since
+     that represents the "browser chrome" outside the page, same as
+     the reference video. To strip this prototype back out again:
+     delete this block, the <style id="bfProtoStyle"> block, and the
+     buildBrowserFrame() <script> block near the end of <body>. -->
+<style id="bfProtoStyle">
+  html, body { margin: 0; }
+  body.bf-active { background: #05070d; }
+  .bf-outer {
+    min-height: 100vh; padding: clamp(14px, 3vw, 48px);
+    display: flex; justify-content: center;
+    background:
+      radial-gradient(circle at 80% 8%, rgba(249,115,22,0.16), transparent 55%),
+      radial-gradient(circle at 10% 92%, rgba(99,102,241,0.12), transparent 50%),
+      #05070d;
+  }
+  .bf-window {
+    width: 100%; max-width: 1480px; margin: 0 auto;
+    background: var(--bg); border-radius: 18px; overflow: hidden;
+    box-shadow: 0 50px 120px -30px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07);
+  }
+  .bf-chrome {
+    height: 42px; display: flex; align-items: center; gap: 7px;
+    padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .bf-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .bf-url {
+    margin-left: 14px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 16px; font-size: 0.72rem; color: var(--muted);
+    font-family: inherit;
+  }
+  @media (max-width: 700px) { .bf-outer { padding: 0; } .bf-window { border-radius: 0; } }
+</style>
+
 <!-- 已登入用戶專屬top bar -- 淨係isLoggedIn()先顯示（見下面initUserTopbar()）。
      一個「帳戶」掣，撳落/指住會滑出返一個完整嘅帳戶選單（登入緊嘅
      email/PLAN/複製推薦連結/分享XFINLAB/登出），內容同dashboard.html
@@ -2585,5 +2636,46 @@ async function submitFeedback() {
 <script src="js/mobile-widget-dock.js"></script>
 <script src="js/scroll-reveal.js"></script>
 <script src="js/quick-ask-bubble.js"></script>
+<script>
+// 2026-10-02 ("我要XFINLAB平台每一頁都有呢D視覺效果" -- browser-window
+// frame prototype, see the <style id="bfProtoStyle"> comment above for
+// full context/rollback instructions). Runs last (after every other
+// body script has had a chance to insert its own widgets) so it sees
+// the final set of direct <body> children. Deliberately DOM-move, not
+// a rebuild -- every element keeps its id/listeners/state, this only
+// changes its position in the tree, so nothing else on the page needs
+// to know this ran.
+(function buildBrowserFrame() {
+  const body = document.body;
+  const outer = document.createElement('div');
+  outer.className = 'bf-outer';
+  const win = document.createElement('div');
+  win.className = 'bf-window';
+  const chrome = document.createElement('div');
+  chrome.className = 'bf-chrome';
+  chrome.innerHTML =
+    '<span class="bf-dot" style="background:#ff5f57"></span>' +
+    '<span class="bf-dot" style="background:#febc2e"></span>' +
+    '<span class="bf-dot" style="background:#28c840"></span>' +
+    '<span class="bf-url">🔒 xfinlab.com</span>';
+  win.appendChild(chrome);
+
+  // Only move children that AREN'T position:fixed -- those (the
+  // feedback/Telegram corner widgets, mobile dock, the level-select
+  // modal, this script's own <style>/<script> tags) need to stay
+  // direct <body> children so they keep floating over the whole
+  // viewport instead of getting clipped by .bf-window's rounded
+  // overflow:hidden corners.
+  Array.from(body.children).forEach((el) => {
+    if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE') return;
+    if (getComputedStyle(el).position === 'fixed') return;
+    win.appendChild(el);
+  });
+
+  outer.appendChild(win);
+  body.insertBefore(outer, body.firstChild);
+  body.classList.add('bf-active');
+})();
+</script>
 </body>
 </html>
