@@ -279,22 +279,28 @@
   .level-select.visible { display:flex; opacity:1; }
   .level-select.leaving { opacity:0; }
   .level-select.leaving .level-select-inner { transform:translateY(-10px) scale(0.97); }
-  .level-select-inner { max-width:760px; width:100%; margin:0 auto; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 28px 26px; box-shadow:0 30px 80px -20px rgba(0,0,0,0.55); transform:translateY(-16px) scale(0.96); transition:transform .3s cubic-bezier(.22,1,.36,1); max-height:80vh; overflow-y:auto; }
+  .level-select-inner { max-width:560px; width:100%; margin:0 auto; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 28px 26px; box-shadow:0 30px 80px -20px rgba(0,0,0,0.55); transform:translateY(-16px) scale(0.96); transition:transform .3s cubic-bezier(.22,1,.36,1); max-height:80vh; overflow-y:auto; }
   .level-select.visible .level-select-inner { transform:translateY(0) scale(1); }
   .level-select-heading { font-size:1.02rem; font-weight:700; margin-bottom:20px; color:var(--text); }
-  .level-select-options { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; perspective:1200px; }
+  /* 2026-10-02 (AJ: "3個選擇 由上中下咁排3張大卡片，指住有浮動效果" --
+     stacked top/middle/bottom as 3 large cards instead of 3 side-by-side
+     small ones; the card under the cursor still gets the 3D-tilt lift
+     from initLevelCardTilt() in the script block, same mechanism as
+     before, just full-width rows now instead of a row of narrow cards). */
+  .level-select-options { display:flex; flex-direction:column; gap:14px; perspective:1200px; }
   /* 2026-10-02 (AJ: "有無更好4D UI顯示"): each card carries its own
      --card-accent custom property (set inline per button below) so the
-     glow/icon-badge/border colors differ per level without new global
-     theme variables -- falls back to the page's --accent if unset.
-     Tilt (rotateX/rotateY) is applied via inline style by the mousemove
+     glow/border colors differ per level without new global theme
+     variables -- falls back to the page's --accent if unset. Tilt
+     (rotateX/rotateY) is applied via inline style by the mousemove
      handler in the script block; this CSS only defines the easing/
      glow/resting state so the JS-driven transform blends smoothly. */
   .level-option {
-    position:relative; display:flex; flex-direction:column; align-items:center; gap:4px;
+    position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+    text-align:left; width:100%;
     background:linear-gradient(165deg, var(--bg), rgba(var(--card-accent-rgb,var(--accent-rgb)),0.05));
-    border:1px solid var(--border); border-radius:16px; padding:22px 26px 20px; cursor:pointer;
-    min-width:160px; font-family:inherit; transform-style:preserve-3d; will-change:transform;
+    border:1px solid var(--border); border-radius:16px; padding:22px 26px; cursor:pointer;
+    font-family:inherit; transform-style:preserve-3d; will-change:transform;
     transition:transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease, border-color .25s ease;
     box-shadow:0 1px 2px rgba(0,0,0,0.04);
   }
@@ -309,17 +315,13 @@
     box-shadow:0 22px 40px -16px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.45), 0 0 0 1px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.12) inset;
   }
   .level-option:hover::before, .level-option:focus-visible::before { opacity:1; }
-  .level-option.picked { transform:scale(0.94) translateZ(0) !important; box-shadow:0 0 0 2px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.6); transition:transform .18s ease, box-shadow .18s ease; }
-  /* 2026-10-02 (AJ, after seeing it live: "個按位同個圖ICON混一埋，唔要
-     ICON，個框包住字得啦" -- the icon badge was overlapping the card
-     border/text at the 3D tilt's resting pose; removed the icon
-     entirely, card is just the border box around label+desc now). */
-  .level-option-label { font-weight:700; font-size:0.88rem; color:var(--text); transform:translateZ(18px); }
-  .level-option-desc { font-size:0.73rem; color:var(--muted); transform:translateZ(12px); max-width:160px; }
+  .level-option.picked { transform:scale(0.97) translateZ(0) !important; box-shadow:0 0 0 2px rgba(var(--card-accent-rgb,var(--accent-rgb)),0.6); transition:transform .18s ease, box-shadow .18s ease; }
+  .level-option-label { font-weight:700; font-size:1rem; color:var(--text); transform:translateZ(18px); }
+  .level-option-desc { font-size:0.8rem; color:var(--muted); transform:translateZ(12px); }
   .level-select-skip { display:block; margin:18px auto 0; background:none; border:none; color:var(--muted); font-size:0.75rem; cursor:pointer; text-decoration:underline; font-family:inherit; transition:color .2s ease; }
   .level-select-skip:hover { color:var(--accent); }
-  @media (max-width:700px) { .level-select { padding:6vh 14px 14px; } .level-select-inner { padding:26px 18px 20px; } .level-select-options { flex-direction:column; align-items:center; perspective:none; } .level-option { width:100%; max-width:280px; } }
-  @media (prefers-reduced-motion: reduce) { .level-option, .level-option-icon, .level-select, .level-select-inner { transition:none !important; } }
+  @media (max-width:700px) { .level-select { padding:6vh 14px 14px; } .level-select-inner { padding:26px 18px 20px; } .level-option { padding:18px 20px; } }
+  @media (prefers-reduced-motion: reduce) { .level-option, .level-select, .level-select-inner { transition:none !important; } }
 
   /* Per-level hero micro-copy -- hidden by default, shown only for the
      matching body class (set by applyUserLevel()). Intermediate
