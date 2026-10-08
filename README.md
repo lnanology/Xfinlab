@@ -4,7 +4,7 @@
 
 Real market events, FinBERT sentiment, technical/market-structure analysis, SEC/CFTC/FDIC/USDA/CBOE official data, and Monte Carlo stress testing. Every field is traceable to a real computation or an official data source — nothing fabricated or interpolated.
 
-[Get a free API key](https://www.xfinlab.com/intelligence-api.html) · [API docs](https://www.xfinlab.com/intelligence-api.html) · [llms.txt](https://www.xfinlab.com/llms.txt) · [Consumer product](https://www.xfinlab.com)
+[Architecture](./ARCHITECTURE.md) · [Get a free API key](https://www.xfinlab.com/intelligence-api.html) · [API docs](https://www.xfinlab.com/intelligence-api.html) · [llms.txt](https://www.xfinlab.com/llms.txt) · [Consumer product](https://www.xfinlab.com)
 
 ## Quick start (API)
 
@@ -52,7 +52,7 @@ Already live in production — no setup needed, just point an MCP-compatible cli
 }
 ```
 
-Server source: [`api/mcp_server.py`](./api/mcp_server.py). Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`. Same auth and free tier as the REST API. Docs: [intelligence-api.html#mcp](https://www.xfinlab.com/intelligence-api.html#mcp).
+Hosted service (the server implementation is proprietary and runs at `api.xfinlab.com`). Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`. Same auth and free tier as the REST API. Docs: [intelligence-api.html#mcp](https://www.xfinlab.com/intelligence-api.html#mcp).
 
 ## Production usage
 
@@ -67,7 +67,7 @@ Server source: [`api/mcp_server.py`](./api/mcp_server.py). Tools: `get_market_ev
 **Two real bugs this surfaced, fixed the same day each was found:**
 
 - *SEC Form 4 false positives (Sept 2026).* SEC EDGAR's own `browse-edgar` `type` filter turned out to behave as a prefix wildcard, not an exact match — `type=4` was silently matching unrelated `424B`-series filings as "insider trading" activity. Caught by the platform's own data-source health alerting (not a user bug report), confirmed against SEC's live responses — its own pagination link rewrites `type=4` to `type=4%25`, which is what gave the bug away.
-- *Point-in-time/vintage data store (Sept 2026).* A quant researcher's comment on r/quant pointed out that treating a filing's period-end date as "known on that date" ignores real filing lag and later restatements — a classic look-ahead-bias source in backtests. Built a dedicated store ([`services/point_in_time_store.py`](./services/point_in_time_store.py)) where every fundamentals value carries a real filing-availability timestamp instead of the period it describes, and a restated value is stored as a new immutable row rather than overwriting the original — so "what did we know on date X" and "what's the latest known value" are two different, both-correct queries.
+- *Point-in-time/vintage data store (Sept 2026).* A quant researcher's comment on r/quant pointed out that treating a filing's period-end date as "known on that date" ignores real filing lag and later restatements — a classic look-ahead-bias source in backtests. Built a dedicated (proprietary) store where every fundamentals value carries a real filing-availability timestamp instead of the period it describes, and a restated value is stored as a new immutable row rather than overwriting the original — so "what did we know on date X" and "what's the latest known value" are two different, both-correct queries.
 
 ## SDKs & examples
 
@@ -100,7 +100,7 @@ The same backend also powers [xfinlab.com](https://www.xfinlab.com), a retail in
 python3 mock-server.py
 ```
 
-Then open [http://localhost:8080](http://localhost:8080). The production backend is a separate FastAPI app (`backend/main.py`, deployed on Railway as `api.xfinlab.com`); the static site above deploys separately on Vercel as `xfinlab.com`.
+Then open [http://localhost:8080](http://localhost:8080). The production backend is a separate, private service (deployed as `api.xfinlab.com`); the static site above deploys separately on Vercel as `xfinlab.com`.
 
 ## More docs
 

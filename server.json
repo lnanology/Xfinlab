@@ -1,0 +1,25 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.lnanology/xfinlab",
+  "description": "Financial intelligence for AI agents: market events, sentiment, technicals, and news feed.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/lnanology/Xfinlab",
+    "source": "github"
+  },
+  "websiteUrl": "https://www.xfinlab.com/intelligence-api.html#mcp",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.xfinlab.com/api/mcp",
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "description": "XFINLAB API key (free tier issued instantly at https://www.xfinlab.com/intelligence-api.html)",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

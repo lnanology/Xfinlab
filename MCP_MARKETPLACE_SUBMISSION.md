@@ -1,8 +1,8 @@
 # XFINLAB Intelligence MCP Server — marketplace submission copy
 
 Ready-to-paste fields for submitting to mcp.so, Smithery, and PulseMCP. The
-server itself lives at [`api/mcp_server.py`](api/mcp_server.py) and has been
-live in production since an earlier session; this file exists only to make
+server itself is a hosted, proprietary service at `api.xfinlab.com` (no public
+source) and has been live in production; this file exists only to make
 submitting it to third-party directories fast. Submission forms require
 AJ's own account on each site, so this is copy to paste in, not something
 that can be automated end-to-end.
@@ -19,9 +19,9 @@ that can be automated end-to-end.
 | Auth | `X-API-Key` header, or `api_key` argument on each tool call |
 | Get a key | https://www.xfinlab.com/intelligence-api.html (free tier, issued instantly) |
 | Docs | https://www.xfinlab.com/intelligence-api.html#mcp |
-| Repo | https://github.com/lnanology/Xfinlab (server: `api/mcp_server.py`) |
+| Repo | https://github.com/lnanology/Xfinlab (SDKs, docs and manifest; the MCP server is a hosted service) |
 | Category | Finance / Data & APIs |
-| License | Server code is part of the main XFINLAB repo; the two companion SDKs (`sdk/python`, `sdk/js`) are MIT |
+| License | The hosted MCP server is proprietary; the companion SDKs (`sdk/python`, `sdk/js`) are MIT |
 | Icon | https://www.xfinlab.com/img/logo-mark.png |
 
 ## One-liner
@@ -58,8 +58,7 @@ XFINLAB Intelligence exposes five MCP tools over market events, sentiment, techn
 ## mcp.so submission notes
 
 mcp.so mostly crawls a GitHub repo + README for its listing. Point it at
-`https://github.com/lnanology/Xfinlab` with subdirectory context
-`api/mcp_server.py`, or use their manual "Submit a server" form with the
+`https://github.com/lnanology/Xfinlab` (docs and `server.json`), or use their manual "Submit a server" form with the
 Core facts table above. **Before submitting: confirm the GitHub repo is
 public** — mcp.so can't index a private repo, and this hasn't been
 independently verified from inside this session (`git remote -v` shows a
