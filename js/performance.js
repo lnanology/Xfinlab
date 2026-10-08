@@ -1,0 +1,1 @@
+const apiCache=new Map;window.cachedFetch=async(t,a={},e=3e5)=>{const n=t+JSON.stringify(a),c=apiCache.get(n);if(c&&Date.now()-c.t<e)return c.d;const i=await fetch(t,a),o=await i.json();return apiCache.set(n,{d:o,t:Date.now()}),o};

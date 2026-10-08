@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — News Engine™ 新聞去噪分析</title>
+<meta name="description" content="新聞降噪引擎 — AI過濾財經新聞噪音，提取真正影響股價嘅關鍵資訊。">
+<link rel="canonical" href="https://www.xfinlab.com/news-denoise.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="新聞降噪 — XFINLAB">
+<meta property="og:description" content="新聞降噪引擎 — AI過濾財經新聞噪音，提取真正影響股價嘅關鍵資訊。">
+<meta property="og:url" content="https://www.xfinlab.com/news-denoise.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
+<script src="js/mvp-api.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1160px;margin:0 auto;padding:28px 18px;flex:1}
+
+.input-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
+.input-label{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);display:block;margin-top:0.5rem;font-weight:600}
+.input-row{display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;margin-top:0.5rem}
+.input{flex:1;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);padding:0.6rem 0.8rem;border-radius:8px;outline:none;font-family:'Inter',sans-serif;font-size:0.95rem}
+.analyze-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0 16px;font-size:0.95rem;font-weight:600;cursor:pointer;height:44px}
+.analyze-btn:hover{background:#A83E00}
+.analyze-btn:disabled{background:#F3F4F6;color:var(--text-muted);cursor:not-allowed}
+.api-hint{font-size:0.88rem;color:var(--text-muted);margin-top:0.6rem}
+
+.api-response-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
+.api-response-title{font-size:0.92rem;color:var(--accent-blue);font-weight:600;cursor:pointer}
+.api-response{background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:8px;display:none}
+.api-response.show{display:block}
+.api-response-json{white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--text-secondary);line-height:1.6;word-break:break-word}
+
+.loading-state{text-align:center;padding:1.75rem 1.5rem;color:var(--text-secondary)}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block}
+.dot-ani span:nth-child(2){animation-delay:0.2s}
+.dot-ani span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1}}
+
+.result-title{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent-blue);margin-bottom:0.8rem;font-weight:600}
+
+.result-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px;display:none}
+.result-section.show{display:block}
+.result-content{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:14px;margin-top:8px;line-height:1.75;font-size:0.92rem;color:var(--text-secondary)}
+.result-content h3{color:var(--accent-blue);font-size:0.95rem;font-weight:600;margin:1rem 0 0.4rem}
+.result-content h3:first-child{margin-top:0}
+.result-content strong{color:var(--accent-orange)}
+/* 2026-07-19 fix: AI replies with a markdown "| # | Title | Brief Analysis |"
+   table were being run through formatAnalysisText's plain escape+\n->br
+   pass, so the table showed up as one unbroken line of raw pipe
+   characters instead of a table ("字排列可以顯示跟第二張咁嗎"). Same
+   table-detection approach as company-compare.html's cc-card fix. */
+.result-content table{width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:0.85rem}
+.result-content table th,.result-content table td{border:1px solid var(--border-color);padding:0.5rem 0.6rem;text-align:left;vertical-align:top}
+.result-content table th{background:var(--bg-primary);color:var(--accent-blue)}
+/* 2026-07-20 fix (task #283): tables with 3+ columns still looked cramped
+   inside <table> on narrow screens -- render as stacked cards instead
+   (see ndRenderRowCard()). Same classes/approach as chat.html's fix. */
+.result-content .rc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem}
+.result-content .rc-card-title{color:var(--accent-blue);font-weight:700;font-size:1rem;margin-bottom:0.4rem}
+.result-content .rc-field{font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-top:0.3rem}
+.result-content .rc-field-label{font-weight:600;color:var(--text-primary);margin-right:0.3rem}
+
+.disclaimer{font-size:0.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:1rem;margin-top:1rem;line-height:1.6}
+
+.footer{padding:16px;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+
+@media(max-width:768px){
+  nav{padding:0.7rem 1rem}
+  .container{padding:18px 12px}
+  .input-section{padding:12px}
+  .input-row{flex-direction:column;align-items:stretch}
+  .analyze-btn{width:100%}
+}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">News Engine™</div>
+  <h1 class="page-title" data-i18n="nd_title">新聞去噪分析</h1>
+  <p class="page-sub" data-i18n="nd_subtitle">輸入股票代號或市場主題，AI 會整理最新新聞重點並過濾情感化炒作字眼，給你一份簡潔摘要。</p>
+
+  <div class="input-section">
+    <label class="input-label" data-i18n="nd_input_label">股票代號或主題</label>
+    <div class="input-row">
+      <input type="text" id="difySymbolInput" class="input" placeholder="例如：AAPL、0700.HK、Fed 議息、大盤走勢" data-i18n-placeholder="nd_input_placeholder">
+      <button class="analyze-btn" id="difyAnalyzeBtn" onclick="simulateDifyApi()" data-i18n="nd_run_btn">開始分析</button>
+    </div>
+    <div class="api-hint" data-i18n="nd_api_hint">💡 由 AI 即時生成，非結構化新聞資料庫統計。</div>
+  </div>
+
+  <div class="api-response-section" id="apiResponseSection" style="display:none">
+    <div class="api-response-title" onclick="document.getElementById('apiResponseBox').classList.toggle('show')" data-i18n="nd_api_response_title">🔍 查看原始 API 回應（除錯用）</div>
+    <div class="api-response" id="apiResponseBox">
+      <div class="api-response-json" id="apiResponseJson" data-i18n="nd_not_queried">尚未查詢。</div>
+    </div>
+  </div>
+
+  <div class="result-section" id="denoisedSection">
+    <div id="resultContent">
+      <div class="result-title" data-i18n="nd_result_title">📰 News Engine™ 分析報告</div>
+      <div class="result-content" id="denoisedContent"></div>
+      <div class="disclaimer" data-i18n="nd_disclaimer">💡 以上內容由 AI 模型根據你提供的主題即時生成，屬於摘要與觀點整理，並非結構化新聞資料庫的統計結果，僅供參考，不構成投資建議。</div>
+    </div>
+    <div id="shareBar"></div>
+  </div>
+</div>
+
+<script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+// 2026-07-18 fix: no Enter-key handling existed -- had to click "開始分析".
+document.getElementById('difySymbolInput').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') simulateDifyApi();
+});
+
+async function simulateDifyApi() {
+  const symbol = document.getElementById('difySymbolInput').value.trim();
+  const responseJson = document.getElementById('apiResponseJson');
+  const button = document.getElementById('difyAnalyzeBtn');
+  const denoisedSection = document.getElementById('denoisedSection');
+  const denoisedContent = document.getElementById('denoisedContent');
+
+  if (!symbol) {
+    responseJson.textContent = t('nd_alert_no_symbol','請先輸入股票代號或主題，例如 AAPL 或 700.HK。');
+    return;
+  }
+
+  button.disabled = true;
+  denoisedSection.classList.remove('show');
+  denoisedContent.innerHTML = `<div class="loading-state"><div class="dot-ani">${t('nd_analyzing','AI 分析中')}<span>.</span><span>.</span><span>.</span></div></div>`;
+  denoisedSection.classList.add('show');
+  responseJson.textContent = t('nd_calling_api','正在呼叫 /api/news-denoise，請稍候…');
+
+  try {
+    const result = await postApi('/api/news-denoise', { query: symbol, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined });
+    const data = result.data || {};
+    responseJson.textContent = JSON.stringify(result, null, 2);
+
+    const text = data.analysis || data.conclusion || '';
+    denoisedContent.innerHTML = text ? formatAnalysisText(text) : `<p>${t('nd_no_content','暫時未能取得分析內容，請稍後重試。')}</p>`;
+
+    if (text && typeof window.renderShareBar === 'function') {
+      const shareUrl = `${location.origin}${location.pathname}?query=${encodeURIComponent(symbol)}`;
+      window.renderShareBar('shareBar', 'resultContent', {
+        filename: `xfinlab-news-${symbol}`,
+        shareUrl: shareUrl
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    responseJson.textContent = t('nd_api_fail','API 呼叫失敗，請稍後重試。');
+    denoisedContent.innerHTML = `<p>${t('nd_analysis_error','⚠️ 分析時出現問題，請稍後重試。')}</p>`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// Share System: a link like news-denoise.html?query=AAPL prefills the
+// input and re-runs the same real analysis so it always shows live,
+// current news rather than a frozen snapshot.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  // 一般用戶收埋「查看原始API回應」呢個除錯用區塊，只有喺網址加
+  // ?debug=1（或者曾經加過一次，靠localStorage記住）先顯示，方便
+  // 開發時繼續用嚟追查問題，但唔會滋擾一般訪客。
+  if (params.get('debug') === '1') localStorage.setItem('xfl_debug', '1');
+  if (localStorage.getItem('xfl_debug') === '1') {
+    const dbg = document.getElementById('apiResponseSection');
+    if (dbg) dbg.style.display = '';
+  }
+  const queryParam = params.get('query');
+  if (queryParam) {
+    document.getElementById('difySymbolInput').value = queryParam;
+    simulateDifyApi();
+  }
+  // 呢個輸入格除咗股票代號都食一般topic（例如"Fed 議息"），打呢啲一樣
+  // 文字autocomplete搵唔到match，dropdown自然唔會彈出嚟，唔影響原本
+  // 打字流程。
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#difySymbolInput');
+  }
+});
+
+// 2026-07-19 fix: markdown tables in the AI reply used to be dumped as
+// literal "| # | Title | ... |" text because this ran the whole response
+// through one escape+<br> pass with no table awareness. Now splits the
+// message into table vs. text blocks first (same approach used on
+// company-compare.html) so tables render as real <table> markup.
+function ndIsTableRow(line) {
+  const t = line.trim();
+  return t.startsWith('|') && t.endsWith('|') && t.length > 1;
+}
+function ndIsTableSeparator(line) {
+  const t = line.trim();
+  return t.includes('-') && /^\|?[\s:|-]+\|?$/.test(t);
+}
+function ndSplitTableRow(line) {
+  let t = line.trim();
+  if (t.startsWith('|')) t = t.slice(1);
+  if (t.endsWith('|')) t = t.slice(0, -1);
+  return t.split('|').map(c => c.trim());
+}
+function ndEscape(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function ndInlineFormat(s) {
+  return ndEscape(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function ndRenderRowCard(header, row) {
+  // 2026-07-20 fix (task #283): a multi-column table (e.g. 代號/公司名稱/
+  // 核心理由/風險提示 stock-pick lists) squished into a real <table> is
+  // still cramped on narrow screens. Show the primary column (a ticker/
+  // symbol-looking header, else the first column) as a heading, with
+  // every other column stacked below as its own labeled line.
+  let primaryIdx = header.findIndex(h => /代號|代码|ticker|symbol/i.test(h));
+  if (primaryIdx === -1) primaryIdx = 0;
+  const fields = row.map((cell, i) => i === primaryIdx ? null :
+    `<div class="rc-field"><span class="rc-field-label">${ndInlineFormat(header[i])}：</span>${ndInlineFormat(cell)}</div>`
+  ).filter(Boolean).join('');
+  return `<div class="rc-card"><div class="rc-card-title">${ndInlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+}
+function ndRenderTableBlock(tableLines) {
+  const header = ndSplitTableRow(tableLines[0]);
+  const rows = tableLines.slice(2).map(ndSplitTableRow).filter(r => r.length === header.length);
+  // Simple 2-column tables (e.g. a plain key/value glossary) have nothing
+  // to squish, so they still render as a real <table>; anything wider
+  // becomes stacked cards instead.
+  if (header.length > 2) {
+    return rows.map(r => ndRenderRowCard(header, r)).join('');
+  }
+  const theadHtml = `<tr>${header.map(h => `<th>${ndInlineFormat(h)}</th>`).join('')}</tr>`;
+  const tbodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${ndInlineFormat(c)}</td>`).join('')}</tr>`).join('');
+  return `<table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;
+}
+function ndRenderTextBlock(text) {
+  return ndInlineFormat(text)
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\n/g, '<br>');
+}
+function formatAnalysisText(text) {
+  const lines = text.split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (ndIsTableRow(lines[i]) && ndIsTableSeparator(lines[i + 1] || '')) {
+      const tableLines = [lines[i], lines[i + 1]];
+      i += 2;
+      while (i < lines.length && ndIsTableRow(lines[i])) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'table', lines: tableLines });
+    } else {
+      const textLines = [];
+      while (i < lines.length && !(ndIsTableRow(lines[i]) && ndIsTableSeparator(lines[i + 1] || ''))) {
+        textLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'text', lines: textLines });
+    }
+  }
+  return blocks
+    .map(b => b.type === 'table' ? ndRenderTableBlock(b.lines) : ndRenderTextBlock(b.lines.join('\n')))
+    .join('');
+}
+</script>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note"><span data-i18n="nd_footer_note">XFINLAB © 2026 · 智能金融分析平台 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none;" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#D35400);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

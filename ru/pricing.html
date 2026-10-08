@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<link href="/img/logo-mark.png" rel="icon" type="image/png"/>
+<link href="/img/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/img/favicon-16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/img/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/img/favicon.ico" rel="shortcut icon"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Тарифы — XFINLAB</title>
+<link href="https://www.xfinlab.com/ru/pricing.html" rel="canonical"/>
+<meta content="index, follow" name="robots"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="/js/theme-toggle.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Light default (2026-07-18): white bg, black text, black border. */
+  :root {
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface2: #F8FAFC;
+    --border: #000000;
+    --accent: #D35400;
+    --green: #16A34A;
+    --red: #DC2626;
+    --amber: #F59E0B;
+    --purple: #7c3aed;
+    --text: #000000;
+    --muted: #666666;
+    --label: #333333;
+    --nav-bg: rgba(255,255,255,0.95);
+  }
+  /* 2026-07-19: pricing.html, like dashboard.html, always had its own
+     self-contained :root and never used css/style.css, so it never had
+     a [data-theme=dark] override -- js/theme-toggle.js could toggle the
+     attribute but nothing here would visually react. Mirrors css/
+     style.css's existing brand dark palette. */
+  [data-theme="dark"] {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --surface2: #111d30;
+    --border: #1e2d45;
+    --accent: #F97316;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --purple: #7c3aed;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+    --nav-bg: rgba(8,12,20,0.95);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--nav-bg); backdrop-filter: blur(12px); z-index: 100; }
+  .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .nav-brand span { color: var(--text); }
+  .nav-links { display: flex; gap: 24px; align-items: center; }
+  .nav-links a { color: var(--label); text-decoration: none; font-size: 0.875rem; }
+  .nav-links a:hover { color: var(--text); }
+  .btn-nav { background: var(--accent); color: #000; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.82rem; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 80px 24px; }
+
+  .hero { text-align: center; margin-bottom: 64px; }
+  .hero-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  .hero h1 { font-size: 2.8rem; font-weight: 700; margin-bottom: 16px; }
+  .hero h1 .accent-word { color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 1rem; max-width: 480px; margin: 0 auto 32px; line-height: 1.6; }
+
+  /* Toggle */
+  .billing-toggle { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 48px; }
+  .toggle-label { font-size: 0.875rem; color: var(--label); }
+  .toggle-label.active { color: var(--text); font-weight: 500; }
+  .toggle { width: 44px; height: 24px; background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; cursor: pointer; position: relative; transition: background 0.2s; }
+  .toggle.annual { background: var(--accent); }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.2s; }
+  .toggle.annual::after { transform: translateX(20px); }
+  .save-badge { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
+
+  /* Plans */
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 64px; }
+
+  .plan { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; position: relative; }
+  .plan.popular { border-color: var(--accent); }
+  .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 14px; border-radius: 99px; white-space: nowrap; }
+
+  .plan-name { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .plan-price { display: flex; align-items: flex-end; gap: 4px; margin-bottom: 6px; }
+  .plan-price .amount { font-size: 2.8rem; font-weight: 700; line-height: 1; }
+  .plan-price .period { font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  .plan-desc { font-size: 0.82rem; color: var(--muted); margin-bottom: 28px; line-height: 1.5; min-height: 36px; }
+
+  /* 2026-07-26 fix: Pro promo pricing ($29 list price -> $18 intro price).
+     Keeps the $29 reference visible (struck through) right next to the
+     actual $18 so the discount itself does the anchoring work, instead of
+     just silently showing a lower number with no context. */
+  .amount-strike { font-size: 1.3rem; font-weight: 600; color: var(--muted); text-decoration: line-through; line-height: 1; margin-right: 2px; }
+  .promo-badge { display: inline-block; background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px; border-radius: 99px; font-size: 0.68rem; font-weight: 600; margin-bottom: 14px; }
+
+  /* 2026-07-26 fix ("主頁面淨係主打3-4層"): Pro+/Professional/Enterprise
+     used to always render alongside Free/Basic/Pro, showing 6 tiers at
+     once -- research on pricing-page conversion consistently finds 3-tier
+     pages convert better than 4+ (more options raises decision friction).
+     These 3 stay in the DOM (not wrapped in an extra container, so they
+     remain direct children of .plans and keep participating in its
+     existing 3-column grid once shown) but default to display:none, only
+     revealed via the "View more plans" toggle below. */
+  .plan-extra { display: none; }
+  .plans.show-more .plan-extra { display: block; }
+  .more-plans-row { text-align: center; margin: -40px 0 64px; }
+  .more-plans-btn { background: none; border: 1px solid var(--border); color: var(--label); padding: 10px 22px; border-radius: 99px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+  .more-plans-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-plan { width: 100%; padding: 12px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.2s; margin-bottom: 28px; }
+  .btn-free { background: var(--surface2); color: var(--label); border: 1px solid var(--border); }
+  .btn-starter { background: var(--accent); color: #000; }
+  .btn-pro { background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; }
+  .btn-enterprise { background: var(--surface2); color: var(--text); border: 1px solid var(--purple); }
+  .btn-plan:hover { opacity: 0.85; }
+
+  .features-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .feature { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.82rem; color: var(--label); }
+  .feature .check { color: var(--green); font-size: 0.9rem; flex-shrink: 0; }
+  .feature .cross { color: var(--muted); font-size: 0.9rem; flex-shrink: 0; }
+  .feature.muted { color: var(--muted); }
+
+  /* Enterprise Contact Us modal */
+  .enterprise-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .enterprise-modal { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .enterprise-modal h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+  .enterprise-modal-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .enterprise-modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; }
+  #entFormFields label { display: block; font-size: 0.78rem; color: var(--label); margin: 12px 0 6px; }
+  #entFormFields input, #entFormFields select, #entFormFields textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; font-family: inherit; font-size: 0.85rem; resize: vertical; }
+  .enterprise-modal-submit { width: 100%; background: linear-gradient(135deg, var(--accent), var(--purple)); color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 18px; }
+  .enterprise-modal-submit:disabled { opacity: 0.6; cursor: default; }
+  .enterprise-modal-status { font-size: 0.8rem; margin-top: 10px; text-align: center; min-height: 1.2em; }
+  .enterprise-modal-fallback { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 18px; }
+  .enterprise-modal-fallback a { color: var(--accent); }
+
+  /* FAQ */
+  .faq { max-width: 640px; margin: 0 auto; }
+  .faq h2 { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 32px; }
+  .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; cursor: pointer; }
+  .faq-q { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 500; }
+  .faq-a { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-top: 12px; display: none; }
+  .faq-item.open .faq-a { display: block; }
+  .faq-item.open .arrow { transform: rotate(180deg); }
+  .arrow { transition: transform 0.2s; color: var(--muted); }
+
+  /* CTA */
+  .cta-section { text-align: center; margin-top: 80px; padding: 48px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+  .cta-section h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; }
+  .cta-section p { color: var(--muted); margin-bottom: 24px; }
+  .btn-cta { background: var(--accent); color: #000; padding: 14px 36px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; text-decoration: none; display: inline-block; }
+
+  footer { text-align: center; padding: 32px; color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 80px; }
+
+  @media (max-width: 980px) {
+    .plans { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .plans { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2rem; }
+  }
+</style>
+<script src="/js/i18n.js"></script>
+<script src="/js/share-widget.js"></script>
+<script src="/js/nav.js"></script>
+<!-- 2026-07-26 fix: same missing-autocomplete.js root cause as news.html/
+     portfolio.html -- js/nav.js's gs() bails without window.searchAssets,
+     so this page's shared topbar was missing the 🔍 icon. -->
+<script src="/js/autocomplete.js"></script>
+<meta content="Бесплатно, Basic $10/мес, Pro от $18/мес (вводная цена), а также планы Pro+/Professional/Enterprise. Тарифы на инвестиционные исследования с ИИ." name="description"/>
+<meta content="Тарифы — XFINLAB" property="og:title"/>
+<meta content="Бесплатно, Basic $10/мес, Pro от $18/мес (вводная цена), а также планы Pro+/Professional/Enterprise. Тарифы на инвестиционные исследования с ИИ." property="og:description"/>
+<meta content="https://www.xfinlab.com/ru/pricing.html" property="og:url"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Pricing — XFINLAB AI Platform" name="twitter:title"/>
+<link href="https://www.xfinlab.com/pricing.html" hreflang="en" rel="alternate"/><link href="https://www.xfinlab.com/de/pricing.html" hreflang="de" rel="alternate"/><link href="https://www.xfinlab.com/es/pricing.html" hreflang="es" rel="alternate"/><link href="https://www.xfinlab.com/pt/pricing.html" hreflang="pt" rel="alternate"/><link href="https://www.xfinlab.com/fr/pricing.html" hreflang="fr" rel="alternate"/><link href="https://www.xfinlab.com/it/pricing.html" hreflang="it" rel="alternate"/><link href="https://www.xfinlab.com/fa/pricing.html" hreflang="fa" rel="alternate"/><link href="https://www.xfinlab.com/zh-CN/pricing.html" hreflang="zh-CN" rel="alternate"/><link href="https://www.xfinlab.com/zh-TW/pricing.html" hreflang="zh-TW" rel="alternate"/><link href="https://www.xfinlab.com/ja/pricing.html" hreflang="ja" rel="alternate"/><link href="https://www.xfinlab.com/ko/pricing.html" hreflang="ko" rel="alternate"/><link href="https://www.xfinlab.com/hi/pricing.html" hreflang="hi" rel="alternate"/><link href="https://www.xfinlab.com/ar/pricing.html" hreflang="ar" rel="alternate"/><link href="https://www.xfinlab.com/bn/pricing.html" hreflang="bn" rel="alternate"/><link href="https://www.xfinlab.com/ru/pricing.html" hreflang="ru" rel="alternate"/><link href="https://www.xfinlab.com/ur/pricing.html" hreflang="ur" rel="alternate"/><link href="https://www.xfinlab.com/id/pricing.html" hreflang="id" rel="alternate"/><link href="https://www.xfinlab.com/pcm/pricing.html" hreflang="pcm" rel="alternate"/><link href="https://www.xfinlab.com/mr/pricing.html" hreflang="mr" rel="alternate"/><link href="https://www.xfinlab.com/pricing.html" hreflang="x-default" rel="alternate"/><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav>
+<a class="nav-brand" href="/ru/index.html"><img alt="XFINLAB" src="/img/logo-mark.png" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px"/>X<span>FIN</span>LAB</a>
+<div class="nav-links">
+<a data-i18n="nav_home" href="/ru/index.html">Главная</a>
+<a data-i18n="nav_dashboard" href="/dashboard.html">Панель</a>
+<a data-i18n="nav_pricing" href="/ru/pricing.html">Цены</a>
+<a id="navSignInBtn" class="btn-nav" data-i18n="nav_login" href="/login.html">Войти</a>
+</div>
+</nav>
+<script>
+(function(){
+  try {
+    if (localStorage.getItem('xfinlab_token')) {
+      var el = document.getElementById('navSignInBtn');
+      if (el) el.style.display = 'none';
+    }
+  } catch (e) {}
+})();
+</script>
+
+<main>
+<!-- Hero -->
+<div class="hero">
+<div class="hero-label" data-i18n="pricing_hero_label">Простые Тарифы</div>
+<h1><span data-i18n="pricing_hero_title">Инвестируйте Умнее с </span><span class="accent-word">AI</span></h1>
+<p data-i18n="pricing_hero_sub">Начните бесплатно, обновитесь, когда будете готовы. Никаких скрытых платежей, отмена в любое время.</p>
+</div>
+<!-- Billing Toggle -->
+<div class="billing-toggle">
+<span class="toggle-label active" data-i18n="pricing_monthly" id="monthlyLabel">Ежемесячно</span>
+<div class="toggle" id="billingToggle" onclick="toggleBilling()"></div>
+<span class="toggle-label" data-i18n="pricing_annual" id="annualLabel">Ежегодно</span>
+<span class="save-badge" data-i18n="pricing_save_badge">Годовая = оплата за 14 месяцев (2 месяца бесплатно)</span>
+</div>
+<!-- Plans -->
+<div class="plans" id="plansGrid">
+<!-- Free -->
+<div class="plan">
+<div class="plan-name" data-i18n="pricing_free_name">Бесплатно</div>
+<div class="plan-price">
+<div class="amount">$0</div>
+<div class="period" data-i18n="pricing_free_period">/месяц</div>
+</div>
+<div class="plan-desc" data-i18n="pricing_free_desc">Попробуйте основные ИИ-инструменты XFINLAB бесплатно.</div>
+<button class="btn-plan btn-free" data-i18n="pricing_free_btn" onclick="window.location.href='login.html'">Начать Бесплатно</button>
+<div class="features-label" data-i18n="pricing_includes_label">Включает</div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f1">5 ИИ-анализов в день</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f2">News Denoise (базовый)</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f3">Базовая ИИ-оценка</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f4">Базовый технический анализ</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f5">Watchlist (5 акций)</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f6">Базовая панель</span></div>
+<div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_free_noagent">Нет доступа к AI Agent</span></div>
+</div>
+<!-- Basic (internal plan key: "basic") -->
+<div class="plan">
+<div class="plan-name" data-i18n="pricing_basic_name">Basic</div>
+<div class="plan-price">
+<div class="amount" id="basicPrice">$10</div>
+<div class="period" data-i18n="pricing_free_period" id="basicPeriod">/месяц</div>
+</div>
+<div class="plan-desc" data-i18n="pricing_basic_desc">Небольшой шаг вперёд для нечастых инвесторов, желающих полный доступ к функциям.</div>
+<button class="btn-plan btn-starter" data-i18n="pricing_basic_btn" onclick=\"handleUpgrade('basic', this)\">Начать с Basic</button>
+<div class="features-label" data-i18n="pricing_everything_free_plus">Всё из Бесплатного, плюс</div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">Все функциональные модули разблокированы</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">Неограниченный watchlist</span></div>
+<!-- 2026-07-26 product decision: Basic-tier psychological limitation --
+           7 "advanced engine" features (Agent Debate, Decision Journal,
+           Smart Beta, Backtest, Scenario Lab, Market Regime, Multi-Timeframe)
+           are Pro-and-above only (see services/quota_middleware.py's
+           ADVANCED_ENGINE_PLANS). Shown here as a muted cross line so
+           Basic buyers see exactly what they're missing next to Pro. -->
+<div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_basic_advanced_locked">Продвинутые AI-движки (Дебаты агентов, Smart Beta, Лаборатория сценариев, Рыночный режим, Мультитаймфрейм) — только Pro и выше</span></div>
+</div>
+<!-- Pro (internal plan key: "pro") -->
+<div class="plan popular">
+<div class="popular-badge" data-i18n="pricing_popular_badge">Самый Популярный</div>
+<div class="plan-name" data-i18n="pricing_pro_name">Pro</div>
+<div class="plan-price">
+<span class="amount-strike" id="proPriceStrike">$29</span>
+<div class="amount" id="proPrice">$18</div>
+<div class="period" data-i18n="pricing_free_period" id="proPeriod">/месяц</div>
+</div>
+<div class="promo-badge" data-i18n="pricing_pro_promo_badge">Вводная цена, ограниченное время</div>
+<div class="plan-desc" data-i18n="pricing_pro_desc">Для активных инвесторов, которым нужно больше ИИ-мощности.</div>
+<button class="btn-plan btn-starter" data-i18n="pricing_pro_btn" onclick=\"handleUpgrade('pro', this)\">Начать Тариф Pro</button>
+<div class="features-label" data-i18n="pricing_everything_basic_plus">Всё из Basic, плюс</div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_advanced_unlock">Открывает все продвинутые AI-движки (Дебаты агентов, Smart Beta, Лаборатория сценариев, Рыночный режим, Мультитаймфрейм)</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_unlimited_watchlist">Неограниченный watchlist</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f5">Оповещения радара аномалий</span></div>
+</div>
+<!-- Pro+ (internal plan key: "proplus") -->
+<div class="plan plan-extra">
+<div class="plan-name" data-i18n="pricing_proplus_name">Pro+</div>
+<div class="plan-price">
+<div class="amount" id="proplusPrice">$49</div>
+<div class="period" data-i18n="pricing_free_period" id="proplusPeriod">/месяц</div>
+</div>
+<div class="plan-desc" data-i18n="pricing_proplus_desc">ИИ-исследования институционального уровня для серьёзных трейдеров.</div>
+<button class="btn-plan btn-pro" data-i18n="pricing_proplus_btn" onclick=\"handleUpgrade('proplus', this)\">Начать с Pro+</button>
+<div class="features-label" data-i18n="pricing_everything_pro_plus">Всё из Pro, плюс</div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_full_unlock_label">Все функциональные модули разблокированы</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_free_f8">ИИ-ассистент исследований</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f3">Приоритетная обработка ИИ</span></div>
+</div>
+<!-- Professional (internal plan key: "professional") -->
+<div class="plan plan-extra">
+<div class="plan-name" data-i18n="pricing_professional_name">Professional</div>
+<div class="plan-price">
+<div class="amount" id="professionalPrice">$149</div>
+<div class="period" data-i18n="pricing_free_period" id="professionalPeriod">/месяц</div>
+</div>
+<div class="plan-desc" data-i18n="pricing_professional_desc">ИИ-исследования на полной мощности для профессионалов, которым нужно всё.</div>
+<button class="btn-plan btn-pro" data-i18n="pricing_professional_btn" onclick=\"handleUpgrade('professional', this)\">Перейти на Professional</button>
+<div class="features-label" data-i18n="pricing_everything_proplus_plus">Всё из Pro+, плюс</div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_pro_f8">Доступ к API</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f5">Ранний доступ к новым функциям</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f6">Поддержка по электронной почте</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_professional_f7">Конструктор индивидуальных стратегий</span></div>
+</div>
+<!-- Enterprise: honest "contact us" tier -- no self-serve backend
+         exists for team seats/SLA/invoicing, so this deliberately routes
+         to a real human conversation (email) rather than pretending
+         there's an automated signup flow. -->
+<div class="plan plan-extra">
+<div class="plan-name" data-i18n="pricing_enterprise_name">Enterprise</div>
+<div class="plan-price">
+<div class="amount" data-i18n="pricing_enterprise_price" style="font-size:1.7rem">Индивидуально</div>
+</div>
+<div class="plan-desc" data-i18n="pricing_enterprise_desc">Для команд и учреждений, которым нужен объём, поддержка и индивидуальные условия.</div>
+<button class="btn-plan btn-enterprise" data-i18n="pricing_enterprise_btn" onclick="openEnterpriseModal()">Связаться с Отделом Продаж</button>
+<div class="features-label" data-i18n="pricing_everything_professional_plus">Всё из Professional, плюс</div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f1">Несколько мест для команды</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f2">Индивидуальные лимиты скорости API</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f3">Выставление счетов</span></div>
+<div class="feature"><span class="check">✓</span> <span data-i18n="pricing_enterprise_f4">Выделенная поддержка при подключении</span></div>
+<div class="feature muted"><span class="cross">✕</span> <span data-i18n="pricing_enterprise_f5">Самостоятельная регистрация (сначала свяжитесь с нами)</span></div>
+</div>
+</div>
+<!-- 2026-07-26 fix ("主頁面淨係主打3-4層"): Pro+/Professional/Enterprise
+       (the 3 .plan-extra cards above) default to hidden -- toggled here
+       instead of always shown alongside Free/Basic/Pro. -->
+<div class="more-plans-row">
+<button class="more-plans-btn" data-i18n="pricing_more_plans_btn" id="morePlansBtn" onclick="toggleMorePlans()" type="button">Показать больше тарифов ▾</button>
+</div>
+<!-- FAQ -->
+<div class="faq">
+<h2 data-i18n="pricing_faq_title">Часто Задаваемые Вопросы</h2>
+<div class="faq-item" onclick="toggleFaq(this)">
+<div class="faq-q"><span data-i18n="pricing_faq_q1">Могу ли я отменить в любое время?</span> <span class="arrow">▾</span></div>
+<div class="faq-a" data-i18n="pricing_faq_a1">Да! Вы можете отменить подписку в любое время. Ваш тариф остаётся активным до конца расчётного периода.</div>
+</div>
+<div class="faq-item" onclick="toggleFaq(this)">
+<div class="faq-q"><span data-i18n="pricing_faq_q2">Есть ли бесплатная пробная версия?</span> <span class="arrow">▾</span></div>
+<div class="faq-a" data-i18n="pricing_faq_a2">Да! План Free позволяет попробовать XFINLAB с 5 анализами в день — без банковской карты.</div>
+</div>
+<div class="faq-item" onclick="toggleFaq(this)">
+<div class="faq-q"><span data-i18n="pricing_faq_q3">Какие способы оплаты вы принимаете?</span> <span class="arrow">▾</span></div>
+<div class="faq-a" data-i18n="pricing_faq_a3">Мы принимаем все основные кредитные карты, PayPal и локальные способы оплаты через нашего платёжного провайдера.</div>
+</div>
+<div class="faq-item" onclick="toggleFaq(this)">
+<div class="faq-q"><span data-i18n="pricing_faq_q4">Является ли XFINLAB финансовым советом?</span> <span class="arrow">▾</span></div>
+<div class="faq-a" data-i18n="pricing_faq_a4">Нет. XFINLAB предоставляет инструменты анализа данных и исследований на основе ИИ исключительно в информационных целях. Всегда консультируйтесь с квалифицированным финансовым консультантом перед принятием инвестиционных решений.</div>
+</div>
+<div class="faq-item" onclick="toggleFaq(this)">
+<div class="faq-q"><span data-i18n="pricing_faq_q5">Предоставляете ли вы возврат средств?</span> <span class="arrow">▾</span></div>
+<div class="faq-a" data-i18n="pricing_faq_a5">Да! Мы предоставляем гарантию возврата денег в течение 14 дней. Свяжитесь с support@xfinlab.com в течение 14 дней после покупки.</div>
+</div>
+</div>
+<!-- CTA -->
+<div class="cta-section">
+<h2 data-i18n="pricing_cta_title">Начните Анализировать Умнее Уже Сегодня</h2>
+<p data-i18n="pricing_cta_sub">Присоединяйтесь к тысячам инвесторов, использующих ИИ для принятия лучших решений.</p>
+<a class="btn-cta" data-i18n="pricing_cta_btn" href="/login.html">Начать Бесплатно →</a>
+</div>
+</main>
+<!-- Enterprise Contact Us: submits to the same /api/feedback pipeline
+     already used by the site's Feedback widget (stored in DB + emails
+     the admin), tagged type="enterprise_inquiry" so it's easy to filter.
+     Falls back to a plain mailto: link if the request fails, so a
+     backend hiccup never leaves an interested lead with no way to
+     reach out. -->
+<div class="enterprise-modal-overlay" id="enterpriseModalOverlay" onclick="if(event.target===this) closeEnterpriseModal()" style="display:none">
+<div class="enterprise-modal">
+<button aria-label="Close" class="enterprise-modal-close" onclick="closeEnterpriseModal()">✕</button>
+<h3 data-i18n="ent_modal_title">Связаться с отделом продаж</h3>
+<p class="enterprise-modal-sub" data-i18n="ent_modal_sub">Расскажите немного о вашей команде, и мы скоро свяжемся с вами.</p>
+<div id="entFormFields">
+<label data-i18n="ent_field_name">Имя</label>
+<input data-i18n-placeholder="ent_field_name_placeholder" id="entName" placeholder="Ваше полное имя" type="text"/>
+<label data-i18n="ent_field_company">Компания</label>
+<input data-i18n-placeholder="ent_field_company_placeholder" id="entCompany" placeholder="Название компании" type="text"/>
+<label data-i18n="ent_field_email">Эл. почта</label>
+<input data-i18n-placeholder="ent_field_email_placeholder" id="entEmail" placeholder="you@company.com" type="email"/>
+<label data-i18n="ent_field_team_size">Размер команды</label>
+<select id="entTeamSize">
+<option data-i18n="ent_team_size_1" value="1-5">1–5</option>
+<option data-i18n="ent_team_size_2" value="6-20">6–20</option>
+<option data-i18n="ent_team_size_3" value="21-50">21–50</option>
+<option data-i18n="ent_team_size_4" value="50+">50+</option>
+</select>
+<label data-i18n="ent_field_message">Что вам нужно?</label>
+<textarea data-i18n-placeholder="ent_field_message_placeholder" id="entMessage" placeholder="Опишите ваш случай использования..." rows="3"></textarea>
+<button class="enterprise-modal-submit" data-i18n="ent_submit_btn" onclick="submitEnterpriseInquiry()">Отправить запрос</button>
+<div class="enterprise-modal-status" id="entStatus"></div>
+</div>
+<div id="entSuccess" style="display:none;text-align:center;padding:20px 0">
+<div style="font-size:2.2rem;margin-bottom:12px">✅</div>
+<p data-i18n="ent_success_msg">Спасибо! Мы получили ваш запрос и скоро свяжемся с вами.</p>
+</div>
+<p class="enterprise-modal-fallback">
+<span data-i18n="ent_fallback_prefix">Предпочитаете почту? Пишите нам на</span>
+<a href="mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry">support@xfinlab.com</a>
+</p>
+</div>
+</div>
+<footer><span data-i18n="pricing_footer">© 2026 XFINLAB — Платформа Инвестиционного ИИ-Интеллекта · </span><a data-i18n="pricing_footer_terms" href="/terms.html" style="color:var(--muted)">Условия</a> · <a data-i18n="pricing_footer_privacy" href="/privacy.html" style="color:var(--muted)">Конфиденциальность</a> · <a data-i18n="pricing_footer_refund" href="/refund.html" style="color:var(--muted)">Возврат</a></footer>
+<script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+let isAnnual = false;
+// 2026-08-19 fix (AJ, setting up real Stripe products: "上面4個係分別PLAN的
+// 年付12個月送2個，共付是12個月可用14個月" -- pay 12 months' worth, get 14
+// months of access/validity, i.e. 2 months free): this used to be 14 here,
+// which made the DISPLAYED annual price monthly x 14 (e.g. Pro showed
+// $252/year) while the real Stripe Prices AJ actually created charge
+// monthly x 12 (Pro Annual = $216) -- a real display-vs-charge mismatch.
+// The x14 is a validity-period multiplier (how many months of access one
+// annual payment buys, matching each Stripe Price's 14-month recurring
+// interval), not a price multiplier -- the price shown here must match
+// what Stripe actually charges, so this is now x12.
+const ANNUAL_MULTIPLIER = 12; // fallback annual = monthly x 12 (customer then gets 14 months of access before renewal -- 2 months free) -- used for the Pro list-price strike-through and the regional-pricing approximation below, neither of which is a real charge
+// 2026-08-19 (AJ: "Basic Annual你打咗$70，想Basic有額外折扣"): Basic gets a
+// deeper-than-standard annual discount ($70, not the plain x12 $120) as a
+// deliberate entry-tier promo -- so annual prices are no longer a uniform
+// x12 formula, they're the exact real Stripe Price amounts AJ created,
+// one per plan. Pro/Pro+/Professional happen to equal monthly x12; Basic
+// doesn't, and that's intentional. Update this dict (not the multiplier
+// above) if any plan's real Stripe annual price ever changes.
+const ANNUAL_PRICES = { basic: 70, pro: 216, proplus: 588, professional: 1788 };
+// 2026-07-26 fix ("將Pro顯示做$29->$18優惠價"): pro's MONTHLY_PRICES entry is
+// now the real/effective price ($18) that toggleBilling() actually uses for
+// the big amount -- $29 only ever appears as the struck-through reference
+// price via PRO_LIST_PRICE below, so the two numbers can never drift out
+// of sync with each other.
+const MONTHLY_PRICES = { basic: 10, pro: 18, proplus: 49, professional: 149 };
+const PRO_LIST_PRICE = 29;
+const TOKEN_PCTS = { Basic: 30, Pro: 50, Proplus: 70, Professional: 90 };
+
+function toggleBilling() {
+  isAnnual = !isAnnual;
+  const toggle = document.getElementById('billingToggle');
+  const monthlyLabel = document.getElementById('monthlyLabel');
+  const annualLabel = document.getElementById('annualLabel');
+
+  toggle.classList.toggle('annual', isAnnual);
+  monthlyLabel.classList.toggle('active', !isAnnual);
+  annualLabel.classList.toggle('active', isAnnual);
+
+  const periodText = isAnnual ? t('pricing_annual_period', '/year') : t('pricing_free_period', '/month');
+
+  Object.keys(MONTHLY_PRICES).forEach(function (key) {
+    const priceEl = document.getElementById(key + 'Price');
+    const periodEl = document.getElementById(key + 'Period');
+    const monthly = MONTHLY_PRICES[key];
+    const annual = ANNUAL_PRICES[key] != null ? ANNUAL_PRICES[key] : monthly * ANNUAL_MULTIPLIER;
+    if (priceEl) priceEl.textContent = '$' + (isAnnual ? annual : monthly);
+    if (periodEl) periodEl.textContent = periodText;
+  });
+
+  const proStrikeEl = document.getElementById('proPriceStrike');
+  if (proStrikeEl) proStrikeEl.textContent = '$' + (isAnnual ? PRO_LIST_PRICE * ANNUAL_MULTIPLIER : PRO_LIST_PRICE);
+}
+
+// 2026-07-26 fix ("主頁面淨係主打3-4層"): reveal/hide the 3 .plan-extra
+// cards (Pro+/Professional/Enterprise). They stay direct children of
+// #plansGrid (not wrapped in an extra container) so they keep participating
+// in its existing 3-column CSS grid once shown, instead of collapsing into
+// a single nested grid item.
+function toggleMorePlans() {
+  const grid = document.getElementById('plansGrid');
+  const btn = document.getElementById('morePlansBtn');
+  const showing = grid.classList.toggle('show-more');
+  btn.textContent = showing
+    ? t('pricing_less_plans_btn', 'Show fewer plans ▴')
+    : t('pricing_more_plans_btn', 'View more plans ▾');
+}
+
+
+// 2026-08-19 (AJ: "Stripe同Paddle並存"): real checkout, replacing the old
+// permanent "coming soon" alert. Tries Stripe first (POST
+// /api/stripe/create-checkout-session), falls back to Paddle (POST
+// /api/paddle/create-checkout-session) if Stripe isn't configured yet for
+// this specific plan+cycle combo, and only falls back to the original
+// "coming soon" message if NEITHER provider has that combo's price ID set
+// yet -- see api/webhooks_stripe.py / api/webhooks_paddle.py, both
+// dormant-safe until AJ finishes setting up the relevant Railway env vars.
+// Every real tier (basic/pro/proplus/professional) and both billing
+// cycles go through this same path -- nothing here is Pro-only.
+async function _tryCheckout(url, token, plan, cycle) {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, plan, cycle }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.checkout_url || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function handleUpgrade(plan, btn) {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+  const cycle = isAnnual ? 'annual' : 'monthly';
+
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = t('pricing_upgrade_loading', 'Loading checkout…'); }
+
+  let checkoutUrl = await _tryCheckout('https://api.xfinlab.com/api/stripe/create-checkout-session', token, plan, cycle);
+  // 2026-08-24 (AJ: "暫停PADDLE，而定得STRIPE付款" -- Paddle's webhook was
+  // never verified against a real captured payload; Stripe is the only
+  // battle-tested path right now -- see api/webhooks_paddle.py's
+  // docstring). Paused, not removed: uncomment below to re-enable once
+  // Paddle is actually tested via a sandbox "send test event".
+  // if (!checkoutUrl) {
+  //   checkoutUrl = await _tryCheckout('https://api.xfinlab.com/api/paddle/create-checkout-session', token, plan, cycle);
+  // }
+
+  if (checkoutUrl) {
+    window.location.href = checkoutUrl;
+    return;
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  const msgTemplate = t('pricing_alert_upgrade_soon', "Upgrading to {plan} plan coming soon! We'll notify you when payment is available.");
+  alert(msgTemplate.replace('{plan}', plan.toUpperCase()));
+}
+
+function toggleFaq(el) {
+  el.classList.toggle('open');
+}
+
+function openEnterpriseModal() {
+  document.getElementById('entFormFields').style.display = 'block';
+  document.getElementById('entSuccess').style.display = 'none';
+  document.getElementById('entStatus').textContent = '';
+  document.getElementById('enterpriseModalOverlay').style.display = 'flex';
+}
+function closeEnterpriseModal() {
+  document.getElementById('enterpriseModalOverlay').style.display = 'none';
+}
+
+async function submitEnterpriseInquiry() {
+  const name = document.getElementById('entName').value.trim();
+  const company = document.getElementById('entCompany').value.trim();
+  const email = document.getElementById('entEmail').value.trim();
+  const teamSize = document.getElementById('entTeamSize').value;
+  const message = document.getElementById('entMessage').value.trim();
+  const status = document.getElementById('entStatus');
+  const submitBtn = document.querySelector('.enterprise-modal-submit');
+
+  if (!name || !email) {
+    status.textContent = t('ent_error_required', 'Please enter your name and email');
+    status.style.color = 'var(--red)';
+    return;
+  }
+
+  const composedMessage =
+    `Company: ${company || 'N/A'}\nTeam size: ${teamSize}\n\n${message || '(no message)'}`;
+
+  submitBtn.disabled = true;
+  status.textContent = '';
+
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'enterprise_inquiry',
+        message: `Name: ${name}\nEmail: ${email}\n${composedMessage}`,
+        email,
+        token,
+      })
+    });
+    if (!res.ok) throw new Error('request failed');
+
+    document.getElementById('entFormFields').style.display = 'none';
+    document.getElementById('entSuccess').style.display = 'block';
+  } catch (e) {
+    // Backend hiccup -- don't strand an interested lead with a dead end,
+    // fall back to the same mailto: link this button used before.
+    status.innerHTML = t('ent_error_fallback', 'Something went wrong — please email us instead:') +
+      ' <a href="mailto:support@xfinlab.com?subject=Enterprise%20Plan%20Inquiry" style="color:var(--accent)">support@xfinlab.com</a>';
+    status.style.color = 'var(--muted)';
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+</script>
+<script src="/js/cookie-consent.js"></script>
+<script src="/js/anti-scrape.js"></script>
+<script src="/js/mobile-widget-dock.js"></script>
+</body>
+</html>

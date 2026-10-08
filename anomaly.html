@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — Anomaly Engine™ 異常偵測</title>
+<meta name="description" content="AI異常偵測 — 掃描全球資產嘅異常成交量同價格波動，即時預警。">
+<link rel="canonical" href="https://www.xfinlab.com/anomaly.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="異常偵測 — XFINLAB">
+<meta property="og:description" content="AI異常偵測 — 掃描全球資產嘅異常成交量同價格波動，即時預警。">
+<meta property="og:url" content="https://www.xfinlab.com/anomaly.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1160px;margin:0 auto;padding:28px 18px;flex:1}
+.primary-btn{background:var(--accent-blue);color:#fff;border:none;padding:0 14px;border-radius:8px;cursor:pointer;height:44px}
+.primary-btn:hover{background:#A83E00}
+.primary-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+.anomaly-list{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.anomaly-item{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
+.anomaly-icon{font-size:1.2rem;flex-shrink:0}
+.anomaly-type{font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
+.anomaly-detail{font-size:0.85rem;color:var(--text-secondary)}
+.severity-HIGH{color:var(--accent-red)}
+.severity-MEDIUM{color:var(--accent-orange)}
+.severity-NONE{color:var(--accent-green)}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em}
+.badge-HIGH{background:rgba(220,38,38,0.12);color:var(--accent-red)}
+.badge-MEDIUM{background:rgba(245,158,11,0.12);color:var(--accent-orange)}
+.badge-NONE{background:rgba(22,163,74,0.12);color:var(--accent-green)}
+.empty-box{color:var(--text-muted);font-size:0.9rem;padding:24px 0;text-align:center}
+
+.edu{line-height:1.7}
+.edu h3{color:var(--accent-blue);margin-top:0.6rem}
+.edu p{color:var(--text-secondary);margin-bottom:0.6rem}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">Anomaly Engine™</div>
+  <h1 class="page-title" data-i18n="anom_title">異常偵測雷達</h1>
+  <p class="page-sub" data-i18n="anom_subtitle">用真實成交量同價格數據，掃描你嘅自選股（未登入就用預設一籃子股票），揪出唔尋常嘅波動 —— 唔靠AI估算，數值指標100%來自真實市場數據。</p>
+
+  <div class="panel">
+    <label class="input-label" for="anomSearchInput" data-i18n="anom_search_label">搜尋單一代號</label>
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+      <input id="anomSearchInput" type="text" data-i18n-placeholder="anom_search_placeholder" placeholder="例如 AAPL、0700.HK、BTC" style="flex:1;min-width:200px;padding:0.5rem 0.6rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary)">
+      <button class="primary-btn" id="anomSearchBtn" onclick="runAnomalySearch()" data-i18n="anom_search_btn">🔍 檢查</button>
+    </div>
+    <div class="upload-hint" style="margin-top:0.5rem;color:var(--text-muted);font-size:0.82rem" data-i18n="anom_search_hint">呢個只查你打嘅單一代號，同下面嘅自選股批量掃描分開</div>
+    <div id="anomSearchResult" style="margin-top:14px"></div>
+    <div id="anomHistoryResult" style="margin-top:14px"></div>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-bottom:6px">
+      <div style="color:var(--text2);font-size:0.9rem" data-i18n="anom_scan_hint">掃描你自選股嘅成交量同價格變化，偵測異常訊號</div>
+      <button class="primary-btn" id="scanBtn" onclick="runAnomalyScan()" data-i18n="anom_scan_btn">開始掃描</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted)" data-i18n="anom_severity_label">整體嚴重程度</span>
+      <span class="badge badge-NONE" id="overallSeverityBadge" data-i18n="anom_not_scanned">未掃描</span>
+    </div>
+    <div id="anomalyContent">
+      <div class="empty-box" data-i18n="anom_empty">按「開始掃描」以查看異常訊號</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title" data-i18n="anom_edu_title">AI 教育解說</div>
+    <div class="edu">
+      <h3 data-i18n="anom_edu_h1">咩係異常訊號？</h3>
+      <p data-i18n="anom_edu_p1">當某隻股票嘅成交量遠高於平均值，或者短時間內價格出現異常大幅變動，往往代表市場有重大消息或資金流向轉變，值得留意。</p>
+      <h3 data-i18n="anom_edu_h2">點解要留意呢啲訊號？</h3>
+      <p data-i18n="anom_edu_p2">異常成交量／價格波動可以係機會（例如突破訊號），亦可以係風險（例如負面消息引發拋售）。Anomaly Engine™ 淨係負責偵測同標記，唔會直接判斷好壞，最終判斷需要你自己結合新聞同基本面分析。</p>
+      <p style="color:var(--text3);margin-top:0.6rem" data-i18n="anom_edu_disclaimer">（數值指標基於真實市場數據計算，僅供參考，唔構成投資建議。）</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note"><span data-i18n="anom_footer_note">XFINLAB © 2026 · Anomaly Engine™ 異常偵測雷達 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script src="js/ai-loading.js"></script>
+<script src="js/sparkline.js"></script>
+<script>
+const API = "https://api.xfinlab.com/api";
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+async function runAnomalyScan() {
+  const btn = document.getElementById('scanBtn');
+  const content = document.getElementById('anomalyContent');
+  const badge = document.getElementById('overallSeverityBadge');
+  btn.disabled = true;
+  // 2026-07-25 fix (task #414 follow-up, "英文題示中文字"): runAnomalyScan()
+  // auto-fires once at the bottom of this inline script (see below), which
+  // runs SYNCHRONOUSLY while the page is still parsing -- guaranteed to
+  // execute before js/i18n.js's DOMContentLoaded-triggered async fetch has
+  // any chance to resolve. So this t() call always falls back to the
+  // Chinese default on that first auto-run, every single time, regardless
+  // of network speed -- not a rare race, a deterministic one. The real
+  // page content (data-i18n elements) gets fixed automatically once
+  // I18N.apply() runs and translations arrive, but this loading text was
+  // plain textContent with no such hook, so it stayed Chinese for as long
+  // as the anomaly fetch below was still in flight. Tagging both elements
+  // with data-i18n means the next I18N.apply() call (i18n's own fetch is
+  // small/fast; this endpoint's real market-data fetch is comparatively
+  // slow, so apply() very likely still runs while this text is on screen)
+  // retroactively corrects it, same as every other dynamic loading label
+  // on this page already relies on.
+  btn.setAttribute('data-i18n', 'anom_scanning');
+  btn.textContent = t('anom_scanning', '掃描緊...');
+  content.innerHTML = `<div class="empty-box" data-i18n="anom_scanning">${t('anom_scanning', '掃描緊...')}</div>`;
+
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/anomaly${token ? '?token=' + token : ''}`);
+    const data = await res.json();
+    const severity = data.severity || 'NONE';
+    badge.className = `badge badge-${severity}`;
+    badge.textContent = severity;
+
+    const items = (data.items || []).flatMap(tickerItem =>
+      (tickerItem.anomalies || []).map(a => {
+        // 2026-08-10 (task #747-752, "所有卡片有資產的都加細K線小圖"):
+        // tickerItem.sparkline comes free from compute_snapshots() (already
+        // fetched to power the anomaly math itself) -- see
+        // services/dashboard_snapshot_service.py.
+        const sparkHtml = (typeof XflSparkline !== 'undefined')
+          ? XflSparkline.render(tickerItem.sparkline, XflSparkline.dirClass(tickerItem.price_change_pct), {width:64,height:22,className:'xfl-spark-sm'})
+          : '';
+        return `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">⚡</div>
+        <div style="flex:1">
+          <div class="anomaly-type severity-${tickerItem.severity || 'NONE'}">${tickerItem.ticker} · ${a.type.replace(/_/g,' ')}</div>
+          <div class="anomaly-detail">${a.detail}</div>
+          ${sparkHtml ? `<div style="width:64px;margin-top:4px">${sparkHtml}</div>` : ''}
+        </div>
+      </div>`;
+      })
+    ).join('');
+
+    content.innerHTML = items || `<div class="empty-box">${t('anom_no_anomalies','未偵測到異常波動')}</div>`;
+    if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'anomaly'});
+  } catch (e) {
+    content.innerHTML = `<div class="empty-box">${t('anom_scan_error','掃描失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.setAttribute('data-i18n', 'anom_scan_btn');
+    btn.textContent = t('anom_scan_btn', '開始掃描');
+  }
+}
+
+// ---- Single-ticker search (separate from the batch watchlist scan above) ----
+// Same normalizeGlobalTicker() rules used on the homepage demo ticker and
+// chart-analysis.html's search box, copied here so this page works
+// standalone.
+const GLOBAL_TICKER_CRYPTO_SYMBOLS = ['BTC','ETH','SOL','BNB','XRP','DOGE','ADA','DOT','AVAX','LTC','LINK','MATIC','SHIB','TRX','ATOM'];
+function normalizeGlobalTicker(raw) {
+  let s = (raw || '').trim().toUpperCase();
+  if (!s) return s;
+  if (s.includes('.') || s.includes('-') || s.includes('=')) return s;
+  if (/^\d+$/.test(s)) {
+    // 2026-07-19 fix: see chart-analysis.html's normalizeGlobalTicker for
+    // the full story -- short HK shorthand like "700" (Tencent) or "5"
+    // (HSBC) used to fall through unnormalized (only 4/5-digit input was
+    // padded), sending a literal ticker the backend can't resolve.
+    if (s.length <= 5) return s.padStart(4, '0') + '.HK';
+    if (s.length === 6) {
+      const first = s[0];
+      if (first === '6') return s + '.SS';
+      if (first === '0' || first === '3') return s + '.SZ';
+    }
+    return s;
+  }
+  if (/^[A-Z]+$/.test(s) && GLOBAL_TICKER_CRYPTO_SYMBOLS.includes(s)) return s + '-USD';
+  return s;
+}
+
+function renderAnomalyResult(ticker, result) {
+  const severity = result.severity || 'NONE';
+  const anomalies = result.anomalies || [];
+  // 2026-08-10 (task #747-752): result.sparkline comes free from
+  // api/anomaly.py's /anomaly/search/{ticker} (same compute_snapshots()
+  // path as the batch scan above).
+  const sparkHtml = (typeof XflSparkline !== 'undefined')
+    ? XflSparkline.render(result.sparkline, XflSparkline.dirClass(result.price_change_pct), {width:100, height:30})
+    : '';
+  const items = anomalies.length
+    ? anomalies.map(a => `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">⚡</div>
+        <div>
+          <div class="anomaly-type severity-${severity}">${ticker} · ${a.type.replace(/_/g,' ')}</div>
+          <div class="anomaly-detail">${a.detail}</div>
+        </div>
+      </div>`).join('')
+    : `<div class="anomaly-item">
+        <div class="anomaly-icon">✅</div>
+        <div>
+          <div class="anomaly-type severity-NONE">${ticker} · ${t('anom_no_anomaly_ticker','未偵測到異常')}</div>
+          <div class="anomaly-detail">${t('anom_no_anomaly_ticker_detail','成交量同價格變化屬於正常範圍')}</div>
+        </div>
+      </div>`;
+  return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted)">${t('anom_severity_label','整體嚴重程度')}</span>
+      <span class="badge badge-${severity}">${severity}</span>
+    </div>${sparkHtml ? `<div style="max-width:180px;margin-bottom:10px">${sparkHtml}</div>` : ''}${items}`;
+}
+
+function renderContractionBreakouts(data) {
+  // 2026-09-14 addition (AJ: "量縮至量放，怎表達？"): services/anomaly_
+  // history_service.py's contraction_breakouts is a separate top-level
+  // field (not part of `flagged`, since a breakout signal spans a DATE
+  // RANGE -- the quiet period plus the breakout day -- not one day's
+  // reading). Rendered as its own small block above the day-by-day
+  // history list so it reads as "here's the pattern", not just another
+  // day card.
+  const signals = data.contraction_breakouts || [];
+  if (!signals.length) return '';
+
+  const heading = `<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:18px 0 10px">${t('anom_contraction_breakout_title', '量縮後放量突破訊號')}</div>`;
+  const template = t('anom_contraction_breakout_summary', '{quiet_start} 至 {quiet_end}（{quiet_days}日量縮）之後，{breakout_date} 放量 {ratio}x，價格{dir} {pct}%');
+  const upLabel = t('anom_direction_up', '上升');
+  const downLabel = t('anom_direction_down', '下跌');
+
+  const items = signals.map(s => {
+    const summary = template
+      .replace('{quiet_start}', s.quiet_period_start)
+      .replace('{quiet_end}', s.quiet_period_end)
+      .replace('{quiet_days}', s.quiet_days)
+      .replace('{breakout_date}', s.breakout_date)
+      .replace('{ratio}', s.breakout_volume_ratio)
+      .replace('{dir}', s.direction === 'up' ? upLabel : downLabel)
+      .replace('{pct}', Math.abs(s.breakout_price_change_pct));
+    return `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">${s.direction === 'up' ? '🚀' : '📉'}</div>
+        <div style="flex:1">
+          <div class="anomaly-type severity-HIGH">${s.breakout_date}</div>
+          <div class="anomaly-detail">${summary}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `${heading}<div class="anomaly-list">${items}</div>`;
+}
+
+function renderAnomalyHistory(ticker, data) {
+  const flagged = data.flagged || [];
+  const breakoutBlock = renderContractionBreakouts(data);
+  // 2026-07-25 fix (task #414): these had data-i18n tags but were never
+  // actually translated -- I18N.apply() only scans [data-i18n] elements
+  // ONCE, right after i18n.js's initial fetch resolves (see js/i18n.js's
+  // init()); it never re-runs on HTML injected later via innerHTML, which
+  // is exactly how this whole block is inserted. Using this file's own
+  // t() helper (same pattern as every other dynamic string on this page)
+  // resolves the translation at render time instead, so it actually shows
+  // the right language regardless of when this function runs.
+  const heading = `<div style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin:18px 0 10px">${t('anom_history_title', '過去30日成交量異常')}</div>`;
+  // 2026-08-10 (task #747-752): data.sparkline is a free slice of the
+  // 3-month OHLC history services/anomaly_history_service.py already
+  // fetches to run this 30-day scan -- zero extra network calls.
+  const histSparkHtml = (typeof XflSparkline !== 'undefined')
+    ? XflSparkline.render(data.sparkline, 'neutral', {width:100, height:30})
+    : '';
+  const histSparkBlock = histSparkHtml ? `<div style="max-width:180px;margin-bottom:6px">${histSparkHtml}</div>` : '';
+
+  if (!flagged.length) {
+    // A contraction-breakout can fire on a day that never trips
+    // AnomalyEngine's own flagged-day thresholds (breakout_ratio_min=1.5
+    // is deliberately looser than volume_spike's 2.0x) -- so still show
+    // it even when `flagged` itself is empty, instead of contradicting
+    // it with a "nothing found" message right above it.
+    return `${heading}${histSparkBlock}${breakoutBlock}${breakoutBlock ? '' : `<div class="empty-box">${t('anom_history_empty', '過去30日未發現明顯成交量或價格異常')}</div>`}`;
+  }
+
+  // 2026-07-25 fix (task #414, "duplicated bilingual event descriptions"):
+  // this line used to be followed by `anomalyLines` -- each of
+  // day.anomalies[].detail from engines/anomaly_engine.py, e.g. "Volume
+  // 4.65x above average" -- which restated the EXACT SAME volume-ratio/
+  // price-change numbers already in the summary line below, just in
+  // hardcoded English while the summary line itself was hardcoded
+  // Chinese. That looked like the same event described twice in two
+  // different languages stacked on top of each other. The summary line
+  // is now translated via anom_history_summary (46 languages) and the
+  // now-redundant anomalyLines block is removed -- severity/volume/price
+  // are already fully conveyed by the summary line + badge, so nothing
+  // substantive is lost.
+  const summaryTemplate = t('anom_history_summary', '成交量 {volume}（平均 {avg}，{ratio}x）· 價格變化 {pct}%');
+  const marketCloseLabel = t('anom_history_market_close', '收市 (Market Close)');
+
+  const days = flagged.map(day => {
+    const newsLines = (day.news || []).length
+      ? (day.news || []).map(n => n.url
+          ? `<div class="anomaly-detail" style="margin-top:4px">📰 <a href="${n.url}" target="_blank" rel="noopener" style="color:var(--accent-blue);text-decoration:none">${n.title}</a>${n.source ? ` — ${n.source}` : ''}</div>`
+          : `<div class="anomaly-detail" style="margin-top:4px">📰 ${n.title}${n.source ? ` — ${n.source}` : ''}</div>`
+        ).join('')
+      : `<div class="anomaly-detail" style="margin-top:4px;opacity:0.7">${t('anom_history_no_news', '暫無相關新聞')}</div>`;
+
+    const summary = summaryTemplate
+      .replace('{volume}', Number(day.volume).toLocaleString())
+      .replace('{avg}', Number(day.avg_volume).toLocaleString())
+      .replace('{ratio}', day.volume_ratio)
+      .replace('{pct}', day.price_change_pct);
+
+    return `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">📅</div>
+        <div style="flex:1">
+          <div class="anomaly-type severity-${day.severity || 'NONE'}">${day.date} · ${marketCloseLabel} <span class="badge badge-${day.severity || 'NONE'}" style="margin-left:6px">${day.severity || 'NONE'}</span></div>
+          <div class="anomaly-detail">${summary}</div>
+          ${newsLines}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `${heading}${histSparkBlock}${breakoutBlock}<div class="anomaly-list">${days}</div>`;
+}
+
+async function runAnomalyHistory(ticker) {
+  const historyBox = document.getElementById('anomHistoryResult');
+  historyBox.innerHTML = `<div class="empty-box">${t('anom_history_checking', '搵緊過去30日數據...')}</div>`;
+  try {
+    // 2026-09-14 fix (site-wide lang-leak audit): sibling
+    // runAnomalySearch() already sends I18N.currentLang -- this call never
+    // did, so /anomaly/history's error/label strings always came back
+    // Chinese regardless of UI language.
+    const _histLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const res = await fetch(`${API}/anomaly/history/${encodeURIComponent(ticker)}` + (_histLang ? `?lang=${encodeURIComponent(_histLang)}` : ''));
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      throw new Error(data.message || t('anom_history_error', '暫時攞唔到歷史數據'));
+    }
+    historyBox.innerHTML = renderAnomalyHistory(ticker, data);
+  } catch (e) {
+    historyBox.innerHTML = `<div class="empty-box">${e.message || t('anom_history_error', '暫時攞唔到歷史數據')}</div>`;
+  }
+}
+
+async function runAnomalySearch(symbolOverride) {
+  const input = document.getElementById('anomSearchInput');
+  const ticker = normalizeGlobalTicker(symbolOverride || input.value);
+  if (!ticker) {
+    alert(t('anom_search_alert_empty', '請輸入股票代號'));
+    return;
+  }
+  input.value = ticker;
+
+  const btn = document.getElementById('anomSearchBtn');
+  const resultBox = document.getElementById('anomSearchResult');
+  const historyBox = document.getElementById('anomHistoryResult');
+  btn.disabled = true;
+  btn.textContent = t('anom_search_checking', '檢查緊...');
+  resultBox.innerHTML = `<div class="empty-box">${t('anom_search_checking', '檢查緊...')}</div>`;
+  historyBox.innerHTML = '';
+
+  try {
+    const _anomLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const res = await fetch(`${API}/anomaly/search/${encodeURIComponent(ticker)}` + (_anomLang ? `?lang=${encodeURIComponent(_anomLang)}` : ''));
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      throw new Error(data.message || t('anom_search_error', '檢查失敗，請重試'));
+    }
+    resultBox.innerHTML = renderAnomalyResult(data.ticker || ticker, data);
+    if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'anomaly_search', ticker});
+    runAnomalyHistory(data.ticker || ticker);
+  } catch (e) {
+    resultBox.innerHTML = `<div class="empty-box">${e.message || t('anom_search_error', '檢查失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('anom_search_btn', '🔍 檢查');
+  }
+}
+
+document.getElementById('anomSearchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runAnomalySearch();
+});
+
+if (typeof autoAttachTickerAutocomplete === 'function') {
+  autoAttachTickerAutocomplete('#anomSearchInput');
+}
+
+// Share System / Smart Router: a link like anomaly.html?ticker=AAPL
+// prefills the single-ticker search box and re-runs the same real scan.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const tickerParam = params.get('ticker');
+  if (tickerParam) {
+    document.getElementById('anomSearchInput').value = tickerParam;
+    runAnomalySearch(tickerParam);
+  }
+});
+
+// auto-run once on load, same behaviour as dashboard.html's Anomaly Radar
+runAnomalyScan();
+</script>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#D35400);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/search-reminder.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

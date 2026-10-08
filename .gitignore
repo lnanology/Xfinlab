@@ -1,0 +1,24 @@
+.env
+*.db
+# Trained model artifacts (services/direction_probability_service.py) --
+# regeneratable via scripts/train_direction_models.py, not source.
+/models/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.vercel
+.env*
+__pycache__/
+.continue/
+*.pyc
+.venv/
+__pycache__/
+.continue/
+*.pyc
+.venv/
+.DS_Store
+.fuse_hidden*
+
+# Personal documents that live in the project folder but aren't part of the site
+*.docx

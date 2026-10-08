@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — XFINLAB</title>
+<meta name="description" content="登入XFINLAB，查閱你的AI投資分析、自選股同投資組合。">
+<link rel="canonical" href="https://www.xfinlab.com/login.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="登入 — XFINLAB">
+<meta property="og:description" content="登入XFINLAB，查閱你的AI投資分析、自選股同投資組合。">
+<meta property="og:url" content="https://www.xfinlab.com/login.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Light default (2026-07-18): white bg, black text, black border. */
+  :root {
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --border: #000000;
+    --accent: #D35400;
+    --accent-rgb: 211,84,0;
+    --accent-text: #FFFFFF;
+    --green: #16A34A;
+    --red: #DC2626;
+    --text: #000000;
+    --muted: #666666;
+    --label: #333333;
+  }
+  /* 2026-07-22 fix: this page had no dark-theme variant at all, so a user
+     who toggled dark mode elsewhere on the site (index.html/dashboard.html/
+     pricing.html) got a jarring light flash on login/register with no way
+     to switch back here. Mirror the shared css/style.css dark palette. */
+  [data-theme="dark"] {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --border: #1e2d45;
+    --accent: #F97316;
+    --accent-rgb: 249,115,22;
+    --accent-text: #000000;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --label: #94a3b8;
+  }
+  /* min-height 用返100vh做fallback，支援唔到100dvh嘅舊瀏覽器都有基本高度；
+     100dvh先至係手機/iPad嘅重點 -- iOS Safari嘅100vh係跟「layout viewport」
+     計，唔會理彈出咗嘅virtual keyboard，於是個keyboard彈出之後，用flex
+     center擺中間嘅.auth-box可能會被谷落去畫面睇唔到嘅位置，用戶填完
+     資料撳"Create Account"睇落好似「無反應」，其實個掣仲喺度，只不過
+     喺visual viewport範圍以外。100dvh會即時反映返keyboard彈出後嘅實際
+     可見高度，令個box唔會被谷出畫面。 */
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; border-bottom: 1px solid var(--border); }
+  .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .nav-brand span { color: var(--text); }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; overflow-y: auto; }
+  /* 手機/iPad（直度）：唔好強行垂直居中 -- keyboard彈出後個box仲要留喺
+     畫面上半部，唔會俾keyboard region完全遮晒，撳掣先至真係撳得到。 */
+  @media (max-width: 640px) {
+    main { align-items: flex-start; padding-top: 32px; }
+  }
+  .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 100%; max-width: 420px; }
+  .auth-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+  .auth-sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 32px; }
+  .tabs { display: flex; gap: 0; margin-bottom: 28px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .tab { flex: 1; padding: 10px; text-align: center; font-size: 0.875rem; font-weight: 500; cursor: pointer; background: transparent; border: none; color: var(--muted); transition: all 0.2s; }
+  .tab.active { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--label); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 11px 14px; border-radius: 8px; font-size: 0.9rem; font-family: inherit; transition: border-color 0.2s; }
+  input:focus { outline: none; border-color: var(--accent); }
+  .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; margin-top: 8px; }
+  .btn-primary { background: var(--accent); color: var(--accent-text); }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 16px; display: none; }
+  .success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 16px; display: none; }
+  /* task #321: points-to-upgrade hint shown above login/register forms */
+  .points-hint { background: rgba(var(--accent-rgb),0.08); border: 1px solid rgba(var(--accent-rgb),0.25); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.78rem; line-height: 1.5; margin-bottom: 16px; }
+  .divider { text-align: center; color: var(--muted); font-size: 0.78rem; margin: 20px 0; position: relative; }
+  .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
+  .divider span { background: var(--surface); padding: 0 12px; position: relative; }
+  .switch-text { text-align: center; font-size: 0.82rem; color: var(--muted); margin-top: 20px; }
+  .switch-text a { color: var(--accent); text-decoration: none; font-weight: 500; }
+  footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.75rem; border-top: 1px solid var(--border); }
+</style>
+<script src="js/i18n.js"></script>
+<script src="js/captcha-widget.js"></script>
+<script src="js/device-fingerprint.js"></script>
+<script src="js/theme-toggle.js"></script>
+<!-- task #333: Google Identity Services -- inert until google.accounts.id.initialize()
+     is actually called (only happens if the google_login feature flag is on AND a
+     client_id is configured), so loading it unconditionally costs nothing when off. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand" style="text-decoration:none"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<span>FIN</span>LAB</a>
+</nav>
+<main>
+  <div class="auth-box">
+    <div class="auth-title" data-i18n="login_title">Welcome Back</div>
+    <div class="auth-sub" data-i18n="login_subtitle">Sign in to your XFINLAB account</div>
+
+    <div class="tabs">
+      <button type="button" class="tab active" onclick="switchTab('login')" data-i18n="login_tab_signin">Sign In</button>
+      <button type="button" class="tab" onclick="switchTab('register')" data-i18n="login_tab_register">Register</button>
+    </div>
+
+    <div class="points-hint" data-i18n="login_points_hint">💡 免費用戶：使用AI功能可儲積分，7日內夠500分即自動升級Basic方案7日！</div>
+
+    <div id="errorMsg" class="error"></div>
+    <div id="successMsg" class="success"></div>
+
+    <!-- 2026-07-30 ("GOOGLE 及 LINE 放上面行先"): Google + LINE moved above
+         the email/password form -- these are one-click/one-tap methods, so
+         putting them first reduces friction for users who'd rather skip
+         typing. WhatsApp OTP still needs typing a phone number + code, so
+         it stays below the form in its own block (see socialLoginSection
+         further down). Toggled by loadLoginMethods() same as before, just
+         a different display target now (socialLoginTop). -->
+    <div id="socialLoginTop" style="display:none;margin-bottom:8px">
+      <div id="googleLoginBlock" style="display:none;margin-bottom:10px;justify-content:center"></div>
+      <button type="button" id="lineLoginBtn" class="btn" style="display:none;background:#06C755;color:#fff" onclick="startLineLogin()">
+        <span data-i18n="login_line_btn">💬 Continue with LINE</span>
+      </button>
+      <div class="divider"><span data-i18n="login_or_divider">or</span></div>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label data-i18n="login_label_email">Email</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" autocorrect="off">
+      </div>
+      <div class="form-group">
+        <label data-i18n="login_label_password">Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        <div style="text-align:right;margin-top:6px"><a href="forgot-password.html" style="color:var(--accent);font-size:0.78rem;text-decoration:none" data-i18n="login_forgot_password">忘記密碼？</a></div>
+      </div>
+      <button type="button" class="btn btn-primary" id="loginBtn" onclick="handleLogin()" data-i18n="login_tab_signin">Sign In</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerForm" style="display:none">
+      <div class="form-group">
+        <label data-i18n="login_label_name">Full Name</label>
+        <input type="text" id="regName" placeholder="Your name" data-i18n-placeholder="login_placeholder_name" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label data-i18n="login_label_email">Email</label>
+        <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="email" autocapitalize="off" autocorrect="off">
+      </div>
+      <div class="form-group">
+        <label data-i18n="login_label_password">Password</label>
+        <input type="password" id="regPassword" placeholder="Min 6 characters" data-i18n-placeholder="login_placeholder_minchars" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label data-i18n="captcha_title">Slide to verify</label>
+        <div id="captchaWidget"></div>
+      </div>
+      <button type="button" class="btn btn-primary" id="registerBtn" onclick="handleRegister()" data-i18n="login_btn_create">Create Account</button>
+    </div>
+
+    <!-- task #333: WhatsApp OTP login (Google/LINE moved to socialLoginTop
+         above, 2026-07-30) -- only shows if its feature flag is on; see
+         loadLoginMethods() below. Works for both the Sign In and Register
+         tabs since the backend finds-or-creates the account, so there's no
+         need for separate widgets per tab. -->
+    <div id="socialLoginSection" style="display:none;margin-top:8px">
+      <div class="divider"><span data-i18n="login_or_divider">or</span></div>
+      <div id="whatsappOtpBlock" style="display:none">
+        <div class="form-group">
+          <label data-i18n="login_whatsapp_label">WhatsApp number</label>
+          <input type="tel" id="waPhone" placeholder="+852 1234 5678" data-i18n-placeholder="login_whatsapp_placeholder" autocomplete="tel">
+        </div>
+        <button type="button" class="btn" id="waSendBtn" style="background:#25D366;color:#fff" onclick="sendWhatsAppOtp()">
+          <span data-i18n="login_whatsapp_send">📱 Send code via WhatsApp</span>
+        </button>
+        <div class="form-group" id="waCodeGroup" style="display:none">
+          <label data-i18n="login_whatsapp_code_label">Verification code</label>
+          <input type="text" id="waCode" inputmode="numeric" maxlength="6" placeholder="123456">
+        </div>
+        <button type="button" class="btn btn-primary" id="waVerifyBtn" style="display:none" onclick="verifyWhatsAppOtp()">
+          <span data-i18n="login_whatsapp_verify">Verify & Sign In</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer><span data-i18n="login_footer">© 2026 XFINLAB — AI Investment Intelligence</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></footer>
+
+<script>
+const API = "https://api.xfinlab.com/api";
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+let captchaMounted = false;
+// 2026-07-26 referral system: `?ref=CODE` from a shared referral link
+// (see api/referral.py's /referral/code) is picked up in loadLoginMethods()
+// below and stashed here, then sent along with the register() call so
+// backend/auth/auth.py can credit both sides via
+// services/referral_service.py -- see the "準確連接" fix: the link now
+// auto-opens the Register tab instead of just landing on Sign In.
+let referralCode = null;
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  hideMessages();
+  // Lazy-mount the slide-puzzle captcha only when the Register tab is
+  // actually shown, so signed-in-only visitors never trigger the
+  // /api/captcha/challenge fetch for nothing.
+  if (tab === 'register' && !captchaMounted && typeof window.XFLCaptcha !== 'undefined') {
+    window.XFLCaptcha.mount('captchaWidget');
+    captchaMounted = true;
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('successMsg').style.display = 'none';
+}
+
+function showSuccess(msg) {
+  const el = document.getElementById('successMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+function hideMessages() {
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('successMsg').style.display = 'none';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { showError(t('login_err_fill_fields','Please fill in all fields')); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = t('login_signing_in','Signing in...');
+
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.detail || t('login_err_login_failed','Login failed')); return; }
+
+    localStorage.setItem('xfinlab_token', data.token);
+    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan, avatar_gender: data.avatar_gender, oauth_provider: data.oauth_provider, name_is_custom: data.name_is_custom}));
+    showSuccess(t('login_success_login','Login successful! Redirecting...'));
+    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+  } catch(e) {
+    showError(t('login_err_connection','Connection error. Make sure API is running.'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('login_tab_signin','Sign In');
+  }
+}
+
+async function handleRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  if (!name || !email || !password) { showError(t('login_err_fill_fields','Please fill in all fields')); return; }
+  if (password.length < 6) { showError(t('login_err_password_length','Password must be at least 6 characters')); return; }
+
+  const captchaToken = (typeof window.XFLCaptcha !== 'undefined') ? window.XFLCaptcha.getVerifyToken() : null;
+  if (!captchaToken) { showError(t('captcha_required','Please slide to verify you\'re not a robot')); return; }
+
+  // 2026-07-24 anti-abuse batch: self-hosted device fingerprint (js/
+  // device-fingerprint.js) sent alongside the registration so services/
+  // risk_score_service.py can spot the same browser being reused across
+  // several signups. Best-effort -- XFLFingerprint.get() always resolves
+  // (never rejects), and an empty string just means "no signal" server-side.
+  const deviceFingerprint = (typeof window.XFLFingerprint !== 'undefined') ? await window.XFLFingerprint.get() : '';
+
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true;
+  btn.textContent = t('login_creating_account','Creating account...');
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, email, password, captcha_token: captchaToken, device_fingerprint: deviceFingerprint, ref_code: referralCode})
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.detail || t('login_err_register_failed','Registration failed'));
+      // Captcha tokens are single-purpose/short-lived -- reset the widget
+      // so the visitor can solve a fresh challenge for their next attempt
+      // regardless of whether THIS failure was captcha-related.
+      if (typeof window.XFLCaptcha !== 'undefined') window.XFLCaptcha.reset();
+      return;
+    }
+
+    // 2026-07-24: a risk-flagged registration (services/risk_score_
+    // service.py) comes back with requires_verification=true and a
+    // deliberately empty token -- there is nothing usable to log in
+    // with yet, so don't touch localStorage or redirect to the
+    // dashboard. The account exists and a verification email was sent
+    // (same email_verification.py flow as every other registration);
+    // the person just has to click that link before they can sign in.
+    if (data.requires_verification) {
+      showSuccess(t('login_success_register_verify_required', 'Account created! Please check your email and click the verification link before signing in.'));
+      if (typeof window.XFLCaptcha !== 'undefined') window.XFLCaptcha.reset();
+      return;
+    }
+
+    localStorage.setItem('xfinlab_token', data.token);
+    localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan, avatar_gender: data.avatar_gender, oauth_provider: data.oauth_provider, name_is_custom: data.name_is_custom}));
+    // 2026-08-25 (AJ: "新用戶第一次登入 → 強制走一次30秒流程"): UserResponse
+    // carries no created_at/is_new_user field for dashboard.html to detect
+    // "this is genuinely their first visit" server-side, so this is set
+    // client-side at the one moment we know for certain -- right after a
+    // brand-new account is created (never set on the login() path below,
+    // only here). dashboard.html checks + clears this on its first load.
+    localStorage.setItem('xfinlab_needs_onboarding', '1');
+    showSuccess(t('login_success_register','Account created! Redirecting...'));
+    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+  } catch(e) {
+    showError(t('login_err_connection','Connection error. Make sure API is running.'));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('login_btn_create','Create Account');
+  }
+}
+
+// task #333: Google/LINE/WhatsApp login. Each block only appears once
+// /api/auth/login-methods confirms its feature flag is on (all 3 default
+// OFF -- see api/admin.py's _DEFAULT_FLAGS -- until manually enabled in
+// the admin panel once the necessary env vars/console setup are done).
+function finishSocialLogin(data) {
+  localStorage.setItem('xfinlab_token', data.token);
+  localStorage.setItem('xfinlab_user', JSON.stringify({id: data.id, email: data.email, name: data.name, plan: data.plan}));
+  showSuccess(t('login_success_login', 'Login successful! Redirecting...'));
+  setTimeout(() => window.location.href = 'dashboard.html', 800);
+}
+
+function handleGoogleCredential(response) {
+  fetch(`${API}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential: response.credential }),
+  })
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) { showError(data.detail || t('login_err_login_failed', 'Login failed')); return; }
+      finishSocialLogin(data);
+    })
+    .catch(() => showError(t('login_err_connection', 'Connection error. Make sure API is running.')));
+}
+
+function startLineLogin() {
+  window.location.href = `${API}/auth/line/start`;
+}
+
+async function sendWhatsAppOtp() {
+  const phone = document.getElementById('waPhone').value.trim();
+  if (!phone) { showError(t('login_whatsapp_err_phone', 'Please enter your WhatsApp number')); return; }
+  const btn = document.getElementById('waSendBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/auth/whatsapp/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.detail || t('login_whatsapp_err_send', 'Could not send code')); return; }
+    showSuccess(data.message || t('login_whatsapp_sent', 'Code sent! Check WhatsApp.'));
+    document.getElementById('waCodeGroup').style.display = 'block';
+    document.getElementById('waVerifyBtn').style.display = 'block';
+  } catch (e) {
+    showError(t('login_err_connection', 'Connection error. Make sure API is running.'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function verifyWhatsAppOtp() {
+  const phone = document.getElementById('waPhone').value.trim();
+  const code = document.getElementById('waCode').value.trim();
+  if (!code) { showError(t('login_whatsapp_err_code', 'Please enter the code you received')); return; }
+  const btn = document.getElementById('waVerifyBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/auth/whatsapp/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.detail || t('login_whatsapp_err_verify', 'Verification failed')); return; }
+    finishSocialLogin(data);
+  } catch (e) {
+    showError(t('login_err_connection', 'Connection error. Make sure API is running.'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadLoginMethods() {
+  // Pick up a completed LINE redirect-flow login/error from the URL
+  // first (LINE is a full-page redirect, unlike Google's in-page popup).
+  const params = new URLSearchParams(window.location.search);
+  const socialToken = params.get('social_token');
+  const socialError = params.get('social_error');
+
+  // 2026-07-26 referral system: a shared referral link points here as
+  // `login.html?ref=CODE` -- auto-switch to the Register tab (without
+  // relying on switchTab()'s `event.target`, since there's no click event
+  // to read here) so a new visitor lands directly on the signup form
+  // instead of Sign In, then carries the code through to handleRegister().
+  const refCode = params.get('ref');
+  if (refCode) referralCode = refCode;
+
+  // 2026-08-01 ("start free 入果頁 好似無用咁"): index.html's "Start Free"
+  // hero CTA was linking here with no signal at all, so anonymous visitors
+  // landed on the Sign In tab -- i.e. a "free" button that asked existing
+  // users to log in, with zero visible signup form. index.html now appends
+  // `?intent=register`; reuse the exact same tab-switch as the referral
+  // flow above so both paths share one code path.
+  if (refCode || params.get('intent') === 'register') {
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    if (!captchaMounted && typeof window.XFLCaptcha !== 'undefined') {
+      window.XFLCaptcha.mount('captchaWidget');
+      captchaMounted = true;
+    }
+  }
+
+  if (socialToken) {
+    // We only get a bare JWT back from the redirect (no id/email/name --
+    // those would leak into browser history/referrer headers via the
+    // URL), so fetch the profile the same way an existing session would.
+    try {
+      const res = await fetch(`${API}/auth/me?token=${encodeURIComponent(socialToken)}`);
+      const profile = await res.json();
+      if (res.ok) {
+        finishSocialLogin({ token: socialToken, id: profile.id, email: profile.email, name: profile.name, plan: profile.plan, avatar_gender: profile.avatar_gender, oauth_provider: profile.oauth_provider, name_is_custom: profile.name_is_custom });
+      }
+    } catch (e) { /* fall through to normal login form */ }
+    history.replaceState(null, '', window.location.pathname);
+  } else if (socialError) {
+    showError(t('login_line_err_' + socialError, 'LINE login failed. Please try again.'));
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  try {
+    const res = await fetch(`${API}/auth/login-methods`);
+    const cfg = await res.json();
+    // 2026-07-30: Google + LINE now live in their own block above the form
+    // (socialLoginTop); WhatsApp OTP stays in the original block below the
+    // form (socialLoginSection). Tracked separately so each block only
+    // reveals itself (and its own "or" divider) when it actually has
+    // something to show.
+    let anyShownTop = false;
+    let anyShownBottom = false;
+
+    if (cfg.line_login) {
+      document.getElementById('lineLoginBtn').style.display = 'block';
+      anyShownTop = true;
+    }
+    if (cfg.whatsapp_otp) {
+      document.getElementById('whatsappOtpBlock').style.display = 'block';
+      anyShownBottom = true;
+    }
+    if (cfg.google_login && cfg.google_client_id && typeof google !== 'undefined' && google.accounts) {
+      document.getElementById('googleLoginBlock').style.display = 'flex';
+      google.accounts.id.initialize({ client_id: cfg.google_client_id, callback: handleGoogleCredential });
+      google.accounts.id.renderButton(document.getElementById('googleLoginBlock'), { theme: 'outline', size: 'large', width: 280 });
+      anyShownTop = true;
+    }
+    if (anyShownTop) document.getElementById('socialLoginTop').style.display = 'block';
+    if (anyShownBottom) document.getElementById('socialLoginSection').style.display = 'block';
+  } catch (e) { /* social login blocks just stay hidden */ }
+}
+loadLoginMethods();
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const loginVisible = document.getElementById('loginForm').style.display !== 'none';
+    loginVisible ? handleLogin() : handleRegister();
+  }
+});
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+</body>
+</html>

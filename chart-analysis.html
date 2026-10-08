@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — Chart Engine™ AI K線圖分析</title>
+<meta name="description" content="AI K線圖分析 — 搜尋任何全球代號，即時支撐/阻力/型態識別同技術指標分析。">
+<link rel="canonical" href="https://www.xfinlab.com/chart-analysis.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="AI K線圖分析 — XFINLAB">
+<meta property="og:description" content="AI K線圖分析 — 搜尋任何全球代號，即時支撐/阻力/型態識別同技術指標分析。">
+<meta property="og:url" content="https://www.xfinlab.com/chart-analysis.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+<script src="js/ai-loading.js"></script>
+<script src="js/prob-display.js"></script>
+<script src="js/decision-footer.js"></script>
+<script src="js/broker-cta.js"></script>
+<script src="js/share-tools.js"></script>
+<style>
+/* Page-specific small adjustments while fully using site style */
+/* 2026-08-18: removed the local .container max-width override that used
+   to live here (was 1000px) -- css/style.css's shared .container is now
+   1160px site-wide (AJ: "所有功能頁跟"), so this page just inherits it
+   like every other feature page instead of carrying its own value. */
+.upload-hint{color:var(--text3);font-size:0.9rem;margin-top:0.6rem;text-align:center}
+.meta-line{font-size:0.82rem;color:var(--text2);margin-top:0.5rem}
+.analysis-section{margin-top:1.2rem;display:grid;grid-template-columns:1fr 320px;gap:1rem}
+.analysis-section.single-col{grid-template-columns:1fr}
+.analysis-main{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.result-row{display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.6rem 0;border-bottom:1px dashed var(--border2)}
+.result-label{color:var(--text3);flex-shrink:0}
+.result-value{font-weight:600;color:var(--text);min-width:0;overflow-wrap:break-word;word-break:break-word;text-align:right}
+/* 2026-07-19 fix: no gap + no min-width/word-break on the flex children
+   meant a longer result-value string (e.g. a full English confidence
+   sentence once AI replies started following site language, or the
+   Chinese confluence summary) couldn't shrink or wrap -- it either burst
+   past the card's right edge on narrow screens, or squeezed flush
+   against the label with no breathing room ("文字穿出超越框",
+   "資訊貼埋一齊"). On phones/iPad portrait, stack label above value
+   instead of forcing them onto one cramped row. */
+@media(max-width:480px){
+  .result-row{flex-direction:column;align-items:flex-start;gap:0.2rem}
+  .result-value{text-align:left}
+}
+.pattern-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-top:0.6rem}
+.pattern-item{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.6rem;text-align:center}
+/* 2026-07-27 Q&A card redesign ("每個的字分上下題及答顯示，置中框內"):
+   pattern name = question (top line), verdict = answer (bottom line),
+   both centered inside a bordered box. font-size is set per-element by
+   fitCardText() in JS (shrink-to-fit for long text in any language), so
+   only the max/min bounds and box layout live here in CSS. */
+.pattern-qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-top:0.6rem}
+.pattern-qa-card{background:var(--navy3);border:1px solid var(--border2);border-radius:8px;padding:0.65rem 0.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;min-height:78px;text-align:center}
+.pattern-qa-q{display:block;width:100%;color:var(--text2);font-weight:600;line-height:1.25;overflow-wrap:break-word}
+.pattern-qa-a{display:block;width:100%;font-weight:700;line-height:1.25;overflow-wrap:break-word}
+.pattern-qa-a.is-possible{color:var(--green,#16A34A)}
+.pattern-qa-a.is-not-possible{color:var(--text3)}
+.pattern-qa-a.is-unclear{color:var(--text2)}
+/* 2026-08-18 (AJ: "UI 介面好悶" -- pattern-details redesign, option A
+   "重點式": detected patterns get their own prominent row; the other
+   ~17 (mostly 不可能/不明, same visual weight as detected in the old
+   19-card flat grid) collapse into a <details> so the page leads with
+   what was actually found instead of a wall of near-identical gray
+   cards. No fabricated confidence numbers added -- still the same
+   honest 可能/不可能/不明 verdicts from chart_pattern_service.py, just
+   restructured by visual priority. */
+.pattern-detected-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.6rem;margin-top:0.6rem}
+.pattern-detected-card{background:var(--navy3);border:1.5px solid var(--green,#16A34A);border-radius:8px;padding:0.7rem 0.8rem;display:flex;align-items:center;gap:0.6rem}
+.pattern-detected-dot{width:8px;height:8px;border-radius:50%;background:var(--green,#16A34A);flex-shrink:0}
+.pattern-detected-name{font-weight:700;color:var(--text);line-height:1.3;overflow-wrap:break-word}
+.pattern-detected-verdict{font-size:0.78rem;color:var(--green,#16A34A);margin-top:0.1rem}
+.pattern-none-detected{color:var(--text3);font-size:0.85rem;padding:0.4rem 0;margin:0}
+.pattern-rest-details{margin-top:0.7rem}
+.pattern-rest-details summary{cursor:pointer;font-size:0.8rem;color:var(--text2);font-weight:600;list-style:none}
+.pattern-rest-details summary::-webkit-details-marker{display:none}
+.pattern-rest-details summary::after{content:" ▾"}
+.pattern-rest-details[open] summary::after{content:" ▴"}
+.pattern-rest-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.6rem}
+.pattern-rest-pill{font-size:0.72rem;padding:0.25rem 0.55rem;border-radius:6px;background:var(--navy3);border:1px solid var(--border2)}
+.pattern-rest-pill.is-not-possible{color:var(--text3)}
+.pattern-rest-pill.is-unclear{color:var(--text2)}
+.education{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:1rem}
+@media(max-width:980px){.analysis-section{grid-template-columns:1fr}}
+.tf-btn{background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.3rem 0.7rem;border-radius:5px;cursor:pointer;font-size:0.78rem;font-family:inherit}
+.tf-btn.active{background:var(--accent-blue);border-color:var(--accent-blue);color:#fff}
+.tf-btn:disabled{opacity:0.5;cursor:not-allowed}
+.pattern-toggle-pill{display:inline-flex;align-items:center;gap:5px;background:var(--navy2);border:1px solid var(--border2);color:var(--text2);padding:0.25rem 0.6rem;border-radius:999px;cursor:pointer;font-size:0.74rem;font-family:inherit;opacity:0.55}
+.pattern-toggle-pill.active{opacity:1;color:var(--text);border-color:var(--pill-color,var(--accent-blue))}
+.pattern-toggle-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--pill-color,var(--accent-blue));flex-shrink:0}
+.btn-secondary:disabled{opacity:0.5;cursor:not-allowed}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">Chart Engine™</div>
+  <h1 class="page-title" data-i18n="ca_title">AI K線圖分析</h1>
+  <p class="page-sub" data-i18n="ca_sub_search">打入任何全球代號，AI 即刻用真實歷史數據畫出K線圖同技術分析。</p>
+
+  <!-- 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用" --
+       completely remove the upload-screenshot feature, confirmed via
+       clarifying question). This used to be a 2-tab bar (search /
+       upload); now search is the only mode, so the tab bar itself is
+       gone -- the search panel below is simply always visible. -->
+
+  <div class="panel" id="searchPanel">
+    <label class="input-label" for="tickerSearchInput" data-i18n="ca_search_label">股票代號</label>
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
+      <input id="tickerSearchInput" type="text" data-i18n-placeholder="ca_search_placeholder" placeholder="例如 AAPL、0700.HK、BTC" style="flex:1;min-width:200px;padding:0.5rem 0.6rem;border-radius:6px;border:1px solid var(--border2);background:var(--navy3);color:var(--text)">
+      <button class="primary-btn" id="searchBtn" onclick="runTickerSearch()" data-i18n="ca_search_btn">🔍 分析</button>
+    </div>
+    <div class="upload-hint" id="tickerTypeHint" style="margin-top:0.4rem;min-height:1.1em"></div>
+    <div class="upload-hint" style="margin-top:0.2rem" data-i18n="ca_search_hint">支援全球代號：美股（AAPL）、港股（0700 或 0700.HK）、A股（600519）、加密貨幣（BTC）</div>
+  </div>
+
+  <div id="searchErrorBanner" style="display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid var(--accent-red,#DC2626);color:var(--accent-red,#DC2626);font-size:0.85rem"></div>
+
+  <div class="panel" id="klineChartPanel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem">
+      <h4 style="margin:0" data-i18n="ca_tv_title">K線圖</h4>
+      <div id="klineTfRow" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    </div>
+    <div id="patternToggleRow" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:0.6rem"></div>
+    <div id="klineChart" style="height:460px"></div>
+  </div>
+
+  <div class="analysis-section single-col" id="analysisSection">
+    <div class="analysis-main">
+      <div id="resultContent">
+      <h3 style="margin-top:0" data-i18n="ca_result_title">AI 分析結果 <span class="meta-line" id="dataSourceTag" style="display:inline;margin-left:0.4rem"></span></h3>
+
+      <div class="result-row"><div class="result-label" data-i18n="ca_trend">趨勢方向</div><div class="result-value" id="trendValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_support">支撐位</div><div class="result-value" id="supportValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_resistance">阻力位</div><div class="result-value" id="resistanceValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_fib">0.618 回調位</div><div class="result-value" id="fibValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_confluence">綜合訊號（Confluence）</div><div class="result-value" id="confluenceValue">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_volume_zone">關鍵成交量區</div><div class="result-value" id="volumeZone">-</div></div>
+      <div class="result-row"><div class="result-label">RSI</div><div class="result-value" id="rsiValue">-</div></div>
+      <div class="result-row"><div class="result-label">MACD</div><div class="result-value" id="macdValue">-</div></div>
+      <div class="result-row" id="patternSummaryRow"><div class="result-label" data-i18n="ca_pattern_summary">型態辨識</div><div class="result-value" id="patternSummary">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_risk_tips">風險提示</div><div class="result-value" id="riskTips">-</div></div>
+      <div class="result-row"><div class="result-label" data-i18n="ca_recommendation">建議</div><div class="result-value" id="recommendationValue">-</div></div>
+
+      <div id="patternBlock">
+      <h4 style="margin-top:0.8rem" data-i18n="ca_pattern_detail_title">型態詳情</h4>
+      <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_pattern_low_confidence_note">杯柄形／菱形／ABC修正浪／旗形／尖旗形嘅判斷主觀性較大，僅供參考</p>
+      <!-- 2026-07-27 Q&A card redesign: content is now built entirely by
+           renderPatternDetails() in JS (question=pattern name on top,
+           answer=verdict below, centered, auto-shrinking font via
+           fitCardText()) -- see PATTERN_KEYS/renderPatternDetails below.
+           Left empty here; populated on page load and after every
+           search/timeframe-switch. -->
+      <div class="pattern-detected-grid" id="patternDetectedGrid"></div>
+      <p class="pattern-none-detected" id="patternNoneDetected" style="display:none" data-i18n="ca_pattern_none_detected">今次未有偵測到明確嘅型態——按下面展開查看已檢查嘅全部19種。</p>
+      <details class="pattern-rest-details" id="patternRestDetails" style="display:none">
+        <summary id="patternRestSummary"></summary>
+        <div class="pattern-rest-list" id="patternRestList"></div>
+      </details>
+      </div>
+
+      <div id="marketStructureBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_ms_title">市場結構（Market Structure）</h4>
+        <div class="result-row"><div class="result-label" data-i18n="ca_ms_prior">先前結構</div><div class="result-value" id="msPriorStructure">-</div></div>
+        <!-- 2026-07-30 addition (Market Structure Engine V2): quantified
+             0-100 sub-engine scores, replacing the old boolean-only read.
+             Hidden when data.market_structure has no score fields (e.g. an
+             older cached response) so this degrades gracefully. -->
+        <div class="pattern-qa-grid" id="msScoreGrid" style="margin-top:0.5rem;display:none"></div>
+        <!-- 2026-07-30 addition: Order Flow / Volume Profile / Institutional
+             Footprint. These 3 are OHLCV-only APPROXIMATIONS (no real
+             order-book/tick/dark-pool data available to this codebase) --
+             kept in their own grid with a distinct disclosure line so they
+             are never confused with the 6 primary calibrated-weight scores
+             above. Hidden entirely when the backend sends no proxy data. -->
+        <div class="pattern-qa-grid" id="msProxyGrid" style="margin-top:0.5rem;display:none"></div>
+        <div id="msEvents" style="margin-top:0.4rem"></div>
+      </div>
+
+      <div id="mtfBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_mtf_title">跨時間框架（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_mtf_hint">比較週線/日線/1小時嘅趨勢是否一致（非必需，主動按先會查）</p>
+        <button class="btn-secondary" id="mtfBtn" onclick="requestMultiTimeframe()" data-i18n="ca_mtf_btn" style="border-color:var(--blue,#D35400)">📊 查看跨時間框架</button>
+        <div id="mtfResult" style="margin-top:0.6rem"></div>
+      </div>
+
+      <div id="backtestBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_backtest_title">策略歷史回測（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_backtest_hint">用真實歷史數據回測幾種策略嘅過往勝率／回報／回撤（非必需，主動按先會查；細樣本統計學上唔可靠，過去表現不代表未來）</p>
+        <button class="btn-secondary" id="backtestBtn" onclick="requestBacktestCompare()" data-i18n="ca_backtest_btn" style="border-color:var(--blue,#D35400)">🧪 回測比較策略</button>
+        <div id="backtestResult" style="margin-top:0.6rem"></div>
+      </div>
+
+      <!-- Regime Router (P3 of the Quant Research Factory roadmap, 2026-08-10):
+           same button-triggered lazy-fetch pattern as Multi-Timeframe/Backtest
+           above. Shows the current causal market regime (fast live call) plus
+           whichever composed signal combo (services/formula_composer_service.py)
+           has historically performed best in that same regime, per services/
+           regime_router_service.py. Coverage of the "best combo" half grows as
+           the scheduled scan job works through the platform's core symbol
+           universe, so this honestly shows "not enough data yet" for most
+           tickers not yet scanned rather than faking a result. -->
+      <div id="regimeRouterBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_regime_router_title">市況配對 Regime Router（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_regime_router_hint">睇下現時市況同歷史上邊個訊號組合表現最好（非必需，主動按先會查；歷史統計，唔係投資建議）</p>
+        <button class="btn-secondary" id="regimeRouterBtn" onclick="requestRegimeRouter()" data-i18n="ca_regime_router_btn" style="border-color:var(--blue,#D35400)">🧭 查看市況配對</button>
+        <div id="regimeRouterResult" style="margin-top:0.6rem"></div>
+      </div>
+
+      <div id="aiCommentaryBlock" style="display:none">
+        <h4 style="margin-top:0.8rem" data-i18n="ca_ai_commentary_title">AI 文字解讀（選填）</h4>
+        <p class="upload-hint" style="margin:-0.2rem 0 0.6rem" data-i18n="ca_ai_commentary_hint">型態辨識需要截圖先做到；呢度可以叫AI將上面嘅真實數據寫成一段易讀總結（非必需，主動按先會叫AI）</p>
+        <button class="btn-secondary" id="commentaryBtn" onclick="requestAiCommentary()" data-i18n="ca_ai_commentary_btn" style="border-color:var(--blue,#D35400)">🤖 產生AI文字解讀</button>
+        <p class="meta-line" id="commentaryResult" style="margin-top:0.6rem"></p>
+      </div>
+
+      <div class="education">
+        <h4 data-i18n="ca_edu_title">AI 教育：指標說明</h4>
+        <p><strong data-i18n="ca_edu_support_term">支撐位</strong><span data-i18n="ca_edu_support_desc">：價格下跌時多方可能出現買盤的位置，若跌破可能轉為賣壓。</span></p>
+        <p><strong data-i18n="ca_edu_resistance_term">阻力位</strong><span data-i18n="ca_edu_resistance_desc">：價格上漲時空方可能出現的賣壓位置，若突破可能帶來延續上漲。</span></p>
+        <p><strong data-i18n="ca_edu_invalid_term">型態失效條件</strong><span data-i18n="ca_edu_invalid_desc">：當價格反向穿越關鍵頸線或支撐/阻力，原先型態將被視為失效。</span></p>
+      </div>
+
+      <div id="decisionFooter"></div>
+      <div id="brokerCta"></div>
+      <button class="btn-secondary" id="downloadReportBtn" type="button" data-i18n="report_download_pdf" style="display:none;margin-top:0.6rem">📄 下載 PDF 報告</button>
+      </div>
+
+      <div id="shareBar"></div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="ca_footer_note">AI K線圖分析</span> · <a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script>
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): the
+// drag/drop upload widget + handleFiles() image-reader that used to live
+// here are gone along with the rest of upload-screenshot mode. t()/
+// CA_DIRECTION_MAP/CA_CONFIDENCE_MAP below are still used by the search-
+// mode result rendering further down this file, so they stay.
+function t(key, fallback){
+  return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback;
+}
+// 2026-07-20 fix (task #282, "選英文重係顯示好多中文字"): the Confluence
+// Engine's direction/confidence come back from the backend as fixed
+// Chinese business-logic strings (services/technical_analysis_service.py
+// literally compares against "偏多"/"偏空" internally, so those values
+// can't just be changed without risking the backend's own logic) --
+// translate them here at the display boundary only, same as ai-analysis.html
+// already does for regime_* codes.
+const CA_DIRECTION_MAP = {'偏多': 'ca_dir_bullish', '偏空': 'ca_dir_bearish', '訊號分歧，中性': 'ca_dir_neutral', '數據不足': 'ca_dir_insufficient'};
+const CA_CONFIDENCE_MAP = {'高': 'ca_conf_high', '中': 'ca_conf_mid', '低': 'ca_conf_low'};
+function caDirectionLabel(direction){
+  const key = CA_DIRECTION_MAP[direction];
+  return key ? t(key, direction) : direction;
+}
+function caConfidenceLabel(confidence){
+  const key = CA_CONFIDENCE_MAP[confidence];
+  return key ? t(key, confidence) : confidence;
+}
+const API = 'https://api.xfinlab.com/api';
+
+// Analytics tracking (same pattern as dashboard.html) — Chart Analysis
+// usage was previously invisible in the admin dashboard's DAU/MAU/
+// trending stats because this page never called /analytics/track.
+const SESSION_ID = Math.random().toString(36).substring(2);
+
+async function trackEvent(event_type, event_data = null) {
+  // 2026-07-20: respect the cookie-consent banner's "Essential Only"
+  // choice (js/cookie-consent.js) -- skip the analytics POST entirely if
+  // the visitor declined, instead of the decline being purely cosmetic.
+  if (typeof window.XFLConsent === 'object' && !window.XFLConsent.hasAnalyticsConsent()) return;
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    await fetch(`${API}/analytics/track`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        event_type,
+        event_data,
+        token,
+        session_id: SESSION_ID,
+        page: 'chart-analysis'
+      })
+    });
+  } catch(e) {}
+}
+
+trackEvent('page_view', {page: 'chart-analysis'});
+
+// ---- Global ticker search mode: real OHLC + indicators, no screenshot ----
+// needed. Same normalizeGlobalTicker() rules used on the homepage's demo
+// ticker input, copied here so this page works standalone.
+const GLOBAL_TICKER_CRYPTO_SYMBOLS = ['BTC','ETH','SOL','BNB','XRP','DOGE','ADA','DOT','AVAX','LTC','LINK','MATIC','SHIB','TRX','ATOM'];
+function normalizeGlobalTicker(raw) {
+  let s = (raw || '').trim().toUpperCase();
+  if (!s) return s;
+  if (s.includes('.') || s.includes('-') || s.includes('=')) return s;
+  if (/^\d+$/.test(s)) {
+    // 2026-07-19 fix: was gated to length===4||5, so common HK shorthand
+    // like "700" (Tencent, usually written 0700.HK) or "5" (HSBC,
+    // 0005.HK) fell through UNNORMALIZED to the length<=5 branch below
+    // and got sent to the backend as literal "700"/"5" -- which yfinance
+    // can't resolve, giving a real "歷史數據不足" error that looked like
+    // a broken HK-stock feature. Confirmed live: /chart-search/700 errored
+    // while /chart-search/0700.HK worked. Now any 1-5 digit numeric input
+    // is treated as an HK code (Yahoo's HK convention is 4-digit
+    // zero-padded), same as it already did for 4/5-digit input.
+    if (s.length <= 5) return s.padStart(4, '0') + '.HK';
+    if (s.length === 6) {
+      const first = s[0];
+      if (first === '6') return s + '.SS';
+      if (first === '0' || first === '3') return s + '.SZ';
+    }
+    return s;
+  }
+  if (/^[A-Z]+$/.test(s) && GLOBAL_TICKER_CRYPTO_SYMBOLS.includes(s)) return s + '-USD';
+  return s;
+}
+
+let currentSearchSymbol = null;
+
+// 2026-07-25 ("自行建可顯示任何資產嘅K線圖，不用TradingView"): self-hosted
+// candlestick chart using Lightweight Charts (a free, open-source,
+// no-API-key charting library) instead of the TradingView iframe embed.
+// Renders straight from res.ohlc -- the same real historical data already
+// driving the Support/Resistance/RSI/MACD numbers below -- so it works
+// for literally any ticker this page's /api/chart-search endpoint can
+// resolve, with no dependency on matching TradingView's own
+// EXCHANGE:SYMBOL naming convention.
+let klineChart = null;
+let klineSeries = null;
+let klineVolumeSeries = null;
+let klineCurrentSymbol = null;
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+// 2026-07-25 ("時間選擇 年月日4小時1小時30分鐘15分鐘1分鐘"): timeframe
+// selector for the self-hosted chart. "年"(Yearly) and "4小時"(4-Hour) have
+// NO native bar on either yfinance or Alpaca (see the "never fabricate
+// data" comment in services/technical_analysis_service.py) -- fabricating
+// them by resampling finer candles would mean presenting synthetic bars as
+// if they were real exchange-published ones, which this codebase
+// deliberately never does. Per user's own resolution ("如實用最近似原生
+// 框架代替"), Yearly is honestly replaced with Quarterly (3mo bars, the
+// coarsest real bar above Monthly) and 4-Hour is dropped since 1-Hour
+// already covers that need -- every button below maps to a REAL
+// exchange-published bar size, none synthesized. period/interval pairs
+// reuse the exact combos already proven safe elsewhere in this codebase
+// (see MULTI_TIMEFRAMES in technical_analysis_service.py) wherever one
+// already exists, to stay well inside yfinance's per-interval lookback
+// caps (1m~7d, 15m/30m~60d, 1h~2y, 1d/1mo/3mo effectively uncapped).
+const KLINE_TIMEFRAMES = [
+  { period: '10y', interval: '3mo', i18n: 'ca_tf_quarter', fallback: '季度' },
+  { period: '10y', interval: '1mo', i18n: 'ca_tf_month', fallback: '月' },
+  { period: '6mo', interval: '1d', i18n: 'ca_tf_day', fallback: '日', isDefault: true },
+  { period: '5d', interval: '1h', i18n: 'ca_tf_hour', fallback: '1小時' },
+  { period: '1mo', interval: '30m', i18n: 'ca_tf_30m', fallback: '30分鐘' },
+  { period: '1mo', interval: '15m', i18n: 'ca_tf_15m', fallback: '15分鐘' },
+  { period: '5d', interval: '1m', i18n: 'ca_tf_1m', fallback: '1分鐘' },
+];
+
+function ensureKlineChart() {
+  const container = document.getElementById('klineChart');
+  if (!container) return;
+  if (klineChart) { klineChart.remove(); klineChart = null; klineSeries = null; klineVolumeSeries = null; }
+  klineChart = LightweightCharts.createChart(container, {
+    layout: { background: { color: 'transparent' }, textColor: cssVar('--text3', '#94a3b8') },
+    grid: {
+      vertLines: { color: 'rgba(148,163,184,0.08)' },
+      horzLines: { color: 'rgba(148,163,184,0.08)' },
+    },
+    timeScale: { borderVisible: false },
+    rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.1, bottom: 0.28 } },
+    autoSize: true,
+  });
+  klineSeries = klineChart.addCandlestickSeries({
+    upColor: cssVar('--green', '#16A34A'),
+    downColor: cssVar('--red', '#DC2626'),
+    borderVisible: false,
+    wickUpColor: cssVar('--green', '#16A34A'),
+    wickDownColor: cssVar('--red', '#DC2626'),
+  });
+  // 成交量 (volume): plotted as a histogram sharing the same chart/time
+  // axis but pinned to its own bottom price scale (scaleMargins) so it
+  // reads as a separate pane under the candles rather than overlapping
+  // them -- the standard Lightweight Charts volume-pane idiom.
+  klineVolumeSeries = klineChart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'kline-volume',
+  });
+  klineChart.priceScale('kline-volume').applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
+}
+
+function buildKlineTfButtons(symbol) {
+  const row = document.getElementById('klineTfRow');
+  if (!row) return;
+  row.innerHTML = '';
+  KLINE_TIMEFRAMES.forEach(tf => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tf-btn' + (tf.isDefault ? ' active' : '');
+    btn.textContent = t(tf.i18n, tf.fallback);
+    btn.onclick = () => setKlineTimeframe(symbol, tf, btn);
+    row.appendChild(btn);
+  });
+}
+
+async function setKlineTimeframe(symbol, tf, btnEl) {
+  if (!klineSeries || !klineVolumeSeries) return;
+  const row = document.getElementById('klineTfRow');
+  if (row) Array.from(row.children).forEach(b => { b.classList.remove('active'); b.disabled = true; });
+  if (btnEl) btnEl.classList.add('active');
+  try {
+    const _sklang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const resp = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}?period=${encodeURIComponent(tf.period)}&interval=${encodeURIComponent(tf.interval)}${_sklang ? '&lang=' + encodeURIComponent(_sklang) : ''}`);
+    const json = await resp.json();
+    if (json.status === 'ok' && json.data && json.data.ohlc && json.data.ohlc.length) {
+      // Only the candle/volume data changes with the timeframe -- the
+      // support/resistance/entry/stop/take-profit price lines stay as
+      // originally computed (they're a longer-horizon trade plan, not
+      // something that should jump around every time someone peeks at a
+      // 1-minute view).
+      setKlineOhlcData(json.data.ohlc);
+
+      // 2026-07-26 fix ("不同時間都加入PATTERN"): patterns are DIFFERENT
+      // from support/resistance/decision-levels above -- a "double top" on
+      // the daily chart and one on the 15-minute chart are genuinely
+      // different shapes on different swing points, so unlike the
+      // longer-horizon trade plan, patterns SHOULD be recomputed per
+      // timeframe. json.data.patterns/pattern_points here are already
+      // freshly computed by services/chart_pattern_service.py for this
+      // exact period/interval (chart-search always computes them, see
+      // technical_analysis_service.get_analysis()) -- just wire them in.
+      const tfPatterns = json.data.patterns || {};
+      const tfPatternCount = Object.values(tfPatterns).filter(p => p === '可能').length;
+      safeSetText('patternSummary', tfPatternCount > 0
+        ? t('ca_pattern_detected_search','根據真實走勢幾何運算，偵測到若干可能型態')
+        : t('ca_pattern_not_detected_search','根據真實走勢幾何運算，未偵測到明顯型態'));
+      renderPatternDetails(tfPatterns, json.data.pattern_directions || {});
+      drawPatternOverlays(json.data.pattern_points || {});
+    }
+  } catch (e) {
+    console.error('[chart-analysis] timeframe switch failed', e);
+  } finally {
+    if (row) Array.from(row.children).forEach(b => { b.disabled = false; });
+  }
+}
+
+function setKlineOhlcData(ohlc) {
+  if (!klineSeries || !klineVolumeSeries) return;
+  klineSeries.setData(ohlc.map(b => ({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close })));
+  klineVolumeSeries.setData(ohlc.map(b => ({
+    time: b.time,
+    value: b.volume || 0,
+    color: b.close >= b.open ? cssVar('--green', '#16A34A') : cssVar('--red', '#DC2626'),
+  })));
+  klineChart.timeScale().fitContent();
+}
+
+function renderKlineChart(res) {
+  if (!klineSeries) return;
+  klineCurrentSymbol = currentSearchSymbol;
+  setKlineOhlcData(res.ohlc);
+  buildKlineTfButtons(klineCurrentSymbol);
+
+  // Overlay the same real support/resistance/entry/stop/take-profit
+  // levels shown as text in the result rows below, directly on the chart
+  // as horizontal price lines -- previously these only existed as
+  // numbers, now they're visible against the actual price action.
+  (klineSeries._xflLines || []).forEach(l => klineSeries.removePriceLine(l));
+  klineSeries._xflLines = [];
+  const addLine = (price, color, title) => {
+    if (price == null || isNaN(price)) return;
+    klineSeries._xflLines.push(klineSeries.createPriceLine({
+      price, color, lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed,
+      axisLabelVisible: true, title,
+    }));
+  };
+  if (res.support && res.support.level != null) addLine(res.support.level, cssVar('--green', '#16A34A'), t('ca_support', '支撐位'));
+  if (res.resistance && res.resistance.level != null) addLine(res.resistance.level, cssVar('--red', '#DC2626'), t('ca_resistance', '阻力位'));
+  // 2026-07-30 (Paddle compliance, deep rewrite -- "深度改做純描述性支持/
+  // 阻力位"): this used to draw dl.entry/dl.stop_loss as extra "進場"/"止損"
+  // lines on top of the support/resistance lines just above -- dl.stop_loss
+  // is literally the SAME price as res.support.level/res.resistance.level
+  // (it's derived from them), so drawing it again as a "stop loss" line
+  // only added buy/sell-instruction framing to an already-shown structural
+  // level, never new information. dl.entry (= current close) is redundant
+  // with the chart itself. Only draw dl.take_profits[0] -- the one further
+  // level genuinely grounded in the opposite real support/resistance --
+  // as one more descriptive reference line; the other two are pure
+  // risk-multiple projections with no technical basis, dropped entirely.
+  const dl = res.decision_levels;
+  if (dl && dl.take_profits && dl.take_profits.length) {
+    addLine(dl.take_profits[0], cssVar('--accent-blue', '#D35400'), t('ca_reco_tp', 'Reference Level'));
+  }
+
+  // 2026-07-26 addition: draw the "可能" chart patterns (res.pattern_points,
+  // from services/chart_pattern_service.py) directly on the chart, same
+  // way support/resistance/decision levels already are as price lines --
+  // these instead connect the REAL swing-point coordinates each verdict
+  // was computed from, in chronological order, so the shape shown is
+  // exactly the geometry the text verdict is based on (not an idealized
+  // redraw).
+  drawPatternOverlays(res.pattern_points || {});
+
+  klineChart.timeScale().fitContent();
+}
+
+// Distinct-ish colors per pattern purely so multiple overlays drawn at
+// once stay visually separable -- no meaning beyond that (unlike the
+// green/red used for support/resistance above, these aren't bullish/
+// bearish-coded).
+const PATTERN_OVERLAY_COLORS = {
+  p_double_top: '#DC2626', p_double_bottom: '#16A34A',
+  p_head_shoulder_top: '#EA580C', p_head_shoulder_bottom: '#0D9488',
+  p_triangle: '#F59E0B', p_channel: '#D35400', p_rectangle: '#7C3AED',
+  p_broadening: '#DB2777', p_breakback: '#0EA5E9', p_0618: '#8B5CF6',
+  p_flag: '#059669', p_pennant: '#65A30D', p_cup_handle: '#D946EF',
+  p_diamond: '#E11D48', p_abc: '#CA8A04', p_gap: '#F97316', p_island: '#0891B2',
+  // 2026-07-30 addition ("呢D圖你可以量化加入圖表嗎"): rising/falling wedge,
+  // see services/chart_pattern_service.py's _wedge_rising/_wedge_falling.
+  p_wedge_rising: '#991B1B', p_wedge_falling: '#166534',
+};
+
+// 2026-07-27 addition ("可以自由按導航框開關去顯示形態"): per-pattern
+// show/hide state, keyed by the same p_* keys as everywhere else. true
+// (or missing, i.e. default) = visible. Kept module-level (not reset on
+// every redraw) so a user's on/off choice survives a timeframe switch for
+// the same symbol -- only a brand-new ticker search resets it, since a
+// totally different chart's pattern set has no relation to the last one.
+let PATTERN_TOGGLE_STATE = {};
+
+function drawPatternOverlays(patternPoints) {
+  window.__lastChartPatternPoints = patternPoints || {};
+  buildPatternToggles(patternPoints);
+  renderPatternOverlaySeries(patternPoints);
+}
+
+// Pure drawing step, split out from drawPatternOverlays() so a toggle-pill
+// click can just redraw from the already-fetched pattern_points without
+// re-fetching data or rebuilding the toggle row itself (which would wipe
+// the user's other on/off choices and flicker the row on every click).
+function renderPatternOverlaySeries(patternPoints) {
+  if (!klineChart || !klineSeries) return;
+  // Defensive cleanup in case this chart instance already has overlays
+  // from an earlier call -- in the normal flow ensureKlineChart() always
+  // tears down and recreates the whole chart first, so this is a no-op in
+  // practice, but keeps the function safe to call on its own too.
+  (klineChart._xflPatternSeries || []).forEach(s => { try { klineChart.removeSeries(s); } catch (e) {} });
+  klineChart._xflPatternSeries = [];
+
+  // 2026-07-27 fix ("Pattern名字...都不要重疊同一位置 分開"): name-tag
+  // markers used to always anchor at each pattern's own LAST point with a
+  // fixed 'aboveBar' position -- several patterns often resolve near the
+  // same recent bar/price (today's live price action), so their tags
+  // piled up on top of each other at that one spot, on every timeframe.
+  // Give each simultaneously-drawn pattern its own "lane": alternate the
+  // tag above/below its own line, and walk the anchor back to an earlier
+  // vertex along that SAME real line (still one of its genuine swing
+  // points, nothing fabricated) as more patterns compete for the same
+  // spot, so tags fan out both vertically and horizontally instead of
+  // stacking. Recomputed fresh on every call, so it applies at every
+  // timeframe, not just the one first drawn.
+  const activeKeys = PATTERN_KEYS.filter(key => {
+    if (PATTERN_TOGGLE_STATE[key] === false) return false;
+    return ((patternPoints || {})[key] || []).length >= 2;
+  });
+  activeKeys.forEach((key, laneIndex) => {
+    const pts = (patternPoints[key] || []).slice().sort((a, b) => a.time - b.time);
+    const color = PATTERN_OVERLAY_COLORS[key] || cssVar('--accent-blue', '#D35400');
+    const series = klineChart.addLineSeries({
+      color, lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dotted,
+      priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+    });
+    series.setData(pts.map(p => ({ time: p.time, value: p.price })));
+    const label = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+    const anchorIdx = Math.max(0, pts.length - 1 - (laneIndex % pts.length));
+    series.setMarkers([{
+      time: pts[anchorIdx].time,
+      position: laneIndex % 2 === 0 ? 'aboveBar' : 'belowBar',
+      color, shape: 'circle', text: label,
+    }]);
+    klineChart._xflPatternSeries.push(series);
+  });
+}
+
+// Builds one pill per pattern that actually has drawable points (i.e. came
+// back "可能" with >=2 real swing coordinates) -- patterns that came back
+// "不可能" have nothing to toggle, so they're simply not shown here rather
+// than appearing as a permanently-disabled pill.
+function buildPatternToggles(patternPoints) {
+  const row = document.getElementById('patternToggleRow');
+  if (!row) return;
+  const drawableKeys = PATTERN_KEYS.filter(key => ((patternPoints || {})[key] || []).length >= 2);
+  row.innerHTML = '';
+  if (!drawableKeys.length) { row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  drawableKeys.forEach(key => {
+    if (PATTERN_TOGGLE_STATE[key] === undefined) PATTERN_TOGGLE_STATE[key] = true;
+    const color = PATTERN_OVERLAY_COLORS[key] || cssVar('--accent-blue', '#D35400');
+    const label = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'pattern-toggle-pill' + (PATTERN_TOGGLE_STATE[key] ? ' active' : '');
+    pill.style.setProperty('--pill-color', color);
+    pill.innerHTML = `<span class="dot"></span><span>${label}</span>`;
+    pill.title = t('ca_pattern_toggle_hint', '按一下顯示／隱藏呢個型態喺圖表上嘅劃線');
+    pill.onclick = () => {
+      PATTERN_TOGGLE_STATE[key] = !PATTERN_TOGGLE_STATE[key];
+      pill.classList.toggle('active', PATTERN_TOGGLE_STATE[key]);
+      renderPatternOverlaySeries(window.__lastChartPatternPoints || {});
+    };
+    row.appendChild(pill);
+  });
+}
+
+// Defensive DOM helper -- every "分析失敗" crash reported so far traced
+// back to a plain `document.getElementById(id).textContent = ...` call
+// throwing "Cannot set properties of null" when some element wasn't
+// found (stale cache, a future markup edit, a race with mode-switching,
+// etc). Routing every result-writing assignment through this means a
+// missing element is silently skipped (and logged to console for
+// debugging) instead of throwing and popping a blocking alert() that
+// interrupts the user's flow.
+function safeSetText(id, value) {
+  const el = document.getElementById(id);
+  if (!el) { console.warn('[chart-analysis] missing element for id=', id); return; }
+  el.textContent = value;
+}
+
+// Non-blocking inline error banner -- replaces the old alert() on
+// analysis failure, which forced the user to click "OK" before they
+// could do anything else. Errors now show as a dismissible inline
+// message near the search box instead.
+function showSearchError(message) {
+  const banner = document.getElementById('searchErrorBanner');
+  if (banner) {
+    banner.textContent = message;
+    banner.style.display = 'block';
+  } else {
+    console.error('[chart-analysis]', message);
+  }
+}
+function hideSearchError() {
+  const banner = document.getElementById('searchErrorBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+// 2026-07-26 addition: shared Pattern Details renderer for BOTH flows --
+// upload mode's AI-vision result and search mode's real swing-point-
+// geometry result (services/chart_pattern_service.py) return the exact
+// same 17 keys with the same "可能"/"不可能" literals, so one renderer
+// can fill in the detected/rest pattern lists regardless of which flow produced it.
+const PATTERN_KEYS = ['p_double_top','p_double_bottom','p_head_shoulder_top','p_head_shoulder_bottom',
+  'p_triangle','p_breakback','p_0618','p_flag','p_pennant','p_channel',
+  'p_rectangle','p_cup_handle','p_diamond','p_broadening','p_abc','p_gap','p_island',
+  'p_wedge_rising','p_wedge_falling'];
+
+// 2026-07-30 addition ("呢D圖你可以量化加入圖表嗎" -- user's reference image
+// labelled bullish/bearish variants of triangle/channel/flag/pennant/
+// rectangle): services/chart_pattern_service.py's detect_patterns() now
+// also returns a separate res.pattern_directions dict (only for the
+// real-geometry search flow -- the AI-vision upload flow has no
+// equivalent, so this is always {} there and the suffix below simply
+// never appears for that flow). Maps each direction code to an i18n key.
+const PATTERN_DIRECTION_I18N = {
+  ascending: 'ca_dir_ascending',
+  descending: 'ca_dir_descending',
+  symmetrical: 'ca_dir_symmetrical',
+  bull: 'ca_dir_bull',
+  bear: 'ca_dir_bear',
+  bull_continuation: 'ca_dir_bull_continuation',
+  bear_continuation: 'ca_dir_bear_continuation',
+};
+function patternDirectionSuffix(key, directions) {
+  const code = (directions || {})[key];
+  const i18nKey = code && PATTERN_DIRECTION_I18N[code];
+  if (!i18nKey) return '';
+  return ` (${t(i18nKey, code)})`;
+}
+
+// 2026-07-27 fix ("全部要加語言"): the backend's 可能/不可能 verdict
+// literals are shared, unchanged business-logic strings used internally
+// by both pattern-detection code paths (see chart_pattern_service.py's
+// own comment on why they're never renamed) -- so translate them here at
+// the display boundary only, same approach this file already uses for
+// CA_DIRECTION_MAP/CA_CONFIDENCE_MAP just above. Backend stays untouched;
+// only what the user sees changes with the UI language.
+function caVerdictLabel(verdict) {
+  if (verdict === '可能') return t('ca_verdict_possible', '可能');
+  if (verdict === '不可能') return t('ca_verdict_not_possible', '不可能');
+  return verdict;
+}
+
+// 2026-07-27 shrink-to-fit ("字長時自動調整尺寸"): some languages render
+// noticeably longer than Chinese for the same label (e.g. German "Kopf-
+// Schulter-Formation (oben)"), and the card width is fixed by the grid --
+// rather than truncating or fixed-shrinking by language, measure the
+// actual rendered width and step the font down until it fits, so this
+// works correctly for literally any language/string length.
+function fitCardText(el, maxPx, minPx) {
+  if (!el) return;
+  maxPx = maxPx || 13; minPx = minPx || 9;
+  el.style.fontSize = maxPx + 'px';
+  let size = maxPx;
+  while (el.scrollWidth > el.clientWidth + 1 && size > minPx) {
+    size -= 1;
+    el.style.fontSize = size + 'px';
+  }
+}
+
+// 2026-07-27 Q&A card redesign ("每個的字分上下題及答顯示，置中框內"):
+// each pattern is now its own card with the pattern name as a "question"
+// on top and the (translated) verdict as an "answer" below, both
+// centered -- replacing the old two-span "label：value" row layout.
+// Shared by both flows exactly as before (upload's AI-vision result and
+// search's real-geometry result use the same key/literal set).
+// 2026-07-30: added optional `directions` param (res.pattern_directions,
+// search flow only) -- appends a bull/bear/ascending/descending suffix
+// to the question label when available; omitted entirely for the
+// upload flow (always called with {} or undefined there), so nothing
+// changes for that path.
+// 2026-08-18 redesign (AJ: "UI 介面好悶", option A "重點式" -- see git log
+// for the 3 mockup options this was chosen from): the old version put all
+// 19 patterns in one flat grid regardless of verdict, so a real detection
+// (1-3 cards, typically) was visually drowned out by ~16-18 near-identical
+// gray "不可能"/"不明" cards. This splits the same 19 keys/verdicts (still
+// exactly what chart_pattern_service.py returns -- no new data, no
+// fabricated confidence score) into two tiers: detected patterns get their
+// own prominent bordered row up top; everything else collapses into a
+// <details> so it's available (never hidden/lost) without competing for
+// attention. Shared by both flows exactly as before.
+function renderPatternDetails(patterns, directions) {
+  const detectedGrid = document.getElementById('patternDetectedGrid');
+  const noneMsg = document.getElementById('patternNoneDetected');
+  const restDetails = document.getElementById('patternRestDetails');
+  const restSummary = document.getElementById('patternRestSummary');
+  const restList = document.getElementById('patternRestList');
+  if (!detectedGrid || !restDetails) return;
+
+  const hasData = !!(patterns && Object.keys(patterns).length);
+  detectedGrid.innerHTML = '';
+  if (restList) restList.innerHTML = '';
+
+  if (!hasData) {
+    if (noneMsg) noneMsg.style.display = 'none';
+    restDetails.style.display = 'none';
+    return;
+  }
+
+  const detectedKeys = [];
+  const restKeys = [];
+  PATTERN_KEYS.forEach(key => {
+    if (patterns[key] === '可能') detectedKeys.push(key);
+    else restKeys.push(key);
+  });
+
+  detectedKeys.forEach(key => {
+    const card = document.createElement('div');
+    card.className = 'pattern-detected-card';
+
+    const dot = document.createElement('span');
+    dot.className = 'pattern-detected-dot';
+
+    const textWrap = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'pattern-detected-name';
+    name.textContent = t(`ca_${key}`, key).replace(/[:：]\s*$/, '') + patternDirectionSuffix(key, directions);
+
+    const verdict = document.createElement('div');
+    verdict.className = 'pattern-detected-verdict';
+    verdict.textContent = caVerdictLabel('可能');
+
+    textWrap.appendChild(name);
+    textWrap.appendChild(verdict);
+    card.appendChild(dot);
+    card.appendChild(textWrap);
+    detectedGrid.appendChild(card);
+    fitCardText(name, 14, 11);
+  });
+
+  if (noneMsg) noneMsg.style.display = detectedKeys.length ? 'none' : 'block';
+
+  if (restKeys.length && restList && restSummary) {
+    restDetails.style.display = '';
+    restSummary.textContent = t('ca_pattern_rest_toggle', 'Show the other {n} checked patterns').replace('{n}', restKeys.length);
+    restKeys.forEach(key => {
+      const raw = patterns[key];
+      const isNotPossible = raw === '不可能';
+      const pill = document.createElement('span');
+      pill.className = 'pattern-rest-pill' + (isNotPossible ? ' is-not-possible' : ' is-unclear');
+      const label = t(`ca_${key}`, key).replace(/[:：]\s*$/, '');
+      const verdictText = raw ? caVerdictLabel(raw) : t('ca_unclear', '不明');
+      pill.textContent = `${label} · ${verdictText}`;
+      restList.appendChild(pill);
+    });
+  } else {
+    restDetails.style.display = 'none';
+  }
+}
+
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): switchMode()
+// used to toggle between search/upload panels + the now-removed analysisSide
+// aside. Search is now the page's only mode (analysisSection already has
+// class="single-col" by default in the static HTML), so this is gone.
+
+document.getElementById('tickerSearchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runTickerSearch();
+});
+
+// Live asset-type auto-detect: as the user types, preview what
+// normalizeGlobalTicker() would resolve the input to and which asset
+// class it falls into, WITHOUT mutating the actual input value (that
+// only happens on submit). Reuses the already-translated topopp_class_*
+// labels (stock/futures/crypto) from the homepage's Top Opportunity
+// section instead of adding new i18n keys for the same three concepts.
+//
+// 2026-07-25 fix ("包括 股 指 債 ETF 外匯 商品 所有資產可見"): every
+// "^"-prefixed ticker (world indices ^HSI/^GSPC/^DJI/^VIX, and Treasury-
+// yield "bond" tickers ^TNX/^TYX/^FVX/^IRX) used to fall through to the
+// generic "Stocks" label since this only ever checked for "=" (futures)
+// or "-" (crypto) -- misleading for e.g. ^HSI, which isn't a stock at
+// all. Added ca_tf-adjacent topopp_class_index/topopp_class_bond keys so
+// these show their real class instead.
+const _YIELD_TICKERS = ['^TNX', '^TYX', '^FVX', '^IRX'];
+function detectAssetPreview(raw){
+  const s = (raw || '').trim();
+  if (!s) return null;
+  const normalized = normalizeGlobalTicker(s);
+  let classKey;
+  if (_YIELD_TICKERS.includes(normalized)) classKey = 'topopp_class_bond';
+  else if (normalized.startsWith('^')) classKey = 'topopp_class_index';
+  else if (normalized.includes('=')) classKey = 'topopp_class_futures';
+  else if (normalized.includes('-')) classKey = 'topopp_class_crypto';
+  else classKey = 'topopp_class_stock';
+  const fallbacks = {topopp_class_futures:'Futures', topopp_class_crypto:'Crypto', topopp_class_stock:'Stocks', topopp_class_index:'Index', topopp_class_bond:'Bond Yield'};
+  const classLabel = t(classKey, fallbacks[classKey]);
+  return `→ ${normalized} · ${classLabel}`;
+}
+
+document.getElementById('tickerSearchInput').addEventListener('input', (e) => {
+  const hintEl = document.getElementById('tickerTypeHint');
+  const preview = detectAssetPreview(e.target.value);
+  hintEl.textContent = preview || '';
+});
+
+async function runTickerSearch(symbolOverride){
+  const input = document.getElementById('tickerSearchInput');
+  const symbol = normalizeGlobalTicker(symbolOverride || input.value);
+  if(!symbol){
+    alert(t('ca_search_alert_empty','請輸入股票代號'));
+    return;
+  }
+  input.value = symbol;
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = t('ca_search_analyzing','分析中...');
+  if (typeof window.startAiLoading === 'function') window.startAiLoading();
+
+  // A brand-new symbol search means a brand-new pattern set with no
+  // relation to whatever the user had toggled on/off for the previous
+  // ticker -- reset so every newly-detected pattern starts visible again
+  // (timeframe switches on the SAME symbol deliberately do NOT reset this,
+  // see PATTERN_TOGGLE_STATE's own comment above).
+  PATTERN_TOGGLE_STATE = {};
+
+  // 2026-07-26 fix: search/no-upload mode used to permanently hide
+  // patternBlock here with a "you need to upload a screenshot" note
+  // (2026-07-23 fix, since AI vision genuinely can't run without an
+  // image) -- but services/chart_pattern_service.py now computes the
+  // same 17 patterns from real swing-point geometry on the same OHLC
+  // data this search already fetches, so there's no need to hide it
+  // anymore. Left visible; populated from res.patterns below once the
+  // fetch resolves.
+  document.getElementById('patternBlock').style.display = 'block';
+  document.getElementById('patternSummaryRow').style.display = 'flex';
+  document.getElementById('aiCommentaryBlock').style.display = 'block';
+  safeSetText('commentaryResult', '');
+  document.getElementById('commentaryBtn').disabled = false;
+  safeSetText('commentaryBtn', t('ca_ai_commentary_btn','🤖 產生AI文字解讀'));
+  hideSearchError();
+
+  try {
+    // 2026-07-25 fix (task #409): pass the site's selected UI language
+    // through so the confluence engine's dynamic signal strings (RSI/MACD/
+    // support-resistance descriptions etc, shown right below in the "AI
+    // Analysis Result" table) translate instead of always coming back
+    // hardcoded Chinese regardless of language.
+    const _calang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/chart-search/${encodeURIComponent(symbol)}${_calang ? '?lang=' + encodeURIComponent(_calang) : ''}`);
+    const json = await response.json();
+    if(json.status !== 'ok'){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+
+    const res = json.data;
+    currentSearchSymbol = symbol;
+    trackEvent('search', {ticker: symbol, mode: 'chart_search'});
+
+    // 2026-07-25 fix ("自行建可顯示任何資產嘅K線圖，不用TradingView"):
+    // back to a self-hosted chart instead of the TradingView iframe embed
+    // (which needed a correct EXCHANGE:SYMBOL mapping and silently showed
+    // a plain notice for anything that didn't map, e.g. indices/continuous
+    // futures/forex -- see js/tradingview-widget.js history). This reuses
+    // the exact real OHLC bars (res.ohlc) already fetched for every
+    // ticker XFINLAB supports, so it renders for ANY asset this page can
+    // search, with no third-party symbol-mapping dependency at all. Also
+    // overlays the same real support/resistance/entry/stop/take-profit
+    // levels shown as text below directly onto the chart as price lines.
+    if (res.ohlc && res.ohlc.length) {
+      document.getElementById('klineChartPanel').style.display = 'block';
+      ensureKlineChart();
+      renderKlineChart(res);
+    } else {
+      document.getElementById('klineChartPanel').style.display = 'none';
+    }
+
+    safeSetText('dataSourceTag', t('ca_data_source_search','（支撐/阻力/RSI/MACD 來自真實歷史數據）'));
+    const noRealData = t('ca_no_real_data','未有真實數據');
+    safeSetText('trendValue', res.trend || '-');
+    safeSetText('supportValue', res.support ? res.support.level : noRealData);
+    safeSetText('resistanceValue', res.resistance ? res.resistance.level : noRealData);
+    safeSetText('fibValue', res.fibonacci_0618 ? res.fibonacci_0618.level_0618 : noRealData);
+    if(res.confluence){
+      const c = res.confluence;
+      safeSetText('confluenceValue', `${caDirectionLabel(c.direction)}（${t('ca_reco_confidence_label','信心')}${caConfidenceLabel(c.confidence)}，${c.signals_counted}${t('ca_signals_counted_suffix','個訊號')}）`);
+    } else {
+      safeSetText('confluenceValue', noRealData);
+    }
+    safeSetText('volumeZone', res.volume_desc || '-');
+    safeSetText('rsiValue', res.rsi != null ? res.rsi : '-');
+    safeSetText('macdValue', res.macd ? res.macd.trend : '-');
+
+    // 2026-07-26 fix: patterns now come from services/chart_pattern_
+    // service.py's real swing-point geometry (see get_technical_analysis
+    // -> res.patterns), computed from the exact same OHLC data already
+    // fetched for this search -- no screenshot needed, replacing the old
+    // permanent "upload a screenshot first" placeholder.
+    const searchPatterns = res.patterns || {};
+    const searchPatternCount = Object.values(searchPatterns).filter(p => p === '可能').length;
+    safeSetText('patternSummary', searchPatternCount > 0
+      ? t('ca_pattern_detected_search','根據真實走勢幾何運算，偵測到若干可能型態')
+      : t('ca_pattern_not_detected_search','根據真實走勢幾何運算，未偵測到明顯型態'));
+    renderPatternDetails(searchPatterns, res.pattern_directions || {});
+    window.__lastChartPatternPoints = res.pattern_points || {};
+
+    // 2026-07-20 fix ("風險提示/建議 按「產生AI文字解讀」查看，未做好"):
+    // these two rows used to just say "click the button below to view" --
+    // but that button (requestAiCommentary()) writes into a totally
+    // different element (#commentaryResult), never into these rows, so
+    // the message was a dead end. Every input these two rows need
+    // (RSI, confluence direction/confidence/signals, decision levels,
+    // market-structure events) is already fetched and sitting in `res`
+    // above -- so build real, honestly-derived text from it immediately,
+    // the same way trend/support/resistance/confluence already do. The
+    // AI commentary button remains as an optional deeper narrative on
+    // top of this, not a replacement for it.
+    const riskParts = [];
+    if (res.rsi != null) {
+      if (res.rsi >= 70) riskParts.push(t('ca_risk_rsi_high','RSI {rsi}，偏高（超買區）').replace('{rsi}', res.rsi));
+      else if (res.rsi <= 30) riskParts.push(t('ca_risk_rsi_low','RSI {rsi}，偏低（超賣區）').replace('{rsi}', res.rsi));
+    }
+    if (res.decision_levels && res.decision_levels.risk_pct != null) {
+      riskParts.push(t('ca_risk_stop_dist','止損距離約 {pct}%').replace('{pct}', res.decision_levels.risk_pct));
+    }
+    if (res.confluence) {
+      const c = res.confluence;
+      const opposing = (c.direction || '').includes('空') ? (c.bullish_signals || []) : (c.bearish_signals || []);
+      if (opposing.length) riskParts.push(t('ca_risk_opposing_signals','仍有 {n} 個相反方向訊號').replace('{n}', opposing.length));
+    }
+    if (res.market_structure && res.market_structure.events && res.market_structure.events.some(e => e.type === 'liquidity_sweep')) {
+      riskParts.push(t('ca_risk_liquidity_sweep','偵測到流動性掃蕩事件，留意假突破風險'));
+    }
+    safeSetText('riskTips', riskParts.length ? riskParts.join('；') : t('ca_risk_none','暫無顯著風險數據'));
+
+    if (res.confluence) {
+      const c = res.confluence;
+      let reco = `${caDirectionLabel(c.direction)}（${t('ca_reco_confidence_label','信心')}：${caConfidenceLabel(c.confidence)}）`;
+      const dl = res.decision_levels;
+      if (dl && dl.entry != null) {
+        reco += ' · ' + t('ca_reco_levels','參考進場 {entry}，止損 {stop}，目標 {tp1}/{tp2}（風險回報比 1:{rr}）')
+          .replace('{entry}', dl.entry).replace('{stop}', dl.stop_loss)
+          .replace('{tp1}', dl.take_profits ? dl.take_profits[0] : '-')
+          .replace('{tp2}', dl.take_profits ? dl.take_profits[1] : '-')
+          .replace('{rr}', dl.risk_reward);
+      }
+      safeSetText('recommendationValue', reco);
+    } else {
+      safeSetText('recommendationValue', noRealData);
+    }
+
+    // Phase 2 Market Structure Engine -- always shown when present, since
+    // it's computed for free from the same data already fetched above
+    // (no extra network call).
+    const ms = res.market_structure;
+    const msBlock = document.getElementById('marketStructureBlock');
+    if (ms) {
+      msBlock.style.display = 'block';
+      const structureLabel = {uptrend: t('ca_ms_uptrend','上升結構'), downtrend: t('ca_ms_downtrend','下降結構'), mixed: t('ca_ms_mixed','結構混合/盤整')}[ms.prior_structure] || ms.prior_structure;
+      safeSetText('msPriorStructure', structureLabel);
+
+      // 2026-07-30 addition (Market Structure Engine V2): render the
+      // quantified 0-100 sub-engine scores as Q&A-style cards (reusing
+      // the same .pattern-qa-grid/.pattern-qa-card styling already used
+      // above for Pattern Details). Only shown when the backend actually
+      // sent score fields -- a stale/older response missing them just
+      // hides this grid rather than showing broken "undefined" cells.
+      const scoreGrid = document.getElementById('msScoreGrid');
+      const scoreFields = [
+        ['trend_score', 'ca_ms_trend_score', '趨勢分數'],
+        ['swing_quality', 'ca_ms_swing_quality', '擺動品質'],
+        ['bos_score', 'ca_ms_bos_score', 'BOS強度'],
+        ['choch_score', 'ca_ms_choch_score', 'CHOCH強度'],
+        ['liquidity_score', 'ca_ms_liquidity_score', '流動性訊號'],
+        ['volatility_score', 'ca_ms_volatility_score', '波動穩定度'],
+        ['confidence', 'ca_ms_confidence', '結構信心'],
+      ];
+      if (ms.confidence != null && scoreGrid) {
+        scoreGrid.style.display = 'grid';
+        scoreGrid.innerHTML = scoreFields.map(([key, i18nKey, fallback]) => {
+          const val = ms[key];
+          const shown = (val == null) ? '-' : Math.round(val);
+          const cls = shown === '-' ? 'is-unclear' : (shown >= 65 ? 'is-possible' : shown <= 35 ? 'is-not-possible' : 'is-unclear');
+          return `<div class="pattern-qa-card">
+            <span class="pattern-qa-q">${t(i18nKey, fallback)}</span>
+            <span class="pattern-qa-a ${cls}">${shown}${shown === '-' ? '' : '/100'}</span>
+          </div>`;
+        }).join('');
+        if (ms.weights_calibrated === false) {
+          scoreGrid.innerHTML += `<div class="upload-hint" style="grid-column:1/-1;font-size:0.7rem">${t('ca_ms_weights_note','分數權重為初步設計，尚未經歷史回測校準')}</div>`;
+        }
+      } else if (scoreGrid) {
+        scoreGrid.style.display = 'none';
+      }
+
+      // Proxy-only engines (Order Flow / Volume Profile / Institutional
+      // Footprint) -- OHLCV-derived APPROXIMATIONS, not real order-book/
+      // tick/dark-pool data (see market_structure_engine.py docstring).
+      // Rendered in a visually separate grid with its own disclosure line.
+      const proxyGrid = document.getElementById('msProxyGrid');
+      const vpPositionI18n = { above_value_area: 'ca_ms_vp_above', inside_value_area: 'ca_ms_vp_inside', below_value_area: 'ca_ms_vp_below' };
+      const footprintI18n = { accumulation: 'ca_ms_footprint_accumulation', distribution: 'ca_ms_footprint_distribution', breakout: 'ca_ms_footprint_breakout' };
+      const proxyDirI18n = { bullish: 'ca_dir_bull', bearish: 'ca_dir_bear' };
+      const proxyCards = [];
+      if (ms.order_flow && ms.order_flow.score != null) {
+        const val = Math.round(ms.order_flow.score);
+        const cls = val >= 65 ? 'is-possible' : val <= 35 ? 'is-not-possible' : 'is-unclear';
+        proxyCards.push(`<div class="pattern-qa-card">
+          <span class="pattern-qa-q">${t('ca_ms_order_flow','資金流向（近似）')}</span>
+          <span class="pattern-qa-a ${cls}">${val}/100</span>
+        </div>`);
+      }
+      if (ms.volume_profile && ms.volume_profile.poc != null) {
+        const vp = ms.volume_profile;
+        const posKey = vpPositionI18n[vp.position];
+        const posLabel = posKey ? t(posKey, vp.position) : vp.position;
+        const cls = vp.position === 'above_value_area' ? 'is-possible' : vp.position === 'below_value_area' ? 'is-not-possible' : 'is-unclear';
+        proxyCards.push(`<div class="pattern-qa-card">
+          <span class="pattern-qa-q">${t('ca_ms_volume_profile','成交量分佈 POC（近似）')}</span>
+          <span class="pattern-qa-a ${cls}">${vp.poc} · ${posLabel}</span>
+        </div>`);
+      }
+      if (ms.institutional_footprint && ms.institutional_footprint.candidate) {
+        const fp = ms.institutional_footprint;
+        const fpKey = footprintI18n[fp.candidate];
+        const fpLabel = fpKey ? t(fpKey, fp.candidate) : fp.candidate;
+        const dirKey = proxyDirI18n[fp.direction];
+        const dirLabel = dirKey ? ` (${t(dirKey, fp.direction)})` : '';
+        const cls = fp.direction === 'bullish' ? 'is-possible' : fp.direction === 'bearish' ? 'is-not-possible' : 'is-unclear';
+        proxyCards.push(`<div class="pattern-qa-card">
+          <span class="pattern-qa-q">${t('ca_ms_institutional_footprint','大戶足跡訊號（近似）')}</span>
+          <span class="pattern-qa-a ${cls}">${fpLabel}${dirLabel}</span>
+        </div>`);
+      }
+      if (proxyCards.length && proxyGrid) {
+        proxyGrid.style.display = 'grid';
+        proxyGrid.innerHTML = proxyCards.join('') +
+          `<div class="upload-hint" style="grid-column:1/-1;font-size:0.7rem">${t('ca_ms_proxy_note','以上為近似估算，並非真實盤口／大戶數據，僅供參考')}</div>`;
+      } else if (proxyGrid) {
+        proxyGrid.style.display = 'none';
+      }
+
+      const eventsEl = document.getElementById('msEvents');
+      if (ms.events && ms.events.length) {
+        eventsEl.innerHTML = ms.events.map(e => `<div class="result-row"><div class="result-label">${e.type}</div><div class="result-value">${e.detail}</div></div>`).join('');
+      } else {
+        eventsEl.innerHTML = `<div class="upload-hint">${t('ca_ms_no_event','未偵測到BOS/CHOCH/流動性掃蕩事件')}</div>`;
+      }
+    } else {
+      msBlock.style.display = 'none';
+    }
+
+    // Phase 2 Multi-Timeframe Engine -- lazy button, reset per search.
+    document.getElementById('mtfBlock').style.display = 'block';
+    document.getElementById('mtfResult').innerHTML = '';
+    document.getElementById('mtfBtn').disabled = false;
+    safeSetText('mtfBtn', t('ca_mtf_btn','📊 查看跨時間框架'));
+
+    // Strategy Intelligence Step 3/4/5 -- real historical backtest
+    // comparison across strategies, lazy button, reset per search.
+    document.getElementById('backtestBlock').style.display = 'block';
+    document.getElementById('backtestResult').innerHTML = '';
+    document.getElementById('backtestBtn').disabled = false;
+    safeSetText('backtestBtn', t('ca_backtest_btn','🧪 回測比較策略'));
+
+    // P3 Regime Router -- same lazy button reveal, reset per search.
+    document.getElementById('regimeRouterBlock').style.display = 'block';
+    document.getElementById('regimeRouterResult').innerHTML = '';
+    document.getElementById('regimeRouterBtn').disabled = false;
+    safeSetText('regimeRouterBtn', t('ca_regime_router_btn','🧭 查看市況配對'));
+
+    if (typeof window.renderDecisionFooter === 'function') {
+      if (res.confluence) {
+        const c = res.confluence;
+        const decisionScore = Math.round(((c.score + 100) / 2) * 10) / 10;
+        let riskLabel = null;
+        if (res.volume_ratio != null) {
+          const volatility = res.volume_ratio * 15;
+          riskLabel = volatility < 20 ? 'Low' : volatility <= 40 ? 'Medium' : 'High';
+        }
+        const reasons = [].concat(c.bullish_signals || [], c.bearish_signals || []);
+        const dl = res.decision_levels;
+        window.renderDecisionFooter('decisionFooter', {
+          decisionScore: decisionScore,
+          confidencePct: c.confidence_pct,
+          probSeed: (currentSearchSymbol || '') + 'confidence',
+          riskLabel: riskLabel,
+          keyReasons: reasons.length ? reasons : null,
+          suggestedAction: null,
+          entryPrice: dl ? dl.entry : null,
+          stopLoss: dl ? dl.stop_loss : null,
+          takeProfits: dl ? dl.take_profits : null,
+          riskReward: dl ? dl.risk_reward : null,
+          riskPct: dl ? dl.risk_pct : null
+        });
+        if (typeof window.renderBrokerCta === 'function') {
+          window.renderBrokerCta('brokerCta');
+        }
+        // AI Report Generator (task #600) -- see ai-analysis.html's matching
+        // wiring / ai/report_generator.py's generate_from_live_data()
+        // docstring. Only shown when there's a real confluence score to
+        // report on (this branch), never in the AI-vision-only fallback.
+        const downloadReportBtn = document.getElementById('downloadReportBtn');
+        if (downloadReportBtn) {
+          downloadReportBtn.style.display = 'inline-block';
+          downloadReportBtn.onclick = async () => {
+            const originalText = downloadReportBtn.textContent;
+            downloadReportBtn.disabled = true;
+            downloadReportBtn.textContent = '⏳ 生成緊...';
+            try {
+              const reportToken = localStorage.getItem('xfinlab_token') || '';
+              const resp = await fetch(`${API_BASE}/api/report/generate${reportToken ? '?token=' + encodeURIComponent(reportToken) : ''}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ticker: currentSearchSymbol || 'ASSET',
+                  decisionScore: decisionScore,
+                  confidencePct: c.confidence_pct,
+                  riskLabel: riskLabel,
+                  keyReasons: reasons.length ? reasons : null,
+                  suggestedAction: null,
+                  stopLoss: dl ? dl.stop_loss : null,
+                  takeProfits: dl ? dl.take_profits : null,
+                  riskPct: dl ? dl.risk_pct : null
+                })
+              });
+              if (!resp.ok) throw new Error('report generation failed');
+              const blob = await resp.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${currentSearchSymbol || 'asset'}_XFINLAB_Report.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              URL.revokeObjectURL(url);
+            } catch (e) {
+              console.error(e);
+              alert('報告生成失敗，請稍後再試');
+            } finally {
+              downloadReportBtn.disabled = false;
+              downloadReportBtn.textContent = originalText;
+            }
+          };
+        }
+      } else {
+        window.renderDecisionFooter('decisionFooter', {});
+        var brokerCtaEl = document.getElementById('brokerCta');
+        if (brokerCtaEl) brokerCtaEl.innerHTML = '';
+        var downloadReportBtnEl = document.getElementById('downloadReportBtn');
+        if (downloadReportBtnEl) downloadReportBtnEl.style.display = 'none';
+      }
+    }
+
+    // Share System -- Link IS honestly possible here (unlike the image-
+    // upload flow) since the whole analysis is reconstructable from a
+    // symbol query param.
+    if (typeof window.renderShareBar === 'function') {
+      const shareUrl = `${location.origin}${location.pathname}?symbol=${encodeURIComponent(symbol)}&mode=search`;
+      window.renderShareBar('shareBar', 'resultContent', {
+        filename: `xfinlab-chart-search-${symbol}`,
+        shareUrl: shareUrl
+      });
+    }
+  } catch (err) {
+    console.error('[chart-analysis] runTickerSearch failed:', err);
+    showSearchError(t('ca_alert_fail_prefix','分析失敗，請重試：') + err.message);
+  } finally {
+    btn.disabled = false; safeSetText('searchBtn', t('ca_search_btn','🔍 分析'));
+    if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
+  }
+}
+
+async function requestAiCommentary(){
+  if(!currentSearchSymbol) return;
+  const btn = document.getElementById('commentaryBtn');
+  const out = document.getElementById('commentaryResult');
+  btn.disabled = true;
+  btn.textContent = t('ca_ai_commentary_loading','產生緊...');
+  try {
+    const _authToken = localStorage.getItem('xfinlab_token');
+    const _commLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const _commentaryParams = new URLSearchParams();
+    if(_authToken) _commentaryParams.set('token', _authToken);
+    if(_commLang) _commentaryParams.set('lang', _commLang);
+    const _qs = _commentaryParams.toString();
+    const _commentaryUrl = `${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/commentary`
+      + (_qs ? `?${_qs}` : '');
+    const response = await fetch(_commentaryUrl);
+    const json = await response.json();
+    if(json.status !== 'ok'){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+    out.textContent = json.data.commentary;
+  } catch (err) {
+    out.textContent = t('ca_ai_commentary_fail','AI解讀生成失敗，請重試');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('ca_ai_commentary_btn','🤖 產生AI文字解讀');
+  }
+}
+
+async function requestMultiTimeframe(){
+  if(!currentSearchSymbol) return;
+  const btn = document.getElementById('mtfBtn');
+  const out = document.getElementById('mtfResult');
+  btn.disabled = true;
+  btn.textContent = t('ca_mtf_loading','查詢緊...');
+  try {
+    const _mtflang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/chart-search/${encodeURIComponent(currentSearchSymbol)}/multi-timeframe${_mtflang ? '?lang=' + encodeURIComponent(_mtflang) : ''}`);
+    const json = await response.json();
+    if(json.status !== 'ok'){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+    const data = json.data;
+    const rows = (data.timeframes || []).map(tf =>
+      `<div class="result-row"><div class="result-label">${tf.label}</div><div class="result-value">${tf.trend} · ${tf.confluence_direction}（${tf.confluence_score}）</div></div>`
+    ).join('');
+    out.innerHTML = rows + `<div class="upload-hint" style="margin-top:0.4rem">${data.alignment || ''}</div>`;
+  } catch (err) {
+    out.innerHTML = `<div class="upload-hint">${t('ca_mtf_fail','跨時間框架查詢失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('ca_mtf_btn','📊 查看跨時間框架');
+  }
+}
+
+// 2026-07-31 fix: this used to be a static object built once with hardcoded
+// Traditional Chinese values, so every strategy name in the backtest-
+// compare results stayed Chinese regardless of UI language. Turned into a
+// lookup function so each call reads the CURRENT language via the same
+// t()/I18N pattern already used for periodLabelMap/intervalLabelMap just
+// below -- new bt_strategy_* keys carry the same 7 strategy names
+// translated to all 47 languages.
+const BACKTEST_STRATEGY_LABEL_FALLBACK = {
+  confluence_trend: '趨勢追蹤（Confluence）',
+  breakout_donchian: '突破（Donchian Breakout）',
+  mean_reversion_bollinger: '均值回歸（Bollinger）',
+  atr_turtle_breakout: '海龜式突破（55日+ATR濾網）',
+  rsi_divergence: 'RSI背馳',
+  volume_breakout_confirmation: '量價突破確認',
+  ma_golden_cross: '黃金交叉/死亡交叉（50/200MA）',
+};
+function btStrategyLabel(code){
+  return t('bt_strategy_' + code, BACKTEST_STRATEGY_LABEL_FALLBACK[code] || code);
+}
+
+async function requestBacktestCompare(){
+  if(!currentSearchSymbol) return;
+  const btn = document.getElementById('backtestBtn');
+  const out = document.getElementById('backtestResult');
+  btn.disabled = true;
+  btn.textContent = t('ca_backtest_loading','回測緊...');
+  try {
+    // 2026-09-14 fix (site-wide lang-leak audit): sibling regime-router
+    // call below already sends lang -- this one never did, so an invalid-
+    // ticker rejection here always came back Chinese regardless of UI
+    // language.
+    const _btLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/backtest/${encodeURIComponent(currentSearchSymbol)}/compare${_btLang ? '?lang=' + encodeURIComponent(_btLang) : ''}`);
+    const json = await response.json();
+    if(json.status !== 'ok'){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+    const data = json.data;
+    // 2026-08-06 fix ("以下的地方顯示語言不一至...勝率 56.2%（16次交易）·
+    // 平均回報 3.22% · 最大回撤 14.04%"): this row template hardcoded raw
+    // Traditional/Cantonese Chinese regardless of UI language -- backend
+    // stats (win_rate_pct/trade_count/avg_return_pct/max_drawdown_pct) are
+    // plain numbers, so building the sentence here with a translated
+    // template (ca_bt_stats_line, 47 languages) instead of relying on any
+    // backend-supplied Chinese text.
+    const rows = (data.strategies || []).map(s => {
+      const label = btStrategyLabel(s.strategy);
+      const st = s.stats || {};
+      if(st.trade_count === 0){
+        return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">${t('ca_bt_no_trades','回測期間冇觸發任何交易訊號，無法計算統計數字。')}</div></div>`;
+      }
+      const statsLine = t('ca_bt_stats_line','勝率 {rate}%（{count}次交易）· 平均回報 {return}% · 最大回撤 {drawdown}%')
+        .replace('{rate}', st.win_rate_pct).replace('{count}', st.trade_count)
+        .replace('{return}', st.avg_return_pct).replace('{drawdown}', st.max_drawdown_pct);
+      return `<div class="result-row"><div class="result-label">${label}</div><div class="result-value">${statsLine}</div></div>`;
+    }).join('');
+    const caveats = (data.strategies && data.strategies[0] && data.strategies[0].caveats) || [];
+    // The backend (services/backtest_service.py) returns disclaimer/
+    // caveats as fixed, hardcoded Chinese sentences with no lang param --
+    // map the exact raw strings to translated keys here, same pattern as
+    // this page's existing VOLATILITY_KEYS/PULSE_LABEL_KEYS-style lookups.
+    const BT_DISCLAIMER_KEYS = {
+      '以上排名純粹基於歷史回測勝率排序，並非投資建議，亦不保證未來表現。': 'ca_bt_disclaimer',
+    };
+    const BT_CAVEAT_KEYS = {
+      '未計入手續費/滑點，實際表現會較差。': 'ca_bt_caveat_fees',
+      '支撐/阻力型訊號（依賴未來K棒確認嘅fractal swing point）刻意冇加入呢個回測，避免未來數據滲入歷史判斷。': 'ca_bt_caveat_sr_excluded',
+      '細樣本（交易次數少）嘅勝率統計學上唔可靠，請留意 stats.trade_count。': 'ca_bt_caveat_small_sample',
+      '過去表現不代表未來結果，呢個唔係投資建議。': 'ca_bt_caveat_no_advice',
+    };
+    function trBtText(raw, map){ const key = map[raw]; return key ? t(key, raw) : raw; }
+
+    // 2026-07-20: this info (how much real history the backtest above
+    // actually used) existed in the API response all along but was never
+    // rendered -- user had to guess. Now shown as its own line, e.g.
+    // "回測範圍：過去2年（日線）· 共 504 條K線".
+    const periodLabelMap = {
+      '1mo': t('ca_backtest_period_1mo','past 1 month'), '3mo': t('ca_backtest_period_3mo','past 3 months'),
+      '6mo': t('ca_backtest_period_6mo','past 6 months'), '1y': t('ca_backtest_period_1y','past 1 year'),
+      '2y': t('ca_backtest_period_2y','past 2 years'), '5y': t('ca_backtest_period_5y','past 5 years'),
+    };
+    const intervalLabelMap = {
+      '15m': t('ca_backtest_interval_15m','15-Min bars'), '1h': t('ca_backtest_interval_1h','Hourly bars'),
+      '1d': t('ca_backtest_interval_1d','Daily bars'), '1wk': t('ca_backtest_interval_1wk','Weekly bars'),
+      '1mo': t('ca_backtest_interval_1mo','Monthly bars'),
+    };
+    const periodLabel = periodLabelMap[data.period] || data.period || '-';
+    const intervalLabel = intervalLabelMap[data.interval] || data.interval || '-';
+    const rangeLineTmpl = t('ca_backtest_range_line', 'Backtest window: {period} ({interval}) · {n} bars used');
+    const rangeLine = rangeLineTmpl
+      .replace('{period}', periodLabel).replace('{interval}', intervalLabel)
+      .replace('{n}', data.data_points != null ? data.data_points : '-');
+
+    out.innerHTML = `<div class="upload-hint" style="margin-bottom:0.5rem">${rangeLine}</div>`
+      + rows
+      + `<div class="upload-hint" style="margin-top:0.6rem">${trBtText(data.disclaimer || '', BT_DISCLAIMER_KEYS)}</div>`
+      + (caveats.length ? `<div class="upload-hint" style="margin-top:0.3rem">${caveats.map(c => trBtText(c, BT_CAVEAT_KEYS)).join(' ')}</div>` : '');
+  } catch (err) {
+    out.innerHTML = `<div class="upload-hint">${t('ca_backtest_fail','策略回測查詢失敗，請重試')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('ca_backtest_btn','🧪 回測比較策略');
+  }
+}
+
+// P3 Regime Router (2026-08-10) -- same lazy-button-fetch pattern as
+// requestMultiTimeframe()/requestBacktestCompare() above. best-for-regime
+// is a READ of a persisted leaderboard, not a fresh scan (a live scan is
+// 35 walk-forward simulations, far too slow for a button click) -- so
+// most tickers not yet covered by the scheduled scan job will honestly
+// show "not enough data yet" rather than a fabricated pick. Still shows
+// the current regime immediately (that half is a fast live call).
+async function requestRegimeRouter(){
+  if(!currentSearchSymbol) return;
+  const btn = document.getElementById('regimeRouterBtn');
+  const out = document.getElementById('regimeRouterResult');
+  btn.disabled = true;
+  btn.textContent = t('ca_regime_router_loading','分析緊現時市況...');
+  try {
+    // 2026-08-31 fix (AJ flagged mixed-language rendering): this fetch used
+    // to omit ?lang= entirely, so the backend always returned hardcoded
+    // Cantonese reason/caveat text no matter what language was selected.
+    // Same pattern as _calang/_mtflang above.
+    const _rrlang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await fetch(`${API}/regime-router/${encodeURIComponent(currentSearchSymbol)}/best-for-regime${_rrlang ? '?lang=' + encodeURIComponent(_rrlang) : ''}`);
+    const json = await response.json();
+    if(json.status !== 'ok' || !json.data){
+      throw new Error(json.message || t('ca_search_alert_fail','分析失敗'));
+    }
+    const d = json.data;
+    const regimeLine = t('ca_regime_router_current','現時市況：{regime}').replace('{regime}', d.regime);
+    if (!d.available) {
+      out.innerHTML = `
+        <div class="result-row"><div class="result-label">${regimeLine}</div><div class="result-value"></div></div>
+        <div class="upload-hint" style="margin-top:0.4rem">${d.reason || t('ca_regime_router_no_data','呢隻股票喺呢個市況嘅歷史配對數據仲未夠，掃描會持續進行，遲啲再嚟睇睇。')}</div>
+      `;
+    } else {
+      const bc = d.best_candidate;
+      const bestLine = t('ca_regime_router_best','歷史上呢個市況表現最好嘅訊號組合：{label}').replace('{label}', bc.label);
+      const statsLine = t('ca_regime_router_stats','（{n}單交易，勝率{wr}%，平均回報{ret}%）')
+        .replace('{n}', bc.trade_count).replace('{wr}', bc.win_rate_pct).replace('{ret}', bc.avg_return_pct);
+      out.innerHTML = `
+        <div class="result-row"><div class="result-label">${regimeLine}</div><div class="result-value"></div></div>
+        <div class="result-row"><div class="result-label">${bestLine}</div><div class="result-value">${statsLine}</div></div>
+        <div class="upload-hint" style="margin-top:0.4rem">${t('ca_regime_router_caveat','呢個係歷史配對統計，唔係即時交易訊號，唔係投資建議，過去表現不代表將來結果。')}</div>
+      `;
+    }
+  } catch (err) {
+    out.innerHTML = `<div class="upload-hint">${t('ca_regime_router_error','暫時無法判斷市況配對。')}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('ca_regime_router_btn','🧭 查看市況配對');
+  }
+}
+
+// Prefill from a shared Chart Search link (?symbol=...&mode=search) so
+// sharing genuinely re-runs the same real analysis rather than showing a
+// frozen screenshot of it.
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): the
+// urlMode==='upload' branch + switchMode() calls are gone along with
+// switchMode() itself; search is the only mode now, so this always
+// prefills+runs a ticker search if ?symbol= is present. #symbolInput no
+// longer exists in the DOM (it was upload-mode-only), so that autocomplete
+// attach call is gone too.
+(function initChartAnalysisMode(){
+  // Pre-populate the 17 Q&A cards with the "-" not-yet-analyzed placeholder
+  // (matches the old static markup's pre-search look) so the block never
+  // renders as an empty box before the user's first search.
+  renderPatternDetails({});
+
+  const params = new URLSearchParams(location.search);
+  const urlSymbol = params.get('symbol');
+  if (urlSymbol) {
+    document.getElementById('tickerSearchInput').value = urlSymbol;
+    runTickerSearch(urlSymbol);
+  }
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#tickerSearchInput');
+  }
+})();
+
+// 2026-08-08 removal (AJ: "AI Chart Analysis 上傳截圖 收起 唔用"): runImageAnalysis()
+// used to POST an uploaded screenshot to the now-deleted backend
+// POST /chart-analysis endpoint (api/chart_analysis.py). Its only caller
+// was the analyzeBtn onclick, which was removed along with uploadPanel.
+
+// keep navbar behavior consistent
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#D35400);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/search-reminder.js"></script>
+
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

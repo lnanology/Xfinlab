@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — Screener Engine™ 股票篩選器</title>
+<link rel="canonical" href="https://www.xfinlab.com/screener.html">
+<meta name="robots" content="index, follow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+<script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
+<script src="js/mvp-api.js"></script>
+<script src="js/sparkline.js"></script>
+
+<style>nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
+
+.filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.filter-group label{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);display:block;margin-bottom:0.4rem;}
+.filter-select{width:100%;background:var(--navy4);border:1px solid var(--border2);border-radius:4px;padding:0.6rem 0.8rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;cursor:pointer;}
+.filter-select option{background:var(--navy3);}
+.preset-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.preset-btn{padding:0.35rem 0.9rem;border:1px solid var(--border);border-radius:12px;font-size:0.75rem;color:var(--text2);cursor:pointer;transition:all 0.2s;background:transparent;}
+.preset-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(245,158,11,0.08);}
+.screen-btn{width:100%;background:var(--blue2);color:#fff;border:none;border-radius:4px;padding:0.85rem;font-size:0.88rem;font-weight:500;cursor:pointer;transition:background 0.2s;margin-bottom:2rem;}
+.screen-btn:hover{background:var(--blue);}
+.screen-btn:disabled{background:var(--navy4);color:var(--text3);cursor:not-allowed;}
+.result-card{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:1rem;display:none;}
+.result-card.show{display:block;}
+.result-title{font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;}
+.analysis-text{font-size:0.85rem;color:var(--text2);line-height:1.8;}
+.analysis-text h3{color:var(--blue);font-size:0.88rem;font-weight:500;margin:0.8rem 0 0.3rem;}
+.analysis-text strong{color:var(--gold);}
+.loading-text{text-align:center;padding:2rem;color:var(--text2);}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block;}
+.dot-ani span:nth-child(2){animation-delay:0.2s;}
+.dot-ani span:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+/* 2026-07-25 fix (task #405): the AI screening result is a markdown table
+   (代號/公司名稱/核心理由/風險提示) -- fmt() used to just \n->br the whole
+   response, so it rendered as one unbroken line of raw "| 0700.HK | ... |"
+   pipe text. Reuses the exact same table-detection + row-card approach
+   already shipped on company-compare.html/news-denoise.html (task #283)
+   instead of a third hand-rolled parser for the same problem shape. */
+.analysis-text .sc-card{border:1px solid var(--border);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem;background:var(--navy3);}
+.analysis-text .sc-card-title{color:var(--blue2);font-weight:700;font-size:1rem;margin-bottom:0.4rem;}
+.analysis-text .sc-field{font-size:0.85rem;line-height:1.6;color:var(--text2);margin-top:0.3rem;}
+.analysis-text .sc-field-label{font-weight:600;color:var(--text);margin-right:0.3rem;}
+.analysis-text table{width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:0.85rem;}
+.analysis-text table th,.analysis-text table td{border:1px solid var(--border);padding:0.5rem 0.6rem;text-align:left;}
+.analysis-text table th{background:var(--navy3);color:var(--blue);}
+</style>
+<script src="js/nav.js"></script>
+<!-- 2026-07-26 fix: same missing-autocomplete.js root cause as news.html/
+     portfolio.html/pricing.html -- js/nav.js's gs() bails without
+     window.searchAssets, so this page's shared topbar was missing the 🔍
+     icon. -->
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/quota.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<meta name="description" content="AI stock screener. Find the best investment opportunities.">
+<meta property="og:title" content="Stock Screener — XFINLAB AI">
+<meta property="og:description" content="AI stock screener. Find the best investment opportunities.">
+<meta property="og:url" content="https://www.xfinlab.com/screener.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Stock Screener — XFINLAB AI">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+</nav>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+</script>
+<div class="container">
+  <div class="page-tag">Screener Engine™</div>
+  <h1 class="page-title" data-i18n="sc_title">股票篩選器</h1>
+  <p class="page-sub" data-i18n="sc_subtitle">設定條件，AI為你篩選符合標準的潛力股票並提供分析報告</p>
+  <div class="page-tag" style="margin-bottom:0.4rem;" data-i18n="sc_quick_presets">快速預設</div>
+  <div class="preset-row">
+    <div class="preset-btn" onclick="setPreset('growth')" data-i18n="sc_preset_growth">🚀 高增長股</div>
+    <div class="preset-btn" onclick="setPreset('value')" data-i18n="sc_preset_value">💎 價值投資</div>
+    <div class="preset-btn" onclick="setPreset('dividend')" data-i18n="sc_preset_dividend">💰 高息股</div>
+    <div class="preset-btn" onclick="setPreset('momentum')" data-i18n="sc_preset_momentum">⚡ 動能強勢</div>
+    <div class="preset-btn" onclick="setPreset('smallcap')" data-i18n="sc_preset_smallcap">🌱 小市值潛力</div>
+    <div class="preset-btn" onclick="setPreset('tech')" data-i18n="sc_preset_tech">💻 科技龍頭</div>
+  </div>
+  <div class="filter-grid">
+    <div class="filter-group">
+      <label data-i18n="sc_f_market_label">市場</label>
+      <select class="filter-select" id="f_market">
+        <option value="全球" data-i18n="sc_opt_global">🌍 全球</option>
+        <option value="港股" data-i18n="sc_opt_hk">🇭🇰 港股</option>
+        <option value="美股" data-i18n="sc_opt_us">🇺🇸 美股</option>
+        <option value="A股" data-i18n="sc_opt_ashare">🇨🇳 A股</option>
+        <option value="加密貨幣" data-i18n="sc_opt_crypto">🪙 加密貨幣</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label data-i18n="sc_f_sector_label">行業</label>
+      <select class="filter-select" id="f_sector">
+        <option value="所有行業" data-i18n="sc_opt_all_sectors">所有行業</option>
+        <option value="科技" data-i18n="sc_opt_tech">科技</option>
+        <option value="金融" data-i18n="sc_opt_finance">金融</option>
+        <option value="醫療" data-i18n="sc_opt_healthcare">醫療</option>
+        <option value="消費" data-i18n="sc_opt_consumer">消費</option>
+        <option value="能源" data-i18n="sc_opt_energy">能源</option>
+        <option value="房地產" data-i18n="sc_opt_realestate">房地產</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label data-i18n="sc_f_cap_label">市值</label>
+      <select class="filter-select" id="f_cap">
+        <option value="任何市值" data-i18n="sc_opt_any_cap">任何市值</option>
+        <option value="大型股(>500億美元)" data-i18n="sc_opt_large_cap">大型股 &gt;500億</option>
+        <option value="中型股(50-500億美元)" data-i18n="sc_opt_mid_cap">中型股 50-500億</option>
+        <option value="小型股(<50億美元)" data-i18n="sc_opt_small_cap">小型股 &lt;50億</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label data-i18n="sc_f_growth_label">增長率</label>
+      <select class="filter-select" id="f_growth">
+        <option value="任何增長率" data-i18n="sc_opt_any_growth">任何增長率</option>
+        <option value="高增長(>30%)" data-i18n="sc_opt_high_growth">高增長 &gt;30%</option>
+        <option value="穩健增長(10-30%)" data-i18n="sc_opt_steady_growth">穩健增長 10-30%</option>
+        <option value="低增長(<10%)" data-i18n="sc_opt_low_growth">低增長 &lt;10%</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label data-i18n="sc_f_value_label">估值</label>
+      <select class="filter-select" id="f_value">
+        <option value="任何估值" data-i18n="sc_opt_any_value">任何估值</option>
+        <option value="低估值(PE<15)" data-i18n="sc_opt_low_value">低估值 PE&lt;15</option>
+        <option value="合理估值(PE 15-30)" data-i18n="sc_opt_fair_value">合理估值 PE 15-30</option>
+        <option value="高增長溢價(PE>30)" data-i18n="sc_opt_growth_premium">高增長溢價 PE&gt;30</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label data-i18n="sc_f_risk_label">風險</label>
+      <select class="filter-select" id="f_risk">
+        <option value="任何風險" data-i18n="sc_opt_any_risk">任何風險</option>
+        <option value="低風險" data-i18n="sc_opt_low_risk">低風險</option>
+        <option value="中等風險" data-i18n="sc_opt_medium_risk">中等風險</option>
+        <option value="高風險高回報" data-i18n="sc_opt_high_risk">高風險高回報</option>
+      </select>
+    </div>
+  </div>
+  <button class="screen-btn" id="screenBtn" onclick="doScreen()" data-i18n="sc_run_btn">🔍 AI 智能篩選分析</button>
+  <div class="result-card" id="resultCard">
+    <div class="result-title" id="resultTitle" data-i18n="sc_result_title_default">篩選結果</div>
+    <div class="analysis-text" id="resultContent"></div>
+    <!-- 2026-07-25 ("唔明？直接問AI"): same pattern as ai-analysis.html's
+         quick-actions link -- hands the filter context straight to
+         chat.html's existing ?q= auto-send instead of leaving the user to
+         retype the whole screening context from scratch in a blank chat. -->
+    <div id="scAskAiRow" style="display:none;margin-top:0.8rem">
+      <a id="scAskAi" href="chat.html" data-i18n="sc_ask_ai" style="background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary);padding:0.5rem 0.9rem;border-radius:8px;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem">🤖 唔明？直接問AI</a>
+    </div>
+    <div style="font-size:0.72rem;color:var(--text3);border-top:1px solid var(--border);padding-top:0.8rem;margin-top:1rem;" data-i18n="sc_disclaimer">⚠️ 以上篩選結果由AI生成，僅供參考，不構成投資建議。</div>
+  </div>
+  <div id="shareBar"></div>
+</div>
+<script>
+const presets={
+  growth:{market:'美股',sector:'科技',cap:'任何市值',growth:'高增長(>30%)',value:'高增長溢價(PE>30)',risk:'中等風險'},
+  value:{market:'全球',sector:'所有行業',cap:'大型股(>500億美元)',growth:'穩健增長(10-30%)',value:'低估值(PE<15)',risk:'低風險'},
+  dividend:{market:'港股',sector:'所有行業',cap:'大型股(>500億美元)',growth:'低增長(<10%)',value:'合理估值(PE 15-30)',risk:'低風險'},
+  momentum:{market:'美股',sector:'所有行業',cap:'任何市值',growth:'高增長(>30%)',value:'任何估值',risk:'高風險高回報'},
+  smallcap:{market:'全球',sector:'科技',cap:'小型股(<50億美元)',growth:'高增長(>30%)',value:'任何估值',risk:'高風險高回報'},
+  tech:{market:'美股',sector:'科技',cap:'大型股(>500億美元)',growth:'穩健增長(10-30%)',value:'合理估值(PE 15-30)',risk:'中等風險'}
+};
+function setPreset(p){
+  const s=presets[p];
+  document.getElementById('f_market').value=s.market;
+  document.getElementById('f_sector').value=s.sector;
+  document.getElementById('f_cap').value=s.cap;
+  document.getElementById('f_growth').value=s.growth;
+  document.getElementById('f_value').value=s.value;
+  document.getElementById('f_risk').value=s.risk;
+}
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+// 2026-07-31 fix: the post-search summary line used to show the raw <option
+// value="..."> string (always Chinese, e.g. "全球"/"任何風險") regardless of
+// UI language -- those values are the semantic filter values sent to the
+// backend, never translated themselves. The <option>'s displayed textContent
+// IS already translated by I18N.apply() by the time doScreen() runs, so
+// reading .selectedOptions[0].textContent gives the correct on-screen label
+// in whatever language is active, without touching the underlying query.
+function selText(id){
+  const el = document.getElementById(id);
+  if(el && el.selectedOptions && el.selectedOptions[0]) return el.selectedOptions[0].textContent.trim();
+  return el ? el.value : '';
+}
+
+async function doScreen(){
+  const market=document.getElementById('f_market').value;
+  const sector=document.getElementById('f_sector').value;
+  const cap=document.getElementById('f_cap').value;
+  const growth=document.getElementById('f_growth').value;
+  const value=document.getElementById('f_value').value;
+  const risk=document.getElementById('f_risk').value;
+  document.getElementById('screenBtn').disabled=true;
+  document.getElementById('resultCard').className='result-card show';
+  document.getElementById('resultTitle').textContent=t('sc_analyzing_title','AI 篩選分析中...');
+  document.getElementById('resultContent').innerHTML=`<div class="loading-text"><div class="dot-ani">${t('sc_loading','AI 智能篩選中')}<span>.</span><span>.</span><span>.</span></div></div>`;
+  // 2026-07-23 fix (task #317/#327): this used to be one hardcoded
+  // Chinese template regardless of UI language. sc_query_template
+  // carries the exact same structure translated to all 46 languages,
+  // with {MARKET}/{SECTOR}/{CAP}/{GROWTH}/{VALUE}/{RISK} substituted in
+  // (the filter values themselves stay as the option's underlying
+  // value -- same short category words the backend/rule engine already
+  // expects -- only the surrounding instructional text is translated).
+  const scTemplate = t('sc_query_template', '請根據以下條件篩選推薦股票：\n市場：{MARKET}\n行業：{SECTOR}\n市值：{CAP}\n增長率：{GROWTH}\n估值：{VALUE}\n風險：{RISK}\n\n請提供：\n## 🎯 篩選結果（推薦5-8隻股票）\n每隻股票包含：代號、公司名、核心理由（2句）、風險提示\n\n## 📊 行業分析\n當前該條件下最值得關注的行業趨勢\n\n## ⚠️ 整體風險提示\n目前市場環境下的主要風險因素');
+  const query = scTemplate
+    .replace('{MARKET}', market).replace('{SECTOR}', sector).replace('{CAP}', cap)
+    .replace('{GROWTH}', growth).replace('{VALUE}', value).replace('{RISK}', risk);
+  try{
+    const payload = {
+      query, user: 'xfinlab-screener', filters: { market, sector, cap, growth, value, risk },
+      lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined
+    };
+    const res = await postApi('/api/ai-analysis', payload);
+    const answer = res?.data?.conclusion || res?.data?.analysis || res?.answer || '';
+    if(answer){
+      document.getElementById('resultTitle').textContent=`${selText('f_market')} · ${selText('f_sector')} · ${selText('f_risk')} ${t('sc_result_title_suffix','篩選結果')}`;
+      const resultContentEl=document.getElementById('resultContent');
+      resultContentEl.innerHTML=fmt(typeof answer === 'string' ? answer : JSON.stringify(answer));
+      scAttachSparklines(resultContentEl);
+
+      const scAskQ = t('sc_ask_ai_q','我啱啱用篩選器搵咗呢啲條件：市場{market}、行業{sector}、市值{cap}、增長率{growth}、估值{value}、風險{risk}，可唔可以再簡單解釋一次點解會揀呢啲推薦？')
+        .replace('{market}', market).replace('{sector}', sector).replace('{cap}', cap).replace('{growth}', growth).replace('{value}', value).replace('{risk}', risk);
+      document.getElementById('scAskAi').href = `chat.html?q=${encodeURIComponent(scAskQ)}`;
+      document.getElementById('scAskAiRow').style.display = 'block';
+
+      if (typeof window.renderShareBar === 'function') {
+        const params = new URLSearchParams({ market, sector, cap, growth, value, risk });
+        const shareUrl = `${location.origin}${location.pathname}?${params.toString()}`;
+        window.renderShareBar('shareBar', 'resultCard', {
+          filename: `xfinlab-screener-${market}-${sector}`,
+          shareUrl: shareUrl
+        });
+      }
+    }
+  }catch(e){document.getElementById('resultContent').innerHTML=`<p style="color:var(--accent-red)">${t('sc_error_msg','篩選出現問題，請稍後重試。')}</p>`;}
+  document.getElementById('screenBtn').disabled=false;
+}
+// 2026-07-25 fix (task #405): table-aware formatter, ported from
+// company-compare.html's formatAnalysis()/cc* helpers (task #283) -- same
+// "代號/公司名/理由/風險" row shape the screener prompt asks the AI for.
+function scIsTableRow(line){const t=line.trim();return t.startsWith('|')&&t.endsWith('|')&&t.length>1;}
+function scIsTableSeparator(line){const t=line.trim();return t.includes('-')&&/^\|?[\s:|-]+\|?$/.test(t);}
+function scSplitTableRow(line){let t=line.trim();if(t.startsWith('|'))t=t.slice(1);if(t.endsWith('|'))t=t.slice(0,-1);return t.split('|').map(c=>c.trim());}
+function scEscape(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function scInlineFormat(s){return scEscape(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+// 2026-08-10 (task #747-749, "所有卡片有資產的都加細K線小圖"): AI-generated
+// screener rows have no structured backing data (api/ai_analysis.py returns
+// free-text prose, not a ticker-keyed JSON list -- see js/sparkline.js's
+// module docstring), so a ticker-shaped ID guard here (same pattern as
+// api/anomaly.py's _SYMBOL_RE) decides whether the primary cell is safe to
+// key a sparkline lookup off of -- the AI sometimes writes "AAPL" but can
+// also write a bare company name with no code in that column, which this
+// deliberately does NOT try to fetch a chart for.
+const SC_TICKER_RE = /^[A-Za-z0-9.\-=^]{1,12}$/;
+function scRenderRowCard(header,row){
+  let primaryIdx=header.findIndex(h=>/代號|代码|ticker|symbol/i.test(h));
+  if(primaryIdx===-1)primaryIdx=0;
+  const fields=row.map((cell,i)=>i===primaryIdx?null:
+    `<div class="sc-field"><span class="sc-field-label">${scInlineFormat(header[i])}：</span>${scInlineFormat(cell)}</div>`
+  ).filter(Boolean).join('');
+  const rawTicker=(row[primaryIdx]||'').trim().toUpperCase();
+  const tickerAttr=SC_TICKER_RE.test(rawTicker)?` data-ticker="${scEscape(rawTicker)}"`:'';
+  const sparkSlot=tickerAttr?`<span class="sc-spark" style="display:block;width:90px;margin:4px 0"></span>`:'';
+  return `<div class="sc-card"${tickerAttr}><div class="sc-card-title">${scInlineFormat(row[primaryIdx])}</div>${sparkSlot}${fields}</div>`;
+}
+// Post-render pass: fetch the generic GET /api/sparkline/{ticker} lookup
+// once per card that got a data-ticker attribute above, same client-side
+// pattern as company-compare.html / dashboard.html's watchlist.
+function scAttachSparklines(container){
+  if(typeof XflSparkline==='undefined')return;
+  container.querySelectorAll('.sc-card[data-ticker]').forEach(card=>{
+    const ticker=card.getAttribute('data-ticker');
+    const slot=card.querySelector('.sc-spark');
+    if(!ticker||!slot)return;
+    fetch(`${API_BASE}/api/sparkline/${encodeURIComponent(ticker)}`).then(r=>r.json()).then(d=>{
+      slot.innerHTML=XflSparkline.render(d.sparkline,'neutral',{width:90,height:24,className:'xfl-spark-sm'});
+    }).catch(()=>{});
+  });
+}
+function scRenderTableBlock(tableLines){
+  const header=scSplitTableRow(tableLines[0]);
+  const rows=tableLines.slice(2).map(scSplitTableRow).filter(r=>r.length===header.length);
+  if(header.length>2)return rows.map(r=>scRenderRowCard(header,r)).join('');
+  const theadHtml=`<tr>${header.map(h=>`<th>${scInlineFormat(h)}</th>`).join('')}</tr>`;
+  const tbodyHtml=rows.map(r=>`<tr>${r.map(c=>`<td>${scInlineFormat(c)}</td>`).join('')}</tr>`).join('');
+  return `<table><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;
+}
+function scRenderTextBlock(text){
+  return scInlineFormat(text).replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');
+}
+function fmt(text){
+  const lines=text.split('\n');
+  const blocks=[];
+  let i=0;
+  while(i<lines.length){
+    if(scIsTableRow(lines[i])&&scIsTableSeparator(lines[i+1]||'')){
+      const tableLines=[lines[i],lines[i+1]];
+      i+=2;
+      while(i<lines.length&&scIsTableRow(lines[i])){tableLines.push(lines[i]);i++;}
+      blocks.push({type:'table',lines:tableLines});
+    }else{
+      const textLines=[];
+      while(i<lines.length&&!(scIsTableRow(lines[i])&&scIsTableSeparator(lines[i+1]||''))){textLines.push(lines[i]);i++;}
+      blocks.push({type:'text',lines:textLines});
+    }
+  }
+  return blocks.map(b=>b.type==='table'?scRenderTableBlock(b.lines):scRenderTextBlock(b.lines.join('\n'))).join('');
+}
+
+// Share System: a link with the same filter params (?market=...&sector=...)
+// prefills every dropdown and re-runs the same real screening query.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  if (params.has('market')) {
+    ['market','sector','cap','growth','value','risk'].forEach(key => {
+      const v = params.get(key);
+      const el = document.getElementById('f_' + key);
+      if (v && el) el.value = v;
+    });
+    doScreen();
+  }
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#fff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:var(--bg-secondary);color:var(--text-primary);text-align:center;padding:9px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:var(--bg-secondary);color:var(--text-primary);text-align:center;padding:9px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#fff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_screener">Screener</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

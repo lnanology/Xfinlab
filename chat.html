@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — Research Agent AI 金融分析</title>
+<meta name="description" content="同XFINLAB AI對話，即時查詢股票、加密貨幣、市場趨勢分析。">
+<link rel="canonical" href="https://www.xfinlab.com/chat.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="AI對話 — XFINLAB">
+<meta property="og:description" content="同XFINLAB AI對話，即時查詢股票、加密貨幣、市場趨勢分析。">
+<meta property="og:url" content="https://www.xfinlab.com/chat.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+<style>
+/* 2026-07-21 fix: html,body{height:100%} doesn't account for mobile
+   browsers' dynamic viewport (address bar show/hide, on-screen keyboard) --
+   the fixed-height flex column (nav + main + input-area) could end up
+   taller than the real visible viewport on phones/tablets, and with
+   overflow:hidden on body there was no way to scroll down to reveal the
+   clipped .input-area ("入AI CHAT無CHAT框") or the whole page could shift
+   in a way that made nav feel unresponsive ("TOPBAR沒反應/TOPBAR不動").
+   100dvh tracks the browser's actual visible viewport instead; the 100%
+   fallback keeps working on older browsers that don't support dvh. */
+html,body{height:100%;height:100dvh;overflow:hidden}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;display:flex;flex-direction:column;min-height:0}
+
+/* NAV */
+nav{position:relative;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-color);background:var(--bg-primary);flex-shrink:0;z-index:10}
+.nav-center{display:flex;align-items:center;gap:0.5rem}
+.mode-btn{padding:6px 12px;border-radius:20px;font-size:0.9rem;cursor:pointer;transition:all 0.12s;border:1px solid var(--border-color);color:var(--text-secondary);background:transparent}
+.mode-btn.active{background:var(--bg-secondary);border-color:var(--border-color);color:var(--accent-blue)}
+.nav-right{display:flex;align-items:center;gap:0.8rem}
+
+.new-chat-btn{background:transparent;border:1px solid var(--border-color);color:var(--accent-blue);padding:6px 12px;border-radius:8px;font-size:0.9rem;cursor:pointer;transition:all 0.12s}
+.new-chat-btn:hover{background:var(--bg-secondary)}
+
+/* MAIN */
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-color);display:flex;flex-direction:column;flex-shrink:0}
+.sb-top{padding:12px}
+.sb-label{font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem}
+.quick-prompt{display:flex;align-items:flex-start;gap:0.6rem;padding:8px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:all 0.12s;margin-bottom:6px;background:transparent}
+.quick-prompt:hover{background:var(--bg-secondary)}
+.qp-icon{font-size:1rem;flex-shrink:0;margin-top:0.1rem}
+.qp-text{font-size:0.9rem;color:var(--text-secondary);line-height:1.4}
+.qp-text strong{color:var(--text-primary);font-weight:600;display:block;margin-bottom:2px;font-size:0.92rem}
+.divider{border:none;border-top:1px solid var(--border-color);margin:0.5rem 0}
+.history-list{flex:1;overflow-y:auto;padding:0 12px 12px}
+.history-item{padding:8px;border-radius:8px;transition:all 0.12s;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;position:relative}
+.history-item:hover{background:var(--bg-secondary);color:var(--text-primary)}
+.history-item-text{display:block;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:20px}
+/* task #323: optional per-item delete control, hidden until hover so the
+   list doesn't look cluttered by default */
+.history-del{position:absolute;right:2px;top:50%;transform:translateY(-50%);opacity:0;transition:opacity 0.12s;background:transparent;border:none;color:var(--text-secondary);cursor:pointer;font-size:0.8rem;line-height:1;padding:3px 6px;border-radius:4px}
+.history-item:hover .history-del{opacity:1}
+.history-del:hover{color:#ef4444;background:var(--bg-card)}
+.sb-bottom{padding:12px;border-top:1px solid var(--border-color)}
+.sb-tip{font-size:0.82rem;color:var(--text-muted);line-height:1.5;padding:8px;background:rgba(245,158,11,0.06);border-radius:6px;border-left:3px solid var(--accent-orange)}
+
+/* CHAT AREA */
+/* 2026-07-24 fix: .chat-area's direct children now carry explicit `order`
+   values so the 14-button .input-tools row can be repositioned per
+   breakpoint via CSS alone (no DOM move needed): desktop keeps it below
+   the input row (order:4, closest to the input as a secondary shortcut
+   row); the mobile media query further down overrides it to order:0 so
+   it renders above the welcome/messages content instead -- see that
+   query for the full reasoning. */
+.chat-area{flex:1;width:100%;min-width:0;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.welcome,.messages{order:2}
+.img-preview{order:3}
+.input-area{order:4}
+.input-tools{order:5}
+
+/* 2026-07-24 fix ("信號框擋左" -- the fixed bottom-right "🎯 訂閱每日信號"
+   badge (js/free-signals-badge.js) and the "TG Signals" widget both float
+   OVER the bottom-right corner of the viewport, which is exactly where
+   this page's pinned input row/messages live since .chat-area spans the
+   full remaining width next to the sidebar. On desktop the chat column
+   needs to stay narrower than that badge stack so its content (message
+   bubbles, mic/send buttons, hint text) never renders underneath it.
+   A flat, generously-sized value is used deliberately instead of a
+   JS-measured one (an earlier version of this fix computed the exact
+   badge width in JS and broke the nav logo -- reverted, see chat commit
+   history 2026-07-24). Both floating badges are short pill-shaped labels
+   (emoji + 2-4 words) even in the longest translated language, so a
+   static 260px comfortably clears them everywhere without needing to
+   measure anything. Mobile is excluded: its floating-widget clearance is
+   handled separately (padding-bottom, see mobile query) since badges
+   reflow differently on narrow screens. */
+@media(min-width:769px){
+  .chat-area{padding-right:260px}
+}
+
+/* WELCOME */
+/* 2026-07-22 fix: unlike .messages, this never had its own scrollbar --
+   its parent .chat-area is overflow:hidden, so once the 9-card welcome
+   grid needed more height than the fixed 100dvh shell had left (nav now
+   2 rows tall on narrow phones + logo/subtitle + 9 cards), the excess
+   was silently clipped with literally nothing to scroll ("滑不動") and
+   the input box below it never came into view ("無CHAT"). justify-
+   content:center made it worse: a flex box shorter than its content
+   clips evenly from BOTH the top and bottom, so scrolling up didn't
+   reveal anything either. Give it its own scroll like .messages already
+   has, and stop force-centering so content simply flows from the top.
+   2026-07-24 fix ("上面9個卡片上面 我睇唔到XFINLAB"): that centering fix
+   was only ever applied inside the mobile media query below -- this
+   base rule (which desktop also uses) still had justify-content:center,
+   so the exact same top/bottom clipping bug described above was still
+   live on desktop any time the welcome-logo + welcome-sub + 9-card grid
+   needed more height than a shorter/laptop-height browser window had
+   available: the "XFINLAB" wordmark and subtitle sit at the very top of
+   that centered block, so they were the first thing to get clipped off
+   with no way to scroll up to them. Removing the centering here (not
+   just on mobile) fixes it identically on desktop. */
+/* 2026-08-22 redesign ("AI CHAT介面跟Ruixen Moon Chat咁,底色跟網站黑色及
+   橙色"): hero-style empty state -- big centered wordmark, one-line
+   subtitle, a soft radial glow (site's orange accent instead of the
+   reference's blue/purple), and the 9 quick-prompt cards restyled as
+   rounded pill buttons wrapping under the input, matching the reference
+   screenshot's layout. .welcome-grid keeps its original class NAME (JS's
+   positionInputTools() above still selects '.welcome-grid' to relocate
+   #inputTools on mobile) even though its CSS is now a flex pill-wrap
+   instead of a 3-col grid -- renaming it would silently break that JS. */
+/* 2026-08-24 fix ("個AICHAT劃面得一半" -- AI Chat screen only filling half
+   the viewport): .main/.chat-area/.messages all explicitly set
+   min-height:0 (needed for a flex:1 item inside a flex-column parent to
+   actually grow to fill available space instead of clamping to its own
+   content's intrinsic min-height) -- .welcome was the one flex:1 item in
+   this exact chain that DIDN'T have it, an inconsistency against this
+   same file's own established pattern. Without it, #welcome could refuse
+   to expand past its own content height in some browsers/zoom levels,
+   leaving the whole welcome+input block sized to its content instead of
+   the full viewport, with dead space below down to the footer. Also
+   width:100% -- belt-and-braces alongside flex:1 so this never depends
+   on flex-basis:auto resolving correctly on its own. */
+.welcome{position:relative;flex:1;width:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem;padding-top:min(9vh,4rem);text-align:center;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* 2026-08-22 v2 (AJ: "好似無點改" -- the first pass's glow/pills were too
+   subtle to read as a redesign at a glance). Made the glow much bigger/
+   more saturated (closer to the reference screenshot's dominant lit-up
+   sphere, just orange instead of blue/purple). Deliberately kept
+   justify-content:flex-start, NOT :center -- the 2026-07-22/07-24 fixes
+   right above this rule exist specifically because centering a flex
+   column taller than the viewport clips it evenly from BOTH top and
+   bottom with nothing to scroll up to ("上面9個卡片上面 我睇唔到
+   XFINLAB"), which is exactly what would happen again here once the
+   glow/bigger logo/9 pills push total height past a shorter laptop
+   window. padding-top nudges the block down instead, giving a similar
+   "centered hero" feel without reintroducing that clipping bug. */
+.welcome::before{content:'';position:absolute;top:50%;left:50%;width:min(1100px,150vw);height:640px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(245,158,11,0.42) 0%,rgba(245,158,11,0.20) 35%,rgba(245,158,11,0.06) 60%,transparent 78%);pointer-events:none;z-index:0}
+.welcome>*{position:relative;z-index:1}
+.welcome-logo{font-family:'DM Serif Display',serif;font-size:4.2rem;color:var(--text-primary);margin-bottom:0.7rem;letter-spacing:0.01em}
+.welcome-logo em{color:var(--accent-orange);font-style:normal}
+.welcome-sub{font-size:1.05rem;color:var(--text-secondary);margin-bottom:2.4rem;max-width:460px;line-height:1.8}
+.welcome-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:0.7rem;max-width:820px;width:100%;margin-top:1.6rem}
+.wcard{display:flex;align-items:center;gap:0.55rem;padding:12px 22px;border:1px solid rgba(245,158,11,0.22);border-radius:999px;cursor:pointer;transition:all 0.15s;text-align:left;background:var(--bg-card);backdrop-filter:blur(6px);white-space:nowrap;font-size:0.92rem}
+.wcard:hover{border-color:var(--accent-orange);background:rgba(245,158,11,0.14);transform:translateY(-2px)}
+.wcard-icon{font-size:1.05rem;margin-bottom:0}
+.wcard-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);margin-bottom:0}
+.wcard-desc{display:none}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem;min-height:0}
+.messages::-webkit-scrollbar{width:6px}
+.messages::-webkit-scrollbar-track{background:transparent}
+.messages::-webkit-scrollbar-thumb{background:var(--bg-secondary);border-radius:4px}
+.msg{display:flex;gap:0.8rem;max-width:85%}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg.bot{align-self:flex-start}
+.msg-avatar{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;font-family:'DM Serif Display',serif}
+.msg.bot .msg-avatar{background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--accent-blue);font-size:0.7rem;font-weight:600}
+.msg.user .msg-avatar{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.12);color:var(--accent-orange)}
+.msg-bubble{padding:0.8rem 1rem;border-radius:8px;font-size:0.94rem;line-height:1.7}
+.msg.bot .msg-bubble{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-primary)}
+.msg.user .msg-bubble{background:var(--accent-blue);color:#fff;border:none}
+.msg-bubble h3{font-size:0.96rem;font-weight:600;color:var(--accent-blue);margin:0.8rem 0 0.3rem}
+.msg-bubble h3:first-child{margin-top:0}
+.msg-bubble ul{padding-left:1.2rem;margin:0.4rem 0}
+.msg-bubble li{margin-bottom:0.2rem}
+.msg-bubble strong{color:var(--accent-orange);font-weight:600}
+.chat-ticker-strong{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+.chat-ticker-strong:hover{opacity:0.75}
+.msg-bubble table{border-collapse:collapse;width:100%;margin:0.5rem 0;font-size:0.88rem}
+.msg-bubble th{background:var(--bg-secondary);color:var(--accent-blue);padding:0.4rem 0.6rem;text-align:left;border:1px solid var(--border-color)}
+.msg-bubble td{padding:0.35rem 0.6rem;border:1px solid var(--border-color);color:var(--text-secondary)}
+
+/* 2026-07-30 (Paddle compliance): on-demand asset card -- shown only
+   after the user's question resolves to a specific ticker (never
+   proactively), pulling REAL data from the public /api/ai-analysis
+   endpoint. Deliberately shows only a descriptive probability bar
+   (Bullish/Neutral/Bearish %) and two plain structural price levels
+   (Key Level / Reference Level) -- no Entry/Stop Loss/Take Profit/
+   Risk-Reward framing, matching the same deep-rewrite already applied
+   to chart-analysis.html/ai-analysis.html/js/decision-footer.js this
+   session. Available to logged-out users too, since the underlying
+   endpoint fields are already ungated. */
+.chat-asset-card{margin-top:0.7rem;padding:0.8rem 0.9rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary)}
+.chat-asset-card-head{font-size:0.78rem;font-weight:700;color:var(--accent-blue);margin-bottom:0.5rem}
+.chat-asset-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--border-color);margin-bottom:0.4rem}
+.chat-asset-bar-seg{height:100%}
+.chat-asset-bar-legend{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.5rem}
+.chat-asset-levels{display:flex;gap:1.2rem;font-size:0.8rem;color:var(--text-secondary)}
+.chat-asset-levels b{color:var(--text-primary);font-family:monospace}
+.msg-bubble tr:hover td{background:var(--bg-secondary)}
+.msg-bubble .disclaimer{font-size:0.82rem;color:var(--text-muted);border-top:1px solid var(--border-color);margin-top:0.8rem;padding-top:0.6rem}
+
+/* 2026-07-19: comparison content (e.g. "AAPL vs TSLA vs NVDA, 優勢/劣勢")
+   used to come back from the AI as a raw markdown table -- formatMsg()
+   never parsed "|...|" at all, so it rendered as one unbroken wall of
+   pipe characters and literal "<br>" text. Two fixes: (1) generic
+   markdown tables now actually parse into the <table> styling above
+   that already existed but was dead code; (2) pros/cons-style compare
+   tables specifically render as stacked cards instead -- a table
+   forces side-by-side reading in a narrow chat bubble (bad for a
+   crowded 85%-width column), whereas one card per asset with a
+   green/red split lets the eye pattern-match ✓ vs ✗ instead of reading
+   full sentences (pre-attentive color coding + chunking, so each card
+   stays within ~4-5 short points per side -- Miller's Law). */
+.cc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;overflow:hidden}
+.cc-card-title{background:var(--bg-secondary);color:var(--accent-blue);font-weight:600;font-size:0.9rem;padding:0.5rem 0.8rem}
+.cc-card-grid{display:flex;flex-wrap:wrap}
+.cc-col{flex:1 1 160px;padding:0.6rem 0.8rem}
+.cc-col-pro{border-right:1px solid var(--border-color)}
+.cc-col-label{font-size:0.72rem;font-weight:600;letter-spacing:0.04em;margin-bottom:0.35rem}
+.cc-col-pro .cc-col-label{color:var(--accent-green)}
+.cc-col-con .cc-col-label{color:var(--accent-red)}
+.cc-list{list-style:none;padding:0;margin:0}
+.cc-list li{font-size:0.85rem;line-height:1.5;padding:0.15rem 0 0.15rem 1.1rem;position:relative;color:var(--text-secondary)}
+.cc-pro::before{content:'✓';position:absolute;left:0;color:var(--accent-green);font-weight:700}
+.cc-con::before{content:'✗';position:absolute;left:0;color:var(--accent-red);font-weight:700}
+@media(max-width:520px){.cc-col-pro{border-right:none;border-bottom:1px solid var(--border-color)}}
+/* 2026-07-20 fix (task #283): a pasted 4-column table (代號/公司名稱/核心
+   理由/風險提示 -- a stock-pick-style list) used to fall through to the
+   generic <table> below, which crammed 4 columns into one cramped row on
+   any screen narrower than a desktop ("主顯跟內文分行顯示" -- show the
+   primary field on its own line, then the rest stacked below, not squished
+   side by side). Reuses the same stacked-card idea as .cc-card above, just
+   generalized to any row shape instead of only pros/cons. */
+.rc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem}
+.rc-card-title{color:var(--accent-blue);font-weight:700;font-size:1rem;margin-bottom:0.4rem}
+.rc-field{font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-top:0.3rem}
+.rc-field-label{font-weight:600;color:var(--text-primary);margin-right:0.3rem}
+
+/* 2026-07-23: whenever the AI gives the user 2+ numbered options
+   ("1. ... 2. ..."), each one becomes a clickable navigation card
+   instead of plain numbered text -- clicking sends that option straight
+   back as the next message (reuses the existing sendQuick()), so a
+   clarifying question or a multi-choice answer becomes a tap-through
+   flow instead of the user having to retype/copy the option. See
+   formatMsg()/pushTextSegments() below for the detection logic. */
+.chat-options{display:flex;flex-direction:column;gap:0.5rem;margin:0.6rem 0}
+.chat-option-card{display:flex;align-items:center;gap:0.6rem;border:1px solid var(--border-color);border-radius:8px;padding:0.65rem 0.9rem;cursor:pointer;transition:all 0.12s;background:var(--bg-card)}
+.chat-option-card:hover{border-color:var(--accent-blue);background:var(--bg-secondary)}
+.chat-option-card:active{transform:scale(0.98)}
+.chat-option-num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent-blue);color:#fff;font-size:0.76rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.chat-option-text{flex:1;font-size:0.9rem;line-height:1.4;color:var(--text-primary)}
+.chat-option-arrow{flex:0 0 auto;color:var(--text-muted);font-size:0.9rem}
+
+.msg-time{font-size:0.78rem;color:var(--text-muted);margin-top:0.3rem;padding:0 0.2rem}
+.msg.user .msg-time{text-align:right}
+/* task #323: per-message copy/delete controls -- hidden until the
+   message is hovered/tapped so the normal chat view stays uncluttered */
+.msg-actions{display:flex;gap:4px;margin-top:2px;padding:0 0.2rem;opacity:0;transition:opacity 0.12s}
+.msg:hover .msg-actions,.msg:focus-within .msg-actions{opacity:1}
+.msg.user .msg-actions{justify-content:flex-end}
+.msg-action-btn{background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
+.msg-action-btn:hover{background:var(--bg-secondary);color:var(--accent-blue)}
+.msg-action-btn.speaking{color:var(--accent-orange,#f59e0b);background:var(--bg-secondary)}
+@media(max-width:768px){.msg-actions{opacity:1}}
+/* 2026-08-22 (AJ: "將錄音ICON 換好睇"): #micBtn used to reuse .send-btn's
+   look with an inline style override, and swapped its icon by rewriting
+   textContent to a 🎤/⏺ emoji -- emoji glyphs render inconsistently
+   across OS/browsers (different weight, size, colour per platform) and
+   clashed with the rest of this page's clean stroke-icon language. Now
+   an outline mic SVG (idle, matches .attach-btn's muted look) and a
+   filled stop-square SVG (recording) live in the button as two children,
+   toggled purely by the .mic-recording class below -- toggleVoiceInput()
+   no longer touches textContent at all, just adds/removes the class. */
+.mic-btn{background:transparent;border:1px solid var(--border-color);border-radius:12px;color:var(--text-secondary);width:44px;height:44px;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mic-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(245,158,11,0.06)}
+.mic-icon-rec{display:none}
+.mic-btn.mic-recording{background:var(--accent-red,#DC2626);border-color:var(--accent-red,#DC2626);color:#fff;animation:xfl-mic-pulse 1.2s ease-in-out infinite}
+.mic-btn.mic-recording .mic-icon-idle{display:none}
+.mic-btn.mic-recording .mic-icon-rec{display:block}
+@keyframes xfl-mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.45)}50%{box-shadow:0 0 0 8px rgba(220,38,38,0)}}
+
+/* TYPING */
+.typing{display:flex;gap:0.3rem;align-items:center;padding:0.8rem 1rem}
+.typing span{width:6px;height:6px;background:var(--accent-blue);border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:0.2s}
+.typing span:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* IMAGE PREVIEW */
+.img-preview{display:flex;gap:0.5rem;padding:0.5rem 1.5rem;background:var(--bg-card);border-top:1px solid var(--border-color);flex-wrap:wrap}
+.img-thumb{position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1px solid var(--border-color)}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-remove{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* INPUT */
+/* 2026-07-21 fix: input-area sat flush against the very bottom of the
+   100dvh layout, so on phones with a home-indicator/gesture bar the send
+   box felt jammed right against the physical screen edge ("個CHAT 推高
+   D" -- push the chat box up a bit). Reserve the device's safe-area
+   inset (0 on most devices, ~34px on notched iPhones) plus a touch more
+   breathing room below the input row. */
+.input-area{padding:12px 12px calc(20px + env(safe-area-inset-bottom, 0px));border-top:1px solid var(--border-color);background:var(--bg-card);flex-shrink:0}
+/* 2026-07-24 fix: now a direct .chat-area child (see .chat-area rule
+   above) instead of nested inside .input-area, so it needs its own
+   horizontal padding to match (previously inherited from .input-area's
+   padding) and its own background/border since it's no longer visually
+   grouped with the input row on mobile (see mobile query for the
+   top-of-page treatment). */
+.input-tools{display:flex;flex-wrap:wrap;gap:0.4rem;padding:0.6rem 12px;flex-shrink:0}
+.tool-btn{background:transparent;border:1px solid var(--border-color);border-radius:8px;color:var(--text-secondary);padding:6px 10px;font-size:0.88rem;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:0.3rem}
+.tool-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:var(--bg-secondary)}
+/* 2026-08-22 redesign: rounder box + a soft focus glow using --accent-
+   orange (#F59E0B amber, this file's decorative highlight colour --
+   see .wcard:hover/.sb-tip above for the same rgba(245,158,11,...)
+   pattern) matching the Ruixen reference's glow-on-focus input, but in
+   the site's own black/orange theme instead of blue/purple. send-btn
+   deliberately LEFT on --accent-blue: despite the name, that variable is
+   already the site's real solid-orange/rust action colour (#D35400
+   light / #F97316 dark -- see css/style.css's own comment on why it
+   keeps the old var name), so it was already correct/on-theme; only the
+   hardcoded hover hex (#A83E00, light-theme-only) is swapped for the
+   --accent-blue-strong var so hover tracks dark mode's own strong shade
+   (#DB6A0F) too instead of clashing. */
+.input-box{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:14px;padding:12px 16px;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.95rem;outline:none;resize:none;min-height:44px;max-height:120px;transition:border-color 0.12s,box-shadow 0.12s;line-height:1.6}
+.input-box:focus{border-color:var(--accent-blue);box-shadow:0 0 0 3px rgba(245,158,11,0.14)}
+.input-box::placeholder{color:var(--text-muted)}
+/* 2026-08-22 v2 (AJ: "好似無點改"): the reference screenshot's input box
+   glows even before you click into it -- a focus-only shadow (above)
+   isn't visible on first glance. This makes the WHOLE input row glow
+   ambiently, but only while #welcome (the empty-state hero) is still
+   showing -- showChat() sets #welcome's inline display:none the moment
+   the first message is sent, so the glow naturally turns off once a
+   real conversation starts (matches every other chat UI's plain docked
+   input bar during an active thread; only the empty/landing state gets
+   the hero treatment). Requires :has() (Safari 16.4+/Chrome 105+) --
+   degrades silently to the plain bar on older browsers, no breakage. */
+.chat-area:has(#welcome:not([style*="none"])) .input-row{box-shadow:0 0 40px rgba(245,158,11,0.16);border-radius:18px}
+.attach-btn{background:transparent;border:1px solid var(--border-color);border-radius:12px;color:var(--text-secondary);width:44px;height:44px;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+.attach-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(245,158,11,0.06)}
+.send-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:12px;width:44px;height:44px;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.send-btn:hover{background:var(--accent-blue-strong)}
+.send-btn:disabled{background:#F3F4F6;color:var(--text-muted);cursor:not-allowed}
+.input-hint{font-size:0.82rem;color:var(--text-muted);margin-top:0.4rem;text-align:center}
+
+/* FILE INPUT */
+#fileInput{display:none}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  #newChatBtnMobile{display:block!important;margin:6px 12px;width:calc(100% - 24px)}
+  /* 2026-08-22: was grid-template-columns (a no-op now .welcome-grid is
+     flex, not grid -- see the redesign comment above .welcome-grid's base
+     rule) -- pills now wrap naturally via flex-wrap on narrow screens, no
+     override needed. */
+  .msg{max-width:95%}
+  /* 2026-07-24 fix ("14個直接放短線投資卡片下面，接住滑落去，用細卡片排
+     4 4 4跟語言長度自動調整"): the previous attempt (a sticky horizontal-
+     scroll strip pinned above the messages) didn't work out, so this
+     replaces it entirely -- js/toggleVoiceInput-adjacent positionInputTools()
+     below physically moves #inputTools into #welcome right after
+     .welcome-grid on mobile, so it's normal scrollable content continuing
+     directly below the last ("短線投資") wcard, not a separate pinned
+     strip. Styled as a small-card grid instead of pill chips: auto-fill
+     with a minmax width means it naturally lands on ~4 columns for short
+     labels (zh-HK/zh-TW/zh-CN/ja/ko etc.) and automatically drops to
+     fewer, wider columns for languages whose translated labels run
+     longer, instead of a fixed 4 that would force-wrap long text. */
+  #inputTools.mobile-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:0.5rem;padding:0 0 1.5rem;margin-top:0.8rem;width:100%;max-width:760px}
+  #inputTools.mobile-card-grid .tool-btn{flex-direction:column;justify-content:center;text-align:center;padding:10px 4px;border-radius:8px;font-size:0.76rem;line-height:1.3;white-space:normal;gap:0.2rem;min-height:56px}
+  /* .welcome's justify-content:flex-start now lives in the base rule
+     above (applies to every breakpoint, not just mobile) -- bottom
+     clearance for the docked widget bar is set further down
+     (.messages/.welcome padding-bottom, next to #mobileWidgetDock) now
+     that the floating widgets are consolidated into one slim bar instead
+     of a tall corner stack. */
+
+  /* 2026-07-22 fix: this page's shell is a fixed 100dvh flex column with
+     overflow:hidden on html/body (needed so only .messages scrolls, not
+     the whole page). The shared site-wide mobile nav dropdown from
+     css/style.css is position:absolute, anchored off the viewport/nav's
+     containing block -- combined with this page's own fixed-height,
+     no-page-scroll shell, that overlay kept landing somewhere
+     unreachable/untappable ("滑不下去選其他/按也沒反應/完全不能滑動"),
+     even after anchoring it to the nav (position:relative). Stop
+     fighting the overlay positioning entirely: make the dropdown part of
+     nav's own normal box (position:static) so opening it simply grows
+     nav's height and shrinks .main via flex, which this fixed-height
+     column already recalculates correctly -- guaranteed reachable and
+     tappable since nothing is absolutely positioned or off-flow. */
+  nav{flex-wrap:wrap}
+  /* 2026-08-01 fix ("TOPBAR功能滑出分左右各一半" -- nav-links split into
+     2 uneven columns with the right one clipped off-screen, e.g. "News
+     Den[oise]"): this override never set flex-direction, so it fell
+     back to css/style.css's base (non-mobile) .nav-links rule --
+     display:flex with the default row direction + flex-wrap:wrap --
+     instead of that same stylesheet's @media(max-width:768px) column
+     stacking. Every link then wrapped 2-ish per row by available width,
+     and body's site-wide overflow-x:hidden silently clipped whatever
+     didn't fit instead of showing a horizontal scrollbar. column forces
+     one link per row like every other page's mobile dropdown. */
+  .nav-links{position:static;width:100%;box-shadow:none;background:transparent;backdrop-filter:none;max-height:0;overflow:hidden;transition:max-height 0.3s ease;flex-direction:column;flex-wrap:nowrap}
+  .nav-links.open{max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+  /* 2026-07-24 fix ("CHAT下面個輸入 放錄音旁 自動調整"): css/style.css's
+     shared .input-row rule force-stacks into a column on mobile
+     (flex-direction:column;align-items:stretch) -- that's meant for
+     other pages' filter/search rows, but on chat.html it splits the
+     textarea, mic button and send button onto 3 separate lines instead
+     of keeping them side by side. This inline <style> loads after
+     css/style.css so an equal-specificity override here wins; keep the
+     row layout and let the textarea (flex:1, see .input-box below)
+     auto-shrink/grow beside the two fixed-size round buttons instead. */
+  .input-row{flex-direction:row;align-items:center;flex-wrap:nowrap}
+  .input-box{flex:1;min-width:0}
+  /* 2026-09-30 (AJ: "CHECK全網手機...語言" QA pass found the send button
+     sitting right under js/mobile-widget-dock.js's fixed bottom-right
+     icon column on narrow viewports): reserve that column's width so the
+     row's own send button never lands underneath it. Matches the same
+     fix applied to index.html's hero search bar. */
+  .input-row{padding-right:56px}
+
+  /* 2026-08-09 (task #731, AJ ref-image batch): chat.html used to run its
+     own page-local copy of the widget-dock logic here (a 3x2 grid bar,
+     mobile-only -- see git history for the removed #mobileWidgetDock
+     rules/dockMobileWidgets() JS). That's now replaced by the shared
+     js/mobile-widget-dock.js (single round trigger above the quick-ask
+     bubble, same on mobile and desktop) loaded near the end of this file,
+     so chat.html matches every other page instead of having its own
+     divergent bottom-bar design. */
+  .input-area{margin-bottom:100px}
+  .messages{padding-bottom:110px}
+  .welcome{padding-bottom:110px}
+}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- 之前呢度冇晒<nav>開頭標籤同<body>，導致成頁得返首頁連結，冇連去
+     其他工具頁 -- 而家跟返全站common nav pattern補晒返嚟。 -->
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+    <!-- 2026-07-25 fix: the real "+New Chat" button now lives in .sidebar
+         (see below), but .sidebar is display:none on mobile (<=768px, see
+         the @media(max-width:768px) block below), which would leave mobile
+         users with no way to start a new chat at all. This duplicate stays
+         hidden on desktop (id="newChatBtnMobile", display:none inline) and
+         is only shown by the existing mobile media query below, so it
+         surfaces inside the hamburger dropdown instead. -->
+    <button class="new-chat-btn" id="newChatBtnMobile" onclick="newChat()" data-i18n="chat_new_chat" style="display:none;">＋ 新對話</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="sidebar">
+    <!-- 2026-07-25 fix ("new chat 放Recent Chats上面，Recent Chats推落一行"):
+         used to sit inside .nav-links, crowding the already-wide topbar
+         (12 page links) and contributing to #xflTopRightGroup wrapping
+         onto its own line -- see the #xflTopRightGroup fix in
+         css/style.css below. Moved here, above the "Recent Chats" label,
+         so it reads as the sidebar's own primary action instead of just
+         another topbar link. -->
+    <button class="new-chat-btn" onclick="newChat()" data-i18n="chat_new_chat" style="margin:12px 1rem 0.8rem;width:calc(100% - 2rem);">＋ 新對話</button>
+    <div class="sb-label" style="padding:0 1rem;" data-i18n="chat_recent_label">最近對話</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <div class="chat-area" id="chatArea">
+    <div class="welcome" id="welcome">
+      <div class="welcome-logo"><img src="/img/logo-mark.png" alt="" style="height:1em;width:auto;vertical-align:-0.12em;margin-right:0.15em">X<em>FIN</em>LAB</div>
+      <p class="welcome-sub" data-i18n="chat_welcome_sub">機構級AI金融分析，輸入股票代號或上傳K線圖，即時獲取深度分析報告</p>
+      <div class="welcome-grid">
+        <div class="wcard" onclick="sendQuick(t('chat_q_sector_flow','分析主要板塊（科技、金融、能源、消費、醫療等）近期資金流向及輪動跡象，邊個板塊資金流入流出最明顯？'))">
+          <div class="wcard-icon">💧</div>
+          <div class="wcard-title" data-i18n="chat_wc_flow_title">市場資金流向</div>
+          <div class="wcard-desc" data-i18n="chat_wc_flow_desc">板塊資金流入流出、輪動跡象分析</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_sentiment','分析現時全球市場情緒：VIX恐慌指數、標普500技術走勢、主要風險因素'))">
+          <div class="wcard-icon">🌐</div>
+          <div class="wcard-title" data-i18n="chat_wc3_title">市場情緒分析</div>
+          <div class="wcard-desc" data-i18n="chat_wc3_desc">VIX指數、大市走勢、地緣政治風險評估</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_trending','而家市場最多人留意/搜尋緊邊隻資產？分析近期成交量最活躍、話題度最高嘅股票或資產'))">
+          <div class="wcard-icon">🔥</div>
+          <div class="wcard-title" data-i18n="chat_wc_hot_title">熱門資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_hot_desc">近期成交量最活躍、市場焦點資產</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_top_gainers','邊啲資產近期升幅最快？分析近1個月表現最強勁嘅股票或資產，附漲幅數據'))">
+          <div class="wcard-icon">🚀</div>
+          <div class="wcard-title" data-i18n="chat_wc_growth_title">最快增長資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_growth_desc">近1個月漲幅最強勁嘅資產排行</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_technical_best','根據技術分析同Confluence Engine評分，邊個資產目前技術面機會最大？'))">
+          <div class="wcard-icon">🎯</div>
+          <div class="wcard-title" data-i18n="chat_wc_best_title">最大機會資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_best_desc">技術面Confluence評分最高嘅資產</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_high_dividend','邊啲資產派息最高？分析高股息股票或ETF嘅殖利率同派息穩定性'))">
+          <div class="wcard-icon">💵</div>
+          <div class="wcard-title" data-i18n="chat_wc_yield_title">最高收息資產</div>
+          <div class="wcard-desc" data-i18n="chat_wc_yield_desc">高股息股票/ETF殖利率排行</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_long_term','邊啲資產適合長線投資？分析週線同月線走勢，搵出長期趨勢最穩健嘅資產'))">
+          <div class="wcard-icon">📈</div>
+          <div class="wcard-title" data-i18n="chat_wc_long_title">長線投資</div>
+          <div class="wcard-desc" data-i18n="chat_wc_long_desc">週線/月線趨勢最穩健嘅資產</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_mid_term','邊啲資產適合中線投資？分析日線走勢，搵出中期（數星期至數月）機會'))">
+          <div class="wcard-icon">📊</div>
+          <div class="wcard-title" data-i18n="chat_wc_mid_title">中線投資</div>
+          <div class="wcard-desc" data-i18n="chat_wc_mid_desc">日線走勢中期（數星期至數月）機會</div>
+        </div>
+        <div class="wcard" onclick="sendQuick(t('chat_q_short_term','邊啲資產適合短線投資？分析1小時圖同短期動量，搵出短線（日內至數日）機會'))">
+          <div class="wcard-icon">⚡</div>
+          <div class="wcard-title" data-i18n="chat_wc_short_title">短線投資</div>
+          <div class="wcard-desc" data-i18n="chat_wc_short_desc">短期動量、日內至數日機會</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages" style="display:none;"></div>
+    <div class="img-preview" id="imgPreview" style="display:none;"></div>
+
+    <!-- 2026-07-24 fix: .input-tools pulled out to be a direct sibling of
+         .input-area (both inside the flex-column .chat-area) instead of
+         nested inside it, purely so CSS `order` can reposition it per
+         breakpoint: desktop keeps it below the input row (closer to the
+         input, as secondary shortcuts), mobile moves it ABOVE the
+         messages/welcome content entirely (order:0, see mobile media
+         query below) since on a short mobile screen the quick-category
+         chips work better as the first thing seen, with the actual input
+         row pinned at the very bottom regardless. -->
+    <div class="input-tools" id="inputTools">
+      <!-- task #324: reordered + expanded to 14 categories (加密/美國/歐洲/
+           英國/香港/台灣/日本/韓國/澳洲/中東/東南亞/南美洲/印度/俄羅斯) -->
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_crypto','分析加密貨幣市場今日走勢，BTC及ETH技術面'))" data-i18n="chat_tool_crypto">🪙 加密</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_us','分析美股市場今日走勢，標普500、納指、道指表現'))" data-i18n="chat_tool_us">🇺🇸 美股</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_eu','分析歐洲市場今日走勢，STOXX 600、DAX、CAC 40表現'))" data-i18n="chat_tool_eu">🇪🇺 歐洲</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_uk','分析英國市場今日走勢，富時100指數表現'))" data-i18n="chat_tool_uk">🇬🇧 英國</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_hk','分析港股市場今日走勢及主要板塊表現'))" data-i18n="chat_tool_hk">🇭🇰 港股</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_tw','分析台股市場今日走勢及主要板塊表現'))" data-i18n="chat_tool_tw">🇹🇼 台灣</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_jp','分析日本市場今日走勢，日經225指數表現及主要板塊'))" data-i18n="chat_tool_jp">🇯🇵 日本</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_kr','分析韓國市場今日走勢，KOSPI指數表現及主要板塊'))" data-i18n="chat_tool_kr">🇰🇷 韓國</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_au','分析澳洲市場今日走勢，澳洲標普200指數表現'))" data-i18n="chat_tool_au">🇦🇺 澳洲</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_me','分析中東市場今日走勢及主要風險因素，包括油價影響'))" data-i18n="chat_tool_me">🌍 中東</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_sea','分析東南亞市場今日走勢，新加坡、印尼、泰國主要指數表現'))" data-i18n="chat_tool_sea">🌏 東南亞</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_sa','分析南美市場今日走勢，巴西、阿根廷主要指數表現'))" data-i18n="chat_tool_sa">🌎 南美</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_india','分析印度市場今日走勢，SENSEX及NIFTY指數表現'))" data-i18n="chat_tool_india">🇮🇳 印度</button>
+      <button class="tool-btn" onclick="sendQuick(t('chat_q_russia','分析俄羅斯市場今日走勢及主要風險因素'))" data-i18n="chat_tool_russia">🇷🇺 俄羅斯</button>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <!-- 2026-08-22 (Ruixen redesign, "跟呢個咁"): #fileInput/handleFile()
+             already existed for image upload but had NO on-page trigger at
+             all (no button called fileInput.click(), no paste/drop
+             handler either) -- this paperclip button is the first real
+             entry point for that dormant capability, matching the
+             reference screenshot's attach icon. -->
+        <button type="button" class="attach-btn" onclick="document.getElementById('fileInput').click()" title="上傳圖片" data-i18n-title="chat_attach_title">📎</button>
+        <textarea class="input-box" id="inputBox" placeholder="輸入股票代號、公司名稱…" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)" data-i18n-placeholder="chat_input_placeholder"></textarea>
+        <button type="button" class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" style="display:none" data-i18n-title="chat_mic_title" title="語音輸入">
+          <svg class="mic-icon-idle" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+          <svg class="mic-icon-rec" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"></rect></svg>
+        </button>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint" data-i18n="chat_disclaimer">⚠️ 分析僅供參考，不構成投資建議</div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+
+<script src="js/autocomplete.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<script src="js/ai-loading.js"></script>
+<script src="js/mvp-api.js"></script>
+<script src="js/sparkline.js"></script>
+<script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+// 2026-07-19 fix: this page had the shared #navLinks markup + CSS but no
+// nav-toggle button and no toggleNav() at all, so on mobile/iPad the
+// hamburger menu had nothing to tap and no way to open -- the nav simply
+// never showed the other tool pages ("有部分頁面沒滑出").
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+
+let conversationId = '';
+let pendingImages = [];
+let isLoading = false;
+let chatHistory = [];
+
+function setMode(m, btn) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function showChat() {
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('messages').style.display = 'flex';
+}
+
+function addMessage(role, content, imageUrl) {
+  showChat();
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const time = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit',minute:'2-digit'});
+  const avatarText = role === 'bot' ? 'XFL' : t('chat_avatar_me','我');
+  let imgHtml = imageUrl ? `<img src="${imageUrl}" style="max-width:200px;border-radius:4px;margin-bottom:0.5rem;display:block;">` : '';
+  // 2026-07-24 ("加播放文字"): only bot replies get a "read aloud" button --
+  // there's no point letting the user TTS-play back their own typed
+  // question. Uses the same dataset.rawContent plain-text source copyMsg()
+  // already relies on, so speakMsg() never has to re-parse rendered HTML
+  // (markdown tables, ticker spans, etc).
+  const speakBtnHtml = role === 'bot'
+    ? `<button type="button" class="msg-action-btn" onclick="speakMsg(this)" title="${t('chat_msg_speak','播放')}">🔊 <span class="speak-label">${t('chat_msg_speak','播放')}</span></button>`
+    : '';
+  div.innerHTML = `
+    <div class="msg-avatar">${avatarText}</div>
+    <div>
+      <div class="msg-bubble">${imgHtml}${formatMsg(content)}</div>
+      <div class="msg-time">${time}</div>
+      <div class="msg-actions">
+        ${speakBtnHtml}
+        <button type="button" class="msg-action-btn" onclick="copyMsg(this)" title="${t('chat_msg_copy','複製')}">⧉ ${t('chat_msg_copy','複製')}</button>
+        <button type="button" class="msg-action-btn" onclick="deleteMsg(this)" title="${t('chat_msg_delete','刪除')}">✕ ${t('chat_msg_delete','刪除')}</button>
+      </div>
+    </div>`;
+  // Stored as a plain data property (not string-interpolated into the HTML
+  // above) so quotes/special characters in the AI's answer can never break
+  // the markup -- copyMsg() reads this instead of re-parsing rendered HTML.
+  div.dataset.rawContent = content || '';
+  msgs.appendChild(div);
+  // 2026-07-23 fix: a long bot answer used to get scrolled straight to
+  // its very bottom (msgs.scrollTop = msgs.scrollHeight), so the user
+  // landed on the END of the answer and had to scroll back up to read
+  // it from the start -- right where their own question is. For bot
+  // replies, scroll so the reply's own top (i.e. right below the
+  // question that triggered it) is what comes into view instead.
+  if (role === 'bot') {
+    div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+  return div;
+}
+
+// 2026-07-19 fix: this used to run the ENTIRE message (including any
+// markdown table) through one \n -> <br> replace, so a table like
+// "| AAPL | ...優勢... | ...劣勢... |" rendered as one unbroken line of
+// raw pipe characters and literal "<br>" text -- see the .cc-card CSS
+// comment above for the full reasoning. formatMsg() now splits the
+// message into table vs. non-table blocks first, so each gets the
+// right treatment.
+function isTableRow(line) {
+  const t = line.trim();
+  return t.startsWith('|') && t.endsWith('|') && t.length > 1;
+}
+function isTableSeparator(line) {
+  const t = line.trim();
+  return t.includes('-') && /^\|?[\s:|-]+\|?$/.test(t);
+}
+function splitTableRow(line) {
+  let t = line.trim();
+  if (t.startsWith('|')) t = t.slice(1);
+  if (t.endsWith('|')) t = t.slice(0, -1);
+  return t.split('|').map(c => c.trim());
+}
+// 2026-07-23: "橙色或橙色主題都加入可按導航" -- .msg-bubble strong renders
+// in the site's orange accent colour (see CSS above), and the AI's own
+// bold markdown routinely bolds ticker mentions like "AstraZeneca（AZN）"
+// or "BP (BP.L)". Any (TICKER) parenthetical found inside bold text
+// becomes its own clickable span (not the whole bold phrase -- a single
+// bold run can name 2+ tickers, e.g. "BP (BP.L)、Shell (SHEL.L)", and
+// each needs its own click target) that continues the SAME chat
+// conversation by asking the AI to analyze that ticker, via the existing
+// sendQuick() -- same interaction model as the numbered-options cards
+// above, chosen over navigating away to ai-analysis.html so the user
+// never loses their current chat.
+const TICKER_PAREN_RE_SRC = '[\\(（]\\s*([A-Z]{1,6}(?:\\.[A-Z]{1,3})?)\\s*[\\)）]';
+function analyzeTickerMention(ticker) {
+  if (typeof isLoading !== 'undefined' && isLoading) return;
+  sendQuick(`${t('chat_quick_analyze_prefix','分析')} ${ticker}`);
+}
+
+// 2026-07-30 (Paddle compliance): "用戶按卡片或CHAT發問先出" -- an on-demand
+// (never proactive) asset card, shown only once the AI's own answer has
+// resolved to a specific ticker (reusing the SAME TICKER_PAREN_RE_SRC
+// regex already used for ticker-mention linkification above, so a
+// mention of e.g. "AstraZeneca（AZN）" is what triggers it -- a broad
+// multi-asset market question with no single resolvable ticker never
+// shows a card). Calls the public /api/ai-analysis endpoint directly
+// (not postApi(), to skip the global full-screen loading overlay for
+// what should feel like a quiet background enrichment, not a second
+// "AI thinking" moment) and renders only a descriptive probability bar
+// + two plain structural price levels -- deliberately no Entry/Stop
+// Loss/Take Profit/Risk-Reward framing, matching the same deep-rewrite
+// already applied to chart-analysis.html/ai-analysis.html/
+// js/decision-footer.js this session. No login required: the
+// probabilities/decision_levels fields in /api/ai-analysis's response
+// are already ungated for anonymous callers.
+function firstTickerFromAnswer(text) {
+  if (!text) return null;
+  const re = new RegExp(TICKER_PAREN_RE_SRC);
+  const m = text.match(re);
+  return m ? m[1] : null;
+}
+async function attachAssetCard(msgDiv, answerText) {
+  try {
+    const ticker = firstTickerFromAnswer(answerText);
+    if (!ticker || !msgDiv) return;
+    const lang = (typeof I18N !== 'undefined' && I18N.currentLang) || undefined;
+    const res = await fetch(`${API_BASE}/api/ai-analysis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols: [ticker], lang })
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    const data = json.data || json;
+    const probs = data.probabilities;
+    const dl = data.decision_levels;
+    if (!probs && !dl) return; // nothing real to show -- stay silent, never fabricate
+
+    const bull = Math.round(probs?.bull ?? 0);
+    const flat = Math.round(probs?.flat ?? 0);
+    const bear = Math.round(probs?.bear ?? 0);
+    const total = bull + flat + bear;
+
+    let barHtml = '';
+    let legendHtml = '';
+    if (total > 0) {
+      barHtml = `<div class="chat-asset-bar">`
+        + (bull > 0 ? `<div class="chat-asset-bar-seg" style="width:${bull}%;background:var(--accent-green,#16A34A)"></div>` : '')
+        + (flat > 0 ? `<div class="chat-asset-bar-seg" style="width:${flat}%;background:var(--text-secondary,#94A3B8)"></div>` : '')
+        + (bear > 0 ? `<div class="chat-asset-bar-seg" style="width:${bear}%;background:var(--accent-red,#DC2626)"></div>` : '')
+        + `</div>`;
+      legendHtml = `<div class="chat-asset-bar-legend">`
+        + `<span>${t('idx_dir_bull','偏多')} ${bull}%</span>`
+        + `<span>${t('idx_dir_neutral','橫行')} ${flat}%</span>`
+        + `<span>${t('idx_dir_bear','偏空')} ${bear}%</span>`
+        + `</div>`;
+    }
+
+    let levelsHtml = '';
+    if (dl && dl.stop_loss != null) {
+      const parts = [`<span>${t('chat_key_level','關鍵位')}: <b>${dl.stop_loss}</b></span>`];
+      if (dl.take_profits && dl.take_profits.length) {
+        parts.push(`<span>${t('ca_reco_tp','參考位')}: <b>${dl.take_profits[0]}</b></span>`);
+      }
+      levelsHtml = `<div class="chat-asset-levels">${parts.join('')}</div>`;
+    }
+
+    // 2026-08-10 (task #747-753, "所有卡片有資產的都加細K線小圖"): this
+    // endpoint already fetches + returns OHLC history (data.ohlc, same
+    // {date,open,high,low,close,volume} shape as market_pulse.py's
+    // reference sparkline) to draw the TradingView-style chart elsewhere --
+    // reusing it here for the mini sparkline costs zero extra requests.
+    let sparkHtml = '';
+    if (Array.isArray(data.ohlc) && data.ohlc.length > 1 && typeof XflSparkline !== 'undefined') {
+      const closes = data.ohlc.slice(-20).map(b => b.close).filter(v => typeof v === 'number');
+      const dir = probs ? (bull > bear ? 'bull' : (bear > bull ? 'bear' : 'neutral')) : 'neutral';
+      sparkHtml = XflSparkline.render(closes, dir, {width: 100, height: 28, className: 'xfl-spark-sm'});
+    }
+
+    if (!barHtml && !levelsHtml && !sparkHtml) return;
+    const card = document.createElement('div');
+    card.className = 'chat-asset-card';
+    card.innerHTML = `<div class="chat-asset-card-head">📊 ${ticker}</div>${sparkHtml}${barHtml}${legendHtml}${levelsHtml}`;
+    const bubble = msgDiv.querySelector('.msg-bubble');
+    if (bubble) bubble.appendChild(card);
+  } catch (e) {
+    // best-effort enrichment only -- a failure here must never disrupt
+    // the main chat answer that already rendered successfully
+  }
+}
+// 2026-07-25: "CHAT 加入顯示回答如有資產文字或相似代號 技術指標 經濟指標
+// 公司名...加入導航跟當句主題再搜" -- besides (TICKER) parentheticals, the
+// AI's prose also names indices/exchanges/technical indicators/economic
+// institutions/company names in plain running text with no parens at all
+// (e.g. "VIX 急升", "MACD 出現黃金交叉", "ECB 議息"), and these should be
+// clickable too, re-querying the AI using that exact term as the new
+// topic -- same interaction model as ticker mentions. This is a closed
+// vocabulary (not a generic bare-word match) so ordinary English words
+// don't get wrongly linkified. Longest-first ordering so "S&P 500" wins
+// over any shorter overlapping match.
+const TERM_LIST = [
+  'S&P 500', 'STOXX 600', 'CAC 40', 'DAX', 'VIX', 'CBOE',
+  'MACD', 'EMA', 'RSI', 'PE', 'ETF',
+  'ECB', 'Volkswagen', 'BMW',
+  // Site feature names -- kept literal (Latin) like the acronyms above,
+  // since these are XFINLAB's own product names rather than translated
+  // vocabulary. Chinese variants added too since the site's own nav links
+  // use these Chinese labels (see resolveNavTarget() below, which already
+  // recognizes both phrasings for the numbered-options-card flow).
+  'Free Signals', 'AI Analysis', 'Chart Analysis', 'AI市場分析', 'K線分析', '免費信號',
+  // 2026-08-06 (Positioning batch, task #663): Free Signals renamed to
+  // Market Brief site-wide (see /market-brief.html). Old terms kept above
+  // so cached/older chat history still linkifies; new terms added here so
+  // the model's fresh replies (which now say "Market Brief") also work.
+  'Market Brief', '市場快訊'
+];
+
+// 2026-07-27 fix ("以下字或相關字句要導航可搜 要跟全語言"): the TERM_LIST
+// above only ever held Latin-script proper nouns/acronyms/product names --
+// identical in every UI language, so one hardcoded array always worked.
+// This batch covers XFINLAB's own investment/strategy vocabulary (asset
+// classes, technical/fundamental jargon, risk-profile and holding-period
+// language), which genuinely differs by language since the AI replies in
+// the user's UI language (see services/i18n.py). Each entry has its own
+// chat_term_* i18n key (46-language coverage); the second element is the
+// Chinese fallback shown before I18N finishes loading. The detection
+// regex is rebuilt from the CURRENT active language on every
+// buildLinkifyRegex() call below (not cached once at parse time), so
+// switching UI language mid-session immediately changes what gets
+// matched -- no page reload needed.
+const CHAT_TERM_ENTRIES = [
+  ['chat_term_hk_stocks', '港股'], ['chat_term_us_stocks', '美股'], ['chat_term_china', '中國'],
+  ['chat_term_crypto', '加密貨幣'], ['chat_term_commodity', '商品'], ['chat_term_gold', '黃金'],
+  ['chat_term_oil', '原油'], ['chat_term_candlestick', 'K線'], ['chat_term_moving_avg', '均線'],
+  ['chat_term_fundamentals', '基本面'], ['chat_term_earnings', '財報'], ['chat_term_earnings_season', '財報季'],
+  ['chat_term_policy_news', '政策消息'], ['chat_term_combine_both', '兩者結合'],
+  ['chat_term_tech_and_news', '技術配合消息面'], ['chat_term_risk_mgmt', '風險管理'],
+  ['chat_term_risk_tolerance', '風險承擔'], ['chat_term_conservative', '保守'],
+  ['chat_term_stop_loss', '止損'], ['chat_term_pullback', '回撤'], ['chat_term_aggressive', '激進'],
+  ['chat_term_bear_tolerate', '承受'], ['chat_term_larger_volatility', '較大波動'],
+  ['chat_term_big_volatility', '大波動'], ['chat_term_high_return', '高回報'],
+  ['chat_term_tech_sector', '科技'], ['chat_term_energy_sector', '能源'],
+  ['chat_term_support', '支撐'], ['chat_term_pressure', '壓力'], ['chat_term_swing', '波段'],
+  ['chat_term_take_profit', '止盈'], ['chat_term_top_gainer', '漲幅最大'],
+  ['chat_term_recent_performance', '最近表現'], ['chat_term_realtime_info', '即時資訊'],
+  ['chat_term_risk_assessment', '風險評估'], ['chat_term_investment_horizon', '投資期限'],
+  ['chat_term_investment_strategy', '投資策略'], ['chat_term_technical_analysis', '技術面分析'],
+  ['chat_term_fundamental_info', '基本面資訊'], ['chat_term_indicator', '指標'],
+  ['chat_term_company_business', '公司業務'], ['chat_term_industry_trend', '行業趨勢'],
+  ['chat_term_investment_direction', '投資方向'], ['chat_term_short_swing', '短線波段'],
+  ['chat_term_swing_holding', '波段持倉'], ['chat_term_long_term_invest', '長期投資'],
+  ['chat_term_engulfing', '吞沒形態'], ['chat_term_piercing', '刺透形態'],
+  ['chat_term_overall_trend', '大盤趨勢'], ['chat_term_key_news', '重要新聞'],
+  ['chat_term_trend', '趨勢'], ['chat_term_econ_data', '經濟數據'],
+  ['chat_term_policy_announcement', '政策公告'], ['chat_term_a_shares', 'A股'],
+  ['chat_term_market_session', '開市時段'], ['chat_term_sentiment', '情緒'],
+  ['chat_term_technicals', '技術面'], ['chat_term_entry_point', '切入點'],
+  ['chat_term_tech_entry_point', '技術面切入點'], ['chat_term_premarket_prep', '盤前準備'],
+  ['chat_term_volume_surge', '成交量突增'], ['chat_term_volatility_range', '波幅'],
+  ['chat_term_volatility', '波動'], ['chat_term_psychology', '心理'],
+  ['chat_term_execution', '執行'], ['chat_term_discipline', '紀律'],
+  ['chat_term_overtrading', '過度交易'], ['chat_term_trade_review', '復盤'],
+  ['chat_term_decisiveness', '果斷'], ['chat_term_optimization', '優化'],
+  ['chat_term_strategy', '策略'], ['chat_term_trading_opportunity', '交易機會'],
+  ['chat_term_close_position', '平倉'], ['chat_term_noise', '噪音'],
+  ['chat_term_trigger', '觸發'], ['chat_term_post_trigger_intraday', '觸發後即市'],
+  ['chat_term_limit_price', '限價'],
+];
+function analyzeTermMention(term) {
+  if (typeof isLoading !== 'undefined' && isLoading) return;
+  const navUrl = resolveNavTarget(term);
+  if (navUrl) { window.location.href = navUrl; return; }
+  sendQuick(`${t('chat_quick_analyze_prefix','分析')} ${term}`);
+}
+// 2026-07-23 follow-up: "CHAT 回答 所有橙色 藍色都可導航" -- ticker
+// linkification originally only ran inside the **bold** callback (orange
+// .msg-bubble strong text). But .cc-card-title/.rc-card-title (compare-
+// card and row-card titles, usually the ticker/company name itself) and
+// .msg-bubble h3 (section headers) render in the site's BLUE accent
+// colour and go through this same inlineFormat() -- they just never had
+// tickers inside **bold** markers, so the old nested-only check missed
+// them. Running linkifyTickers() on the whole string FIRST (before the
+// bold regex, which only cares about literal "**" and is unaffected by
+// the <span> markup already injected) means every inlineFormat() call
+// site -- table cells, compare/row card titles, headers, plain text --
+// picks up clickable tickers automatically, orange or blue, without
+// duplicating this logic at each call site.
+// The ticker-paren match and the closed-vocabulary term match are combined
+// into ONE regex/replace pass (rather than two chained .replace() calls)
+// so the second pass can never re-scan HTML markup the first pass already
+// injected (e.g. a ticker equal to a term name, like BMW, would otherwise
+// get its own onclick/title attribute text re-matched and mangled).
+// Builds the combined ticker+term detection regex fresh every call (not a
+// cached top-level constant) -- CHAT_TERM_ENTRIES' surface forms depend on
+// the CURRENT active UI language via t(), so this must be re-evaluated
+// every time a message is formatted, not just once at page load.
+function buildLinkifyRegex() {
+  const dynamicTerms = CHAT_TERM_ENTRIES.map(([key, zh]) => t(key, zh));
+  const allTerms = TERM_LIST.concat(dynamicTerms);
+  const termReSrc = '(' + allTerms.slice().sort((a, b) => b.length - a.length)
+    .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'))
+    .join('|') + ')(?![A-Za-z0-9])';
+  return new RegExp(TICKER_PAREN_RE_SRC + '|' + termReSrc, 'g');
+}
+function linkifyTickers(s) {
+  return s.replace(buildLinkifyRegex(), (full, ticker, term) => {
+    const key = ticker || term;
+    const handler = ticker ? 'analyzeTickerMention' : 'analyzeTermMention';
+    // 2026-07-27 fix: this tooltip used to be a single hardcoded Chinese
+    // string regardless of UI language ("continue asking AI"), which was
+    // also just wrong for the handful of terms (Free Signals/AI Analysis/
+    // Chart Analysis) that now navigate to a real page instead of
+    // re-querying chat -- see analyzeTermMention()'s resolveNavTarget()
+    // check above. Both tooltip variants are now real i18n templates.
+    const navUrl = ticker ? null : resolveNavTarget(key);
+    const tooltip = (navUrl
+      ? t('chat_tooltip_go_to_page', '前往 {term} 頁面')
+      : t('chat_tooltip_ask_ai', '繼續問AI：分析 {term}')
+    ).replace('{term}', key);
+    return `<span class="chat-ticker-strong" onclick="${handler}('${key.replace(/'/g, "\\'")}')" title="${tooltip.replace(/"/g, '&quot;')}">${full}</span>`;
+  });
+}
+function inlineFormat(s) {
+  return linkifyTickers(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function splitCellPoints(cell) {
+  // Cells commonly separate multiple points with a literal "<br>" or a
+  // real newline, each line optionally starting with a "•"/"-"/"*"
+  // bullet marker that gets stripped (the ✓/✗ pseudo-element already
+  // supplies the marker visually).
+  return cell
+    .split(/<br\s*\/?>|\n/gi)
+    .map(s => inlineFormat(s.trim().replace(/^[•·\-*]\s*/, '')))
+    .filter(Boolean);
+}
+function renderCompareCard(name, prosCell, consCell) {
+  const pros = splitCellPoints(prosCell).map(p => `<li class="cc-pro">${p}</li>`).join('');
+  const cons = splitCellPoints(consCell).map(c => `<li class="cc-con">${c}</li>`).join('');
+  return `<div class="cc-card">
+    <div class="cc-card-title">${inlineFormat(name)}</div>
+    <div class="cc-card-grid">
+      <div class="cc-col cc-col-pro"><div class="cc-col-label">${t('chat_compare_pros_label','優勢')}</div><ul class="cc-list">${pros}</ul></div>
+      <div class="cc-col cc-col-con"><div class="cc-col-label">${t('chat_compare_cons_label','留意')}</div><ul class="cc-list">${cons}</ul></div>
+    </div>
+  </div>`;
+}
+function renderRowCard(header, row) {
+  // Generalized stacked-field card (task #283): the primary column (a
+  // ticker/symbol-looking header, else just the first column) becomes a
+  // bold heading; every other column renders as its own labeled line
+  // below it, instead of squishing all columns into one cramped table
+  // row ("主顯跟內文分行顯示" -- show the primary field on its own line,
+  // rest stacked below).
+  let primaryIdx = header.findIndex(h => /代號|代码|ticker|symbol/i.test(h));
+  if (primaryIdx === -1) primaryIdx = 0;
+  const fields = row.map((cell, i) => i === primaryIdx ? null :
+    `<div class="rc-field"><span class="rc-field-label">${inlineFormat(header[i])}：</span>${splitCellPoints(cell).join(' ')}</div>`
+  ).filter(Boolean).join('');
+  return `<div class="rc-card"><div class="rc-card-title">${inlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+}
+function renderTableBlock(tableLines) {
+  const header = splitTableRow(tableLines[0]);
+  const rows = tableLines.slice(2).map(splitTableRow).filter(r => r.length === header.length);
+
+  const prosIdx = header.findIndex(h => /優勢|优势|pros|advantage/i.test(h));
+  const consIdx = header.findIndex(h => /劣勢|劣势|cons|disadvantage/i.test(h));
+
+  if (prosIdx > -1 && consIdx > -1 && header.length <= 4) {
+    return rows.map(r => renderCompareCard(r[0], r[prosIdx], r[consIdx])).join('');
+  }
+
+  // Any other multi-column table (e.g. 代號/公司名稱/核心理由/風險提示
+  // stock-pick lists) -- stacked cards read better than a squished table
+  // on narrow screens, and match the exact layout the user asked for.
+  // A genuinely simple 2-column table (like a plain key/value glossary)
+  // still renders as a real <table>, since there's nothing to squish.
+  if (header.length > 2) {
+    return rows.map(r => renderRowCard(header, r)).join('');
+  }
+
+  const theadHtml = `<tr>${header.map(h => `<th>${inlineFormat(h)}</th>`).join('')}</tr>`;
+  const tbodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${inlineFormat(c)}</td>`).join('')}</tr>`).join('');
+  return `<table>${theadHtml ? `<thead>${theadHtml}</thead>` : ''}<tbody>${tbodyHtml}</tbody></table>`;
+}
+function renderTextBlock(text) {
+  return inlineFormat(text)
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h3>$1</h3>')
+    .replace(/⚠️(.+)/g, '<div class="disclaimer">⚠️$1</div>')
+    .replace(/\n/g, '<br>');
+}
+
+// 2026-07-23: "AI CHAT 係給人2個或以上選擇... 分別都可做成導航卡片" -- any
+// time the AI's answer offers the user 2+ numbered choices ("1. AAPL
+// 2. TSLA", "1. 短線 2. 長線" etc), each one becomes a clickable card
+// instead of plain numbered text. Matches "1." / "1)" / "1、" markers
+// (the AI's own markdown always uses Arabic numerals even in Chinese
+// replies, same as every other numbered list already seen in this
+// codebase). A single numbered line on its own is NOT converted -- that's
+// almost always just "step 1 of an explanation", not a real choice, so
+// only runs of 2+ consecutive numbered lines qualify.
+const OPTION_LINE_RE = /^\s*[\(\[]?(\d{1,2})[\.\)、][\]\)]?\s+(\S.*)$/;
+function isOptionLine(line) {
+  return OPTION_LINE_RE.test(line);
+}
+function stripOptionMarker(line) {
+  const m = line.match(OPTION_LINE_RE);
+  return m ? m[2].trim() : line.trim();
+}
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+// 2026-07-23 follow-up: "AI而家會老實話冇即時數據,叫用戶用返Free Signals/
+// AI Analysis呢類真係接數據嘅功能...咁加入卡片比佢選擇按" -- the honesty
+// prompt in api/chat.py now phrases its "I don't have live data, go check
+// X" redirect as a short numbered list (see that file's updated prompt),
+// which the numbered-options-cards machinery above already turns into
+// clickable cards. But unlike a ticker follow-up ("分析 AZN"), "去睇Free
+// Signals" has no useful sendQuick() chat continuation -- that redirect's
+// whole point is to send the user to a DIFFERENT page that actually has
+// live data. So a card recognized as naming one of those real pages
+// navigates there directly instead of re-asking the same unanswerable
+// question back in chat. Any other numbered option (ticker choices,
+// "短線/長線" style questions, etc) is unaffected and still uses the
+// existing sendQuick() behaviour.
+function resolveNavTarget(label) {
+  if (/market\s*brief|市場快訊|free\s*signals|免費(?:信|訊)號/i.test(label)) return 'market-brief.html';
+  if (/chart\s*analysis|圖表分析|k線分析/i.test(label)) return 'chart-analysis.html';
+  if (/ai\s*analysis|ai\s*市場分析|ai\s*分析/i.test(label)) return 'ai-analysis.html';
+  return null;
+}
+function renderOptionsBlock(optionLines) {
+  const cards = optionLines.map((line, idx) => {
+    const label = stripOptionMarker(line);
+    const navUrl = resolveNavTarget(label);
+    const navAttr = navUrl ? ` data-nav="${escAttr(navUrl)}"` : '';
+    return `<div class="chat-option-card" data-option="${escAttr(label)}"${navAttr} onclick="sendOptionCard(this)"><span class="chat-option-num">${idx + 1}</span><span class="chat-option-text">${inlineFormat(label)}</span><span class="chat-option-arrow">›</span></div>`;
+  }).join('');
+  return `<div class="chat-options">${cards}</div>`;
+}
+function sendOptionCard(el) {
+  if (typeof isLoading !== 'undefined' && isLoading) return;
+  const navUrl = el.dataset.nav;
+  if (navUrl) { window.location.href = navUrl; return; }
+  const val = el.dataset.option;
+  if (val) sendQuick(val);
+}
+// Splits a run of non-table lines into alternating 'text' and 'options'
+// sub-blocks, preserving order. A lone blank line inside an option run
+// (list items separated by a blank line) doesn't break the run.
+function pushTextSegments(blocks, textLines) {
+  let j = 0;
+  while (j < textLines.length) {
+    if (isOptionLine(textLines[j])) {
+      const optLines = [];
+      while (j < textLines.length && (isOptionLine(textLines[j]) || textLines[j].trim() === '')) {
+        if (isOptionLine(textLines[j])) optLines.push(textLines[j]);
+        j++;
+      }
+      if (optLines.length >= 2) {
+        blocks.push({ type: 'options', lines: optLines });
+      } else {
+        blocks.push({ type: 'text', lines: optLines });
+      }
+    } else {
+      const plain = [];
+      while (j < textLines.length && !isOptionLine(textLines[j])) {
+        plain.push(textLines[j]);
+        j++;
+      }
+      blocks.push({ type: 'text', lines: plain });
+    }
+  }
+}
+function formatMsg(text) {
+  const lines = text.split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (isTableRow(lines[i]) && isTableSeparator(lines[i + 1] || '')) {
+      const tableLines = [lines[i], lines[i + 1]];
+      i += 2;
+      while (i < lines.length && isTableRow(lines[i])) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'table', lines: tableLines });
+    } else {
+      const textLines = [];
+      while (i < lines.length && !(isTableRow(lines[i]) && isTableSeparator(lines[i + 1] || ''))) {
+        textLines.push(lines[i]);
+        i++;
+      }
+      pushTextSegments(blocks, textLines);
+    }
+  }
+  return blocks
+    .map(b => b.type === 'table' ? renderTableBlock(b.lines) : b.type === 'options' ? renderOptionsBlock(b.lines) : renderTextBlock(b.lines.join('\n')))
+    .join('');
+}
+
+function addTyping() {
+  showChat();
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing-indicator';
+  div.innerHTML = `<div class="msg-avatar">XFL</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingImages.push({file, dataUrl: ev.target.result});
+    showImgPreview();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function showImgPreview() {
+  const wrap = document.getElementById('imgPreview');
+  wrap.style.display = pendingImages.length ? 'flex' : 'none';
+  wrap.innerHTML = pendingImages.map((img,i) => `
+    <div class="img-thumb">
+      <img src="${img.dataUrl}">
+      <button class="img-remove" onclick="removeImg(${i})">×</button>
+    </div>`).join('');
+}
+
+function removeImg(i) {
+  pendingImages.splice(i,1);
+  showImgPreview();
+}
+
+async function sendQuick(text) {
+  document.getElementById('inputBox').value = text;
+  await sendMessage();
+}
+
+// Smart Router: a link like chat.html?q=依家邊隻股份值博率最高 prefills
+// the chat box with the visitor's original free-text question and
+// sends it immediately, so the homepage's "AI, help me find the right
+// tool" input box has somewhere sensible to land for open-ended
+// questions that don't map to any single Engine page.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const qParam = params.get('q');
+  if (qParam) {
+    // 2026-09-14 fix (AJ: "用英文又出現中文...網址也有中文？"): js/i18n.js's
+    // I18N.init() is async (awaits a fetch before setting I18N.currentLang),
+    // but this handler used to call sendQuick() immediately on the same
+    // DOMContentLoaded event -- for a first-time visitor (no cached
+    // xfinlab_lang in localStorage yet) that raced ahead of init(), so the
+    // very first auto-sent message went out with lang=undefined and the
+    // backend defaulted to Chinese, even though the page chrome itself
+    // renders in the detected language moments later once the fetch
+    // resolves. Wait for i18n.js's own "i18nApplied" event (dispatched at
+    // the end of a successful init(), after I18N.currentLang is set) so the
+    // auto-send carries the real language; fall back to a short timeout so
+    // a slow or failed i18n fetch (init()'s try/catch swallows fetch
+    // errors silently) can't strand the auto-send forever.
+    let qParamSent = false;
+    const sendQParamOnce = () => { if (qParamSent) return; qParamSent = true; sendQuick(qParam); };
+    document.addEventListener('i18nApplied', sendQParamOnce, { once: true });
+    setTimeout(sendQParamOnce, 1200);
+  }
+
+  // 2026-07-24 ("打HK50 CH50呢D搜不到"): #inputBox never had js/
+  // autocomplete.js wired to it at all -- every other search box on the
+  // site (ai-analysis.html, chart-analysis.html, dashboard.html etc) has
+  // this, chat.html simply never got it. Uses the new wordMode (matches
+  // the trailing alnum run being typed, e.g. "打HK50" -> "HK50", instead
+  // of the whole message or a comma-separated list like other pages) so
+  // it works inside a natural-language sentence, and dropUp (dropdown
+  // opens ABOVE the box, not below) since #inputBox sits at the very
+  // bottom of the viewport -- a downward dropdown would render off-screen.
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#inputBox', { wordMode: true, dropUp: true, rotatePlaceholder: false });
+  }
+
+  // 2026-07-24 ("加錄音出字"): only show the mic button when the browser
+  // actually supports SpeechRecognition -- Safari/iOS and some in-app
+  // webviews don't, and a dead button is worse than no button.
+  if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+    const micBtn = document.getElementById('micBtn');
+    if (micBtn) micBtn.style.display = '';
+  }
+
+  positionInputTools();
+  window.addEventListener('resize', debounce(positionInputTools, 200));
+});
+
+// 2026-08-09 (task #731): the page-local dockMobileWidgets()/
+// MOBILE_DOCK_IDS implementation that used to live here was removed --
+// js/mobile-widget-dock.js (loaded near the end of this file) now does
+// this identically across the whole site, so chat.html no longer needs
+// its own copy.
+
+function debounce(fn, ms) {
+  let h;
+  return (...args) => { clearTimeout(h); h = setTimeout(() => fn(...args), ms); };
+}
+
+// 2026-07-24 fix ("14個直接放短線投資卡片下面，接住滑落去"): on mobile,
+// physically moves #inputTools out of .chat-area and into #welcome (right
+// after .welcome-grid, i.e. directly below the last "短線投資" card) so it
+// scrolls as normal content instead of sitting in a separate pinned strip.
+// Desktop keeps it in its original position (a .chat-area child, ordered
+// below .input-area via CSS -- see that rule). Re-run on resize (debounced)
+// so rotating a tablet or resizing the window across the breakpoint moves
+// it back correctly either way; cheap to call repeatedly since it no-ops
+// once the element is already where it should be.
+function positionInputTools() {
+  const tools = document.getElementById('inputTools');
+  const welcomeGrid = document.querySelector('.welcome-grid');
+  const chatArea = document.querySelector('.chat-area');
+  if (!tools || !welcomeGrid || !chatArea) return;
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  if (isMobile) {
+    if (tools.parentElement !== welcomeGrid.parentElement || tools.previousElementSibling !== welcomeGrid) {
+      welcomeGrid.insertAdjacentElement('afterend', tools);
+    }
+    tools.classList.add('mobile-card-grid');
+  } else {
+    if (tools.parentElement !== chatArea) {
+      chatArea.appendChild(tools);
+    }
+    tools.classList.remove('mobile-card-grid');
+  }
+}
+
+// Speech-to-text: reuses the same locale->BCP-47 mapping as playback
+// (ttsLangCode(), defined further down) since recognition and synthesis
+// both key off XFINLAB's current UI language the same way.
+let _recognition = null;
+let _recognizing = false;
+function toggleVoiceInput() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  const micBtn = document.getElementById('micBtn');
+  if (_recognizing) {
+    if (_recognition) _recognition.stop();
+    return;
+  }
+  const input = document.getElementById('inputBox');
+  const baseText = input.value ? input.value.replace(/\s+$/, '') + ' ' : '';
+  _recognition = new SR();
+  _recognition.lang = ttsLangCode();
+  _recognition.interimResults = true;
+  _recognition.continuous = false;
+  _recognizing = true;
+  micBtn.classList.add('mic-recording');
+  _recognition.onresult = (e) => {
+    let transcript = '';
+    for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+    input.value = baseText + transcript;
+    autoResize(input);
+  };
+  _recognition.onerror = () => {
+    _recognizing = false;
+    micBtn.classList.remove('mic-recording');
+  };
+  _recognition.onend = () => {
+    _recognizing = false;
+    micBtn.classList.remove('mic-recording');
+    input.focus();
+  };
+  try {
+    _recognition.start();
+  } catch (e) {
+    _recognizing = false;
+    micBtn.classList.remove('mic-recording');
+  }
+}
+
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('inputBox');
+  const text = input.value.trim();
+  if (!text && pendingImages.length === 0) return;
+
+  const imageUrl = pendingImages.length > 0 ? pendingImages[0].dataUrl : null;
+  const imageFile = pendingImages.length > 0 ? pendingImages[0].file : null;
+
+  addMessage('user', text || t('chat_image_analysis_label','（圖表分析）'), imageUrl);
+  input.value = '';
+  input.style.height = 'auto';
+  pendingImages = [];
+  showImgPreview();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+  addTyping();
+
+  try {
+    // prepare payload: text + optional base64 image
+    const imageBase64 = imageUrl || null;
+    const payload = {
+      query: text || t('chat_default_chart_query', '請分析這張圖表，識別支撐阻力位、圖形形態及技術指標，給出短中期展望'),
+      conversation_id: conversationId,
+      user: 'xfinlab-user',
+      image: imageBase64,
+      lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined
+    };
+
+    const res = await postApi('/api/chat', payload);
+    removeTyping();
+    const answer = res?.answer || res?.data?.answer || res?.data?.conclusion || null;
+    if (answer) {
+      conversationId = res.conversation_id || res?.data?.conversation_id || conversationId;
+      const botDiv = addMessage('bot', answer);
+      addToHistory(text || t('chat_chart_analysis','圖表分析'));
+      // Fire-and-forget: never await, never block the chat UI on this.
+      attachAssetCard(botDiv, answer);
+    } else {
+      addMessage('bot', t('chat_error_analysis','⚠️ 分析時出現問題，請稍後重試。'));
+    }
+  } catch (err) {
+    removeTyping();
+    addMessage('bot', t('chat_error_connection','⚠️ 連接出現問題，請檢查網絡後重試。'));
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function addToHistory(text) {
+  chatHistory.unshift({
+    full: text,
+    display: text.substring(0,30)+(text.length>30?'…':'')
+  });
+  if (chatHistory.length > 8) chatHistory.pop();
+  renderHistory();
+}
+
+// Clicking a past-chat entry re-fills the input with that original
+// question so the user can quickly re-ask it (edit or send as-is) --
+// previously these items looked clickable (cursor:pointer, hover
+// highlight in CSS) but had no click handler at all.
+// task #323: each item also gets an optional delete (✕) control so the
+// list can be pruned without clearing the whole conversation.
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const delLabel = t('chat_history_delete','刪除');
+  list.innerHTML = chatHistory.map((h, i) =>
+    `<div class="history-item">
+       <span class="history-item-text" onclick="useHistoryItem(${i})" title="${h.full.replace(/"/g,'&quot;')}">💬 ${h.display}</span>
+       <button type="button" class="history-del" onclick="event.stopPropagation();deleteHistoryItem(${i})" title="${delLabel}" aria-label="${delLabel}">✕</button>
+     </div>`
+  ).join('');
+}
+
+function deleteHistoryItem(i) {
+  chatHistory.splice(i, 1);
+  renderHistory();
+}
+
+function useHistoryItem(i) {
+  const entry = chatHistory[i];
+  if (!entry) return;
+  const input = document.getElementById('inputBox');
+  if (input) {
+    input.value = entry.full;
+    input.focus();
+    if (typeof input.dispatchEvent === 'function') {
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+}
+
+// task #323: copy/delete controls on individual Q&A messages.
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) { /* best-effort only */ }
+  document.body.removeChild(ta);
+}
+
+function copyMsg(btn) {
+  const msgDiv = btn.closest('.msg');
+  const text = (msgDiv && msgDiv.dataset.rawContent) ||
+    (msgDiv && msgDiv.querySelector('.msg-bubble')?.innerText) || '';
+  if (!text) return;
+  const showCopied = () => {
+    const original = btn.innerHTML;
+    btn.innerHTML = '✓ ' + t('chat_msg_copied','已複製');
+    setTimeout(() => { btn.innerHTML = original; }, 1400);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showCopied).catch(() => {
+      fallbackCopyText(text);
+      showCopied();
+    });
+  } else {
+    fallbackCopyText(text);
+    showCopied();
+  }
+}
+
+// 2026-07-24 ("加播放文字"): text-to-speech playback for AI replies, using
+// the browser-native Web Speech API (SpeechSynthesis) -- no backend/API
+// cost, works offline-ish once the voice is downloaded by the OS/browser.
+// Maps XFINLAB's own locale codes (js/i18n.js's I18N.currentLang, e.g.
+// "zh-HK"/"zh-TW"/"zh-CN") to the BCP-47 tags speechSynthesis actually
+// expects; most already match directly, a handful (en/ja/ko/es/etc, which
+// XFINLAB stores as the bare 2-letter code) need the full region suffix or
+// most engines won't pick a voice for them at all.
+const TTS_LANG_MAP = {
+  en: 'en-US', ja: 'ja-JP', ko: 'ko-KR', es: 'es-ES', fr: 'fr-FR', de: 'de-DE',
+  it: 'it-IT', pt: 'pt-PT', ru: 'ru-RU', nl: 'nl-NL', pl: 'pl-PL', tr: 'tr-TR',
+  ar: 'ar-SA', hi: 'hi-IN', id: 'id-ID', th: 'th-TH', vi: 'vi-VN', ro: 'ro-RO',
+  uk: 'uk-UA', fa: 'fa-IR', ur: 'ur-PK', bn: 'bn-BD', ms: 'ms-MY',
+};
+function ttsLangCode() {
+  const cur = (typeof I18N !== 'undefined' && I18N.currentLang) || 'zh-HK';
+  if (cur.startsWith('zh')) return cur; // zh-HK / zh-TW / zh-CN already valid BCP-47
+  return TTS_LANG_MAP[cur] || cur;
+}
+let _currentUtterance = null;
+function speakMsg(btn) {
+  if (typeof window.speechSynthesis === 'undefined') {
+    alert(t('chat_tts_unsupported','此瀏覽器不支援語音播放'));
+    return;
+  }
+  const msgDiv = btn.closest('.msg');
+  const text = (msgDiv && msgDiv.dataset.rawContent) ||
+    (msgDiv && msgDiv.querySelector('.msg-bubble')?.innerText) || '';
+  if (!text) return;
+  const label = btn.querySelector('.speak-label');
+  // Toggle off: tapping the same message's button again while it's
+  // speaking just stops it, rather than restarting from the top.
+  if (_currentUtterance && btn.classList.contains('speaking')) {
+    window.speechSynthesis.cancel();
+    return;
+  }
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.msg-action-btn.speaking').forEach(b => {
+    b.classList.remove('speaking');
+    const l = b.querySelector('.speak-label');
+    if (l) l.textContent = t('chat_msg_speak','播放');
+  });
+  // Strip markdown table pipes/asterisks so playback doesn't read out
+  // raw "|" and "**" punctuation -- listeners just want the words.
+  const clean = text.replace(/\|/g, ' ').replace(/\*\*/g, '').replace(/[#>_`]/g, '');
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = ttsLangCode();
+  utter.rate = 1.0;
+  _currentUtterance = utter;
+  btn.classList.add('speaking');
+  if (label) label.textContent = t('chat_msg_stop','停止');
+  utter.onend = utter.onerror = () => {
+    btn.classList.remove('speaking');
+    if (label) label.textContent = t('chat_msg_speak','播放');
+    _currentUtterance = null;
+  };
+  window.speechSynthesis.speak(utter);
+}
+
+function deleteMsg(btn) {
+  const msgDiv = btn.closest('.msg');
+  if (!msgDiv) return;
+  msgDiv.remove();
+  const msgs = document.getElementById('messages');
+  if (msgs && msgs.children.length === 0) {
+    msgs.style.display = 'none';
+    document.getElementById('welcome').style.display = 'flex';
+  }
+}
+
+function newChat() {
+  conversationId = '';
+  pendingImages = [];
+  chatHistory = [];
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('messages').style.display = 'none';
+  document.getElementById('welcome').style.display = 'flex';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('historyList').innerHTML = '';
+  document.getElementById('inputBox').value = '';
+}
+
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#D35400);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<!-- 2026-08-24 fix ("個AICHAT劃面得一半" -- make the chat area FULL height):
+     chat.html is the one page on this site that opts into a true
+     single-viewport "app shell" layout (html,body{height:100dvh;
+     overflow:hidden} + .main{flex:1}, see that CSS block's own 2026-07-21
+     comment) -- every other page (chart-analysis.html, stress-lab.html,
+     portfolio.html, etc.) is a normal SCROLLING page where a full-size
+     <footer> at the bottom is fine. Here, a full-size footer + ad slot
+     were still competing with #chatArea for a share of that fixed
+     100dvh, shrinking the actual chat area well below "full". Collapsed
+     by default into a slim, always-visible strip (flex-shrink:0, ~34px)
+     so #chatArea gets effectively the whole viewport; click to expand
+     and see the ad slot + full legal links without losing them from the
+     page (compliance links stay reachable, just not eating chat space
+     by default).
+
+     2026-08-24 CONFIRMED by AJ after deploy ("AICHAT正常，呢個SIZE岩啦"):
+     full-viewport sizing verified correct on the live site -- this is
+     the confirmed-good baseline. Don't "fix" this layout again without
+     a real reported issue; if the welcome/input block ever looks
+     shrunk again, suspect a NEW regression (e.g. something else added
+     back into body's flex flow without flex-shrink:0/collapsed), not
+     this block. -->
+<div id="legalBar" style="flex-shrink:0;border-top:1px solid var(--border-color);background:var(--bg-card)">
+  <button onclick="const b=document.getElementById('legalBarBody');const open=b.style.display!=='none';b.style.display=open?'none':'block';document.getElementById('legalBarToggle').textContent=open?'▲':'▼';" id="legalBarToggleBtn" style="width:100%;background:transparent;border:none;color:var(--text-muted);font-size:0.72rem;padding:6px 1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+    <span data-i18n="chat_legal_toggle">Legal &amp; Disclosures</span><span id="legalBarToggle">▼</span>
+  </button>
+  <div id="legalBarBody" style="display:none">
+    <div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+    <footer>
+      <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_chat">Research Copilot</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+    </footer>
+  </div>
+</div>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+</body>
+</html>

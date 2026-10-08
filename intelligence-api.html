@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB Intelligence API — Events, Sentiment &amp; AI Debate for Developers</title>
+<meta name="description" content="A structured JSON API for market events, FinBERT sentiment, and multi-agent AI debate — built on real data, no fabricated numbers. Early access now open.">
+<link rel="canonical" href="https://www.xfinlab.com/intelligence-api.html">
+<!-- 2026-07-30: no hreflang block on this page (unlike the rest of the
+     site) -- this is a developer-facing product page, not consumer
+     content, and hasn't gone through the site's i18n pass yet. Follow-up
+     task if/when this product gets a public multi-language push. -->
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="XFINLAB Intelligence API — Events, Sentiment &amp; AI Debate">
+<meta property="og:description" content="A structured JSON API for market events, FinBERT sentiment, and multi-agent AI debate. Early access now open.">
+<meta property="og:url" content="https://www.xfinlab.com/intelligence-api.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:14px 20px;border-bottom:1px solid var(--border-color);background:var(--bg-primary);display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-weight:700;font-size:1.05rem;color:var(--text-primary);text-decoration:none;display:flex;align-items:center}
+.nav-brand em{font-style:normal;color:var(--accent-blue)}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-right a{font-size:0.85rem;color:var(--text-secondary);text-decoration:none}
+.container{max-width:1160px;margin:0 auto;padding:0 20px;flex:1}
+.badge-pill{display:inline-block;padding:4px 12px;border-radius:99px;background:rgba(211,84,0,0.1);color:var(--accent-blue);font-size:0.72rem;font-weight:700;letter-spacing:0.03em;margin-bottom:16px}
+.hero{padding:56px 0 40px;text-align:center}
+.hero h1{font-size:2.1rem;font-weight:700;line-height:1.25;margin:0 0 14px}
+.hero p{font-size:1rem;color:var(--text-secondary);max-width:640px;margin:0 auto 26px;line-height:1.6}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--accent-blue);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-primary:hover{background:#A83E00}
+.btn-ghost{background:transparent;color:var(--text-primary);border:1px solid var(--border-color);padding:12px 24px;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer;text-decoration:none;display:inline-block}
+
+.section{padding:36px 0}
+.section-title{font-size:1.4rem;font-weight:700;margin:0 auto 6px;text-align:center}
+/* 2026-08-24 fix (AJ: "API呢度字置中" -- section text not visually
+   centered): css/style.css's shared .section-sub rule (loaded before
+   this page's own <style> block) sets max-width:500px with no margin,
+   which this page's own rule below never overrode -- a block-level div
+   with a max-width and no auto side-margins sits flush against the LEFT
+   edge of its parent by default, so even though text-align:center makes
+   the TEXT centered *within that narrow box*, the box itself (and
+   everything in it) visibly hugs the left side of the page instead of
+   sitting in the middle. margin:0 auto forces the box itself to center,
+   regardless of whatever max-width some other stylesheet applies. */
+.section-sub{color:var(--text-muted);font-size:0.88rem;text-align:center;margin:0 auto 28px}
+
+.endpoints{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media (max-width:820px){.endpoints{grid-template-columns:1fr}}
+/* 2026-08-11 (AJ: "更新intelligence-api.html行銷文案" -- reflect the now-
+   resolved data-licensing audit as a real differentiator, not a
+   liability shield). 3-col responsive grid, reusing .ep-card's visual
+   language so this section feels native to the page rather than bolted
+   on. */
+.source-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:820px){.source-grid{grid-template-columns:1fr}}
+.ep-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+.ep-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ep-icon{width:34px;height:34px;flex-shrink:0;border-radius:9px;background:rgba(211,84,0,0.1);color:var(--accent-blue);display:flex;align-items:center;justify-content:center}
+.ep-icon svg{width:18px;height:18px}
+.ep-weight{font-size:0.68rem;font-weight:700;color:var(--text-muted);background:var(--bg-primary);border:1px solid var(--border-color);border-radius:99px;padding:2px 9px;white-space:nowrap}
+.ep-tag{font-family:monospace;font-size:0.75rem;color:var(--accent-blue);background:rgba(211,84,0,0.1);padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:10px}
+.ep-name{font-weight:700;font-size:1rem;margin-bottom:6px}
+.ep-desc{font-size:0.83rem;color:var(--text-secondary);line-height:1.55}
+
+/* 2026-08-09 SDK code-tabs (Longbridge-dev-docs-inspired, AJ-requested):
+   one code panel per language, only one visible at a time, switched by
+   .sdk-tab-btn buttons. Kept to plain CSS class toggling (no framework)
+   -- consistent with this page's zero-dependency, hand-rolled convention. */
+.sdk-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden}
+.sdk-tabs{display:flex;gap:4px;padding:10px 10px 0;border-bottom:1px solid var(--border-color);flex-wrap:wrap}
+.sdk-tab-btn{background:transparent;border:none;color:var(--text-muted);font-size:0.82rem;font-weight:600;padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;font-family:inherit}
+.sdk-tab-btn.active{color:var(--accent-blue);background:var(--bg-primary)}
+.sdk-panel{display:none;padding:18px 20px}
+.sdk-panel.active{display:block}
+.sdk-install{font-family:monospace;font-size:0.78rem;color:var(--text-secondary);background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:9px 12px;margin-bottom:12px;word-break:break-all;position:relative}
+.code-block{position:relative;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;font-family:monospace;font-size:0.8rem;line-height:1.7;color:var(--text-primary);overflow-x:auto}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-muted);font-size:0.68rem;padding:4px 9px;border-radius:6px;cursor:pointer;font-family:inherit}
+.copy-btn:hover{color:var(--accent-blue);border-color:var(--accent-blue)}
+.copy-btn.copied{color:var(--accent-green);border-color:var(--accent-green)}
+.try-result{margin:0;white-space:pre-wrap;word-break:break-word}
+.try-path-preview{font-family:monospace;font-size:0.75rem;color:var(--accent-blue);background:rgba(211,84,0,0.1);padding:3px 8px;border-radius:6px;display:inline-block;margin-top:6px}
+details.schema-details{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color)}
+details.schema-details summary{cursor:pointer;font-size:0.76rem;font-weight:700;color:var(--accent-blue);list-style:none}
+details.schema-details summary::-webkit-details-marker{display:none}
+details.schema-details summary::after{content:" ▾"}
+details.schema-details[open] summary::after{content:" ▴"}
+.schema-fields{margin-top:10px}
+.schema-field{font-size:0.74rem;line-height:1.75;color:var(--text-secondary)}
+.schema-field code{font-family:monospace;color:var(--accent-blue);background:rgba(211,84,0,0.08);padding:1px 5px;border-radius:4px;font-size:0.72rem}
+.schema-type{font-family:monospace;font-size:0.68rem;color:var(--text-muted)}
+.schema-note{font-size:0.72rem;color:var(--text-muted);margin-top:8px;font-style:italic}
+.changelog-entry{margin-bottom:22px}
+.changelog-date{font-family:monospace;font-size:0.78rem;font-weight:700;color:var(--text-primary);margin-bottom:8px}
+.changelog-change{font-size:0.82rem;color:var(--text-secondary);line-height:1.6;margin-bottom:6px;padding-left:2px}
+.changelog-tag{display:inline-block;font-size:0.62rem;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:99px;margin-right:8px;vertical-align:middle;white-space:nowrap}
+.changelog-tag.added{background:rgba(34,197,94,0.12);color:var(--accent-green)}
+.changelog-tag.changed{background:rgba(211,84,0,0.12);color:var(--accent-blue)}
+.changelog-tag.fixed{background:rgba(234,179,8,0.15);color:#CA8A04}
+#statusWidget a{color:var(--accent-blue);text-decoration:none}
+.status-dot-ok{color:var(--accent-green)}
+.status-dot-down{color:#DC2626}
+.roadmap-item{background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.roadmap-item-head{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.roadmap-item-title{font-size:0.86rem;font-weight:700}
+.roadmap-status{font-size:0.62rem;font-weight:700;text-transform:uppercase;padding:1px 7px;border-radius:99px;white-space:nowrap}
+.roadmap-status.planned{background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-muted)}
+.roadmap-status.in_progress{background:rgba(211,84,0,0.12);color:var(--accent-blue)}
+.roadmap-item-text{font-size:0.8rem;color:var(--text-secondary);line-height:1.6}
+
+/* 2026-08-14 quickstart step layout (task #828) */
+.qs-steps{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.qs-step{display:flex;gap:16px}
+.qs-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--accent-blue);color:#fff;font-weight:700;font-size:0.85rem;display:flex;align-items:center;justify-content:center}
+.qs-body{flex:1;min-width:0}
+.qs-step-title{font-weight:700;font-size:0.95rem;margin-bottom:4px}
+.qs-step-desc{font-size:0.83rem;color:var(--text-secondary);line-height:1.5;margin-bottom:10px}
+.qs-step .code-block{margin-top:2px}
+
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:820px){.plans{grid-template-columns:1fr}}
+.plan{background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:24px;display:flex;flex-direction:column}
+.plan.popular{border-color:var(--accent-blue);position:relative}
+.plan.popular::before{content:'MOST REQUESTED';position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--accent-blue);color:#fff;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;padding:3px 10px;border-radius:99px}
+.plan-name{font-weight:700;font-size:1.05rem;margin-bottom:4px}
+.plan-price{font-size:1.5rem;font-weight:700;margin:6px 0 4px}
+.plan-price small{font-size:0.7rem;font-weight:500;color:var(--text-muted)}
+.plan-desc{font-size:0.8rem;color:var(--text-muted);margin-bottom:14px;min-height:32px}
+.promo-badge{display:inline-block;background:rgba(16,185,129,0.15);color:var(--green,#10b981);border:1px solid rgba(16,185,129,0.3);padding:2px 8px;border-radius:99px;font-size:0.68rem;font-weight:600;margin-bottom:8px}
+.plan-features{list-style:none;padding:0;margin:0 0 18px;flex:1}
+.plan-features li{font-size:0.82rem;color:var(--text-secondary);padding:5px 0;display:flex;gap:8px}
+.plan-features li .check{color:var(--accent-green)}
+.plan-features li .cross{color:var(--text-muted)}
+/* 2026-08-30 fix (AJ: buttons showing left-aligned text): css/style.css's
+   shared `button` rule sets display:inline-flex with no justify-content
+   (defaults to flex-start) -- for a flex container, text-align:center has
+   NO effect on content position, only justify-content does. text-align:
+   center here was therefore silently doing nothing on real <button>
+   elements. Same root cause fixed identically on .form-submit below. */
+.plan-btn{width:100%;text-align:center;justify-content:center;padding:10px 0;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;border:1px solid var(--border-color);background:transparent;color:var(--text-primary)}
+.plan.popular .plan-btn{background:var(--accent-blue);color:#fff;border:none}
+
+.access-form{max-width:480px;margin:0 auto;background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:28px}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:0.78rem;font-weight:600;color:var(--text-secondary);margin-bottom:5px}
+.form-row input,.form-row select,.form-row textarea{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-family:inherit;font-size:0.88rem}
+.form-row textarea{resize:vertical;min-height:64px}
+.form-submit{width:100%;padding:12px 0;border-radius:8px;border:none;background:var(--accent-blue);color:#fff;font-weight:700;font-size:0.9rem;cursor:pointer;justify-content:center}
+.form-submit:disabled{opacity:0.6;cursor:not-allowed}
+.form-note{font-size:0.72rem;color:var(--text-muted);margin-top:10px;text-align:center;line-height:1.5}
+#accessMsg{font-size:0.85rem;margin-top:12px;text-align:center;display:none;padding:10px;border-radius:8px}
+#accessMsg.ok{display:block;background:rgba(16,185,129,0.1);color:var(--accent-green)}
+#accessMsg.err{display:block;background:rgba(239,68,68,0.1);color:var(--accent-red)}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center;font-size:0.8rem;color:var(--text-muted)}
+.footer a{color:var(--text-muted)}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <div class="nav-right">
+    <a href="index.html" data-i18n="ia_nav_back">← Back to XFINLAB</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="hero">
+    <span class="badge-pill" data-i18n="ia_badge">EARLY ACCESS</span>
+    <h1 data-i18n="ia_hero_title">Real market intelligence, structured for developers</h1>
+    <p data-i18n="ia_hero_p">20+ JSON endpoints — market events, FinBERT sentiment, multi-agent AI debate, company network intelligence, fundamentals, and cross-industry macro context (energy, agriculture, real estate, supply chain, consumer demand) — built on the same real data and anti-fabrication principles behind XFINLAB's own product. Free tier keys are issued instantly and automatically; Pro/Enterprise are still set up personally.</p>
+    <div class="hero-ctas">
+      <a href="#quickstart" class="btn-primary" data-i18n="ia_cta_quickstart">Quickstart →</a>
+      <a href="#access" class="btn-ghost" data-i18n="ia_cta_access">Request Early Access</a>
+      <a href="#endpoints" class="btn-ghost" data-i18n="ia_cta_endpoints">See the endpoints</a>
+      <a href="#data-sourcing" class="btn-ghost" data-i18n="ia_cta_datasourcing">Data sourcing</a>
+      <a href="#sdks" class="btn-ghost" data-i18n="ia_cta_sdks">SDKs</a>
+      <a href="#mcp" class="btn-ghost" data-i18n="ia_cta_mcp">MCP Server</a>
+    </div>
+  </div>
+
+  <!-- 2026-08-14 (AJ: "重寫Developer Docs做quickstart風格" -- task #828).
+       Stripe/Twilio-pattern quickstart: key -> code -> result, in that
+       order, sitting above the full endpoint catalog rather than
+       replacing it. Deliberately reuses .sdk-card/.code-block/.copy-btn
+       styling and copyCode() already defined for the #sdks section below
+       -- no new JS logic, no page rebuild. -->
+  <div class="section" id="quickstart">
+    <div class="section-title" data-i18n="ia_qs_title">Quickstart</div>
+    <div class="section-sub" data-i18n="ia_qs_sub">Three steps, no signup wait for the free tier.</div>
+    <div class="qs-steps">
+      <div class="qs-step">
+        <div class="qs-num">1</div>
+        <div class="qs-body">
+          <div class="qs-step-title" data-i18n="ia_qs1_title">Get a free API key</div>
+          <div class="qs-step-desc"><span data-i18n="ia_qs1_desc">Issued instantly and automatically, no waiting on a human.</span> <a href="#access" data-i18n="ia_qs1_link">Request one below →</a></div>
+        </div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">2</div>
+        <div class="qs-body">
+          <div class="qs-step-title" data-i18n="ia_qs2_title">Make your first call</div>
+          <div class="qs-step-desc" data-i18n="ia_qs2_desc">One endpoint, one header. Swap in your own key and ticker.</div>
+          <div class="code-block"><button class="copy-btn" onclick="copyCode('qsCurl',this)" data-i18n="ia_copy_btn">Copy</button><span id="qsCurl">curl -H "X-API-Key: xfl_..." \
+  "https://api.xfinlab.com/api/intelligence/v1/sentiment?ticker=AAPL"</span></div>
+        </div>
+      </div>
+      <div class="qs-step">
+        <div class="qs-num">3</div>
+        <div class="qs-body">
+          <div class="qs-step-title" data-i18n="ia_qs3_title">See a real result</div>
+          <div class="qs-step-desc" data-i18n="ia_qs3_desc">Trimmed example — your actual response includes per-headline sentiment too.</div>
+          <div class="code-block"><span>{
+  "success": true,
+  "data": {
+    "ticker": "AAPL",
+    "aggregate_sentiment": "neutral",
+    "aggregate_score": 0.04,
+    "headline_count": 8
+  }
+}</span></div>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:18px;font-size:0.83rem;color:var(--text-muted)"><span data-i18n="ia_qs_footer">Prefer Python or Node? Same endpoint, one method call.</span> <a href="#sdks" data-i18n="ia_qs_footer_link">See the official SDKs →</a></p>
+  </div>
+
+  <!-- 2026-08-17 (task #4 follow-up, AJ: "重有咩可以升級" -- upgrade #1,
+       live try-it-now console): a real client-side fetch() straight to
+       api.xfinlab.com using the visitor's own key -- nothing routes
+       through XFINLAB's own servers first, and the key is never stored
+       or logged by this page, only sent in the direct request to the
+       API itself. Reuses the SDK section's .sdk-card/.code-block visual
+       language and the existing copyCode() helper rather than inventing
+       new components. Endpoint dropdown reuses the same ia_ep*_name
+       i18n keys already translated for the #endpoints cards below, so
+       this didn't need its own set of per-endpoint-name translations. -->
+  <div class="section" id="try-it">
+    <div class="section-title" data-i18n="ia_try_title">Try it live</div>
+    <div class="section-sub"><span data-i18n="ia_try_sub">Paste your API key, pick an endpoint, and see a real response — right here, no code required.</span> <a href="#access" data-i18n="ia_try_get_key_link">Don't have one? Get a free key ↓</a></div>
+    <div class="sdk-card" style="max-width:640px;margin:0 auto;padding:20px 22px">
+      <div class="form-row">
+        <label for="tryKey" data-i18n="ia_try_label_key">Your API key</label>
+        <input type="password" id="tryKey" data-i18n-placeholder="ia_try_placeholder_key" placeholder="xfl_..." autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label for="tryEndpoint" data-i18n="ia_try_label_endpoint">Endpoint</label>
+        <select id="tryEndpoint" onchange="tryUpdateFields()">
+          <option value="events" data-i18n="ia_ep1_name">Events</option>
+          <option value="sentiment" data-i18n="ia_ep2_name">Sentiment</option>
+          <option value="debate" data-i18n="ia_ep3_name">AI Debate</option>
+          <option value="intel" data-i18n="ia_ep4_name">AI Intelligence Feed</option>
+          <option value="technical" data-i18n="ia_ep5_name">Technical &amp; Market Structure</option>
+          <option value="stress-test" data-i18n="ia_ep6_name">Monte Carlo Stress Test</option>
+          <option value="regime-signal" data-i18n="ia_ep7_name">Regime-Aware Signal</option>
+          <option value="forecast" data-i18n="ia_ep8_name">Probabilistic Forecast</option>
+          <option value="insider" data-i18n="ia_ep9_name">Insider Trading</option>
+          <option value="short-interest" data-i18n="ia_ep10_name">Short Interest</option>
+          <option value="energy" data-i18n="ia_ep11_name">Energy Fundamentals</option>
+          <option value="exchange" data-i18n="ia_ep12_name">Exchange Comparison</option>
+          <option value="fundamentals" data-i18n="ia_ep13_name">Company Fundamentals</option>
+          <option value="vix-term-structure" data-i18n="ia_ep14_name">VIX Term Structure</option>
+          <option value="bank-health" data-i18n="ia_ep15_name">Bank Health</option>
+          <option value="agriculture" data-i18n="ia_ep16_name">Agriculture Prices</option>
+          <option value="real-estate" data-i18n="ia_ep18_name">Real Estate</option>
+          <option value="supply-chain" data-i18n="ia_ep19_name">Supply Chain</option>
+          <option value="consumer-demand" data-i18n="ia_ep20_name">Consumer Demand</option>
+          <option value="opportunity-radar" data-i18n="ia_ep21_name">Opportunity Radar</option>
+          <option value="consumer-safety" data-i18n="ia_ep22_name">Consumer Safety (openFDA)</option>
+          <option value="product-recalls" data-i18n="ia_ep23_name">Product Recalls (CPSC)</option>
+          <option value="recall-search" data-i18n="ia_ep24_name">Recall Search by Brand/Product (CPSC)</option>
+          <option value="impact" data-i18n="ia_ep25_name">Relationship &amp; Impact</option>
+          <option value="evidence-scorecard" data-i18n="ia_ep26_name">Evidence Scorecard</option>
+        </select>
+        <span class="try-path-preview" id="tryPathPreview">GET /v1/events</span>
+      </div>
+      <div class="form-row">
+        <label for="tryTicker" data-i18n="ia_try_label_ticker">Ticker</label>
+        <input type="text" id="tryTicker" data-i18n-placeholder="ia_try_placeholder_ticker" placeholder="AAPL" value="AAPL" style="text-transform:uppercase" oninput="tryUpdatePathPreview()">
+      </div>
+      <div class="form-row" id="tryAmountRow" style="display:none">
+        <label for="tryAmount" data-i18n="ia_try_label_amount">Amount</label>
+        <input type="number" id="tryAmount" value="10000" min="1">
+      </div>
+      <div class="form-row" id="tryHorizonRow" style="display:none">
+        <label for="tryHorizon" data-i18n="ia_try_label_horizon">Horizon (days)</label>
+        <input type="number" id="tryHorizon" value="252" min="1">
+      </div>
+      <button type="button" class="form-submit" id="tryRunBtn" onclick="runTryIt()" data-i18n="ia_try_run_btn">Run request</button>
+      <div style="margin-top:16px">
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('tryResult',this)" data-i18n="ia_copy_btn">Copy</button><pre class="try-result" id="tryResult" data-i18n="ia_try_placeholder_response">Response will appear here.</pre></div>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-muted);margin:14px 0 0;text-align:center" data-i18n="ia_try_note">This runs directly from your browser against the live API. Your key is sent only to XFINLAB's API — never stored or logged by this page.</p>
+    </div>
+  </div>
+
+  <div class="section" id="endpoints">
+    <div class="section-title" data-i18n="ia_ep_title">Nineteen endpoints, one API key</div>
+    <div class="section-sub"><span data-i18n="ia_ep_sub">Every response is AI-structured JSON — never raw scraped article text.</span> <a href="https://api.xfinlab.com/api/intelligence/openapi.json" target="_blank" rel="noopener" data-i18n="ia_openapi_link">View OpenAPI spec →</a> <a href="https://api.xfinlab.com/api/intelligence/postman.json" target="_blank" rel="noopener" data-i18n="ia_postman_link">Download Postman collection →</a></div>
+    <!-- 2026-08-17 (task #4 follow-up, upgrade #4): live, not historical --
+         calls GET /intelligence/status on load and renders per-capability
+         dots. No stored uptime history (see chat: no new scheduled job /
+         DB table for this pass), so deliberately no fabricated uptime %;
+         "True" here means "not gated behind an external reachability
+         check" per that endpoint's own docstring, shown as-is. -->
+    <div id="statusWidget" style="text-align:center;margin:-14px 0 26px;font-size:0.78rem;color:var(--text-muted)"><span id="statusDot">●</span>&nbsp;<span id="statusSummary">Checking live status…</span> <a href="#changelog" style="margin-left:4px">Changelog →</a></div>
+    <p style="font-size:0.76rem;color:var(--text-muted);text-align:center;margin:-14px 0 26px" data-i18n="ia_ratelimit_note">Every authenticated response includes X-RateLimit-Limit and X-RateLimit-Remaining headers, so you can pace requests instead of guessing from a 429.</p>
+    <div class="endpoints">
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M7 13h4M7 16h7"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">GET /v1/events</span>
+        <div class="ep-name" data-i18n="ia_ep1_name">Events</div>
+        <div class="ep-desc" data-i18n="ia_ep1_desc">Recent market/company headlines by ticker or globally — title, source, publish time, and link. No fabricated summaries of articles we can't retain in full.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data</code> <span class="schema-type">array</span> — one entry per headline</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>title</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>source</code> <span class="schema-type">string</span> — publisher name (e.g. GlobeNewswire, PR Newswire, or a GDELT source label)</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>kind</code> <span class="schema-type">string</span> — "company_announcement" or "market_news"</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>published_at</code> <span class="schema-type">string|null</span> — ISO 8601, null if the source feed had no parseable date</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>url</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>tickers</code> <span class="schema-type">string[]</span> — batch mode only, which requested symbols this event matched</div>
+            <div class="schema-field"><code>meta.count</code> <span class="schema-type">int</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string|null</span> — single-ticker or no-ticker mode</div>
+            <div class="schema-field"><code>meta.tickers</code> <span class="schema-type">string[]</span> — batch mode, replaces meta.ticker</div>
+          </div>
+          <p class="schema-note" data-i18n="ia_batch_note_events">`ticker` also accepts a comma-separated list, up to 10 symbols (e.g. "AAPL,MSFT,TSLA"), for watchlist-style queries — results are merged and deduplicated across all requested tickers. Quota weight scales with the number of tickers requested.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">GET /v1/sentiment</span>
+        <div class="ep-name" data-i18n="ia_ep2_name">Sentiment</div>
+        <div class="ep-desc" data-i18n="ia_ep2_desc">FinBERT-scored sentiment across a ticker's recent headlines — per-headline label/confidence plus an aggregate score. Honestly reports "unavailable" rather than guessing when the model is unreachable.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.average_score</code> <span class="schema-type">number|null</span> — 0-100 aggregate bullishness; absent when no headlines matched</div>
+            <div class="schema-field"><code>data.results</code> <span class="schema-type">array</span> — one entry per headline</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>headline</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code> <span class="schema-type">string</span> — "positive" | "neutral" | "negative"</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>confidence_pct</code> <span class="schema-type">number</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>score</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.articles_analyzed</code> <span class="schema-type">int</span>, <code>meta.source</code> <span class="schema-type">"finbert"</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_sentiment">When zero headlines are found, the shape shifts slightly: articles_analyzed moves into data (data.articles_analyzed) instead of meta, and average_score is omitted entirely — worth handling as its own case in your client code.</p>
+          <p class="schema-note" data-i18n="ia_batch_note_sentiment">`ticker` also accepts a comma-separated list, up to 10 symbols. Batch requests return `data.results_by_ticker` (keyed by symbol) instead of the flat ticker/average_score/results shape above, since averaging sentiment across unrelated tickers would be a misleading number. Quota weight scales with the number of tickers requested.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h8M8 14h5"/><path d="M21 12c0 4.4-4 8-9 8-1.4 0-2.7-.3-3.9-.8L3 20l1.1-3.6C3.4 15 3 13.5 3 12c0-4.4 4-8 9-8s9 3.6 9 8z"/></svg></div>
+          <span class="ep-weight">5x</span>
+        </div>
+        <span class="ep-tag">GET /v1/debate</span>
+        <div class="ep-name" data-i18n="ia_ep3_name">AI Debate</div>
+        <div class="ep-desc" data-i18n="ia_ep3_desc">A 4-call Bull / Bear / Risk-Manager / Arbiter debate grounded in real technical data for a ticker — synthesized into one verdict.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.available</code> <span class="schema-type">bool</span> — always true on a 200 (a 503 is raised instead if the debate engine itself is unreachable)</div>
+            <div class="schema-field"><code>data.arguments</code> <span class="schema-type">object|null</span> — {bull, bear, risk_manager}, each a string; null if the debate failed partway through</div>
+            <div class="schema-field"><code>data.verdict</code> <span class="schema-type">string|null</span></div>
+            <div class="schema-field"><code>data.disclaimer</code> <span class="schema-type">string</span> — present only when the debate completed fully</div>
+            <div class="schema-field"><code>data.error</code> <span class="schema-type">string|null</span> — set if a call failed mid-debate</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+          <span class="ep-weight">8x</span>
+        </div>
+        <span class="ep-tag">GET /v1/intel/latest · /v1/intel/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep4_name">AI Intelligence Feed</div>
+        <div class="ep-desc" data-i18n="ia_ep4_desc">Original structured intelligence, not raw news: same-event headlines clustered, then enriched with entities, sentiment, real technical/historical-analog signals, a non-causal cross-asset co-movement read, and an AI-written narrative — every number traceable to a real computation, never a fabricated confidence score. The most compute-intensive endpoint.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data</code> <span class="schema-type">array</span> — one entry per event cluster, newest first</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>id</code>, <code>title</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>summary</code> <span class="schema-type">string|null</span> — AI-generated fact summary; null if that AI call failed</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>entities</code>, <code>affected_assets</code> <span class="schema-type">array&lt;string&gt;</span> — extracted tickers</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>sentiment</code> <span class="schema-type">string|null</span> — "bullish"|"bearish"|"neutral"; <code>sentiment_confidence</code> <span class="schema-type">number|null</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>importance</code> <span class="schema-type">number</span> — 0-100 heuristic; <code>source_count</code> <span class="schema-type">int</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>impact_score</code>, <code>confidence</code>, <code>probability</code> <span class="schema-type">number|null</span> — quant read-through, null while <code>quant_pending</code> is true</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>risk_level</code> <span class="schema-type">string|null</span> — "high"|"medium"|"low"; <code>time_horizon</code> <span class="schema-type">string|null</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>quant_pending</code> <span class="schema-type">bool</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>event_chain</code> <span class="schema-type">array|null</span> — possible downstream-impact candidates with historical win-rate stats; per-candidate fields vary (some carry an <code>error</code> or <code>note</code> instead of stats)</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>quant_signals</code> <span class="schema-type">object</span> — <code>per_asset</code> is dynamically keyed by ticker, each value's fields vary by what resolved; see a live response rather than a fixed list here</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>citations</code> <span class="schema-type">array</span> — {title, link, source, published_at}</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>narrative</code> <span class="schema-type">string|null</span> — AI-written summary paragraph; <code>narrative_lang</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>generated_at</code> <span class="schema-type">string</span> — ISO 8601</div>
+            <div class="schema-field"><code>meta.count</code> <span class="schema-type">int</span>; <code>meta.ticker</code> <span class="schema-type">string</span> on the <code>/intel/{ticker}</code> variant only</div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_intel">The most dynamic response on this API — quant_signals and event_chain fields depend on what data resolved for each cluster. Everything null-able above is genuinely conditional, not a fixed schema you can assume is always fully populated.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 9-9"/><path d="M15 7h6v6"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/technical/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep5_name">Technical &amp; Market Structure</div>
+        <div class="ep-desc" data-i18n="ia_ep5_desc">Confluence direction/confidence, trend, MACD, volume, chart-pattern detection, and market structure (break-of-structure, change-of-character, liquidity sweeps, order flow, volume profile, institutional footprint) for any ticker — the same engine behind XFINLAB's own chart analysis.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.symbol</code>, <code>data.last_close</code>, <code>data.trend</code>, <code>data.rsi</code> <span class="schema-type">string|number|null</span></div>
+            <div class="schema-field"><code>data.macd</code> <span class="schema-type">object</span> — {macd_line, signal_line, histogram, trend}</div>
+            <div class="schema-field"><code>data.support</code>, <code>data.resistance</code> <span class="schema-type">object|null</span> — {level, touches}</div>
+            <div class="schema-field"><code>data.indicators</code> <span class="schema-type">object</span> — ema20/ema50/sma20/sma50/atr14, plus nullable sub-objects for bollinger, obv, vwap, supertrend, ichimoku, donchian, keltner</div>
+            <div class="schema-field"><code>data.confluence</code> <span class="schema-type">object</span> — {score (-100..100), direction, confidence, confidence_pct, signals_counted, bullish_signals[], bearish_signals[]}</div>
+            <div class="schema-field"><code>data.decision_levels</code> <span class="schema-type">object|null</span> — {bias, entry, stop_loss, take_profits[], risk_reward, risk_pct}; null if confluence has no clear directional bias</div>
+            <div class="schema-field"><code>data.market_structure</code> <span class="schema-type">object|null</span> — break-of-structure/change-of-character events, liquidity pools, order flow, volume profile, institutional footprint; null if there isn't enough swing data yet</div>
+            <div class="schema-field"><code>data.patterns</code> <span class="schema-type">object</span> — fixed set of chart-pattern keys, each "可能" (possible) or "不可能" (not present)</div>
+            <div class="schema-field"><code>data.data_points</code>, <code>data.period</code>, <code>data.interval</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_technical">Raw OHLC price bars are deliberately never included in this response — every price-derived field above is a computed result, not the underlying feed (see Data Sourcing below). String-valued fields (trend, confluence.direction, pattern labels, etc.) are localized based on the lang query param.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">POST /v1/stress-test</span>
+        <div class="ep-name" data-i18n="ia_ep6_name">Monte Carlo Stress Test</div>
+        <div class="ep-desc" data-i18n="ia_ep6_desc">A real historical-bootstrap simulation — resamples a symbol's own real daily returns thousands of times to report percentile ending values and drawdowns for a given horizon. Never an LLM-estimated number.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.available</code> <span class="schema-type">true</span></div>
+            <div class="schema-field"><code>data.symbol</code>, <code>data.horizon_days</code>, <code>data.n_simulations</code>, <code>data.n_real_observations</code>, <code>data.starting_amount</code></div>
+            <div class="schema-field"><code>data.ending_value_p5</code> / <code>p25</code> / <code>p50</code> / <code>p75</code> / <code>p95</code> <span class="schema-type">number</span> — percentile ending portfolio values</div>
+            <div class="schema-field"><code>data.max_drawdown_p50_pct</code>, <code>data.max_drawdown_p5_pct</code> <span class="schema-type">number</span> — negative values</div>
+            <div class="schema-field"><code>data.method</code>, <code>data.note</code> <span class="schema-type">string</span> — methodology disclosure, returned verbatim, never stripped</div>
+            <div class="schema-field"><code>meta.symbol</code> <span class="schema-type">string</span></div>
+          </div>
+        </details>
+      </div>
+      <!-- 2026-08-10 (P3 of the Quant Research Factory roadmap): packages
+           services/regime_router_service.py. Honestly reports
+           available:false with a reason when the persisted leaderboard
+           doesn't yet have enough graded trades for a ticker/regime pair --
+           never a fabricated pick. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12 7 14.5 12 12 17 9.5 12"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/regime-signal/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep7_name">Regime-Aware Signal</div>
+        <div class="ep-desc" data-i18n="ia_ep7_desc">Current causal market regime for a ticker, plus whichever composed signal combo has historically performed best in that same regime — backed by real walk-forward-validated backtests, not a fabricated pick. Honestly reports "not enough data yet" for tickers not yet covered by the scheduled scan.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.current_regime</code> <span class="schema-type">object</span> — {symbol, regime, as_of_date, note}</div>
+            <div class="schema-field"><code>data.regime_used</code> <span class="schema-type">string</span> — your <code>regime</code> query param if given, else current_regime.regime</div>
+            <div class="schema-field"><code>data.available</code> <span class="schema-type">bool</span></div>
+            <div class="schema-field"><code>data.best_candidate</code> <span class="schema-type">object</span> — only when available is true: {label, trade_count, win_rate_pct, avg_return_pct}</div>
+            <div class="schema-field"><code>data.runner_up_candidates</code> <span class="schema-type">array</span> — up to 5, same shape as best_candidate, only when available is true</div>
+            <div class="schema-field"><code>data.reason</code> <span class="schema-type">string</span> — only present when available is false</div>
+            <div class="schema-field"><code>data.caveats</code> <span class="schema-type">array&lt;string&gt;</span> — present either way, different text</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+        </details>
+      </div>
+      <!-- 2026-08-24 (Capital Flow Engine roadmap, Layer 7 -- flagship for
+           the v2 direction): packages services/probabilistic_forecast_
+           service.py. Deliberately never returns a fabricated fixed
+           bull/base/bear PROBABILITY split -- band_note explains what the
+           percentile band actually means (standard central-bank "fan
+           chart" convention, e.g. Bank of England GDP forecasts), and
+           ml_cross_check is a SEPARATE, independently backtest-gated
+           number rather than mathematically fused with the bootstrap
+           (no defensible fusion method exists that wouldn't manufacture
+           false precision). -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l5-9 4 5 4-11 5 8"/><path d="M3 20h18"/></svg></div>
+          <span class="ep-weight">4x</span>
+        </div>
+        <span class="ep-tag">GET /v1/forecast/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep8_name">Probabilistic Forecast</div>
+        <div class="ep-desc" data-i18n="ia_ep8_desc">A Bear/Base/Bull price-path fan chart — the 10th/50th/90th percentile of a real historical-return bootstrap, day by day, not just a final value — plus an independently-validated ML up-probability cross-check and a capital-flow/liquidity regime reading. Never a fabricated fixed probability split.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.available</code> <span class="schema-type">true</span></div>
+            <div class="schema-field"><code>data.symbol</code>, <code>data.horizon_days</code>, <code>data.last_close</code></div>
+            <div class="schema-field"><code>data.bear_path</code> / <code>base_path</code> / <code>bull_path</code> <span class="schema-type">number[]</span> — one value per horizon day, 10th/50th/90th percentile across simulations</div>
+            <div class="schema-field"><code>data.band_note</code> <span class="schema-type">string</span> — states what the percentiles mean (e.g. "80% of simulated outcomes fall between Bear and Bull") — always returned verbatim, never stripped</div>
+            <div class="schema-field"><code>data.ml_cross_check</code> <span class="schema-type">object|null</span> — {available, up_probability_pct, holdout_accuracy_pct, trained_at}; null when no validated model exists for this symbol yet</div>
+            <div class="schema-field"><code>data.capital_flow_context</code> <span class="schema-type">object|null</span> — {score, direction}; null until the background refresh job has populated it</div>
+            <div class="schema-field"><code>data.method</code>, <code>data.disclaimer</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>meta.ticker</code>, <code>meta.horizon_days</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_forecast">horizon_days accepts 1-60 (query param, default 5). This endpoint never fabricates a fixed bull/base/bear probability split — the returned band_note explains the honest statistical interpretation of the percentile band instead.</p>
+        </details>
+      </div>
+      <!-- 2026-08-27 (Data Factory -> Intelligence API monetization batch):
+           four endpoints wrapping the newest Data Factory collectors --
+           SEC Form 4 insider trading, FINRA short interest, EIA energy
+           fundamentals, and a Binance/Coinbase exchange comparison. Pure
+           packaging, no new computation -- same honesty posture as every
+           other card here: soft-fail to data:null with an error string,
+           never a fabricated reading for an out-of-universe ticker. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4l2 2 4-4"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/insider/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep9_name">Insider Trading</div>
+        <div class="ep-desc" data-i18n="ia_ep9_desc">SEC Form 4 insider-trading transactions, cross-indexed under the issuer's own EDGAR CIK — not just what the issuer itself filed. Non-derivative open-market activity from the most recent filings, with a buy/sell summary. 24h server-side cached.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.transactions</code> <span class="schema-type">array</span> — most recent filings, newest first</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>insider_name</code>, <code>officer_title</code> <span class="schema-type">string|null</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>is_director</code>, <code>is_officer</code>, <code>is_ten_percent_owner</code> <span class="schema-type">bool</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>transaction_date</code>, <code>transaction_code</code>, <code>transaction_label</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>shares</code>, <code>price_per_share</code>, <code>shares_owned_after</code> <span class="schema-type">number|null</span> — gifts/some grants have no price</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>acquired_disposed</code> <span class="schema-type">"A"|"D"</span></div>
+            <div class="schema-field"><code>data.summary</code> <span class="schema-type">object</span> — {buy_count, sell_count, net_shares, net_value_usd}; net_value_usd only sums rows with both a price and share count</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_insider">Covers non-derivative (direct open-market stock) transactions only — not option/RSU activity, and not a complete trading history. Returns data:null with an error string for tickers not resolvable to a US EDGAR CIK.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 3h-6v6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/short-interest/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep10_name">Short Interest</div>
+        <div class="ep-desc" data-i18n="ia_ep10_desc">FINRA's bi-weekly equity short-interest report — current/previous reported short shares, average daily volume, days-to-cover, and period-over-period change. From FINRA's genuinely free public flat file, not the member-firm-gated Query API.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.issue_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.settlement_date</code> <span class="schema-type">string</span> — ISO 8601, the biweekly reporting date this snapshot covers</div>
+            <div class="schema-field"><code>data.current_short_shares</code>, <code>data.previous_short_shares</code>, <code>data.avg_daily_volume</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>data.days_to_cover</code>, <code>data.change_pct</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_short_interest">A `data:null` response for a covered ticker is a real, honest "not currently shorted at reportable levels" result, not necessarily an error — check the accompanying error string to tell the two cases apart.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 4 5 7 5 10a5 5 0 0 1-10 0c0-3 2-6 5-10z"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/energy/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep11_name">Energy Fundamentals</div>
+        <div class="ep-desc" data-i18n="ia_ep11_desc">EIA physical-market context for energy-linked tickers — WTI crude spot, Henry Hub natural-gas spot, and Lower-48 working natural-gas storage. Only populated for tickers with a real crude/nat-gas linkage (currently USO, UNG).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.series</code> <span class="schema-type">object</span> — dynamically keyed by EIA series (e.g. wti_crude_spot_usd_bbl), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>period</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_energy">Returns data:null for any ticker without a real physical-market linkage — never a fabricated reading for an unrelated symbol. Coverage is USO (WTI crude) and UNG (Henry Hub + storage) today.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/exchange/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep12_name">Exchange Comparison</div>
+        <div class="ep-desc" data-i18n="ia_ep12_desc">The same crypto ticker's live 24h stats from two real spot exchanges — Binance and Coinbase — side by side. Only populated for the tracked crypto tickers both venues cover.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.binance</code>, <code>data.coinbase</code> <span class="schema-type">object|null</span> — either can independently be null on a venue-specific miss</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>ticker</code>, <code>last_price</code>, <code>price_change_pct_24h</code>, <code>high_24h</code>, <code>low_24h</code>, <code>volume_24h</code></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>binance_symbol</code> <span class="schema-type">string</span> — Binance object only; <code>coinbase_product_id</code> <span class="schema-type">string</span> — Coinbase object only</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>quote_volume_24h</code> <span class="schema-type">number</span> — Binance (real); <code>quote_volume_24h_usd_est</code> <span class="schema-type">number</span> + <code>quote_volume_is_estimated: true</code> — Coinbase (derived, not a real per-trade figure)</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_exchange">Both binance and coinbase are null together only when the ticker isn't tracked by either venue — the response never mixes a real reading from one exchange with a fabricated one from the other.</p>
+        </details>
+      </div>
+      <!-- 2026-08-28 (Data Factory batch #2 -> Intelligence API monetization,
+           AJ: "最高效賺錢點接"): the first real FUNDAMENTALS endpoint in
+           this API (SEC XBRL), a market-wide volatility term-structure
+           read (CBOE), regulated-bank health (FDIC), and agricultural
+           commodity fundamentals (USDA). Same soft-fail-to-null posture
+           as every card above. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M8 15l3-4 3 2 4-6"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/fundamentals/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep13_name">Company Fundamentals</div>
+        <div class="ep-desc" data-i18n="ia_ep13_desc">Latest annual (10-K) financial-statement facts straight from SEC XBRL — revenue, net income, diluted EPS, total assets/liabilities, operating cash flow. The first real fundamentals data in this API. 24h server-side cached.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.cik</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.facts</code> <span class="schema-type">object</span> — dynamically keyed (revenue, net_income, eps_diluted, total_assets, total_liabilities, operating_cash_flow), each present only if that concept had a usable 10-K value</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>end_date</code>, <code>form</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_fundamentals">A missing concept key means that company has never reported that specific XBRL tag on a 10-K — never a fabricated zero or null placeholder mixed in with real figures.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">GET /v1/vix-term-structure</span>
+        <div class="ep-name" data-i18n="ia_ep14_name">VIX Term Structure</div>
+        <div class="ep-desc" data-i18n="ia_ep14_desc">CBOE VIX9D/VIX/VIX3M/VIX6M term structure, plus a contango/backwardation regime read. Not ticker-specific — one market-wide snapshot per call.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.term_structure</code> <span class="schema-type">object</span> — keyed vix9d/vix/vix3m/vix6m, each {label, date, close} or null</div>
+            <div class="schema-field"><code>data.structure</code> <span class="schema-type">"contango"|"backwardation"|"flat"|null</span></div>
+            <div class="schema-field"><code>data.vix3m_minus_vix</code> <span class="schema-type">number|null</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_vix">Backwardation (near-term vol priced above medium-term) has historically coincided with market stress episodes — this is a regime read, not a price prediction.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="10" rx="1"/><path d="M12 3l9 7H3l9-7z"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/bank-health/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep15_name">Bank Health</div>
+        <div class="ep-desc" data-i18n="ia_ep15_desc">FDIC Call Report health (ROA, ROE, assets, equity, net income) for a major bank holding company's lead insured subsidiary. Covers JPM, BAC, WFC, C, USB, PNC, TFC today.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.bank</code> <span class="schema-type">object</span> — {cert, bank_name, report_date, asset, equity, net_income, roa, roe}</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_bank_health">Reflects the regulated lead bank subsidiary's own Call Report, not consolidated GAAP financials for the holding company's stock — use /v1/fundamentals for that.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M6 8c0 3 3 3 3 6s-3 3-3 6M18 8c0 3-3 3-3 6s3 3 3 6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/agriculture/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep16_name">Agriculture Prices</div>
+        <div class="ep-desc" data-i18n="ia_ep16_desc">USDA price-received-by-farmers data for corn, wheat, and soybeans — pairs with CORN/WEAT/SOYB the same way /v1/energy pairs with USO/UNG.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.series</code> <span class="schema-type">object</span> — one key, e.g. corn_price_received_usd_bu</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>period</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_agriculture">Returns data:null for any ticker without a real commodity linkage. Coverage is CORN, WEAT, SOYB today.</p>
+        </details>
+      </div>
+      <!-- 2026-08-28 (AJ: "重有咩賺錢位" -> Webhook Pro專屬): push
+           notifications instead of polling. Deliberately NOT wired into
+           the Try-it console above (that widget is GET/ticker-shaped;
+           this is a 3-endpoint POST+GET+DELETE management surface) --
+           documented here so a Pro developer knows it exists, tested via
+           curl/SDK per the code examples below instead. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 0-5 5v4l-2 4h14l-2-4V7a5 5 0 0 0-5-5z"/><path d="M9 18a3 3 0 0 0 6 0"/></svg></div>
+          <span class="ep-weight" style="background:var(--accent-2,#7c3aed)">Pro</span>
+        </div>
+        <span class="ep-tag">POST /v1/webhooks/subscribe · GET /v1/webhooks · DELETE /v1/webhooks/{id}</span>
+        <div class="ep-name" data-i18n="ia_ep17_name">Webhooks (Push Notifications)</div>
+        <div class="ep-desc" data-i18n="ia_ep17_desc">Get notified the moment a real event happens instead of polling. Five event types today: vix_regime_change (market-wide contango/backwardation flip), new_13d_filing (per-ticker, fires when a watched ticker's activist-filing count increases), opportunity_radar_shift (market-wide, fires when an Opportunity Radar industry's net improving/worsening lean flips), recall_match (per keyword, fires on a new CPSC/FDA recall matching a watched brand/product), and watch_digest (per-ticker, fires on a meaningful daily change in price, confluence direction, headline count, insider activity, or short interest). All five are backed by daily scheduled jobs, so delivery is same-day, never a fabricated "real-time" claim. Pro-tier only -- a free-tier key gets a 403.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>POST /subscribe</code> body: <code>event_type</code> <span class="schema-type">string</span>, <code>url</code> <span class="schema-type">string</span> (must start with https://), <code>ticker</code> <span class="schema-type">string, required for all event types except vix_regime_change/opportunity_radar_shift (market-wide)</span></div>
+            <div class="schema-field"><code>data.id</code> <span class="schema-type">number</span> -- your new subscription's id, used to unsubscribe</div>
+            <div class="schema-field"><code>GET /webhooks</code> returns <code>data.webhooks</code> <span class="schema-type">array</span> -- every subscription on your own key, with <code>fail_count</code>/<code>last_delivered_at</code>/<code>last_status_code</code></div>
+            <div class="schema-field">Delivered payload: <code>{"event", "ticker", "data", "delivered_at"}</code> POSTed to your URL</div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_webhooks">A subscription auto-deactivates after 5 consecutive delivery failures (check GET /webhooks for fail_count) -- re-subscribe once your endpoint is back up. Delivery is best-effort and fire-and-forget: a slow/dead receiver never blocks or retries indefinitely.</p>
+        </details>
+      </div>
+      <!-- 2026-08-30/31 cross-industry expansion (AJ: "由1開始順住做"):
+           real estate, supply chain, consumer demand -- 3 new industries
+           of ticker-linked FRED context, same soft-fail-to-null posture
+           as every card above. Documented together since they shipped
+           in quick succession and share one pattern. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/real-estate/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep18_name">Real Estate</div>
+        <div class="ep-desc" data-i18n="ia_ep18_desc">FRED US housing-market context -- 30-year fixed mortgage rate, Case-Shiller home price index, housing starts, existing home sales. Only populated for housing-linked tickers (homebuilders, REITs, a mortgage originator, housing-sector ETFs).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.indicators</code> <span class="schema-type">object</span> -- dynamically keyed (mortgage_rate_30y_pct, home_price_index, housing_starts_thousands, existing_home_sales_thousands), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>date</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_real_estate">Returns data:null for any ticker without a real housing-market linkage -- never a fabricated reading for an unrelated symbol. Coverage: DHI, LEN, PHM, NVR, TOL, KBH, MTH, O, SPG, PLD, PSA, AVB, EQR, RKT, VNQ, XHB, ITB today.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="15" height="10" rx="1"/><path d="M16 10h4l3 3v4h-7z"/><circle cx="5.5" cy="19.5" r="1.5"/><circle cx="18.5" cy="19.5" r="1.5"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/supply-chain/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep19_name">Supply Chain</div>
+        <div class="ep-desc" data-i18n="ia_ep19_desc">FRED US manufacturing/supply-chain context -- inventory/sales ratio, manufacturing new orders, durable goods orders, industrial production, manufacturing employment. Only populated for freight/logistics-linked tickers (carriers, railroads, transportation ETFs).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.indicators</code> <span class="schema-type">object</span> -- dynamically keyed (inventory_sales_ratio, manufacturing_new_orders_musd, durable_goods_orders_musd, industrial_production_manufacturing_index, manufacturing_employment_thousands), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>date</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_supply_chain">Returns data:null for any ticker without a real freight/logistics linkage -- never a fabricated reading for an unrelated symbol. Coverage: FDX, UPS, XPO, JBHT, CHRW, ODFL, GXO, EXPD, CSX, UNP, NSC, IYT, XTN today.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/><path d="M2 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.7a2 2 0 0 0 2-1.6L21 7H6"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/consumer-demand/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep20_name">Consumer Demand</div>
+        <div class="ep-desc" data-i18n="ia_ep20_desc">FRED US consumer-spending context -- retail sales, personal consumption expenditures, durable goods consumption. Not Google Trends search-interest data -- no officially licensed, commercial-use-safe search-trends API exists; real spending data is the more reliable proxy. Only populated for consumer-spending-linked tickers (large retailers, e-commerce, consumer-discretionary ETFs).</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_name</code>, <code>data.attribution</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.indicators</code> <span class="schema-type">object</span> -- dynamically keyed (retail_sales_total_musd, retail_sales_goods_only_musd, personal_consumption_expenditures_busd, durable_goods_consumption_busd), each value or null</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>label</code>, <code>unit</code>, <code>date</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_consumer_demand">Returns data:null for any ticker without a real consumer-spending linkage -- never a fabricated reading for an unrelated symbol. Coverage: WMT, TGT, COST, HD, LOW, AMZN, BBY, TJX, ROST, XRT, XLY today.</p>
+        </details>
+      </div>
+      <!-- 2026-08-31: Opportunity Radar -- global snapshot across the 3
+           industries above + a US macro backdrop, no ticker. Explicitly
+           NOT a fabricated composite score (see services/opportunity_
+           radar_service.py docstring) -- each indicator reports its own
+           real % change and improving/worsening label, never a blended
+           number. Weighted 6x since it re-fetches ~19 series across 6
+           modules per call. 2026-08-31 follow-up: expanded from 3 to 5
+           industries (added energy/EIA and agriculture/USDA) -- each
+           industry now gates independently on its own source's key, so
+           a missing EIA/USDA key never takes down the other industries. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/><path d="M12 12l5-3"/></svg></div>
+          <span class="ep-weight">6x</span>
+        </div>
+        <span class="ep-tag">GET /v1/opportunity-radar</span>
+        <div class="ep-name" data-i18n="ia_ep21_name">Opportunity Radar</div>
+        <div class="ep-desc" data-i18n="ia_ep21_desc">Global (no ticker) snapshot across real estate, supply chain, consumer demand, energy and agriculture, plus a US macro backdrop -- each indicator's own real % change (latest vs. oldest of its trailing observations) and improving/worsening label. No fabricated cross-industry score: industries are never ranked or blended against each other.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.as_of</code>, <code>data.attribution</code>, <code>data.methodology_note</code> <span class="schema-type">string</span></div>
+            <div class="schema-field"><code>data.macro_backdrop.indicators</code> <span class="schema-type">object</span> -- fed_funds_rate_pct, unemployment_pct, yield_curve_10y2y_pct, jobless_claims_initial (direction-only, no improving label)</div>
+            <div class="schema-field"><code>data.industries</code> <span class="schema-type">object</span> -- real_estate, supply_chain, consumer_demand, energy, agriculture, each with <code>label</code>, <code>indicators</code>, <code>indicators_available</code>, <code>improving_count</code>, <code>worsening_count</code>, <code>flat_count</code>, <code>summary</code> <span class="schema-type">string</span></div>
+            <div class="schema-field">&nbsp;&nbsp;each indicator: <code>label</code>, <code>unit</code>, <code>latest_date</code>, <code>latest_value</code>, <code>compare_date</code>, <code>compare_value</code>, <code>pct_change</code>, <code>direction</code> (up/down/flat), <code>improving</code> (true/false/null)</div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_opportunity_radar">5 industries, each gated independently on its own data source's key (FRED_API_KEY for real estate/supply chain/consumer demand, EIA_API_KEY for energy, USDA_NASS_API_KEY for agriculture). An industry whose key isn't configured still appears with an empty indicators object and an honest "not configured" summary -- it never takes the rest of the response down, and never fabricates a placeholder reading.</p>
+        </details>
+      </div>
+      <!-- 2026-08-31 (AJ: "感官與消費者科學" follow-up, "起"): 2 new
+           consumer-safety sources -- openFDA (FDA-regulated recalls +
+           food adverse events) and CPSC (general consumer product
+           recalls). Both event-driven (a recent window, not a single
+           reading), both need no API key on the source's own side --
+           the first Data Factory collectors in this codebase with zero
+           signup friction. Same per-ticker explicit-keyword-map
+           convention as real-estate/supply-chain/consumer-demand above. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/consumer-safety/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep22_name">Consumer Safety (openFDA)</div>
+        <div class="ep-desc" data-i18n="ia_ep22_desc">FDA-regulated food/drug/device recall and food adverse-event (CAERS) context, trailing 12 months, via openFDA. No API key required on openFDA's own side. Only populated for tickers with a real brand/manufacturer keyword linkage.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_keywords</code> <span class="schema-type">array</span>, <code>data.attribution</code>, <code>data.lookback_days</code> <span class="schema-type">number</span></div>
+            <div class="schema-field"><code>data.datasets</code> <span class="schema-type">object</span> -- food_recalls, drug_recalls, device_recalls, food_adverse_events, each with <code>count</code>, <code>recent</code> <span class="schema-type">array</span>, <code>fetch_error</code> <span class="schema-type">boolean</span></div>
+            <div class="schema-field">&nbsp;&nbsp;recall items: <code>recall_number</code>, <code>date</code>, <code>status</code>, <code>classification</code>, <code>recalling_firm</code>, <code>product_description</code>, <code>reason_for_recall</code></div>
+            <div class="schema-field">&nbsp;&nbsp;adverse-event items: <code>report_number</code>, <code>date</code>, <code>product_brand</code>, <code>reactions</code>, <code>outcomes</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_consumer_safety">Per openFDA's own disclaimer: a report existing is not proof of causation, and this data should not be used to estimate incidence or risk. Returns data:null for any ticker without a real brand/manufacturer linkage.</p>
+        </details>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86l-8.18 14.14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.89-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/product-recalls/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep23_name">Product Recalls (CPSC)</div>
+        <div class="ep-desc" data-i18n="ia_ep23_desc">CPSC general consumer product recall context (toys, appliances, furniture, electronics, tools), trailing 12 months. Broader scope than Consumer Safety's FDA-regulated categories. No API key required. Only populated for tickers with a real manufacturer keyword linkage.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.matched_ticker</code>, <code>data.matched_keywords</code> <span class="schema-type">array</span>, <code>data.attribution</code>, <code>data.lookback_days</code> <span class="schema-type">number</span>, <code>data.count</code> <span class="schema-type">number</span>, <code>data.fetch_error</code> <span class="schema-type">boolean</span></div>
+            <div class="schema-field"><code>data.recent</code> <span class="schema-type">array</span> -- <code>recall_id</code>, <code>recall_number</code>, <code>date</code>, <code>title</code>, <code>product_name</code>, <code>manufacturer</code>, <code>hazard</code>, <code>remedy</code>, <code>url</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_product_recalls">CPSC's own live backend has shown intermittent reliability issues -- surfaced honestly as fetch_error:true in the response body, never a fabricated zero-recalls reading. Returns data:null for any ticker without a real manufacturer linkage.</p>
+        </details>
+      </div>
+      <!-- 2026-09-14 (AJ: "開條賺錢新路" -- Recall Alert API for
+           e-commerce sellers): sibling of Product Recalls above, but
+           free-text keyword search instead of a pre-mapped public-
+           company ticker -- built for a seller checking their OWN brand,
+           not an investor checking a stock. Pairs with the recall_match
+           webhook event type below for ongoing monitoring instead of
+           polling this endpoint yourself. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <span class="ep-weight">2x</span>
+        </div>
+        <span class="ep-tag">GET /v1/recall-search?keyword=</span>
+        <div class="ep-name" data-i18n="ia_ep24_name">Recall Search by Brand/Product (CPSC)</div>
+        <div class="ep-desc" data-i18n="ia_ep24_desc">Free-text CPSC recall search by brand or product name -- for e-commerce sellers checking their own product line, not restricted to Product Recalls' pre-mapped list of ~24 large public-company tickers. Combine with a Pro-tier recall_match webhook (below) to get notified the moment a new recall matches your keyword, instead of polling this endpoint yourself.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.keyword</code>, <code>data.attribution</code>, <code>data.lookback_days</code> <span class="schema-type">number</span>, <code>data.count</code> <span class="schema-type">number</span>, <code>data.fetch_error</code> <span class="schema-type">boolean</span></div>
+            <div class="schema-field"><code>data.recent</code> <span class="schema-type">array</span> -- <code>recall_id</code>, <code>recall_number</code>, <code>date</code>, <code>title</code>, <code>product_name</code>, <code>manufacturer</code>, <code>hazard</code>, <code>remedy</code>, <code>url</code></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_recall_search">Same live CPSC source as Product Recalls, same honesty posture -- fetch_error:true on a genuine upstream failure, never a fabricated zero-recalls reading. An empty keyword returns count:0 rather than an error.</p>
+        </details>
+      </div>
+      <!-- 2026-09-30 (AJ: monetization gap-analysis session -- "重有咩有
+           差距的可收費", identified relationship/impact data as the one
+           genuinely missing, genuinely differentiated layer vs. generic
+           price+fundamentals APIs): supplier/customer/competitor/peer
+           relationships composed from services/relationship_graph_
+           service.py, plus capital flow and CFTC positioning context. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M6 9v2a4 4 0 0 0 4 4M18 9v2a4 4 0 0 0-4 4"/></svg></div>
+          <span class="ep-weight">3x</span>
+        </div>
+        <span class="ep-tag">GET /v1/impact/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep25_name">Relationship &amp; Impact</div>
+        <div class="ep-desc" data-i18n="ia_ep25_desc">Given a ticker: who is upstream (suppliers), downstream (customers), same-sector (peers), and directly competing -- plus market-wide capital flow and this ticker's CFTC futures-positioning context if applicable. Supplier/customer/competitor data is a hand-curated starting set; a ticker outside that set honestly returns an empty list for those three fields rather than a guess, while sector_peers still populates for any US large-cap ticker.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.suppliers</code>, <code>data.customers</code>, <code>data.competitors</code> <span class="schema-type">array</span> -- each {ticker, name}, empty if this ticker isn't in the curated set yet</div>
+            <div class="schema-field"><code>data.sector_peers</code> <span class="schema-type">array</span> -- same-sector US large-cap tickers</div>
+            <div class="schema-field"><code>data.capital_flow</code> <span class="schema-type">object|null</span> -- market-wide {score, direction} from the capital flow engine's cache</div>
+            <div class="schema-field"><code>data.cftc_positioning</code> <span class="schema-type">object|null</span> -- only when this ticker has a directly linked CFTC futures contract</div>
+            <div class="schema-field"><code>meta.ticker</code> <span class="schema-type">string</span></div>
+          </div>
+        </details>
+      </div>
+      <!-- 2026-09-30 (same monetization session, shipped alongside Impact
+           above): multi-dimensional evidence tallying across up to 11
+           independent real data sources, built on services/evidence_
+           scorecard_service.py -- the same engine evidence-scorecard.html
+           already shows end users. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">GET /v1/evidence-scorecard/{ticker}</span>
+        <div class="ep-name" data-i18n="ia_ep26_name">Evidence Scorecard</div>
+        <div class="ep-desc" data-i18n="ia_ep26_desc">Up to 11 independent real data sources (technical confluence, fundamentals, 13F/13D-G/Form-4, VIX term structure, CFTC COT, capital flow, a shipping proxy, news sentiment, and the backtested direction-probability model) checked and tallied into support/oppose/neutral -- disagreement between sources is explicitly flagged, never averaged away. asset_class query param (default Stocks) is one of Stocks/Futures/Crypto/Forex/Commodities/Indices; the four SEC-filing-based dimensions only apply to Stocks.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.dimensions</code> <span class="schema-type">array</span> -- one per checked source: {name, stance (support/oppose/neutral), detail}</div>
+            <div class="schema-field"><code>data.tally</code> <span class="schema-type">object</span> -- {support, oppose, neutral} counts</div>
+            <div class="schema-field"><code>data.disagreement_flagged</code> <span class="schema-type">boolean</span> -- true when sources meaningfully conflict</div>
+            <div class="schema-field"><code>meta.ticker</code>, <code>meta.asset_class</code></div>
+          </div>
+        </details>
+      </div>
+      <!-- 2026-10-01 (AJ: "找出未做的賺錢路線" -- monetization follow-up):
+           Research Memory API. Unlike every other card on this page, this
+           is a persistent, versioned object the DEVELOPER writes to, not
+           a read-only XFINLAB data source -- see services/research_memory_
+           service.py's module docstring. 5 endpoints, documented as one
+           card (same convention as the Webhooks card above) since the
+           Try-It console above is GET/ticker-shaped and this is a real
+           CRUD surface. -->
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+          <span class="ep-weight">1x</span>
+        </div>
+        <span class="ep-tag">POST/GET/PATCH /v1/hypotheses, POST .../evidence, GET .../replay</span>
+        <div class="ep-name" data-i18n="ia_ep27_name">Research Memory (Hypotheses)</div>
+        <div class="ep-desc" data-i18n="ia_ep27_desc">Persist a hypothesis about a ticker -- your own freeform statement plus a confidence score -- then attach evidence and counter_evidence to it over time. Every update to statement/confidence/status is versioned with a full snapshot history, so re-running research later starts from what you believed last time instead of from zero. Private per API key -- there is no shared/public hypothesis feed. Replay diffs a real environment snapshot (price, confluence, headlines, insider activity, short interest) frozen at creation time against a fresh one now -- what's actually changed since you made this call.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>POST /hypotheses</code> body: <code>ticker</code>, <code>statement</code> <span class="schema-type">string</span>, <code>confidence</code> <span class="schema-type">number 0.0-1.0, optional</span></div>
+            <div class="schema-field"><code>GET /hypotheses?ticker=&amp;status=</code> -- lists your own key's hypotheses, newest-updated first</div>
+            <div class="schema-field"><code>GET /hypotheses/{id}</code> -- full detail incl. <code>data.evidence</code>, <code>data.counter_evidence</code>, <code>data.version_history</code> <span class="schema-type">array</span></div>
+            <div class="schema-field"><code>PATCH /hypotheses/{id}</code> body: any of <code>statement</code>, <code>confidence</code>, <code>status</code> (active/confirmed/invalidated) -- bumps <code>version</code>, snapshots the prior state</div>
+            <div class="schema-field"><code>POST /hypotheses/{id}/evidence</code> body: <code>kind</code> (evidence/counter_evidence), <code>text</code>, <code>source</code> <span class="schema-type">optional URL</span></div>
+            <div class="schema-field"><code>GET /hypotheses/{id}/replay</code> -- <code>data.available</code> <span class="schema-type">bool</span>; when true: <code>data.changes</code> <span class="schema-type">array</span> {field, at_creation, now}, <code>data.environment_at_creation</code>, <code>data.environment_now</code>, <code>data.days_elapsed</code>; when false: <code>data.reason</code> <span class="schema-type">string</span></div>
+          </div>
+          <p class="schema-note" data-i18n="ia_schema_note_hypotheses">Scoped to the API key that created each hypothesis -- a different key can never read or modify it, even by guessing its id. Replay costs more quota than plain CRUD (it does a real live data fetch).</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2026-08-11: new trust/differentiator section, added after a full
+       data-licensing audit (see DATA-LICENSE-MATRIX.md in the repo)
+       resolved the two real open risks this API used to carry: an RSS
+       source with non-commercial redistribution terms (replaced with
+       GDELT + the press-release wires below), and a raw-OHLC leak on
+       the technical endpoint (removed -- every price-derived field
+       here is a computed result, never the underlying feed, matching
+       the "AI-structured JSON, never raw ... data" promise already
+       made for news above). Every claim below is traceable to a
+       specific source's own published terms, not a blanket assurance
+       -- most competitors in this space don't disclose sourcing at
+       all, so this is a real point of difference, not just legal
+       cover. -->
+  <div class="section" id="data-sourcing">
+    <div class="section-title" data-i18n="ia_ds_title">Where the data comes from</div>
+    <div class="section-sub" data-i18n="ia_ds_sub">Every source below is licensed for commercial redistribution — verified directly against each provider's own published terms, not assumed.</div>
+    <div class="source-grid">
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+        </div>
+        <div class="ep-name" data-i18n="ia_ds1_name">News &amp; events</div>
+        <div class="ep-desc" data-i18n="ia_ds1_desc">GDELT's global news monitoring (public-domain, 100+ languages, unlimited commercial use) plus official company press-release wires (GlobeNewswire, PR Newswire). No feed in this pipeline carries a personal/non-commercial-use restriction.</div>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 9-9"/><path d="M15 7h6v6"/></svg></div>
+        </div>
+        <div class="ep-name" data-i18n="ia_ds2_name">US price data</div>
+        <div class="ep-desc" data-i18n="ia_ds2_desc">US-listed symbols: Alpaca Markets' licensed feed. Explicitly permits commercial redistribution — no unofficial scrapers in this path.</div>
+      </div>
+      <div class="ep-card">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.3 2.7 3.6 6 3.6 9s-1.3 6.3-3.6 9c-2.3-2.7-3.6-6-3.6-9s1.3-6.3 3.6-9z"/></svg></div>
+        </div>
+        <div class="ep-name" data-i18n="ia_ds3_name">Taiwan &amp; other markets</div>
+        <div class="ep-desc" data-i18n="ia_ds3_desc">Taiwan-listed symbols: the Taiwan Stock Exchange's own official open-data API — fully licensed for commercial redistribution, same standard as the US feed. Hong Kong and other non-US, non-Taiwan symbols currently use a best-effort fallback source while we evaluate a licensed provider — disclosed here, not hidden. And regardless of source, no endpoint re-exports raw price bars: every price-derived field (trend, RSI, support/resistance, market structure) is a computed result, not the underlying feed.</div>
+      </div>
+    </div>
+    <!-- 2026-09-02: new key (same drift-safe reasoning as the MCP quality
+         note above) -- Asia-Pacific coverage is a widely-acknowledged gap
+         for most Western financial data APIs (industry coverage
+         consistently notes it as "thin" for the region); real, officially
+         licensed Taiwan Stock Exchange coverage is a genuine point of
+         difference worth naming plainly, not just leaving implicit in the
+         card above. -->
+    <div class="section-sub" data-i18n="ia_ds_apac_note" style="margin-top:10px">Asia-Pacific coverage is a widely-reported gap for most developer-facing financial data APIs. XFINLAB's Taiwan feed is a real, officially licensed exchange connection — not a scraped or best-effort source pretending otherwise.</div>
+  </div>
+
+  <div class="section" id="sdks">
+    <div class="section-title" data-i18n="ia_sdk_title">Official SDKs</div>
+    <div class="section-sub" data-i18n="ia_sdk_sub">Thin, zero-magic wrappers — one method per endpoint, the same JSON you'd get from a raw HTTP call. Not yet on PyPI/npm (no paying developers yet to justify that maintenance overhead) — install straight from the repo for now.</div>
+    <div class="sdk-card">
+      <div class="sdk-tabs" role="tablist">
+        <button class="sdk-tab-btn active" data-sdk-tab="python" onclick="sdkTab('python')">Python</button>
+        <button class="sdk-tab-btn" data-sdk-tab="node" onclick="sdkTab('node')">Node.js</button>
+        <button class="sdk-tab-btn" data-sdk-tab="curl" onclick="sdkTab('curl')">cURL</button>
+      </div>
+
+      <div class="sdk-panel active" id="sdkPanel-python">
+        <div class="sdk-install"><span id="sdkInstall-python">pip install "git+https://github.com/lnanology/Xfinlab.git#subdirectory=sdk/python"</span></div>
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-python',this)" data-i18n="ia_copy_btn">Copy</button><span id="sdkCode-python">from xfinlab_intelligence import XfinlabClient
+
+client = XfinlabClient(api_key="xfl_...")
+client.sentiment("AAPL")</span></div>
+      </div>
+
+      <div class="sdk-panel" id="sdkPanel-node">
+        <div class="sdk-install"><span id="sdkInstall-node">npm install "github:lnanology/Xfinlab#path:sdk/js"</span></div>
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-node',this)" data-i18n="ia_copy_btn">Copy</button><span id="sdkCode-node">const { XfinlabClient } = require('xfinlab-intelligence');
+
+const client = new XfinlabClient('xfl_...');
+await client.sentiment('AAPL');</span></div>
+      </div>
+
+      <div class="sdk-panel" id="sdkPanel-curl">
+        <div class="sdk-install" data-i18n="ia_sdk_curl_note">No SDK needed — every endpoint is plain JSON over HTTPS.</div>
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('sdkCode-curl',this)" data-i18n="ia_copy_btn">Copy</button><span id="sdkCode-curl">curl -H "X-API-Key: xfl_..." \
+  "https://api.xfinlab.com/api/intelligence/v1/sentiment?ticker=AAPL"</span></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:18px">
+      <a href="https://github.com/lnanology/Xfinlab/tree/main/sdk" target="_blank" class="btn-ghost" data-i18n="ia_sdk_github_btn">View SDK source on GitHub</a>
+    </div>
+  </div>
+
+  <!-- 2026-08-14 (Growth OS follow-up, AJ: "提交MCP Server去marketplace" --
+       task #824): the MCP server itself (api/mcp_server.py) has been live
+       since an earlier session, but was never documented on this public
+       page -- a developer or an MCP directory crawler had no way to
+       discover it existed. This section is that missing documentation,
+       written so it can also serve as the copy-source for mcp.so /
+       Smithery / PulseMCP submissions (see MCP_MARKETPLACE_SUBMISSION.md
+       in the repo root for the ready-to-paste versions of this same
+       content). -->
+  <div class="section" id="mcp">
+    <div class="section-title" data-i18n="ia_mcp_title">MCP Server — for AI agents &amp; Claude</div>
+    <div class="section-sub" data-i18n="ia_mcp_sub">The same 7 endpoints above, exposed as Model Context Protocol tools — so an AI agent (Claude, or any MCP-compatible client) can call them directly instead of you writing the HTTP glue yourself.</div>
+    <!-- 2026-09-02: new key, not appended to ia_mcp_sub above, so this
+         doesn't create a translation-drift gap in the other 46 languages
+         while this line waits to be translated -- i18n.js's apply() only
+         swaps text when translations[key] is truthy, so an untranslated
+         key just shows this English fallback everywhere until it's added
+         to i18n.py, never a mixed-language render. -->
+    <div class="section-sub" data-i18n="ia_mcp_quality_note" style="margin-top:-8px">Most MCP servers don't say anything about the quality of the data behind their tool calls. This one does, in public — see the live status of every underlying data source at <a href="trust.html" style="color:#94a3b8">xfinlab.com/trust.html</a>.</div>
+    <div class="sdk-card">
+      <div class="sdk-panel active" style="display:block">
+        <div class="sdk-install"><span>Streamable HTTP endpoint: https://api.xfinlab.com/api/mcp</span></div>
+        <div class="code-block"><button class="copy-btn" onclick="copyCode('mcpConfig',this)" data-i18n="ia_copy_btn">Copy</button><span id="mcpConfig">{
+  "mcpServers": {
+    "xfinlab": {
+      "url": "https://api.xfinlab.com/api/mcp",
+      "headers": { "X-API-Key": "xfl_..." }
+    }
+  }
+}</span></div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin:14px 0 6px" data-i18n="ia_mcp_note1">Prefer raw JSON-RPC? A GET to the same URL returns a human-readable info page; every tool call is a single stateless POST — no session handshake beyond the standard MCP "initialize" method.</p>
+      </div>
+    </div>
+    <div class="endpoints" style="margin-top:20px">
+      <div class="ep-card">
+        <span class="ep-tag">get_market_events</span>
+        <div class="ep-desc" data-i18n="ia_mcp1_desc">Recent market/company headlines, optionally filtered by ticker.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_sentiment</span>
+        <div class="ep-desc" data-i18n="ia_mcp2_desc">FinBERT sentiment score for a ticker's recent headlines.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_technical_analysis</span>
+        <div class="ep-desc" data-i18n="ia_mcp3_desc">Confluence direction, trend, MACD, volume, patterns and market-structure signals from real OHLC data.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_intelligence_feed</span>
+        <div class="ep-desc" data-i18n="ia_mcp4_desc">AI-structured, clustered event intelligence with a narrative summary — never a directional trading signal or probability estimate.</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_global_market_map</span>
+        <div class="ep-desc" data-i18n="ia_mcp5_desc">Cross-region macro + news + sentiment snapshot across 10 regions (US, Europe, Japan, Korea, China, HK, Taiwan, SE Asia, Middle East, LatAm).</div>
+      </div>
+    </div>
+    <p style="max-width:640px;margin:16px auto 0;font-size:0.83rem;color:var(--text-muted);text-align:center" data-i18n="ia_mcp_note2">Auth and quota are identical to the REST API above — same X-API-Key, same free tier, same weighted daily limit. No separate free ride through MCP.</p>
+  </div>
+
+  <!-- 2026-08-17 (task #4 follow-up, "重有咩可以升級" -- upgrade #4,
+       changelog): entries come from GET /intelligence/changelog
+       (INTELLIGENCE_CHANGELOG in api/intelligence.py), hand-maintained,
+       Keep-a-Changelog style. Rendered client-side so the JSON feed stays
+       the single source of truth -- no duplicated content to keep in
+       sync between this page and the API response. Entry text is kept in
+       English, same convention as the code/JSON examples elsewhere on
+       this page (only the section title/sub below are i18n keys). -->
+  <div class="section" id="changelog">
+    <div class="section-title" data-i18n="ia_changelog_title">Changelog</div>
+    <div class="section-sub"><span data-i18n="ia_changelog_sub">What's shipped, chronologically.</span> <a href="https://api.xfinlab.com/api/intelligence/changelog" target="_blank" rel="noopener" data-i18n="ia_changelog_json_link">View as JSON →</a></div>
+    <div id="changelogList" style="max-width:640px;margin:0 auto"></div>
+  </div>
+
+  <!-- 2026-08-17 (follow-up to task #4, "重有咩可以做" round 2): the Pro
+       plan card below has promised "Early say in the public roadmap"
+       since it was written -- this is that roadmap, backing the promise
+       for real instead of leaving it as unlinked text. See
+       INTELLIGENCE_ROADMAP in api/intelligence.py for why every item
+       here is a real candidate, not invented to look impressive. -->
+  <div class="section" id="roadmap">
+    <div class="section-title" data-i18n="ia_roadmap_title">Roadmap</div>
+    <div class="section-sub"><span data-i18n="ia_roadmap_sub">What's next — nothing here is a promise of a ship date, just what's actually being considered.</span> <a href="https://api.xfinlab.com/api/intelligence/roadmap" target="_blank" rel="noopener" data-i18n="ia_changelog_json_link">View as JSON →</a></div>
+    <div id="roadmapList" style="max-width:640px;margin:0 auto"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title" data-i18n="ia_plans_title">Plans</div>
+    <div class="section-sub" data-i18n="ia_plans_sub">Free is instant and automated. Pro/Enterprise are still set up personally — pricing below is what we're launching with, and may be adjusted based on feedback from the first real developers using it.</div>
+    <!-- 2026-08-24 (AJ: "增加用量/功能好過減價搶市佔" -- pricing strategy
+         decision, full reasoning in chat history): deliberately did NOT
+         undercut the $0/$49/Custom price points from the earlier
+         competitive-benchmark pass -- new-entrant price wars against
+         established data providers lose on trust, not price, and cheap
+         AI-native tools retain worse, not better. Instead: Free/Pro quota
+         doubled vs the original launch numbers (100->200, 5,000->10,000)
+         and a first-2-months-free launch promo on Pro, to lower the
+         barrier to TRY without touching the long-run price anchor. -->
+    <div class="plans" id="plansGrid">
+
+      <div class="plan" id="plan-free" data-plan="free">
+        <div class="plan-name" data-i18n="ia_plan_free_name">Free</div>
+        <div class="plan-price">$0</div>
+        <div class="plan-desc" data-i18n="ia_plan_free_desc">For evaluating the API and prototyping.</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_free_f1">200 weighted calls / day</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_free_f2">Events + Sentiment endpoints</span></li>
+          <li><span class="cross">✕</span> <span data-i18n="ia_plan_free_f3">AI Debate endpoint</span></li>
+          <li><span class="cross">✕</span> <span data-i18n="ia_plan_free_f4">AI Intelligence Feed endpoint</span></li>
+          <li><span class="cross">✕</span> <span data-i18n="ia_plan_free_f5">Priority support</span></li>
+        </ul>
+        <button class="plan-btn" onclick="selectPlan('free')" data-i18n="ia_plan_free_btn">Get a Free Key</button>
+      </div>
+
+      <div class="plan popular" id="plan-pro" data-plan="pro">
+        <div class="plan-name" data-i18n="ia_plan_pro_name">Pro</div>
+        <div class="plan-price">$49<small data-i18n="ia_plan_pro_permonth">/month</small><br><small data-i18n="ia_plan_pro_recommended">recommended — see below</small></div>
+        <div class="promo-badge" data-i18n="ia_plan_pro_promo">🎉 First 2 months free for early developers</div>
+        <div class="plan-desc" data-i18n="ia_plan_pro_desc">For shipping a real integration.</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f1">10,000 weighted calls / day</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f2">All 4 endpoints, incl. AI Debate + AI Intelligence Feed</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f3">Branded embed widgets — your colors + logo, co-branded badge</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_pro_f4">Priority email support</span></li>
+          <li><span class="check">✓</span> <a href="#roadmap" data-i18n="ia_plan_pro_f5">Early say in the public roadmap</a></li>
+        </ul>
+        <button class="plan-btn" onclick="selectPlan('pro')" data-i18n="ia_cta_access">Request Early Access</button>
+      </div>
+
+      <div class="plan" id="plan-enterprise" data-plan="enterprise">
+        <div class="plan-name" data-i18n="ia_plan_ent_name">Enterprise</div>
+        <div class="plan-price" data-i18n="ia_plan_ent_price">Custom</div>
+        <div class="plan-desc" data-i18n="ia_plan_ent_desc">For higher volume or dedicated needs.</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f1">Unlimited calls</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f2">All 4 endpoints, incl. AI Debate + AI Intelligence Feed</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f3">White-label: clean JSON with no XFINLAB branding, plus fully unbranded embed widgets (badge removed)</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f4">Dedicated support</span></li>
+          <li><span class="check">✓</span> <span data-i18n="ia_plan_ent_f5">SLA on request</span></li>
+        </ul>
+        <button class="plan-btn" onclick="selectPlan('enterprise')" data-i18n="ia_plan_ent_btn">Contact Sales</button>
+      </div>
+
+    </div>
+    <!-- 2026-08-09 (white-label package tiers, XFINLAB_Final_Strategy.md
+         P2/P3 follow-up): every response from every endpoint above is
+         already plain JSON with no XFINLAB branding baked in -- Pro and
+         Enterprise keys can also re-skin the free embeddable widgets
+         (see api/widgets.py) with a data-xfl-key attribute on the embed
+         script tag; contact us after signing up to have your branding
+         configured. -->
+    <p style="max-width:640px;margin:16px auto 0;font-size:0.85rem;color:var(--muted,#6b7280);text-align:center" data-i18n="ia_plans_footer">
+      Every endpoint above returns plain JSON with no XFINLAB branding — safe to resell under your own product name. Pro/Enterprise keys can also re-skin the free embed widgets (colors, logo, co-brand or fully removed badge) — ask us to configure it once you have a key.
+    </p>
+  </div>
+
+  <div class="section" id="access">
+    <div class="section-title" data-i18n="ia_access_title">Get an API Key</div>
+    <div class="section-sub" data-i18n="ia_access_sub">Choose Free below and your key is emailed instantly — no waiting. Choose Pro or Enterprise and we'll follow up personally with pricing that fits.</div>
+
+    <form class="access-form" id="accessForm">
+      <div class="form-row">
+        <label for="accessEmail" data-i18n="ia_access_label_email">Email *</label>
+        <input type="email" id="accessEmail" required placeholder="you@company.com">
+      </div>
+      <div class="form-row">
+        <label for="accessCompany" data-i18n="ia_access_label_company">Company / project (optional)</label>
+        <input type="text" id="accessCompany" placeholder="e.g. Acme Trading Bot">
+      </div>
+      <div class="form-row">
+        <label for="accessTier" data-i18n="ia_access_label_tier">Which plan interests you?</label>
+        <select id="accessTier">
+          <option value="free" data-i18n="ia_plan_free_name">Free</option>
+          <option value="pro" selected data-i18n="ia_plan_pro_name">Pro</option>
+          <option value="enterprise" data-i18n="ia_plan_ent_name">Enterprise</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="accessMessage" data-i18n="ia_access_label_message">What are you building? (optional)</label>
+        <textarea id="accessMessage" data-i18n-placeholder="ia_access_placeholder_message" placeholder="A quick sentence helps us set you up faster"></textarea>
+      </div>
+      <button type="submit" class="form-submit" id="accessSubmitBtn" data-i18n="ia_access_submit_btn">Request Access</button>
+      <div id="accessMsg"></div>
+      <div class="form-note"><span data-i18n="ia_access_form_note">Free tier: key is generated and emailed automatically, no admin step. Pro/Enterprise: no credit card yet, we'll email you directly to follow up. By requesting access you agree to our</span> <a href="api-terms.html" data-i18n="ia_access_terms_link">API Terms of Service</a>.</div>
+    </form>
+  </div>
+
+</div>
+
+<div class="footer">
+  © 2026 XFINLAB. <a href="index.html" data-i18n="ia_footer_back">Back to xfinlab.com</a> · <a href="api-terms.html" data-i18n="ia_access_terms_link">API Terms of Service</a> · <a href="mailto:support@xfinlab.com">support@xfinlab.com</a>
+</div>
+
+<script>
+const API = 'https://api.xfinlab.com/api';
+
+// 2026-08-24 (Intelligence API self-serve Pro checkout): mirrors the
+// _xflLiveAddonKeys pattern on ai-analysis.html -- fetch once on load so
+// the Pro branch of accessForm's submit handler below only ever offers a
+// real, configured Stripe checkout. Until AJ sets STRIPE_PRICE_ID_API_PRO
+// on Railway this stays empty and Pro silently keeps behaving exactly like
+// today (falls through to the manual /intelligence/early-access path).
+let _xflLiveApiTiers = [];
+(async function() {
+  try {
+    const r = await fetch(`${API}/stripe/status`);
+    const d = await r.json();
+    _xflLiveApiTiers = (d && d.live_api_tiers) || [];
+  } catch (e) { /* stays [] -- Pro falls back to early-access, same as before */ }
+})();
+
+// 2026-08-17 (task #3, "要加返多語言" -- full i18n pass): local t() helper,
+// same pattern used on chart-analysis.html etc. -- reads from the shared
+// I18N object (js/i18n.js) once its async init() has populated
+// translations, falls back to the English default before/if it hasn't.
+function t(key, fallback) {
+  return (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback;
+}
+
+// 2026-08-09 SDK code tabs (AJ: Longbridge-dev-docs-inspired) -- plain
+// class toggling, no framework. copyCode() reads textContent (not
+// innerHTML) so it never copies the <button> markup sitting alongside it.
+function sdkTab(name) {
+  document.querySelectorAll('.sdk-tab-btn').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-sdk-tab') === name);
+  });
+  document.querySelectorAll('.sdk-panel').forEach(function(p) {
+    p.classList.toggle('active', p.id === 'sdkPanel-' + name);
+  });
+}
+function copyCode(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    const original = btn.textContent;
+    btn.textContent = t('ia_copied_btn', 'Copied');
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+  }).catch(function() {});
+}
+
+// 2026-08-17 (task #4 follow-up, live try-it-now console): one config
+// entry per public endpoint. path() builds the real request path from
+// whatever ticker the visitor typed -- events/intel tolerate an empty
+// ticker (fall back to the un-scoped/"latest" variant the API itself
+// supports), everything else requires one and runTryIt() validates that
+// before firing. Weights/tier-gating are NOT special-cased here on
+// purpose: a free-tier key hitting AI Debate or AI Intelligence Feed
+// should see the API's own real 402/403 error, not a client-side guess
+// at what it would say -- same "no fabrication" principle as the rest
+// of this product.
+const TRY_ENDPOINTS = {
+  'events':          { method: 'GET',  needsTicker: false, needsAmount: false, path: function(tk) { return tk ? '/intelligence/v1/events?ticker=' + encodeURIComponent(tk) : '/intelligence/v1/events'; } },
+  'sentiment':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/sentiment?ticker=' + encodeURIComponent(tk); } },
+  'debate':          { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/debate?ticker=' + encodeURIComponent(tk); } },
+  'intel':           { method: 'GET',  needsTicker: false, needsAmount: false, path: function(tk) { return tk ? '/intelligence/v1/intel/' + encodeURIComponent(tk) : '/intelligence/v1/intel/latest'; } },
+  'technical':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/technical/' + encodeURIComponent(tk); } },
+  'stress-test':     { method: 'POST', needsTicker: true,  needsAmount: true,  needsHorizon: true, path: function() { return '/intelligence/v1/stress-test'; } },
+  'regime-signal':   { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/regime-signal/' + encodeURIComponent(tk); } },
+  // 2026-08-24 (Capital Flow Engine roadmap, Layer 7): GET, not POST --
+  // unlike stress-test's dollar `amount`, this needs no amount at all
+  // (everything's expressed in the ticker's own price terms), just an
+  // optional horizon_days query param. needsHorizon reuses the SAME
+  // #tryHorizonRow input stress-test already has -- decoupled from
+  // needsAmount below so this can show the horizon field WITHOUT the
+  // amount field (previously the two were tied together).
+  'forecast':        { method: 'GET',  needsTicker: true,  needsAmount: false, needsHorizon: true, path: function(tk) { const h = parseInt((document.getElementById('tryHorizon')||{}).value, 10) || 5; return '/intelligence/v1/forecast/' + encodeURIComponent(tk) + '?horizon_days=' + h; } },
+  // 2026-08-27 (Data Factory -> Intelligence API monetization batch):
+  // all four are simple GET-by-ticker, no amount/horizon fields needed.
+  'insider':         { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/insider/' + encodeURIComponent(tk); } },
+  'short-interest':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/short-interest/' + encodeURIComponent(tk); } },
+  'energy':          { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/energy/' + encodeURIComponent(tk); } },
+  'exchange':        { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/exchange/' + encodeURIComponent(tk); } },
+  // 2026-08-28 (Data Factory batch #2 -> Intelligence API monetization,
+  // AJ: "最高效賺錢點接"). vix-term-structure is the only endpoint in
+  // this whole console that takes no ticker at all -- market-wide, not
+  // per-symbol -- so needsTicker is false and path() ignores its arg.
+  'fundamentals':      { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/fundamentals/' + encodeURIComponent(tk); } },
+  'vix-term-structure':{ method: 'GET',  needsTicker: false, needsAmount: false, path: function() { return '/intelligence/v1/vix-term-structure'; } },
+  'bank-health':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/bank-health/' + encodeURIComponent(tk); } },
+  'agriculture':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/agriculture/' + encodeURIComponent(tk); } },
+  // 2026-08-30/31 cross-industry expansion -- all three are simple
+  // GET-by-ticker, same shape as energy/agriculture above.
+  'real-estate':       { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/real-estate/' + encodeURIComponent(tk); } },
+  'supply-chain':      { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/supply-chain/' + encodeURIComponent(tk); } },
+  'consumer-demand':   { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/consumer-demand/' + encodeURIComponent(tk); } },
+  // 2026-08-31: Opportunity Radar -- global snapshot, no ticker, same
+  // needsTicker:false pattern as vix-term-structure above.
+  'opportunity-radar': { method: 'GET',  needsTicker: false, needsAmount: false, path: function() { return '/intelligence/v1/opportunity-radar'; } },
+  // 2026-08-31: openFDA/CPSC consumer-safety sources -- simple GET-by-
+  // ticker, same shape as real-estate/supply-chain/consumer-demand above.
+  'consumer-safety':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/consumer-safety/' + encodeURIComponent(tk); } },
+  'product-recalls':  { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/product-recalls/' + encodeURIComponent(tk); } },
+  // 2026-09-14 (Recall Alert API for e-commerce sellers): reuses the same
+  // #tryTicker input box as every ticker-based endpoint above (needsTicker:
+  // true) even though this one actually takes a free-text brand/product
+  // keyword, not a stock ticker -- runTryIt() force-uppercases that field's
+  // value before building the path, which is harmless here (CPSC's own
+  // Manufacturer= match is case-insensitive) but the "ticker symbol" label
+  // is a minor UX rough edge worth a dedicated input/label in a follow-up
+  // pass, not a functional bug.
+  'recall-search':     { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/recall-search?keyword=' + encodeURIComponent(tk); } },
+  // 2026-09-30 (Relationship/Impact API + Evidence Scorecard): simple
+  // GET-by-ticker, same shape as insider/short-interest/energy above.
+  // evidence-scorecard's optional asset_class query param is left at its
+  // server-side default (Stocks) here -- same "don't add console UI for
+  // every optional param" posture as fundamentals/as-of not having its
+  // own Try-It entry either.
+  'impact':             { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/impact/' + encodeURIComponent(tk); } },
+  'evidence-scorecard': { method: 'GET',  needsTicker: true,  needsAmount: false, path: function(tk) { return '/intelligence/v1/evidence-scorecard/' + encodeURIComponent(tk); } },
+};
+
+function tryUpdateFields() {
+  const cfg = TRY_ENDPOINTS[document.getElementById('tryEndpoint').value];
+  document.getElementById('tryAmountRow').style.display = cfg.needsAmount ? 'block' : 'none';
+  document.getElementById('tryHorizonRow').style.display = cfg.needsHorizon ? 'block' : 'none';
+  tryUpdatePathPreview();
+}
+
+function tryUpdatePathPreview() {
+  const cfg = TRY_ENDPOINTS[document.getElementById('tryEndpoint').value];
+  const ticker = document.getElementById('tryTicker').value.trim();
+  document.getElementById('tryPathPreview').textContent = cfg.method + ' ' + cfg.path(ticker);
+}
+
+async function runTryIt() {
+  const btn = document.getElementById('tryRunBtn');
+  const resultEl = document.getElementById('tryResult');
+  const originalBtnText = btn.textContent;
+  const apiKey = document.getElementById('tryKey').value.trim();
+  const cfg = TRY_ENDPOINTS[document.getElementById('tryEndpoint').value];
+  const ticker = document.getElementById('tryTicker').value.trim().toUpperCase();
+
+  if (!apiKey) {
+    resultEl.textContent = t('ia_try_err_no_key', 'Enter your API key first.');
+    return;
+  }
+  if (cfg.needsTicker && !ticker) {
+    resultEl.textContent = t('ia_try_err_no_ticker', 'Enter a ticker symbol.');
+    return;
+  }
+  const amount = parseFloat(document.getElementById('tryAmount').value);
+  if (cfg.needsAmount && (!amount || amount <= 0)) {
+    resultEl.textContent = t('ia_try_err_no_amount', 'Enter an amount.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = t('ia_try_running_btn', 'Running...');
+  resultEl.textContent = '...';
+
+  const path = cfg.path(ticker);
+  const started = (window.performance && performance.now) ? performance.now() : Date.now();
+  try {
+    let res;
+    if (cfg.method === 'POST') {
+      const body = { symbol: ticker, amount: amount };
+      const horizon = parseInt(document.getElementById('tryHorizon').value, 10);
+      if (horizon) body.horizon_days = horizon;
+      res = await fetch(API + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+        body: JSON.stringify(body),
+      });
+    } else {
+      res = await fetch(API + path, { headers: { 'X-API-Key': apiKey } });
+    }
+    const elapsed = Math.round(((window.performance && performance.now) ? performance.now() : Date.now()) - started);
+    let data = null;
+    try { data = await res.json(); } catch (e) {}
+    const statusWord = res.ok ? t('ia_try_status_ok', 'Success') : t('ia_try_status_err', 'Error');
+    const pretty = data !== null ? JSON.stringify(data, null, 2) : t('ia_try_err_network', 'Network error — check your connection and try again.');
+    resultEl.textContent = cfg.method + ' ' + path + '\n' + res.status + ' ' + statusWord + ' · ' + elapsed + ' ms\n\n' + pretty;
+  } catch (err) {
+    resultEl.textContent = t('ia_try_err_network', 'Network error — check your connection and try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = originalBtnText;
+}
+if (document.getElementById('tryEndpoint')) {
+  tryUpdatePathPreview();
+}
+
+// 2026-07-30: which tier cards to show is admin-controlled (see
+// api/admin.py's intel_plan_*_visible flags, toggled in admin.html's
+// Feature Flags page) -- fetched here so a tier can be hidden without a
+// redeploy, e.g. hiding Enterprise until there's a real reason to show it.
+async function applyPlanVisibility() {
+  try {
+    const res = await fetch(`${API}/intelligence/plan-visibility`);
+    const data = await res.json();
+    const flags = (data && data.data) || {};
+    if (flags.free === false) document.getElementById('plan-free').style.display = 'none';
+    if (flags.pro === false) document.getElementById('plan-pro').style.display = 'none';
+    if (flags.enterprise === false) document.getElementById('plan-enterprise').style.display = 'none';
+  } catch (e) {
+    // Best-effort -- if this fails, all 3 plans stay visible (safe default).
+  }
+}
+applyPlanVisibility();
+
+// 2026-08-17 (task #4 follow-up, "重有咩可以升級" -- upgrade #4, live status
+// widget): reads GET /intelligence/status live on every page load -- no
+// stored history, no scheduled job, nothing to maintain. See that
+// endpoint's own docstring in api/intelligence.py for why 5 of the 7
+// capabilities are always true (they don't have an external reachability
+// gate at all, so "true" here isn't a fabricated uptime claim).
+async function applyStatusWidget() {
+  const el = document.getElementById('statusSummary');
+  try {
+    const res = await fetch(`${API}/intelligence/status`);
+    const json = await res.json();
+    const flags = (json && json.data) || {};
+    const entries = Object.entries(flags);
+    const upCount = entries.filter(function(e) { return e[1] === true; }).length;
+    const allUp = upCount === entries.length;
+    document.getElementById('statusDot').className = allUp ? 'status-dot-ok' : 'status-dot-down';
+    // 2026-08-27: was hardcoded "All 7 endpoints operational" -- stale the
+    // moment a new capability key was added to GET /intelligence/status
+    // (like this session's 4). Uses entries.length dynamically so this
+    // never needs a manual update again when the endpoint count changes.
+    el.textContent = allUp
+      ? 'All ' + entries.length + ' endpoints operational'
+      : upCount + '/' + entries.length + ' endpoints operational (' + entries.filter(function(e){return e[1]!==true;}).map(function(e){return e[0];}).join(', ') + ' degraded)';
+  } catch (e) {
+    el.textContent = 'Live status unavailable right now';
+  }
+}
+applyStatusWidget();
+
+// 2026-08-17 (task #4 follow-up, changelog): renders GET /intelligence/
+// changelog client-side -- the JSON response is the single source of
+// truth, this is just a view over it, so the page can never drift out of
+// sync with the API's own changelog feed.
+async function loadChangelog() {
+  const el = document.getElementById('changelogList');
+  try {
+    const res = await fetch(`${API}/intelligence/changelog`);
+    const json = await res.json();
+    const entries = (json && json.data) || [];
+    el.innerHTML = '';
+    entries.forEach(function(entry) {
+      const wrap = document.createElement('div');
+      wrap.className = 'changelog-entry';
+      const dateEl = document.createElement('div');
+      dateEl.className = 'changelog-date';
+      dateEl.textContent = entry.date;
+      wrap.appendChild(dateEl);
+      (entry.changes || []).forEach(function(change) {
+        const row = document.createElement('div');
+        row.className = 'changelog-change';
+        const tag = document.createElement('span');
+        tag.className = 'changelog-tag ' + change.type;
+        tag.textContent = change.type;
+        row.appendChild(tag);
+        row.appendChild(document.createTextNode(change.text));
+        wrap.appendChild(row);
+      });
+      el.appendChild(wrap);
+    });
+  } catch (e) {
+    el.textContent = 'Could not load changelog right now.';
+  }
+}
+loadChangelog();
+
+// 2026-08-17 (follow-up to task #4, roadmap): same fetch/render pattern as
+// loadChangelog() above -- GET /intelligence/roadmap is the single source
+// of truth, this just renders it.
+async function loadRoadmap() {
+  const el = document.getElementById('roadmapList');
+  try {
+    const res = await fetch(`${API}/intelligence/roadmap`);
+    const json = await res.json();
+    const items = (json && json.data) || [];
+    el.innerHTML = '';
+    if (items.length === 0) {
+      el.textContent = t('ia_roadmap_empty', 'Nothing queued right now — check back later.');
+      return;
+    }
+    items.forEach(function(item) {
+      const wrap = document.createElement('div');
+      wrap.className = 'roadmap-item';
+      const head = document.createElement('div');
+      head.className = 'roadmap-item-head';
+      const status = document.createElement('span');
+      status.className = 'roadmap-status ' + item.status;
+      status.textContent = item.status === 'in_progress' ? 'In progress' : 'Planned';
+      const title = document.createElement('span');
+      title.className = 'roadmap-item-title';
+      title.textContent = item.title;
+      head.appendChild(status);
+      head.appendChild(title);
+      const text = document.createElement('div');
+      text.className = 'roadmap-item-text';
+      text.textContent = item.text;
+      wrap.appendChild(head);
+      wrap.appendChild(text);
+      el.appendChild(wrap);
+    });
+  } catch (e) {
+    el.textContent = 'Could not load the roadmap right now.';
+  }
+}
+loadRoadmap();
+
+function selectPlan(tier) {
+  document.getElementById('accessTier').value = tier;
+  document.getElementById('access').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('accessEmail').focus();
+}
+
+document.getElementById('accessForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('accessSubmitBtn');
+  const msgEl = document.getElementById('accessMsg');
+  msgEl.className = '';
+  msgEl.style.display = 'none';
+
+  const tier = document.getElementById('accessTier').value;
+  const email = document.getElementById('accessEmail').value.trim();
+  btn.disabled = true;
+
+  try {
+    let res, data;
+    if (tier === 'free') {
+      // 2026-07-31: Free tier is now fully automated (POST /v1/signup) --
+      // no admin step, key is emailed within seconds. Pro/Enterprise below
+      // still go through the manual early-access flow.
+      btn.textContent = t('ia_msg_issuing', 'Issuing key...');
+      res = await fetch(`${API}/intelligence/v1/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      data = await res.json();
+      if (res.ok && data.success !== false) {
+        msgEl.textContent = t('ia_msg_free_ok', "Done — check your inbox, your free API key is on its way.");
+        msgEl.className = 'ok';
+        document.getElementById('accessForm').reset();
+        document.getElementById('accessTier').value = 'pro';
+      } else {
+        msgEl.textContent = (data && data.detail) || t('ia_msg_err', 'Something went wrong — please try again.');
+        msgEl.className = 'err';
+      }
+    } else if (tier === 'pro' && _xflLiveApiTiers.includes('pro')) {
+      // 2026-08-24: real self-serve checkout -- only reachable once AJ has
+      // set STRIPE_PRICE_ID_API_PRO (see _xflLiveApiTiers above). Redirects
+      // to Stripe; the key itself is issued+emailed by the webhook after
+      // payment (api/webhooks_stripe.py), never returned here.
+      btn.textContent = t('ia_msg_redirecting', 'Redirecting to checkout...');
+      res = await fetch(`${API}/stripe/create-api-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, tier: 'pro' }),
+      });
+      data = await res.json();
+      if (res.ok && data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      } else {
+        msgEl.textContent = (data && data.detail) || t('ia_msg_err', 'Something went wrong — please try again.');
+        msgEl.className = 'err';
+      }
+    } else {
+      btn.textContent = t('ia_msg_sending', 'Sending...');
+      const payload = {
+        email,
+        company: document.getElementById('accessCompany').value.trim() || null,
+        tier_interest: tier,
+        message: document.getElementById('accessMessage').value.trim() || null,
+      };
+      res = await fetch(`${API}/intelligence/early-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      data = await res.json();
+      if (res.ok && data.success !== false) {
+        msgEl.textContent = t('ia_msg_pro_ok', "Thanks — we'll follow up by email shortly.");
+        msgEl.className = 'ok';
+        document.getElementById('accessForm').reset();
+        document.getElementById('accessTier').value = 'pro';
+      } else {
+        msgEl.textContent = (data && data.detail) || t('ia_msg_err', 'Something went wrong — please try again.');
+        msgEl.className = 'err';
+      }
+    }
+  } catch (err) {
+    msgEl.textContent = t('ia_msg_network_err', 'Network error — please try again.');
+    msgEl.className = 'err';
+  }
+  msgEl.style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = t('ia_access_submit_btn', 'Request Access');
+});
+</script>
+
+<!-- 2026-09-03/04: LaunchNest / DevHub / KittyLaunch verification badges --
+     each required by that listing site's own crawler to check THIS exact
+     page for its badge image wrapped in a link back to the listing (kept
+     each <a>/<img> completely unchanged for that reason -- only rel=
+     "noopener" was added, harmless to all three checks). 2026-09-13 (AJ:
+     "最底果3個 launchnest, devhub, kittylaunch" should read left-to-right):
+     these used to be 3 separate stacked block <div>s (each its own row);
+     merged into a single flex row, wrapping on narrow screens, without
+     touching any badge's own markup. -->
+<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:16px;padding:16px 20px 0">
+  <a href="https://launchnest.io/p/xfinlab-intelligence-api" target="_blank" rel="noopener">
+    <img src="https://launchnest.io/badge/xfinlab-intelligence-api.svg?variant=listed" alt="XFINLAB Intelligence API on LaunchNest" width="220" height="56">
+  </a>
+  <a href="https://devhub.best/projects/xfinlab-intelligence-api?utm_source=badge" target="_blank" rel="noopener">
+    <img src="https://r2.direasy-multi-tenant.focusapps.app/uploads/616d0b1a-3979-4b8c-94d1-b4f1fedd3ead/1783239702078/53yqmim54zv/featured-on-light.svg" alt="Featured on DevHub" style="height:44px;width:auto">
+  </a>
+  <a href="https://kittylaunch.com/p/xfinlab-intelligence-api?utm_source=badge" target="_blank" rel="noopener">
+    <img src="https://kittylaunch.com/api/public/badges/launch_badge.svg?style=pill&theme=light" width="296" alt="XFINLAB Intelligence API — Verified by KittyLaunch" data-kittylaunch-badge="1">
+  </a>
+</div>
+
+<footer>
+  <div class="footer-note"><span data-i18n="ia_footer2_prefix">XFINLAB © 2026 · Intelligence API</span> · <a href="api-terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms">API Terms</a> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_privacy">Privacy Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_risk">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="ia_footer2_terms2">Terms</a></div>
+</footer>
+
+<script src="js/i18n.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+<!-- 2026-09-13 (AJ: "12個頁跟API都要做啊" -- match the floating icon column
+     on all 12 feature pages): this page had theme-toggle.js + quick-ask-
+     bubble.js but was missing the "+" dock trigger entirely. Added for
+     visual consistency; this page has no TG/FB/Share/language widgets to
+     dock, so the trigger just won't reveal anything when tapped, same as
+     it would on any page with none of the DOCK_IDS elements present. -->
+<script src="js/mobile-widget-dock.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+!function(){function n(n){var r=0;n=String(n||"");for(var a=0;a<n.length;a++)r=31*r+n.charCodeAt(a)|0;return Math.abs(r)}window.xflHashSeed=n,window.xflDisplayProb=function(r,a){if(null==r||isNaN(r))return r;var t=Math.max(0,Math.min(100,Number(r))),i=n(a);if(t>=95)return 80+i%13;var u=i%17-8,e=Math.round(t+u);return Math.max(3,Math.min(97,e))}}();

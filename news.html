@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — 即時市場新聞</title>
+<meta name="description" content="即時市場新聞 — 輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響。">
+<link rel="canonical" href="https://www.xfinlab.com/news.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="即時市場新聞 — XFINLAB">
+<meta property="og:description" content="輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響。">
+<meta property="og:url" content="https://www.xfinlab.com/news.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+<script src="js/nav.js"></script>
+<!-- 2026-07-26 fix: js/nav.js's gs() (global search icon injector) silently
+     bails if window.searchAssets isn't defined -- this page never included
+     autocomplete.js, so the 🔍 icon never appeared in the shared topbar
+     cluster while every other main page had it. Include-only; nothing on
+     this page auto-attaches to specific input ids from it. -->
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/ai-loading.js"></script>
+<script src="js/mvp-api.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1160px;margin:0 auto;padding:28px 18px;flex:1}
+
+.category-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.cat-btn{padding:0.35rem 1rem;border:1px solid var(--border-color);border-radius:20px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer;transition:all 0.2s;background:transparent}
+.cat-btn:hover,.cat-btn.active{background:rgba(211,84,0,0.1);border-color:var(--accent-blue);color:var(--accent-blue)}
+.search-row{display:flex;gap:0.8rem;margin-bottom:2rem}
+.search-field{flex:1;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.65rem 1rem;color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s}
+.search-field:focus{border-color:var(--accent-blue)}
+.search-field::placeholder{color:var(--text-muted)}
+.search-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0.65rem 1.5rem;font-size:0.85rem;font-weight:600;cursor:pointer;transition:background 0.2s;white-space:nowrap}
+.search-btn:hover{background:var(--accent-blue-strong)}
+
+.ai-summary{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.5rem}
+.ai-summary-title{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent-blue);margin-bottom:0.6rem;font-weight:600}
+.ai-summary-text{font-size:0.85rem;color:var(--text-secondary);line-height:1.7}
+.ai-summary-text h3{color:var(--accent-blue);font-size:0.9rem;font-weight:600;margin:0.8rem 0 0.3rem}
+.ai-summary-text strong{color:var(--accent-orange)}
+.loading{text-align:center;padding:3rem;color:var(--text-secondary)}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block}
+.dot-ani span:nth-child(2){animation-delay:0.2s}
+.dot-ani span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1}}
+
+.disclaimer{font-size:0.72rem;color:var(--text-muted);margin-top:1rem}
+
+.gm-section{margin-top:2.4rem;padding-top:2rem;border-top:1px solid var(--border-color)}
+.gm-title{font-size:1.1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.3rem}
+.gm-sub{font-size:0.8rem;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.6}
+.gm-region-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.3rem}
+.gm-region-btn{padding:0.35rem 0.9rem;border:1px solid var(--border-color);border-radius:20px;font-size:0.78rem;color:var(--text-secondary);cursor:pointer;transition:all 0.2s;background:transparent}
+.gm-region-btn:hover,.gm-region-btn.active{background:rgba(211,84,0,0.1);border-color:var(--accent-blue);color:var(--accent-blue)}
+.gm-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1.2rem 1.4rem}
+.gm-stats-row{display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1rem}
+.gm-stat{background:var(--bg-secondary);border-radius:8px;padding:0.5rem 0.9rem;font-size:0.78rem;color:var(--text-secondary)}
+.gm-stat b{color:var(--text-primary);font-size:0.9rem}
+.gm-label{font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent-blue);margin:0.9rem 0 0.4rem;font-weight:600}
+.gm-ai-text{font-size:0.85rem;color:var(--text-secondary);line-height:1.7}
+.gm-headline{font-size:0.82rem;color:var(--text-secondary);padding:0.4rem 0;border-bottom:1px solid var(--border-color)}
+.gm-headline:last-child{border-bottom:none}
+.gm-headline a{color:var(--text-primary);text-decoration:none}
+.gm-headline a:hover{color:var(--accent-blue)}
+.gm-muted{font-size:0.8rem;color:var(--text-muted)}
+.gm-sentiment-badge{display:inline-block;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:600}
+.gm-sentiment-badge.pos{background:rgba(16,185,129,0.12);color:#10b981}
+.gm-sentiment-badge.neg{background:rgba(239,68,68,0.12);color:#ef4444}
+.gm-sentiment-badge.neu{background:rgba(148,163,184,0.12);color:var(--text-muted)}
+
+.footer{padding:16px;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+
+@media(max-width:768px){
+  nav{padding:0.7rem 1rem}
+  .container{padding:18px 12px}
+  .search-row{flex-direction:column;align-items:stretch}
+}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag" data-i18n="news_page_tag">即時資訊</div>
+  <h1 class="page-title" data-i18n="news_page_title">市場新聞追蹤</h1>
+  <p class="page-sub" data-i18n="news_page_sub">輸入股票代號或關鍵詞，AI即時搜尋相關新聞並分析市場影響</p>
+  <div class="category-row">
+    <div class="cat-btn active" data-i18n="news_cat_all" onclick="setActive(this);loadNews(t('news_topic_all','全球金融市場最新重要新聞'))">🌍 全部</div>
+    <div class="cat-btn" data-i18n="news_cat_hk" onclick="setActive(this);loadNews(t('news_topic_hk','港股市場最新重要新聞及分析'))">🇭🇰 港股</div>
+    <div class="cat-btn" data-i18n="news_cat_us" onclick="setActive(this);loadNews(t('news_topic_us','美股市場最新重要新聞及分析'))">🇺🇸 美股</div>
+    <div class="cat-btn" data-i18n="news_cat_crypto" onclick="setActive(this);loadNews(t('news_topic_crypto','加密貨幣市場最新重要新聞'))">🪙 加密</div>
+    <div class="cat-btn" data-i18n="news_cat_macro" onclick="setActive(this);loadNews(t('news_topic_macro','全球宏觀經濟最新新聞及央行政策'))">📊 宏觀</div>
+    <div class="cat-btn" data-i18n="news_cat_geo" onclick="setActive(this);loadNews(t('news_topic_geo','地緣政治及戰爭對金融市場的最新影響'))">⚠️ 地緣</div>
+  </div>
+  <div class="search-row">
+    <input class="search-field" id="newsSearch" data-i18n-placeholder="news_search_placeholder" placeholder="搜尋股票代號或關鍵詞，例：騰訊、AAPL、加息…" onkeydown="if(event.key==='Enter')searchNews()">
+    <button class="search-btn" onclick="searchNews()" data-i18n="news_search_btn">🔍 AI 搜尋分析</button>
+  </div>
+  <div id="newsArea"><div class="loading"><div class="dot-ani"><span data-i18n="news_loading">載入中</span><span>.</span><span>.</span><span>.</span></div></div></div>
+
+  <div class="gm-section">
+    <div class="gm-title" data-i18n="gm_title">🌍 全球市場概況</div>
+    <div class="gm-sub" data-i18n="gm_sub">涵蓋美/歐/日/韓/中/港/台/東南亞/中東/南美 — 宏觀數據 + 新聞 + AI概況評語（非即市股價分析）</div>
+    <div class="gm-region-row" id="gmRegionRow">
+      <div class="gm-region-btn active" data-region="hk" data-i18n="gm_region_hk" onclick="setGmActive(this);loadGlobalMacro('hk')">🇭🇰 香港</div>
+      <div class="gm-region-btn" data-region="tw" data-i18n="gm_region_tw" onclick="setGmActive(this);loadGlobalMacro('tw')">🇹🇼 台灣</div>
+      <div class="gm-region-btn" data-region="china" data-i18n="gm_region_china" onclick="setGmActive(this);loadGlobalMacro('china')">🇨🇳 中國</div>
+      <div class="gm-region-btn" data-region="us" data-i18n="gm_region_us" onclick="setGmActive(this);loadGlobalMacro('us')">🇺🇸 美國</div>
+      <div class="gm-region-btn" data-region="europe" data-i18n="gm_region_europe" onclick="setGmActive(this);loadGlobalMacro('europe')">🇪🇺 歐洲</div>
+      <div class="gm-region-btn" data-region="japan" data-i18n="gm_region_japan" onclick="setGmActive(this);loadGlobalMacro('japan')">🇯🇵 日本</div>
+      <div class="gm-region-btn" data-region="korea" data-i18n="gm_region_korea" onclick="setGmActive(this);loadGlobalMacro('korea')">🇰🇷 韓國</div>
+      <div class="gm-region-btn" data-region="sea" data-i18n="gm_region_sea" onclick="setGmActive(this);loadGlobalMacro('sea')">🌏 東南亞</div>
+      <div class="gm-region-btn" data-region="me" data-i18n="gm_region_me" onclick="setGmActive(this);loadGlobalMacro('me')">🕌 中東</div>
+      <div class="gm-region-btn" data-region="latam" data-i18n="gm_region_latam" onclick="setGmActive(this);loadGlobalMacro('latam')">🌎 南美</div>
+    </div>
+    <div id="gmArea"><div class="loading"><div class="dot-ani"><span data-i18n="gm_loading">AI 分析中</span><span>.</span><span>.</span><span>.</span></div></div></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-note"><span data-i18n="news_footer_note">XFINLAB © 2026 · 智能金融分析平台 · </span><a href="privacy.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue);text-decoration:none;" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script>
+function setActive(btn){document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function t(key, fallback){
+  try {
+    if (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) return I18N.translations[key];
+  } catch(e) {}
+  return fallback;
+}
+
+async function loadNews(topic){
+  document.getElementById('newsArea').innerHTML = `<div class="loading"><div class="dot-ani"><span>${t('news_loading_ai','AI 搜尋分析中')}</span><span>.</span><span>.</span><span>.</span></div></div>`;
+  // 2026-07-23 fix (task #317/#327): this query used to be built from a
+  // hardcoded Chinese template regardless of the UI language, so the AI
+  // always answered in Chinese even when the user was in English/other
+  // mode. news_query_template carries the same structure translated to
+  // all 46 languages, with {TOPIC} substituted in.
+  const template = t('news_query_template', '請提供關於「{TOPIC}」的最新市場資訊分析。\n\n格式如下：\n## 📰 市場摘要\n（2-3句總結當前市況）\n\n## 🔥 重點新聞（列出5條最重要新聞，每條包含：標題、簡述、市場影響）\n\n## 📊 AI 市場影響分析\n（分析對相關股票/市場的短期影響）\n\n## ⚠️ 需要關注的風險\n（列出2-3個主要風險點）');
+  const query = template.replace('{TOPIC}', topic);
+  try{
+    const payload = { query, user: 'xfinlab-news' };
+    const res = await postApi('/api/news-denoise', payload);
+    const answer = (res && (res.data?.analysis || res.data?.conclusion || res.data?.answer || res.answer || res.data?.summary)) || '';
+    if (answer) {
+      document.getElementById('newsArea').innerHTML = `
+        <div class="ai-summary"><div class="ai-summary-title">🤖 ${t('news_ai_report_title','AI 市場分析報告 — ')}${new Date().toLocaleString('zh-HK')}</div><div class="ai-summary-text">${fmt(answer)}</div></div>
+        <div class="disclaimer">${t('news_disclaimer','⚠️ 以上分析由AI生成，僅供參考，不構成投資建議。')}</div>`;
+    } else {
+      document.getElementById('newsArea').innerHTML = `<div class="loading" style="color:var(--accent-red)">${t('news_no_result','搜尋完成，但無結果可顯示。')}</div>`;
+    }
+  } catch(e){ document.getElementById('newsArea').innerHTML = `<div class="loading" style="color:var(--accent-red)">${t('news_error','搜尋出現問題，請稍後重試。')}</div>`; }
+}
+function searchNews(){
+  const v=document.getElementById('newsSearch').value.trim();
+  if(!v)return;
+  const searchTemplate = t('news_search_query_template', '{V}的最新市場新聞及影響分析');
+  loadNews(searchTemplate.replace('{V}', v));
+}
+function fmt(t){return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^## (.+)$/gm,'<h3>$1</h3>').replace(/\n/g,'<br>');}
+loadNews(t('news_topic_all','全球金融市場最新重要新聞'));
+
+function setGmActive(btn){document.querySelectorAll('.gm-region-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function escHtml(s){return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+async function loadGlobalMacro(region){
+  const area = document.getElementById('gmArea');
+  area.innerHTML = `<div class="loading"><div class="dot-ani"><span>${t('gm_loading','AI 分析中')}</span><span>.</span><span>.</span><span>.</span></div></div>`;
+  try{
+    const uiLang = (typeof I18N !== 'undefined' && I18N.currentLang) ? I18N.currentLang : 'zh-HK';
+    const res = await getApi(`/api/global-macro/${region}?lang=${encodeURIComponent(uiLang)}`);
+    const d = res.data || res;
+    if (!d || d.available === false) {
+      area.innerHTML = `<div class="gm-muted">${escHtml(d && d.message || t('gm_error','載入失敗，請稍後再試'))}</div>`;
+      return;
+    }
+
+    let statsHtml = '';
+    if (d.macro && d.macro.available) {
+      const ind = d.macro.indicators || {};
+      const rows = [];
+      if (ind.gdp_growth_pct) rows.push(`<div class="gm-stat">GDP <b>${ind.gdp_growth_pct.value}%</b> <span class="gm-muted">(${ind.gdp_growth_pct.year})</span></div>`);
+      if (ind.inflation_pct) rows.push(`<div class="gm-stat">${t('gm_inflation','通脹')} <b>${ind.inflation_pct.value}%</b> <span class="gm-muted">(${ind.inflation_pct.year})</span></div>`);
+      if (ind.unemployment_pct) rows.push(`<div class="gm-stat">${t('gm_unemployment','失業率')} <b>${ind.unemployment_pct.value}%</b> <span class="gm-muted">(${ind.unemployment_pct.year})</span></div>`);
+      statsHtml = rows.length ? `<div class="gm-stats-row">${rows.join('')}</div>` : `<div class="gm-muted">${t('gm_no_macro','呢個地區暫時冇公開宏觀數據')}</div>`;
+    } else {
+      statsHtml = `<div class="gm-muted">${escHtml((d.macro && d.macro.message) || t('gm_no_macro','呢個地區暫時冇公開宏觀數據'))}</div>`;
+    }
+
+    let sentimentHtml = '';
+    if (d.sentiment && d.sentiment.available) {
+      const cls = d.sentiment.label === 'Positive' ? 'pos' : d.sentiment.label === 'Negative' ? 'neg' : 'neu';
+      sentimentHtml = `<div class="gm-label">${t('gm_sentiment_label','新聞情緒')}</div><span class="gm-sentiment-badge ${cls}">${d.sentiment.avg_score}/100 · ${d.sentiment.label}</span>`;
+    }
+
+    let aiHtml = '';
+    if (d.ai_commentary) {
+      aiHtml = `<div class="gm-label">${t('gm_ai_label','AI 概況評語')}</div><div class="gm-ai-text">${escHtml(d.ai_commentary)}</div>`;
+    }
+
+    const items = (d.news && d.news.items) || [];
+    let headlinesHtml = `<div class="gm-label">${t('gm_headlines_label','相關頭條')}</div>`;
+    if (items.length) {
+      headlinesHtml += items.map(h => `<div class="gm-headline"><a href="${escHtml(h.link)}" target="_blank" rel="noopener">${escHtml(h.title)}</a></div>`).join('');
+    } else {
+      headlinesHtml += `<div class="gm-muted">${t('gm_no_headlines','暫時未有相關頭條')}</div>`;
+    }
+
+    area.innerHTML = `
+      <div class="gm-card">
+        ${statsHtml}
+        ${sentimentHtml}
+        ${aiHtml}
+        ${headlinesHtml}
+        <div class="disclaimer">${t('gm_disclaimer','宏觀數據為年度數字，新聞及AI評語僅供背景參考，並非即市股價分析或投資建議。')}</div>
+      </div>`;
+  } catch(e) {
+    area.innerHTML = `<div class="gm-muted">${t('gm_error','載入失敗，請稍後再試')}</div>`;
+  }
+}
+loadGlobalMacro('hk');
+
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#D35400);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

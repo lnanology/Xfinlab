@@ -1,0 +1,3308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB Admin V2</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Light default (2026-07-18): white bg, black text, black border. */
+  :root {
+    --bg: #FFFFFF; --surface: #FFFFFF; --surface2: #F8FAFC;
+    --border: #000000; --accent: #D35400; --accent-rgb: 211,84,0; --accent-text: #FFFFFF; --green: #16A34A;
+    --red: #DC2626; --amber: #F59E0B; --purple: #7c3aed;
+    --text: #000000; --muted: #666666; --label: #333333;
+  }
+  /* 2026-07-22 fix: admin panel had no dark-theme variant at all. */
+  [data-theme="dark"] {
+    --bg: #080c14; --surface: #0d1525; --surface2: #111d30;
+    --border: #1e2d45; --accent: #F97316; --accent-rgb: 249,115,22; --accent-text: #000000; --green: #10b981;
+    --red: #ef4444; --amber: #f59e0b; --purple: #7c3aed;
+    --text: #e2e8f0; --muted: #94a3b8; --label: #cbd5e1;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* Sidebar */
+  .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; z-index: 100; overflow-y: auto; }
+  .sidebar-brand { padding: 20px; border-bottom: 1px solid var(--border); }
+  .sidebar-brand .logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .sidebar-brand .logo span { color: var(--text); }
+  .sidebar-brand .badge { background: var(--red); color: #fff; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 99px; margin-left: 6px; }
+  .nav-section { padding: 12px 8px 4px; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; margin: 2px 8px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; color: var(--label); transition: all 0.15s; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(var(--accent-rgb),0.1); color: var(--accent); }
+  .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+  .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
+  .admin-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+
+  /* Main */
+  .main { margin-left: 220px; flex: 1; padding: 28px; min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+  .page-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; }
+
+  /* Cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .stat-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+  /* Panels */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .panel-title { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .panel-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--accent); border-radius: 2px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* Health */
+  .health-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+  .health-item:last-child { border-bottom: none; }
+  .health-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; display: inline-block; }
+  .health-online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .health-offline { background: var(--red); }
+  .health-detail { font-size: 0.72rem; color: var(--muted); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 0 8px 10px 0; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 8px 10px 0; border-bottom: 1px solid var(--border); color: var(--label); vertical-align: middle; }
+  .plan-badge { display: inline-flex; padding: 2px 8px; border-radius: 99px; font-size: 0.65rem; font-weight: 700; }
+  .plan-pro { background: rgba(var(--accent-rgb),0.15); color: var(--accent); }
+  .plan-free { background: rgba(100,116,139,0.15); color: var(--muted); }
+
+  /* Buttons */
+  .btn { padding: 7px 14px; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: var(--accent-text); width: 100%; padding: 11px; }
+  .btn-sm { padding: 4px 10px; font-size: 0.72rem; }
+  .btn-green { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .btn-red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-amber { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+  .btn-purple { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+  .btn:hover { opacity: 0.8; }
+
+  /* Trending */
+  .trend-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .trend-item:last-child { border-bottom: none; }
+  .trend-rank { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); width: 20px; }
+  .trend-ticker { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 0.85rem; }
+  .trend-bar-wrap { flex: 1; height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .trend-bar { height: 100%; background: var(--accent); border-radius: 99px; }
+  .trend-count { font-size: 0.72rem; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+
+  /* Feature Flags */
+  .flag-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .flag-item:last-child { border-bottom: none; }
+  .flag-name { font-size: 0.85rem; font-weight: 500; }
+  .flag-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle { width: 40px; height: 22px; background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; cursor: pointer; position: relative; transition: background 0.2s; }
+  .toggle.on { background: var(--green); border-color: var(--green); }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: white; border-radius: 50%; transition: transform 0.2s; }
+  .toggle.on::after { transform: translateX(18px); }
+  .toggle-label { font-size: 0.72rem; color: var(--muted); }
+
+  /* Content Center */
+  .content-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+  .content-item:last-child { border-bottom: none; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .status-published { background: var(--green); }
+  .status-pending { background: var(--amber); }
+  .status-failed { background: var(--red); }
+
+  /* Push cards */
+  .push-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+  .push-flag { font-size: 1.8rem; margin-bottom: 8px; }
+  .push-name { font-size: 0.82rem; font-weight: 500; margin-bottom: 12px; color: var(--label); }
+
+  /* Login */
+  #loginPage { display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100%; }
+  .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 100%; max-width: 360px; }
+  .login-box h2 { font-size: 1.4rem; margin-bottom: 6px; }
+  .login-box p { color: var(--muted); font-size: 0.82rem; margin-bottom: 24px; }
+  input[type="email"], input[type="password"] { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; font-family: inherit; margin-bottom: 12px; }
+  input:focus { outline: none; border-color: var(--accent); }
+  .error-msg { color: var(--red); font-size: 0.78rem; margin-top: 8px; }
+
+  /* Pagination */
+  .pagination { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .page-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--label); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; }
+  .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .empty { color: var(--muted); font-size: 0.82rem; padding: 16px 0; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="js/theme-toggle.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginPage">
+  <div class="login-box">
+    <button type="button" onclick="toggleAdminLang()" style="float:right;background:none;border:1px solid var(--border,#333);color:inherit;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer" id="langToggleBtn">中文</button>
+    <h2 data-i18n-admin="login_title">🔐 Admin Login</h2>
+    <p data-i18n-admin="login_subtitle">XFINLAB Intelligence Platform</p>
+    <input type="email" id="loginEmail" data-i18n-admin-placeholder="login_email_ph" placeholder="Admin Email" value="abcoaj888@gmail.com">
+    <input type="password" id="loginPassword" data-i18n-admin-placeholder="login_pw_ph" placeholder="Password">
+    <button class="btn btn-primary" onclick="handleLogin()" data-i18n-admin="login_submit">Sign In</button>
+    <div id="loginError" class="error-msg"></div>
+  </div>
+</div>
+
+<!-- Admin Layout -->
+<div id="adminLayout" style="display:none;width:100%;display:none">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-brand" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div class="logo"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<span>FIN</span>LAB <span class="badge">ADMIN</span></div>
+      <button type="button" onclick="toggleAdminLang()" id="sidebarLangToggleBtn" style="background:none;border:1px solid var(--border,#333);color:inherit;border-radius:6px;padding:3px 8px;font-size:0.7rem;cursor:pointer;white-space:nowrap">中文</button>
+    </div>
+
+    <div class="nav-section" data-i18n-admin="ns_overview">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> <span data-i18n-admin="nav_dashboard">Dashboard</span></div>
+    <div class="nav-item" onclick="showPage('health')"><span class="icon">📡</span> <span data-i18n-admin="nav_health">System Health</span></div>
+
+    <div class="nav-section" data-i18n-admin="ns_users">Users</div>
+    <div class="nav-item" onclick="showPage('users')"><span class="icon">👤</span> <span data-i18n-admin="nav_users">User Management</span></div>
+    <div class="nav-item" onclick="showPage('trending')"><span class="icon">🔍</span> <span data-i18n-admin="nav_trending">Trending</span></div>
+
+    <div class="nav-section" data-i18n-admin="ns_content">Content</div>
+    <div class="nav-item" onclick="showPage('telegram')"><span class="icon">✈️</span> <span data-i18n-admin="nav_telegram">Telegram Publisher</span></div>
+    <div class="nav-item" onclick="showPage('content')"><span class="icon">📢</span> <span data-i18n-admin="nav_content">Content Center</span></div>
+    <div class="nav-item" onclick="showPage('seo')"><span class="icon">🌐</span> <span data-i18n-admin="nav_seo">SEO Page Engine</span></div>
+    <div class="nav-item" onclick="showPage('email')"><span class="icon">📧</span> <span data-i18n-admin="nav_email">Email Engine</span></div>
+    <div class="nav-item" onclick="showPage('widgets')"><span class="icon">🧩</span> <span data-i18n-admin="nav_widgets">Widget Engine</span></div>
+    <div class="nav-item" onclick="showPage('apiusage')"><span class="icon">🔑</span> <span data-i18n-admin="nav_apiusage">API Usage</span></div>
+    <div class="nav-item" onclick="showPage('referral')"><span class="icon">🎁</span> <span data-i18n-admin="nav_referral">Referral Engine</span></div>
+    <div class="nav-item" onclick="showPage('video')"><span class="icon">🎬</span> <span data-i18n-admin="nav_video">Video Engine</span></div>
+    <div class="nav-item" onclick="showPage('content-drafts')"><span class="icon">✨</span> Content Engine</div>
+
+    <div class="nav-section" data-i18n-admin="ns_settings">Settings</div>
+    <div class="nav-item" onclick="showPage('flags')"><span class="icon">⚙️</span> <span data-i18n-admin="nav_flags">Feature Flags</span></div>
+    <div class="nav-item" onclick="showPage('auditlog')"><span class="icon">📜</span> <span data-i18n-admin="nav_auditlog">Audit Log</span></div>
+    <div class="nav-item" onclick="showPage('security')"><span class="icon">🛡️</span> <span data-i18n-admin="nav_security">Security Scan</span></div>
+    <div class="nav-item" onclick="showPage('stripeaccount')"><span class="icon">💳</span> <span data-i18n-admin="nav_stripeaccount">Stripe Account</span></div>
+    <div class="nav-item" onclick="showPage('apitrending')"><span class="icon">📈</span> <span data-i18n-admin="nav_apitrending">API Trending Tickers</span></div>
+    <div class="nav-item" onclick="showPage('datafactory')"><span class="icon">🏭</span> <span data-i18n-admin="nav_datafactory">Data Factory</span></div>
+    <div class="nav-item" onclick="showPage('predledger')"><span class="icon">🎯</span> <span data-i18n-admin="nav_predledger">Prediction Ledger</span></div>
+    <div class="nav-item" onclick="showPage('composer')"><span class="icon">🧩</span> <span data-i18n-admin="nav_composer">Formula Composer</span></div>
+    <div class="nav-item" onclick="showPage('feedback')"><span class="icon">💬</span> <span data-i18n-admin="nav_feedback">Feedback</span></div>
+
+    <div class="sidebar-footer">
+      <div class="admin-info" id="sidebarEmail"></div>
+      <button class="btn btn-sm btn-red" onclick="logout()" style="width:100%" data-i18n-admin="signout">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title" data-i18n-admin="pt_dashboard">Dashboard</div>
+      <div class="page-sub">Platform overview — real-time stats</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value" id="totalUsers">—</div>
+          <div class="stat-sub" id="todayUsers">+0 today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">DAU</div>
+          <div class="stat-value" style="color:var(--green)" id="dau">—</div>
+          <div class="stat-sub">Active today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">MAU</div>
+          <div class="stat-value" style="color:var(--amber)" id="mau">—</div>
+          <div class="stat-sub">Active 30 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pro Users</div>
+          <div class="stat-value" style="color:var(--accent)" id="proUsers">—</div>
+          <div class="stat-sub" id="freeUsers">— free</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Today Analyses</div>
+          <div class="stat-value" style="color:var(--purple)" id="todayAnalyses">—</div>
+          <div class="stat-sub">Stock searches</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total API Calls</div>
+          <div class="stat-value" style="color:var(--label)" id="totalEvents">—</div>
+          <div class="stat-sub">All time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">AI Provider</div>
+          <div class="stat-value" style="font-size:1.2rem;color:var(--green)">Groq</div>
+          <div class="stat-sub">llama-3.1-8b-instant</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Platform</div>
+          <div class="stat-value" style="font-size:1rem;color:var(--accent)">🟢 Live</div>
+          <div class="stat-sub">Railway + Vercel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="page" id="page-health">
+      <div class="page-title" data-i18n-admin="pt_health">System Health</div>
+      <div class="page-sub">Real-time API & service status</div>
+      <div class="panel">
+        <div class="panel-title">Service Status</div>
+        <div id="healthList"><div class="empty"><span class="spinner"></span> Checking services...</div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadHealth()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+      <!-- 2026-09-14 addition: services/error_alert_service.py already
+           emails AJ on any unhandled production exception; this surfaces
+           the same history in the panel too, per his "後台可見到嗎" ask,
+           instead of that being email-only. -->
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-title">Recent Errors</div>
+        <div class="page-sub" style="margin:-8px 0 12px">Unhandled exceptions caught by the global error handler. Each one also emails you (at most once per hour per route+error type).</div>
+        <div id="errorAlertsList"><div class="empty"><span class="spinner"></span> Loading...</div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadErrorAlerts()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div class="page" id="page-users">
+      <div class="page-title" data-i18n-admin="pt_users">User Management</div>
+      <div class="page-sub">Manage all registered users</div>
+      <div class="panel">
+        <div class="panel-title">All Users</div>
+        <div id="usersTable"><div class="empty"><span class="spinner"></span></div></div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <!-- Trending -->
+    <div class="page" id="page-trending">
+      <div class="page-title" data-i18n-admin="pt_trending">Trending</div>
+      <div class="page-sub">Most searched & analyzed stocks</div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">Top Searched Stocks</div>
+          <div id="topSearches"><div class="empty">No data</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Most Analyzed</div>
+          <div id="topAnalysis"><div class="empty">No data</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="page" id="page-telegram">
+      <div class="page-title" data-i18n-admin="pt_telegram">Telegram Publisher</div>
+      <div class="page-sub">Manually push to Telegram channels</div>
+      <div class="grid-3">
+        <div class="push-card">
+          <div class="push-flag">🇺🇸</div>
+          <div class="push-name">English Channel<br><span style="font-size:0.7rem;color:var(--muted)">@xfinlab_daily</span></div>
+          <button class="btn btn-green btn-sm" onclick="pushTelegram('en')" style="width:100%">Push Now</button>
+        </div>
+        <div class="push-card">
+          <div class="push-flag">🇹🇼</div>
+          <div class="push-name">繁體中文頻道<br><span style="font-size:0.7rem;color:var(--muted)">@xfinlab_zh</span></div>
+          <button class="btn btn-green btn-sm" onclick="pushTelegram('zh')" style="width:100%">推送</button>
+        </div>
+        <div class="push-card">
+          <div class="push-flag">🇪🇸</div>
+          <div class="push-name">Canal Español<br><span style="font-size:0.7rem;color:var(--muted)">@xfinlab_es</span></div>
+          <button class="btn btn-green btn-sm" onclick="pushTelegram('es')" style="width:100%">Enviar</button>
+        </div>
+      </div>
+      <div id="pushStatus" style="margin-top:16px;font-size:0.85rem;color:var(--green)"></div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-title">Auto Schedule</div>
+        <div style="font-size:0.82rem;color:var(--label);line-height:2">
+          🕘 9:30 AM HKT → English Channel<br>
+          🕘 9:35 AM HKT → 繁體中文頻道<br>
+          🕘 9:40 AM HKT → Canal Español<br>
+          🔄 Every 30 min → Anomaly Check
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Center -->
+    <div class="page" id="page-content">
+      <div class="page-title" data-i18n-admin="pt_content">Content Center</div>
+      <div class="page-sub">Manage SEO, social media & content publishing</div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">SEO Pages</div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>aapl.html</div>
+            <span style="font-size:0.72rem;color:var(--green)">Published</span>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>nvda.html</div>
+            <span style="font-size:0.72rem;color:var(--green)">Published</span>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>tsla.html</div>
+            <span style="font-size:0.72rem;color:var(--green)">Published</span>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>msft.html</div>
+            <span style="font-size:0.72rem;color:var(--green)">Published</span>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>meta.html</div>
+            <span style="font-size:0.72rem;color:var(--green)">Published</span>
+          </div>
+          <button class="btn btn-sm btn-purple" style="margin-top:12px" onclick="alert('SEO pages are live on Vercel!')">View All Pages</button>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Social Media Content</div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>LinkedIn Generator</div>
+            <button class="btn btn-sm btn-green" onclick="alert('LinkedIn content generator ready!')">Generate</button>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>YouTube Shorts</div>
+            <button class="btn btn-sm btn-green" onclick="alert('YouTube script generator ready!')">Generate</button>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-published"></span>TikTok Scripts</div>
+            <button class="btn btn-sm btn-green" onclick="alert('TikTok script generator ready!')">Generate</button>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-pending"></span>Reddit Bot</div>
+            <span style="font-size:0.72rem;color:var(--amber)">API Limited</span>
+          </div>
+          <div class="content-item">
+            <div><span class="status-dot status-pending"></span>Twitter/X Bot</div>
+            <span style="font-size:0.72rem;color:var(--amber)">Paid API Required</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2026-07-27: "Level 1 content leverage" growth batch -- today's
+           real (non-fabricated) ready-to-copy post text, generated daily
+           from the same signals data behind free-signals.html/Telegram
+           push. Read-only display + manual regenerate; nothing here posts
+           anywhere automatically. -->
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>今日 Ready-to-Post 內容 (Level 1 Content Leverage)</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm btn-purple" onclick="regenerateContentVariants()">🔄 Regenerate</button>
+          </div>
+        </div>
+        <div id="cvMeta" style="font-size:0.72rem;color:var(--muted);margin-bottom:12px"></div>
+        <div id="cvBody"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 1 (2026-08-02): AI SEO Engine -- turns the earlier
+         hand-built ticker-page batch (tasks #453-502) into an admin-
+         controlled generator. See services/seo_page_generator.py and
+         api/admin.py's /admin/seo/* endpoints. Gated by the
+         seo_auto_engine feature flag on the Feature Flags page. -->
+    <div class="page" id="page-seo">
+      <div class="page-title" data-i18n-admin="pt_seo">SEO Page Engine</div>
+      <div class="page-sub">Generate new ticker/ETF/forex/crypto landing pages, auto-added to sitemap.xml</div>
+
+      <div class="panel">
+        <div class="panel-title">Current Coverage</div>
+        <div id="seoStats" style="font-size:0.85rem;color:var(--text)">
+          <span class="empty"><span class="spinner"></span></span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Generate a New Page</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Ticker</label>
+            <input id="seoTicker" placeholder="e.g. COIN" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Company / Asset Name</label>
+            <input id="seoName" placeholder="e.g. Coinbase Global Inc." style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Category</label>
+            <select id="seoCategory" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+              <option value="stock">Stock</option>
+              <option value="etf">ETF</option>
+              <option value="crypto">Cryptocurrency</option>
+              <option value="forex">Forex Pair</option>
+              <option value="index">Index</option>
+              <option value="commodity">Commodity</option>
+              <option value="bond">Bond</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.72rem;color:var(--label);display:block;margin-bottom:4px">Related Tickers (comma-separated, optional)</label>
+            <input id="seoRelated" placeholder="e.g. AAPL,MSFT" style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px">
+          </div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="generateSeoPage()">⚡ Generate Page</button>
+        <div id="seoGenResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Suggested Next Pages (from site's own ticker search data, ranked by popularity)</span>
+          <button class="btn btn-sm btn-purple" onclick="loadSeoSuggestions()">🔄 Refresh</button>
+        </div>
+        <div id="seoSuggestions"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 3 (2026-08-02): Email Engine. Uses the same SMTP
+         mailbox already configured for verify-email/password-reset
+         (services/email_service.py) -- no new SendGrid/Mailgun account.
+         Double opt-in: subscribe -> confirmation email -> click to
+         confirm (see services/email_digest_service.py). Gated by the
+         email_digest_engine feature flag. -->
+    <div class="page" id="page-email">
+      <div class="page-title" data-i18n-admin="pt_email">Email Engine</div>
+      <div class="page-sub">Daily signals digest, sent via the existing SMTP mailbox to double-opt-in subscribers</div>
+
+      <div class="panel">
+        <div class="panel-title">Subscribers</div>
+        <div id="emailStats" style="font-size:0.85rem;color:var(--text)">
+          <span class="empty"><span class="spinner"></span></span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Manual Send</span>
+          <button class="btn btn-sm btn-purple" onclick="sendEmailDigestNow()">📤 Send Today's Digest Now</button>
+        </div>
+        <div id="emailSendResult" style="margin-top:10px;font-size:0.8rem;color:var(--muted)">
+          Bypasses the once-per-day guard -- use for testing or resending after a fix. Sends the same email_subject/email_body shown in Content Center.
+        </div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 4 (2026-08-02): Widget Engine. Two embeddable
+         widgets (Market Sentiment Index, Signal Strength Heatmap) any
+         third-party site can drop in via a single <script> tag -- see
+         api/widgets.py + widgets.html (the public embed-code gallery).
+         Gated by the widget_engine feature flag. -->
+    <div class="page" id="page-widgets">
+      <div class="page-title" data-i18n-admin="pt_widgets">Widget Engine</div>
+      <div class="page-sub">Embeddable widgets for third-party sites -- see widgets.html for the public gallery + embed codes</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Embed Views</span>
+          <button class="btn btn-sm btn-purple" onclick="loadWidgetStats()">🔄 Refresh</button>
+        </div>
+        <div id="widgetStats"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Public Gallery</div>
+        <div style="font-size:0.85rem;color:var(--muted)">
+          <a href="https://www.xfinlab.com/widgets.html" target="_blank" style="color:var(--accent)">xfinlab.com/widgets.html</a>
+          &nbsp;— live previews + copy-paste embed codes for both widgets.
+        </div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 5 (2026-08-04): GitHub + Developer Engine. The SDKs
+         themselves (sdk/python, sdk/js) are static files in the repo, not a
+         running service -- there's nothing to "control" here. What this
+         panel adds is devrel visibility: real per-key usage of the
+         Intelligence API (api/intelligence.py), joining api_keys/
+         self_serve_api_keys with intelligence_api_usage via
+         GET /admin/intelligence/usage. No feature flag needed since this
+         is a read-only reporting view, not something that can misbehave
+         in production. -->
+    <div class="page" id="page-apiusage">
+      <div class="page-title" data-i18n-admin="pt_apiusage">API Usage</div>
+      <div class="page-sub">Intelligence API devrel tracking -- who's using it, how much, on which tier</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Overview</span>
+          <button class="btn btn-sm btn-purple" onclick="loadApiUsage()">🔄 Refresh</button>
+        </div>
+        <div id="apiUsageOverview"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Keys</div>
+        <div id="apiUsageKeys"><div class="empty">Loading...</div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">SDKs</div>
+        <div style="font-size:0.85rem;color:var(--muted);line-height:1.7">
+          Official Python + JavaScript clients live in the repo under <code>sdk/python</code> and <code>sdk/js</code>
+          (not yet published to PyPI/npm -- see <code>sdk/README.md</code> for why and the current install path).
+          Linked from <a href="https://www.xfinlab.com/intelligence-api.html" target="_blank" style="color:var(--accent)">intelligence-api.html</a>'s Developers section.
+        </div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 6 (2026-08-04): Referral Engine polish. QR code +
+         personal link + progress UI were already shipped earlier
+         (js/nav.js's referral modal, real QR via api.qrserver.com -- not
+         fabricated). What was missing was admin visibility + control:
+         a stats dashboard (services/referral_service.py's
+         get_admin_dashboard()) and the ability to tune the 5 reward
+         numbers (points bonuses, Pro-grant days, Pro+ threshold) live via
+         the new referral_config table, instead of editing module
+         constants and redeploying. -->
+    <div class="page" id="page-referral">
+      <div class="page-title" data-i18n-admin="pt_referral">Referral Engine</div>
+      <div class="page-sub">Referral stats + live-adjustable reward amounts (services/referral_service.py)</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Overview</span>
+          <button class="btn btn-sm btn-purple" onclick="loadReferralStats()">🔄 Refresh</button>
+        </div>
+        <div id="referralOverview"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Reward Amounts</div>
+        <div id="referralConfigForm"><div class="empty"><span class="spinner"></span></div></div>
+        <div id="referralConfigResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Top Referrers</div>
+        <div id="referralTopList"><div class="empty">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- Growth OS Phase 7 (2026-08-04): Video Engine. Renders REAL K-line
+         data as static candlestick slide images narrated by real Google
+         Cloud TTS, timed to match its own narration clip's actual
+         duration -- a data-slide-plus-narration video, not a fully
+         animated chart-drawing sequence (see services/video_engine_
+         service.py's own docstring for the full honesty-scoped
+         description). Requires GOOGLE_TTS_API_KEY to be set in Railway;
+         until then this correctly shows "unavailable" below, which is
+         expected, not a bug. Gated by the video_engine flag (default
+         OFF, see Feature Flags page) on top of that env var. -->
+    <div class="page" id="page-video">
+      <div class="page-title" data-i18n-admin="pt_video">Video Engine</div>
+      <div class="page-sub">Daily AI-narrated market-signal short video (services/video_engine_service.py)</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Status</span>
+          <button class="btn btn-sm btn-purple" onclick="loadVideoStatus()">🔄 Refresh</button>
+        </div>
+        <div id="videoStatus"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Generate Now</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
+          Runs synchronously (TTS calls + ffmpeg render can take up to ~1-2 minutes). Requires the
+          <code>video_engine</code> flag to be ON (Feature Flags page) and a valid <code>GOOGLE_TTS_API_KEY</code>
+          set in Railway's environment variables. AI script rewrite is attempted automatically (falls back to
+          the honest template script if it fails) -- no toggle needed.
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">
+            Custom tickers (optional, comma-separated -- e.g. NVDA,BTC-USD,GC=F)
+          </label>
+          <input type="text" id="videoTickersInput" class="btn btn-sm" placeholder="Leave blank to use today's auto-ranked top signals"
+                 style="width:100%;max-width:480px;cursor:text;text-align:left">
+          <div style="font-size:0.7rem;color:var(--muted);margin-top:3px">
+            Blank = today's top-ranked signals (same basket every day the market's quiet). Fill this in to point
+            the video at whichever assets you actually want instead.
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Language</label>
+            <select id="videoLangSelect" class="btn btn-sm" style="cursor:pointer">
+              <option value="zh-HK">粵語 zh-HK</option>
+              <option value="zh-CN">普通话 zh-CN</option>
+              <option value="zh-TW">國語 zh-TW</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+              <option value="pt">Português</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="hi">हिन्दी</option>
+              <option value="id">Bahasa Indonesia</option>
+              <option value="ar">العربية</option>
+              <option value="ru">Русский</option>
+              <option value="bn">বাংলা</option>
+              <option value="ur">اردو</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Aspect Ratio</label>
+            <select id="videoAspectSelect" class="btn btn-sm" style="cursor:pointer">
+              <option value="9:16">9:16 (Shorts/Reels)</option>
+              <option value="1:1">1:1 (IG Feed)</option>
+              <option value="16:9">16:9 (YouTube/X)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Theme</label>
+            <select id="videoThemeSelect" class="btn btn-sm" style="cursor:pointer">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:6px;cursor:pointer">
+          <input type="checkbox" id="videoPostTelegram">
+          Also post to the matching-language Telegram channel on success
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:12px;cursor:pointer">
+          <input type="checkbox" id="videoUploadYoutube">
+          Also upload to YouTube (unlisted) on success -- needs GOOGLE_YT_* env vars set
+        </label>
+        <button class="btn btn-sm btn-purple" onclick="generateVideoNow()" id="videoGenerateBtn">▶ Generate Now</button>
+        <div id="videoGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Most Active (stocks, futures, crypto, forex, commodities, indices)</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
+          2026-09-28: look up a curated basket ranked by real trailing volume -- handy for picking
+          tickers to paste into the Custom Video chat prompt below. For "Stocks", Country/Sector apply
+          (only the US basket has full 5-tickers-per-sector coverage). For every other asset class,
+          Country/Sector are ignored and a fixed real-instrument basket is ranked instead -- see
+          services/trending_stocks_service.py's ASSET_CLASS_BASKETS for exactly which tickers (e.g.
+          Forex uses currency ETFs, not spot pairs, since spot FX has no real reported volume).
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Asset class</label>
+            <select id="trendingAssetClass" class="btn btn-sm" style="cursor:pointer" onchange="onTrendingAssetClassChange()">
+              <option value="Stocks" selected>Stocks</option>
+              <option value="Futures">Futures</option>
+              <option value="Crypto">Crypto</option>
+              <option value="Forex">Forex</option>
+              <option value="Commodities">Commodities</option>
+              <option value="Indices">Indices</option>
+            </select>
+          </div>
+          <div id="trendingCountryWrap">
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Country</label>
+            <select id="trendingCountry" class="btn btn-sm" style="cursor:pointer">
+              <option value="US" selected>US</option>
+              <option value="HK">HK</option>
+              <option value="TW">TW</option>
+              <option value="CN">CN</option>
+              <option value="JP">JP</option>
+              <option value="KR">KR</option>
+              <option value="GB">GB</option>
+              <option value="DE">DE</option>
+              <option value="FR">FR</option>
+              <option value="IN">IN</option>
+              <option value="AU">AU</option>
+              <option value="CA">CA</option>
+            </select>
+          </div>
+          <div id="trendingSectorWrap">
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Sector</label>
+            <select id="trendingSector" class="btn btn-sm" style="cursor:pointer">
+              <option value="" selected>All sectors</option>
+              <option value="Technology">Technology</option>
+              <option value="Communication Services">Communication Services</option>
+              <option value="Consumer Discretionary">Consumer Discretionary</option>
+              <option value="Consumer Staples">Consumer Staples</option>
+              <option value="Financials">Financials</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Energy">Energy</option>
+              <option value="Industrials">Industrials</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Real Estate">Real Estate</option>
+              <option value="Materials">Materials</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Trailing window</label>
+            <select id="trendingDays" class="btn btn-sm" style="cursor:pointer">
+              <option value="3">Last 3 days</option>
+              <option value="7" selected>Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="lookupTrendingStocks()" id="trendingLookupBtn">▶ Look up</button>
+        <div id="trendingLookupResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Custom Video (chat)</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
+          2026-08-09: type a free-text request instead of using the fixed daily-signals format above --
+          e.g. "make a video about NVDA earnings, in Spanish, square format". Language/aspect ratio/theme
+          are auto-detected from the text (defaults to zh-HK / 9:16 / dark if not mentioned). AI writes the
+          narration for this specific topic -- if it can't produce a script (e.g. AI provider down), this
+          returns an error instead of generating anything, there is no template fallback for arbitrary topics.
+        </div>
+        <textarea id="videoChatPrompt" rows="3" placeholder="e.g. Make a 4-slide video explaining what a P/E ratio is, in English, vertical format"
+          style="width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit;font-size:0.85rem;margin-bottom:10px"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Slides (incl. intro/outro)</label>
+            <select id="videoChatSlides" class="btn btn-sm" style="cursor:pointer">
+              <option value="3">3</option>
+              <option value="4" selected>4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Language</label>
+            <select id="videoChatLangSelect" class="btn btn-sm" style="cursor:pointer" title="Auto-detect reads the language from your prompt text; pick one here to override that guess">
+              <option value="" selected>Auto-detect (from prompt)</option>
+              <option value="zh-HK">粵語 zh-HK</option>
+              <option value="zh-CN">普通话 zh-CN</option>
+              <option value="zh-TW">國語 zh-TW</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+              <option value="pt">Português</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="hi">हिन्दी</option>
+              <option value="id">Bahasa Indonesia</option>
+              <option value="ar">العربية</option>
+              <option value="ru">Русский</option>
+              <option value="bn">বাংলা</option>
+              <option value="ur">اردو</option>
+            </select>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
+            <input type="checkbox" id="videoChatPostTelegram">
+            Also post to the matching-language Telegram channel on success
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
+            <input type="checkbox" id="videoChatUploadYoutube">
+            Also upload to YouTube (unlisted) on success
+          </label>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:5px">
+            Data points the narration may cite with REAL numbers (only applies if your topic names a ticker; unchecked = generic narration, no numbers, as before)
+          </label>
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
+              <input type="checkbox" id="videoChatDataSr" value="sr_indicator">
+              Support/resistance + RSI/MACD
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
+              <input type="checkbox" id="videoChatDataFundamentals" value="fundamentals">
+              Fundamentals (PE/EPS/revenue growth)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
+              <input type="checkbox" id="videoChatDataVolumeMa" value="volume_ma">
+              Volume + 52-week range + moving averages
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;cursor:pointer">
+              <input type="checkbox" id="videoChatDataInstitutional" value="institutional">
+              Institutional/insider + short interest
+            </label>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:8px">
+          <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:6px">
+            Your own photos/videos as slide backgrounds (instead of the AI-generated one) -- pick which
+            uploaded assets to use below, cycled one-per-slide for variety. A video upload is reduced to
+            ONE still frame at the second you choose (max 10 min / 200MB source; only a frame is used, not
+            motion). Leave nothing checked to keep the default AI-generated background.
+          </label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <input type="file" id="videoMediaFileInput" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" style="font-size:0.78rem">
+            <label style="display:flex;align-items:center;gap:5px;font-size:0.78rem" id="videoMediaFrameSecondWrap" title="Only used for a video upload">
+              frame at
+              <input type="number" id="videoMediaFrameSecond" min="0" step="0.5" placeholder="auto (midpoint)" style="width:110px;padding:4px 6px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-size:0.78rem">
+              sec
+            </label>
+            <button class="btn btn-sm" onclick="uploadVideoMedia()" id="videoMediaUploadBtn">⬆ Upload</button>
+          </div>
+          <div id="videoMediaUploadResult" style="font-size:0.78rem;margin-bottom:8px"></div>
+          <div id="videoMediaLibraryGrid" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="generateCustomVideo()" id="videoChatGenerateBtn">▶ Generate from Chat</button>
+        <div id="videoChatGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
+    </div>
+
+    <!-- 2026-10-02 (AJ: "快有效" growth-strategy discussion -- "起啦"):
+         Content Engine. Generates "why did it move" social post drafts
+         from already-existing engines (Impact Graph + Evidence Scorecard
+         + daily confluence signals) -- a daily job also auto-generates 5
+         at 8:30am. Deliberately draft-only: nothing here posts anywhere.
+         Approve/Reject just marks a draft reviewed; AJ copies the text
+         out himself to X/Reddit/wherever, same "human approves every
+         public post" posture this product requires everywhere else. -->
+    <div class="page" id="page-content-drafts">
+      <div class="page-title">Content Engine</div>
+      <div class="page-sub">"Why did it move" social post drafts, generated from Impact Graph + Evidence Scorecard (services/content_engine_service.py). Draft-only -- nothing here posts anywhere; copy the text out yourself once you approve it.</div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Pending Review</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="loadContentDrafts()">🔄 Refresh</button>
+            <button class="btn btn-sm btn-purple" onclick="generateContentDrafts()" id="contentGenerateBtn">✨ Generate Now</button>
+          </div>
+        </div>
+        <div id="contentGenerateResult" style="font-size:0.8rem;margin-bottom:10px"></div>
+        <div id="contentDraftsList"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Feature Flags -->
+    <div class="page" id="page-flags">
+      <div class="page-title" data-i18n-admin="pt_flags">Feature Flags</div>
+      <div class="page-sub">Toggle features without redeploying</div>
+      <div class="panel">
+        <div class="panel-title">Platform Features</div>
+        <div id="flagsList"></div>
+      </div>
+
+      <!-- 2026-07-30: Intelligence API "Request Early Access" submissions
+           (intelligence-api.html -> POST /api/intelligence/early-access ->
+           the shared `feedback` table, type="intelligence_early_access").
+           Lives on this same page since an admin toggling plan visibility
+           here is the same person who wants to see who's asking for
+           access. Reuses GET /feedback/list's type filter rather than a
+           new endpoint. -->
+      <div class="panel">
+        <div class="panel-title">Intelligence API — Early Access Requests</div>
+        <div id="earlyAccessList"><div class="empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- Audit Log -->
+    <div class="page" id="page-auditlog">
+      <div class="page-title" data-i18n-admin="pt_auditlog">Audit Log</div>
+      <div class="page-sub">Login / register / admin action trail</div>
+      <div class="panel">
+        <div class="panel-title">Recent Activity</div>
+        <div id="auditLogTable"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadAuditLog()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Security Scan (task #326) -->
+    <div class="page" id="page-security">
+      <div class="page-title" data-i18n-admin="pt_security">Security Scan</div>
+      <div class="page-sub">Headers, SSL, dependency CVEs, injected code & live-vs-git file integrity -- runs automatically every 6 hours</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Latest Scan</span>
+          <span id="secScanMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="secScanSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-purple" onclick="loadSecurityScan()">🔄 Refresh</button>
+          <button class="btn btn-sm btn-green" id="secScanRunBtn" onclick="runSecurityScanNow()">▶ Run Scan Now</button>
+          <button class="btn btn-sm btn-amber" id="secScanCopyBtn" onclick="copySecurityReport()">⧉ Copy Report</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Recent Runs</div>
+        <div id="secScanHistory"><div class="empty">No history yet</div></div>
+      </div>
+    </div>
+
+    <!-- Stripe Account Status (2026-08-24, AJ: "點知面家個STRIPE係咪完全可收款提款無問題") -->
+    <div class="page" id="page-stripeaccount">
+      <div class="page-title" data-i18n-admin="pt_stripeaccount">Stripe Account</div>
+      <div class="page-sub">Live check against Stripe's own Account.retrieve() -- not just whether STRIPE_SECRET_KEY/price IDs are set (see the public /stripe/status for that). This answers whether the account can actually accept charges and pay out right now, and exactly what Stripe is still waiting on if not.</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Account Status</span>
+          <span id="stripeAcctMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="stripeAcctSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadStripeAccountStatus()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- API Trending Tickers (2026-08-25, AJ: "咁FREE KEY比人用，我接到數據訓ENGINE或儲存之類嗎") -->
+    <div class="page" id="page-apitrending">
+      <div class="page-title" data-i18n-admin="pt_apitrending">API Trending Tickers</div>
+      <div class="page-sub">Aggregate-only signal: which tickers/endpoints Intelligence API consumers actually query, across all keys/tiers. Endpoint+ticker+timestamp only -- never the response payload, and never which specific key queried what. This is what "letting people use a free key" actually gets you back: a product signal (what developers care about), not engine training data or graded accuracy (that's the separate Prediction Ledger, which only grades this site's OWN internal predictions).</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Most-Queried Tickers</span>
+          <span id="apiTrendMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="apiTrendSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadApiTrendingTickers()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Data Factory (2026-08-26, AJ's "Data Factory" batch: "起啦") -->
+    <div class="page" id="page-datafactory">
+      <div class="page-title" data-i18n-admin="pt_datafactory">Data Factory</div>
+      <div class="page-sub">Foundation layer for auto-extensible external data collectors (FRED, SEC EDGAR, CFTC COT, crypto exchanges, etc.). Each collector self-registers the moment its module is imported -- no code change needed here to see a new one appear. Toggle a source off if it's failing or you want to pause it; failures also email you directly (deduped to once per 6h per source).</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Registered Sources</span>
+          <span id="dataSourcesMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="dataSourcesList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadDataSources()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>CFTC Commitments of Traders -- Net Positioning</span>
+          <span id="cftcCotMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Net long/short = Non-Commercial (fund) longs minus shorts. Positive = funds net long. Weekly data, published Fridays.</div>
+        <div id="cftcCotList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadCftcCot()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>SEC 13F Institutional Holdings</span>
+          <span id="sec13fMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Latest quarterly 13F holdings for watched concentrated managers. Select a filer to see their top positions by value.</div>
+        <select id="sec13fFilerSelect" onchange="loadSec13fHoldings(this.value)" style="background:var(--bg2, #0f1420);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:12px;font-size:0.8rem">
+          <option value="">Loading filers…</option>
+        </select>
+        <div id="sec13fList"><div class="empty">Select a filer above</div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadSec13fFilers()" style="margin-top:12px">🔄 Refresh Filer List</button>
+        <button class="btn btn-sm" onclick="triggerSec13fRefresh()" style="margin-top:12px">📡 Fetch Latest 13F Now (all filers)</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Binance Exchange Market Data</span>
+          <span id="binanceMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Real single-exchange 24h price change/volume for 10 major coins (Binance spot) -- distinct from the CoinGecko cross-exchange average used elsewhere on the site.</div>
+        <div id="binanceList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadBinanceExchange()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>EIA Energy Prices &amp; Storage</span>
+          <span id="eiaEnergyMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">WTI crude + Henry Hub natural gas spot prices, plus Lower-48 gas storage -- pairs with the CFTC oil/gas COT contracts above (positioning vs. physical fundamentals). Requires EIA_API_KEY.</div>
+        <div id="eiaEnergyList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadEiaEnergy()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>US Treasury Fiscal Data</span>
+          <span id="treasuryFiscalMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Total public debt outstanding + Treasury General Account cash balance -- the fiscal side of liquidity, distinct from FRED's Fed-side series above. No API key required.</div>
+        <div id="treasuryFiscalList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadTreasuryFiscal()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Coinbase Exchange Market Data</span>
+          <span id="coinbaseMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Same 10 coins as the Binance panel, sourced from Coinbase instead -- lets a second real exchange's price/volume be compared against Binance's.</div>
+        <div id="coinbaseList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadCoinbaseExchange()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>SEC Form 4 Insider Trading</span>
+          <span id="form4Meta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Per-ticker lookup (not a fixed list, unlike CFTC/EIA above) -- most recent Form 4 filings' non-derivative (open-market) transactions for a company's own directors/officers/10% owners.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="form4TickerInput" type="text" placeholder="e.g. AAPL" style="background:var(--bg2, #0f1420);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;flex:1" onkeydown="if(event.key==='Enter')loadSecForm4()">
+          <button class="btn btn-sm btn-purple" onclick="loadSecForm4()">🔍 Lookup</button>
+        </div>
+        <div id="form4List"><div class="empty">Enter a ticker above</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>FINRA Equity Short Interest</span>
+          <span id="finraShortMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Per-ticker lookup, biweekly settlement data from FINRA's public flat files. Days-to-cover = short interest ÷ average daily volume.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="finraShortTickerInput" type="text" placeholder="e.g. GME" style="background:var(--bg2, #0f1420);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;flex:1" onkeydown="if(event.key==='Enter')loadFinraShortInterest()">
+          <button class="btn btn-sm btn-purple" onclick="loadFinraShortInterest()">🔍 Lookup</button>
+        </div>
+        <div id="finraShortList"><div class="empty">Enter a ticker above</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>SEC XBRL Company Facts (Fundamentals)</span>
+          <span id="xbrlMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Per-ticker lookup -- latest annual (10-K) revenue, net income, diluted EPS, total assets/liabilities and operating cash flow, straight from SEC XBRL. No API key required.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="xbrlTickerInput" type="text" placeholder="e.g. AAPL" style="background:var(--bg2, #0f1420);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:0.8rem;flex:1" onkeydown="if(event.key==='Enter')loadSecXbrl()">
+          <button class="btn btn-sm btn-purple" onclick="loadSecXbrl()">🔍 Lookup</button>
+        </div>
+        <div id="xbrlList"><div class="empty">Enter a ticker above</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>CBOE VIX Term Structure</span>
+          <span id="vixMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">VIX9D / VIX / VIX3M / VIX6M -- contango (calm) vs. backwardation (stress) shape of the options market's own forward volatility view. No API key required.</div>
+        <div id="vixList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadCboeVix()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>FDIC Bank Health</span>
+          <span id="fdicMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Lead bank subsidiary Call Report data (ROA/ROE/assets/equity) for JPM, BAC, WFC, C, USB, PNC, TFC. Reflects the regulated bank subsidiary, not consolidated holding-company financials. No API key required.</div>
+        <div id="fdicList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadFdicBankHealth()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>USDA Agricultural Prices</span>
+          <span id="usdaMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div class="page-sub" style="margin:0 0 12px">Corn/wheat/soybean price received by farmers -- pairs with CORN/WEAT/SOYB ETFs the same way EIA pairs with USO/UNG (positioning vs. physical fundamentals). Requires USDA_NASS_API_KEY.</div>
+        <div id="usdaList"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadUsdaAgriculture()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Prediction Ledger (P1 of the Quant Research Factory roadmap, 2026-08-10) -->
+    <div class="page" id="page-predledger">
+      <div class="page-title" data-i18n-admin="pt_predledger">Prediction Ledger</div>
+      <div class="page-sub">Auto-graded accuracy scoreboard for every direction-probability prediction served via POST /ai-analysis -- hit rate + Brier score against what actually happened, not a self-reported backtest number. Graded automatically once daily.</div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Accuracy Scoreboard</span>
+          <span id="predLedgerMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="predLedgerSummary"><div class="empty"><span class="spinner"></span></div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadPredictionLedger()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Recent Predictions</div>
+        <div id="predLedgerRecent"><div class="empty">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- Formula Composer (P2 of the Quant Research Factory roadmap, 2026-08-10) -->
+    <div class="page" id="page-composer">
+      <div class="page-title" data-i18n-admin="pt_composer">Formula Composer</div>
+      <div class="page-sub">Small-scale combinatorial strategy scan -- 35 candidate combinations (AND-pairs + 2-of-3 vote triples) of 6 existing causal indicator primitives (trend/RSI/MACD/Bollinger/OBV/Donchian), each walk-forward-validated via services/backtest_service.py before being kept. Enter a ticker and scan on demand; results are cached per symbol below.</div>
+      <div class="panel">
+        <div class="panel-title">Run a Scan</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input id="composerSymbolInput" type="text" placeholder="e.g. SPY" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);width:140px" />
+          <button class="btn btn-sm btn-purple" onclick="scanFormulaComposer()">🔍 Scan</button>
+        </div>
+        <div id="composerScanStatus" style="font-size:0.72rem;color:var(--muted);margin-top:8px"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Leaderboard</span>
+          <span id="composerMeta" style="font-size:0.72rem;color:var(--muted)"></span>
+        </div>
+        <div id="composerLeaderboard"><div class="empty">Scan a symbol above to see results, or refresh to see the most recently scanned candidates across all symbols.</div></div>
+        <button class="btn btn-sm btn-purple" onclick="loadFormulaComposerLeaderboard()" style="margin-top:12px">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="page" id="page-feedback">
+      <div class="page-title" data-i18n-admin="pt_feedback">Feedback Center</div>
+      <div class="page-sub">User feedback, bug reports & feature requests</div>
+      <div class="panel">
+        <div class="panel-title">Feedback Channels</div>
+        <div class="content-item">
+          <div>
+            <div style="font-weight:500">Email Support</div>
+            <div style="font-size:0.72rem;color:var(--muted)">support@xfinlab.com</div>
+          </div>
+          <button class="btn btn-sm btn-purple" onclick="window.open('mailto:support@xfinlab.com')">Open</button>
+        </div>
+        <div class="content-item">
+          <div>
+            <div style="font-weight:500">Telegram Channel</div>
+            <div style="font-size:0.72rem;color:var(--muted)">@xfinlab_daily</div>
+          </div>
+          <button class="btn btn-sm btn-purple" onclick="window.open('https://t.me/xfinlab_daily')">Open</button>
+        </div>
+        <div class="content-item">
+          <div>
+            <div style="font-weight:500">User Analytics</div>
+            <div style="font-size:0.72rem;color:var(--muted)">Behaviour tracking active</div>
+          </div>
+          <span style="font-size:0.72rem;color:var(--green)">🟢 Active</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Coming Soon</div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:2">
+          ⬜ Bug Report Form<br>
+          ⬜ Feature Request Board<br>
+          ⬜ NPS Survey<br>
+          ⬜ In-app Chat Support
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'https://api.xfinlab.com/api';
+let adminToken = localStorage.getItem('xfinlab_admin_token');
+let currentPage = 1;
+
+// 2026-09-07 (security review fix): every admin API call below still
+// builds its URL as `${API}/admin/...?token=${adminToken}` (~46 call
+// sites) -- putting the admin JWT in the URL leaks it into the
+// browser's own history and any Referer header a request happens to
+// carry. Rather than hand-editing all ~46 call sites individually
+// (fragile, easy to miss one and leave a real leak), this wraps the
+// global fetch() ONCE: any outgoing request whose URL still contains
+// `token=${adminToken}` gets that parameter stripped from the URL and
+// moved to a real `Authorization: Bearer` header instead, before the
+// request ever leaves the browser. No call site below needed to
+// change. The backend has a matching middleware
+// (backend/main.py's bridge_admin_token_header_to_query) that re-adds
+// it server-side before routing, so every existing admin.py endpoint
+// -- which still individually expects a `token` value -- keeps working
+// completely unchanged. Net effect: the wire format changes (header
+// instead of URL param), nothing else does.
+(function() {
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = function(input, init) {
+    const isAdminUrl = typeof input === 'string' && adminToken && input.includes(`token=${adminToken}`);
+    if (!isAdminUrl) return nativeFetch(input, init);
+    const strippedUrl = input
+      .replace(`?token=${adminToken}&`, '?')
+      .replace(`&token=${adminToken}`, '')
+      .replace(`?token=${adminToken}`, '');
+    const nextInit = Object.assign({}, init);
+    nextInit.headers = Object.assign({}, init && init.headers, {'Authorization': `Bearer ${adminToken}`});
+    return nativeFetch(strippedUrl, nextInit);
+  };
+})();
+
+// --- AJ's request (2026-09-03): "加個香港中文得啦" -- a Hong Kong Chinese
+// toggle for the admin UI chrome. This is an internal, single-operator
+// tool (only AJ uses it), not the public 47-language site, so this is
+// scoped deliberately: the sidebar nav, page titles, and login screen --
+// the "which button does what" chrome -- get a EN/繁中 toggle. Dynamic
+// content (live API data, ticker numbers, audit-log rows, error text)
+// stays in English/whatever the API returns, same as every stat/table on
+// this page already does; translating live data would misrepresent it.
+const ADMIN_ZH = {
+  ns_overview: '總覽', ns_users: '用戶', ns_content: '內容', ns_settings: '設定',
+  nav_dashboard: '儀表板', nav_health: '系統狀態',
+  nav_users: '用戶管理', nav_trending: '熱門趨勢',
+  nav_telegram: 'Telegram 發佈', nav_content: '內容中心', nav_seo: 'SEO 頁面引擎',
+  nav_email: '電郵引擎', nav_widgets: '小工具引擎', nav_apiusage: 'API 用量',
+  nav_referral: '推薦計劃引擎', nav_video: '影片引擎',
+  nav_flags: '功能開關', nav_auditlog: '操作紀錄', nav_security: '安全掃描',
+  nav_stripeaccount: 'Stripe 帳戶', nav_apitrending: 'API 熱門股票',
+  nav_datafactory: '數據工廠', nav_predledger: '預測紀錄',
+  nav_composer: '公式編輯器', nav_feedback: '意見反饋',
+  pt_dashboard: '儀表板', pt_health: '系統狀態',
+  pt_users: '用戶管理', pt_trending: '熱門趨勢',
+  pt_telegram: 'Telegram 發佈', pt_content: '內容中心', pt_seo: 'SEO 頁面引擎',
+  pt_email: '電郵引擎', pt_widgets: '小工具引擎', pt_apiusage: 'API 用量',
+  pt_referral: '推薦計劃引擎', pt_video: '影片引擎',
+  pt_flags: '功能開關', pt_auditlog: '操作紀錄', pt_security: '安全掃描',
+  pt_stripeaccount: 'Stripe 帳戶', pt_apitrending: 'API 熱門股票',
+  pt_datafactory: '數據工廠', pt_predledger: '預測紀錄',
+  pt_composer: '公式編輯器', pt_feedback: '意見反饋中心',
+  login_title: '🔐 管理員登入', login_subtitle: 'XFINLAB Intelligence Platform',
+  login_email_ph: '管理員電郵', login_pw_ph: '密碼', login_submit: '登入',
+  signout: '登出',
+};
+const ADMIN_EN = {}; // populated on first apply, so "switch back to English" is exact
+let adminLang = localStorage.getItem('xfinlab_admin_lang') || 'en';
+
+function applyAdminLang() {
+  const dict = adminLang === 'zh' ? ADMIN_ZH : ADMIN_EN;
+  document.querySelectorAll('[data-i18n-admin]').forEach(el => {
+    const key = el.getAttribute('data-i18n-admin');
+    if (!(key in ADMIN_EN)) ADMIN_EN[key] = el.textContent; // capture original English once
+    el.textContent = dict[key] || ADMIN_EN[key];
+  });
+  document.querySelectorAll('[data-i18n-admin-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-admin-placeholder');
+    if (!(key in ADMIN_EN)) ADMIN_EN[key] = el.placeholder;
+    el.placeholder = dict[key] || ADMIN_EN[key];
+  });
+  const btnLabel = adminLang === 'zh' ? 'EN' : '中文';
+  const b1 = document.getElementById('langToggleBtn'); if (b1) b1.textContent = btnLabel;
+  const b2 = document.getElementById('sidebarLangToggleBtn'); if (b2) b2.textContent = btnLabel;
+}
+function toggleAdminLang() {
+  adminLang = adminLang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('xfinlab_admin_lang', adminLang);
+  applyAdminLang();
+}
+
+// --- Fix for AJ-reported bug (2026-09-03): System Health showed every
+// service as "Offline" and Email Engine showed "undefined confirmed /
+// undefined pending / undefined total". Root cause: an expired admin
+// token. loadHealth() and loadEmailStats() (unlike loadFlags(), which
+// already checks res.ok) parsed the {"detail":"Invalid token"} 401 error
+// body as if it were real data -- data.market_api is undefined so it fell
+// back to a placeholder "Offline/N/A", and data.confirmed/pending/total
+// are undefined so they rendered literally as the word "undefined".
+// Rather than patch each of the 30+ admin fetch() call sites individually,
+// wrap fetch once: any 401 from an /admin/ endpoint means the stored
+// token expired, so log out and show the login screen with a clear
+// reason instead of quietly rendering wrong data.
+const _origFetch = window.fetch.bind(window);
+window.fetch = async function(...args) {
+  const res = await _origFetch(...args);
+  const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+  if (res.status === 401 && url.includes('/admin/') && adminToken) {
+    localStorage.removeItem('xfinlab_admin_token');
+    adminToken = null;
+    const loginPage = document.getElementById('loginPage');
+    const layout = document.getElementById('adminLayout');
+    if (loginPage && layout) {
+      loginPage.style.display = 'flex';
+      layout.style.display = 'none';
+      const err = document.getElementById('loginError');
+      if (err) err.textContent = adminLang === 'zh'
+        ? '登入已過期，請重新登入。'
+        : 'Your session expired -- please log in again.';
+    }
+  }
+  return res;
+};
+const FLAGS_DESC = {
+  research_agent: 'AI Research Report generation',
+  portfolio: 'Portfolio allocation engine',
+  anomaly: 'Anomaly detection & alerts',
+  screener: 'Stock screener',
+  chart_analysis: 'AI Chart image analysis',
+  telegram_bot: 'Telegram bot commands',
+  referral: 'Referral reward system',
+  google_login: 'Show "Sign in with Google" on login page (needs GOOGLE_CLIENT_ID env var)',
+  line_login: 'Show "Login with LINE" on login page',
+  whatsapp_otp: 'Show WhatsApp OTP login option',
+  intel_plan_free_visible: 'Show "Free" tier card on intelligence-api.html',
+  intel_plan_pro_visible: 'Show "Pro" tier card on intelligence-api.html',
+  intel_plan_enterprise_visible: 'Show "Enterprise" tier card on intelligence-api.html',
+  seo_auto_engine: 'Allow SEO Page Engine to generate new ticker landing pages',
+  content_engine_multilang: 'Generate EN/ES social variants alongside the daily ZH content',
+  email_digest_engine: 'Send the daily signals email to confirmed subscribers',
+  widget_engine: 'Serve live data to embeddable widgets on third-party sites',
+  video_engine: 'Allow daily short-video generation (needs GOOGLE_TTS_API_KEY env var + ffmpeg)',
+};
+
+// Auto login
+window.addEventListener('DOMContentLoaded', () => {
+  applyAdminLang(); // apply saved EN/中文 choice to both login screen and sidebar chrome
+  if (adminToken) { initAdmin(); return; }
+  tryReuseMainSiteSession();
+});
+
+// AJ's request: clicking "Admin Panel" from the main site's Account flyout
+// (js/nav.js, only shown when logged in as ADMIN_EMAIL) should land straight
+// in the dashboard -- no second login screen. The main site's login already
+// issues a JWT (localStorage 'xfinlab_token') signed the exact same way
+// admin endpoints verify (backend/auth/jwt_handler.py's verify_token(), same
+// secret for both). So if that token's owner is already the admin account,
+// it's already a fully valid admin token -- we just haven't tried it here
+// yet. Silently attempts it once; falls through to the normal login form
+// (untouched) if there's no main-site session, the email doesn't match, or
+// the token's expired/invalid for any reason.
+async function tryReuseMainSiteSession() {
+  try {
+    const mainToken = localStorage.getItem('xfinlab_token');
+    let mainUser = {};
+    try { mainUser = JSON.parse(localStorage.getItem('xfinlab_user') || '{}'); } catch (e) {}
+    if (!mainToken || mainUser.email !== 'abcoaj888@gmail.com') return;
+    const res = await fetch(`${API}/admin/stats?token=${mainToken}`);
+    if (!res.ok) return;
+    adminToken = mainToken;
+    localStorage.setItem('xfinlab_admin_token', adminToken);
+    document.getElementById('sidebarEmail').textContent = mainUser.email;
+    initAdmin();
+  } catch (e) {}
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  document.getElementById('loginError').textContent = '';
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('loginError').textContent = data.detail || 'Login failed'; return; }
+
+    const adminRes = await fetch(`${API}/admin/stats?token=${data.token}`);
+    if (!adminRes.ok) { document.getElementById('loginError').textContent = 'No admin access'; return; }
+
+    adminToken = data.token;
+    localStorage.setItem('xfinlab_admin_token', adminToken);
+    document.getElementById('sidebarEmail').textContent = email;
+    initAdmin();
+  } catch(e) {
+    document.getElementById('loginError').textContent = 'Connection error';
+  }
+}
+
+function initAdmin() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('adminLayout').style.display = 'flex';
+  loadStats();
+}
+
+async function loadStats() {
+  try {
+    const res = await fetch(`${API}/admin/stats?token=${adminToken}`);
+    const data = await res.json();
+    document.getElementById('totalUsers').textContent = data.total_users;
+    document.getElementById('todayUsers').textContent = `+${data.today_new_users} today`;
+    document.getElementById('dau').textContent = data.dau;
+    document.getElementById('mau').textContent = data.mau;
+    document.getElementById('proUsers').textContent = data.pro_users;
+    document.getElementById('freeUsers').textContent = `${data.free_users} free`;
+    document.getElementById('todayAnalyses').textContent = data.today_analyses;
+    document.getElementById('totalEvents').textContent = data.total_events;
+
+    // Trending
+    const maxCount = Math.max(...(data.top_searches || []).map(s => s.c), 1);
+    document.getElementById('topSearches').innerHTML = (data.top_searches || []).map((s, i) => {
+      let ticker = 'N/A';
+      try { ticker = JSON.parse(s.event_data)?.ticker || s.event_data; } catch { ticker = s.event_data; }
+      return `<div class="trend-item">
+        <span class="trend-rank">${i+1}</span>
+        <span class="trend-ticker">${ticker}</span>
+        <div class="trend-bar-wrap"><div class="trend-bar" style="width:${(s.c/maxCount)*100}%"></div></div>
+        <span class="trend-count">${s.c}x</span>
+      </div>`;
+    }).join('') || '<div class="empty">No data yet</div>';
+
+    document.getElementById('topAnalysis').innerHTML = (data.top_analysis || []).map((s, i) => {
+      let ticker = 'N/A';
+      try { ticker = JSON.parse(s.event_data)?.ticker || s.event_data; } catch { ticker = s.event_data; }
+      return `<div class="trend-item">
+        <span class="trend-rank">${i+1}</span>
+        <span class="trend-ticker">${ticker}</span>
+        <div class="trend-bar-wrap"><div class="trend-bar" style="width:${(s.c/maxCount)*100}%;background:var(--green)"></div></div>
+        <span class="trend-count" style="color:var(--green)">${s.c}x</span>
+      </div>`;
+    }).join('') || '<div class="empty">No data yet</div>';
+
+  } catch(e) {}
+}
+
+async function loadHealth() {
+  document.getElementById('healthList').innerHTML = '<div class="empty"><span class="spinner"></span> Checking...</div>';
+  try {
+    const res = await fetch(`${API}/admin/health?token=${adminToken}`);
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('healthList').innerHTML = `<div class="empty">Failed to load health data (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
+    const services = [
+      { key: 'market_api', name: 'Market Data (yfinance)', icon: '📈' },
+      { key: 'news_api', name: 'News API', icon: '📰' },
+      { key: 'crypto_api', name: 'Crypto API (CoinGecko)', icon: '₿' },
+      { key: 'groq_ai', name: 'Groq AI', icon: '🤖' },
+      { key: 'database', name: 'Database (SQLite)', icon: '🗄️' },
+    ];
+    document.getElementById('healthList').innerHTML = services.map(s => {
+      const status = data[s.key] || {status: 'unknown', detail: 'N/A'};
+      const online = status.status === 'online';
+      return `<div class="health-item">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="health-dot ${online ? 'health-online' : 'health-offline'}"></span>
+          <span>${s.icon} ${s.name}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:0.75rem;font-weight:600;color:${online ? 'var(--green)' : 'var(--red)'}">${online ? 'Online' : 'Offline'}</div>
+          <div class="health-detail">${status.detail}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('healthList').innerHTML = '<div class="empty">Failed to load health data</div>';
+  }
+}
+
+async function loadErrorAlerts() {
+  document.getElementById('errorAlertsList').innerHTML = '<div class="empty"><span class="spinner"></span> Loading...</div>';
+  try {
+    const res = await fetch(`${API}/admin/error-alerts?token=${adminToken}`);
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('errorAlertsList').innerHTML = `<div class="empty">Failed to load errors (HTTP ${res.status})</div>`;
+      return;
+    }
+    const errors = data.errors || [];
+    if (errors.length === 0) {
+      document.getElementById('errorAlertsList').innerHTML = '<div class="empty">No unhandled errors recorded. ✅</div>';
+      return;
+    }
+    document.getElementById('errorAlertsList').innerHTML = `
+      <table>
+        <thead><tr><th>Route</th><th>Type</th><th>Count</th><th>Last Seen</th><th>Last Emailed</th></tr></thead>
+        <tbody>${errors.map(e => `
+          <tr>
+            <td style="font-family:monospace;font-size:0.8rem">${e.route || ''}</td>
+            <td style="color:var(--red)">${e.exception_type || ''}</td>
+            <td>${e.occurrence_count}</td>
+            <td style="font-size:0.8rem">${e.last_seen_at || ''}</td>
+            <td style="font-size:0.8rem">${e.last_notified_at || 'never'}</td>
+          </tr>`).join('')}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('errorAlertsList').innerHTML = '<div class="empty">Failed to load errors</div>';
+  }
+}
+
+async function loadUsers(page = 1) {
+  currentPage = page;
+  document.getElementById('usersTable').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/users?token=${adminToken}&page=${page}&limit=10`);
+    const data = await res.json();
+    document.getElementById('usersTable').innerHTML = `
+      <table>
+        <thead><tr><th>ID</th><th>Email</th><th>Name</th><th>Plan</th><th>Verified</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody>${(data.users||[]).map(u => `
+          <tr>
+            <td><span style="font-family:monospace;color:var(--muted)">#${u.id}</span></td>
+            <td style="color:var(--text)">${u.email}</td>
+            <td>${u.name}</td>
+            <td><span class="plan-badge ${u.plan==='pro'?'plan-pro':'plan-free'}">${u.plan.toUpperCase()}</span></td>
+            <td>${u.email_verified?'✅':'❌'}</td>
+            <td style="color:var(--muted);font-size:0.75rem">${(u.created_at||'').split('T')[0]||u.created_at?.split(' ')[0]||'N/A'}</td>
+            <td><div style="display:flex;gap:6px">
+              ${u.plan==='free'
+                ?`<button class="btn btn-sm btn-green" onclick="upgradeUser(${u.id})">↑ Pro</button>`
+                :`<button class="btn btn-sm btn-amber" onclick="downgradeUser(${u.id})">↓ Free</button>`}
+              <button class="btn btn-sm btn-green" title="標記為已付年費Pro（觸發推薦人1年Pro/5轉Pro+獎勵）" onclick="markAnnualPro(${u.id},'${u.email}')">📅 年付Pro</button>
+              <button class="btn btn-sm btn-red" onclick="deleteUser(${u.id},'${u.email}')">✕</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+    const total = data.total || 0;
+    const totalPages = Math.ceil(total/10);
+    document.getElementById('pagination').innerHTML = `
+      <span style="font-size:0.75rem;color:var(--muted)">${total} users</span>
+      ${page>1?`<button class="page-btn" onclick="loadUsers(${page-1})">← Prev</button>`:''}
+      <span style="font-size:0.75rem;color:var(--muted)">Page ${page}/${totalPages}</span>
+      ${page<totalPages?`<button class="page-btn" onclick="loadUsers(${page+1})">Next →</button>`:''}`;
+  } catch(e) {}
+}
+
+async function loadAuditLog() {
+  document.getElementById('auditLogTable').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/audit-logs?token=${adminToken}&limit=100`);
+    const data = await res.json();
+    const logs = data.logs || [];
+    if (!logs.length) {
+      document.getElementById('auditLogTable').innerHTML = '<div class="empty">No activity logged yet</div>';
+      return;
+    }
+    const ACTION_COLOR = a => a.startsWith('login_failed') ? 'var(--red)' : a.startsWith('admin:') ? 'var(--purple)' : (a === 'login' ? 'var(--green)' : 'var(--accent)');
+    document.getElementById('auditLogTable').innerHTML = `
+      <table>
+        <thead><tr><th>Time</th><th>User ID</th><th>Action</th><th>IP</th></tr></thead>
+        <tbody>${logs.map(l => `
+          <tr>
+            <td style="color:var(--muted);font-size:0.75rem;white-space:nowrap">${l.created_at || 'N/A'}</td>
+            <td><span style="font-family:monospace;color:var(--muted)">${l.user_id != null ? '#' + l.user_id : '—'}</span></td>
+            <td><span style="color:${ACTION_COLOR(l.action)};font-weight:500">${l.action}</span></td>
+            <td style="color:var(--muted);font-size:0.75rem;font-family:monospace">${l.ip_address || '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('auditLogTable').innerHTML = '<div class="empty">Failed to load audit log</div>';
+  }
+}
+
+async function loadEarlyAccessRequests() {
+  const el = document.getElementById('earlyAccessList');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/feedback/list?token=${adminToken}&type=intelligence_early_access`);
+    const data = await res.json();
+    if (!res.ok) {
+      el.innerHTML = `<div class="empty">Failed to load requests (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
+    const rows = data.feedback || [];
+    if (rows.length === 0) {
+      el.innerHTML = '<div class="empty">No early-access requests yet.</div>';
+      return;
+    }
+    el.innerHTML = rows.map(r => `
+      <div class="content-item" style="align-items:flex-start">
+        <div>
+          <div style="font-weight:600">${r.email || 'N/A'}</div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${r.message || ''}</div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">${r.created_at || ''}</div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="window.open('mailto:${r.email}')">Reply</button>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading early-access requests</div>';
+  }
+}
+
+async function loadFlags() {
+  document.getElementById('flagsList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/feature-flags?token=${adminToken}`);
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('flagsList').innerHTML = `<div class="empty">Failed to load feature flags (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
+    const flags = data.flags || {};
+    const entries = Object.entries(flags);
+    if (entries.length === 0) {
+      document.getElementById('flagsList').innerHTML = '<div class="empty">No feature flags found in the database yet.</div>';
+      return;
+    }
+    document.getElementById('flagsList').innerHTML = entries.map(([key, val]) => `
+      <div class="flag-item">
+        <div>
+          <div class="flag-name">${key.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
+          <div class="flag-desc">${FLAGS_DESC[key]||''}</div>
+        </div>
+        <div class="toggle-wrap">
+          <div class="toggle ${val?'on':''}" onclick="toggleFlag('${key}', this)"></div>
+          <span class="toggle-label">${val?'ON':'OFF'}</span>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('flagsList').innerHTML = '<div class="empty">Connection error loading feature flags</div>';
+  }
+}
+
+async function toggleFlag(key, toggleEl) {
+  const willBeOn = !toggleEl.classList.contains('on');
+  const label = toggleEl.nextElementSibling;
+  toggleEl.classList.toggle('on');
+  if (label) label.textContent = willBeOn ? 'ON' : 'OFF';
+  try {
+    const res = await fetch(`${API}/admin/feature-flags/${key}?token=${adminToken}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({enabled: willBeOn})
+    });
+    if (!res.ok) throw new Error('save failed');
+  } catch(e) {
+    // 存唔到就還原返個toggle,唔好俾用戶以為save咗但其實冇
+    toggleEl.classList.toggle('on');
+    if (label) label.textContent = willBeOn ? 'OFF' : 'ON';
+    alert('設定儲存失敗，請重試');
+  }
+}
+
+async function upgradeUser(id) {
+  if (!confirm(`Upgrade user #${id} to Pro?`)) return;
+  await fetch(`${API}/admin/users/${id}/upgrade?token=${adminToken}`, {method:'POST'});
+  loadUsers(currentPage);
+}
+async function downgradeUser(id) {
+  if (!confirm(`Downgrade user #${id} to Free?`)) return;
+  await fetch(`${API}/admin/users/${id}/downgrade?token=${adminToken}`, {method:'POST'});
+  loadUsers(currentPage);
+}
+async function markAnnualPro(id, email) {
+  // 2026-07-27: confirms user #id paid for annual Pro -- no live payment
+  // processor exists yet, so this is the manual trigger. Sets their real
+  // plan+1yr expiry, and if they were referred, immediately rewards the
+  // referrer (1 year Pro, or Pro+ once they hit 5 such conversions).
+  if (!confirm(`確認 ${email} (#${id}) 已付年費 Pro？\n會將此用戶設為 Pro（1年到期），並如果佢係被人推薦嚟嘅，即刻獎勵推薦人。`)) return;
+  const res = await fetch(`${API}/admin/users/${id}/mark-annual-pro?token=${adminToken}`, {method:'POST'});
+  const data = await res.json();
+  if (!res.ok) {
+    alert('失敗: ' + (data.detail || res.status));
+    return;
+  }
+  const rr = data.referral_reward || {};
+  const msg = rr.success
+    ? `已設定 #${id} 為年付 Pro（到期: ${data.plan_expires_at}）。\n推薦人 #${rr.referrer_id} 獲得 ${rr.reward_tier === 'proplus' ? 'Pro+' : 'Pro'} 1年（累積 ${rr.paid_conversions} 個轉換）。`
+    : `已設定 #${id} 為年付 Pro（到期: ${data.plan_expires_at}）。\n${rr.message || '此用戶並非經推薦註冊，冇推薦人獎勵。'}`;
+  alert(msg);
+  loadUsers(currentPage);
+}
+async function deleteUser(id, email) {
+  if (!confirm(`Delete user ${email}? This cannot be undone!`)) return;
+  await fetch(`${API}/admin/users/${id}?token=${adminToken}`, {method:'DELETE'});
+  loadUsers(currentPage);
+}
+
+async function pushTelegram(channel) {
+  const status = document.getElementById('pushStatus');
+  status.textContent = '⏳ Pushing...';
+  try {
+    const res = await fetch(`${API}/admin/push/telegram?token=${adminToken}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({channel})
+    });
+    const data = await res.json();
+    status.textContent = `✅ ${data.message}`;
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.textContent = '❌ Push failed';
+    status.style.color = 'var(--red)';
+  }
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (name === 'health') { loadHealth(); loadErrorAlerts(); }
+  if (name === 'users') loadUsers(1);
+  if (name === 'trending') loadStats();
+  if (name === 'flags') { loadFlags(); loadEarlyAccessRequests(); }
+  if (name === 'auditlog') loadAuditLog();
+  if (name === 'security') loadSecurityScan();
+  if (name === 'stripeaccount') loadStripeAccountStatus();
+  if (name === 'apitrending') loadApiTrendingTickers();
+  if (name === 'datafactory') { loadDataSources(); loadCftcCot(); loadSec13fFilers(); loadBinanceExchange(); loadEiaEnergy(); loadTreasuryFiscal(); loadCoinbaseExchange(); loadCboeVix(); loadFdicBankHealth(); loadUsdaAgriculture(); }
+  if (name === 'content') loadContentVariants();
+  if (name === 'content-drafts') loadContentDrafts();
+  if (name === 'seo') { loadSeoStats(); loadSeoSuggestions(); }
+  if (name === 'email') loadEmailStats();
+  if (name === 'widgets') loadWidgetStats();
+  if (name === 'apiusage') loadApiUsage();
+  if (name === 'referral') loadReferralStats();
+  if (name === 'video') { loadVideoStatus(); loadVideoMediaLibrary(); }
+  if (name === 'predledger') loadPredictionLedger();
+  if (name === 'composer') loadFormulaComposerLeaderboard();
+}
+
+// task #494: Content Center "ready-to-post" panel -- reads services/
+// content_repurpose_service.py's daily-generated variants (persisted in
+// content_variants_log) via GET /admin/content-variants/today, renders
+// one textarea + copy button per platform. Regenerate button bypasses
+// the daily job's once-per-day idempotency guard for on-demand refresh.
+const CV_FIELDS = [
+  {key: 'twitter', label: 'X / Twitter'},
+  {key: 'threads', label: 'Threads'},
+  {key: 'facebook', label: 'Facebook'},
+  {key: 'linkedin', label: 'LinkedIn'},
+  {key: 'instagram', label: 'Instagram Caption'},
+  {key: 'discord', label: 'Discord Announcement'},
+  {key: 'reddit_title', label: 'Reddit — Title'},
+  {key: 'reddit_body', label: 'Reddit — Body'},
+  {key: 'email_subject', label: 'Email — Subject'},
+  {key: 'email_body', label: 'Email — Body'},
+  {key: 'push_title', label: 'Push — Title'},
+  {key: 'push_body', label: 'Push — Body'},
+];
+
+// Growth OS Phase 2: EN/ES fan-out (services/content_repurpose_service.py's
+// generate_content_variants_multilang, gated by the content_engine_multilang
+// feature flag). Only these 3 fields per language since that's all the
+// multilang generator produces (no instagram/discord/reddit variants for
+// EN/ES yet -- see that function's own scoping note).
+const CV_MULTILANG_FIELDS = [
+  {key: 'twitter', label: 'X / Twitter'},
+  {key: 'facebook', label: 'Facebook'},
+  {key: 'linkedin', label: 'LinkedIn'},
+];
+const CV_MULTILANG_NAMES = {en: 'English', es: 'Español'};
+
+function renderContentVariants(data) {
+  const meta = document.getElementById('cvMeta');
+  const body = document.getElementById('cvBody');
+  if (!data || !data.available) {
+    meta.textContent = '';
+    body.innerHTML = '<div class="empty">今日暫無內容（今日信號未生成或未有數據）</div>';
+    return;
+  }
+  meta.textContent = `日期: ${data.date} — 內容唔會自動出街，複製落去各平台自己嘅發文工具`;
+  let html = CV_FIELDS.map(f => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:0.78rem;color:var(--label);font-weight:600">${f.label}</span>
+        <button class="btn btn-sm btn-green" id="cvCopyBtn-${f.key}" onclick="copyVariantField('${f.key}', this)">⧉ Copy</button>
+      </div>
+      <textarea readonly style="width:100%;min-height:70px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:0.8rem;font-family:inherit;resize:vertical" id="cvField-${f.key}">${escapeHtml(data[f.key] || '')}</textarea>
+    </div>`).join('');
+
+  const ml = data.multilang || {};
+  const mlLangs = Object.keys(ml).filter(l => l !== 'zh' && ml[l] && ml[l].available);
+  if (mlLangs.length) {
+    html += `<div style="margin:20px 0 8px;font-size:0.78rem;color:var(--label);font-weight:600;border-top:1px solid var(--border);padding-top:14px">🌐 Multi-Language (EN/ES)</div>`;
+    mlLangs.forEach(lang => {
+      html += CV_MULTILANG_FIELDS.map(f => `
+        <div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:0.78rem;color:var(--label);font-weight:600">${CV_MULTILANG_NAMES[lang] || lang} — ${f.label}</span>
+            <button class="btn btn-sm btn-green" onclick="copyMultilangField('${lang}','${f.key}', this)">⧉ Copy</button>
+          </div>
+          <textarea readonly style="width:100%;min-height:70px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:0.8rem;font-family:inherit;resize:vertical" id="cvField-ml-${lang}-${f.key}">${escapeHtml((ml[lang] || {})[f.key] || '')}</textarea>
+        </div>`).join('');
+    });
+  }
+  body.innerHTML = html;
+}
+
+function copyMultilangField(lang, key, btn) {
+  const el = document.getElementById(`cvField-ml-${lang}-${key}`);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+async function loadContentVariants() {
+  document.getElementById('cvBody').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/content-variants/today?token=${adminToken}`);
+    const data = await res.json();
+    renderContentVariants(data);
+  } catch (e) {
+    document.getElementById('cvBody').innerHTML = '<div class="empty">Connection error loading content variants</div>';
+  }
+}
+
+async function regenerateContentVariants() {
+  const body = document.getElementById('cvBody');
+  body.innerHTML = '<div class="empty"><span class="spinner"></span> Regenerating...</div>';
+  try {
+    const res = await fetch(`${API}/admin/content-variants/regenerate?token=${adminToken}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    renderContentVariants(data);
+  } catch (e) {
+    body.innerHTML = '<div class="empty">Regenerate failed</div>';
+  }
+}
+
+// Growth OS Phase 1 -- SEO Page Engine panel. Reads/writes
+// api/admin.py's /admin/seo/* endpoints (services/seo_page_generator.py).
+async function loadSeoStats() {
+  const el = document.getElementById('seoStats');
+  el.innerHTML = '<span class="empty"><span class="spinner"></span></span>';
+  try {
+    const res = await fetch(`${API}/admin/seo/pages?token=${adminToken}`);
+    const data = await res.json();
+    el.innerHTML = `<b>${data.count}</b> ticker/comparison pages live &nbsp;·&nbsp; <b>${data.generated_by_engine}</b> created via this engine`;
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading SEO stats</div>';
+  }
+}
+
+async function loadSeoSuggestions() {
+  const el = document.getElementById('seoSuggestions');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/seo/suggestions?token=${adminToken}`);
+    const data = await res.json();
+    const cands = data.candidates || [];
+    if (!cands.length) {
+      el.innerHTML = '<div class="empty">No candidates found (or all covered)</div>';
+      return;
+    }
+    el.innerHTML = cands.map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span><b>${escapeHtml(c.symbol)}</b> — ${escapeHtml(c.name)} <span style="color:var(--muted);font-size:0.75rem">(${escapeHtml(c.type)}, popularity ${c.popularity})</span></span>
+        <button class="btn btn-sm btn-green" onclick="prefillSeoForm('${escapeHtml(c.symbol)}','${escapeHtml(c.name).replace(/'/g,"\\'")}','${escapeHtml(c.type)}')">Use</button>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading suggestions</div>';
+  }
+}
+
+function prefillSeoForm(symbol, name, type) {
+  document.getElementById('seoTicker').value = symbol;
+  document.getElementById('seoName').value = name;
+  const catMap = {stock:'stock', crypto:'crypto', forex:'forex', etf:'etf', index:'index', commodity:'commodity', bond:'bond'};
+  document.getElementById('seoCategory').value = catMap[type] || 'stock';
+}
+
+// Growth OS Phase 3 -- Email Engine panel.
+async function loadEmailStats() {
+  const el = document.getElementById('emailStats');
+  el.innerHTML = '<span class="empty"><span class="spinner"></span></span>';
+  try {
+    const res = await fetch(`${API}/admin/email/stats?token=${adminToken}`);
+    const data = await res.json();
+    if (!res.ok) {
+      el.innerHTML = `<div class="empty">Failed to load email stats (HTTP ${res.status}: ${data.detail || 'unknown error'})</div>`;
+      return;
+    }
+    el.innerHTML = `<b>${data.confirmed}</b> confirmed &nbsp;·&nbsp; <b>${data.pending}</b> pending confirmation &nbsp;·&nbsp; <b>${data.total}</b> total`;
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading email stats</div>';
+  }
+}
+
+async function sendEmailDigestNow() {
+  const result = document.getElementById('emailSendResult');
+  result.innerHTML = '<span class="spinner"></span> Sending...';
+  try {
+    const res = await fetch(`${API}/admin/email/send-now?token=${adminToken}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Sent to ${data.sent}/${data.total_confirmed} confirmed subscribers${data.failed ? ` (${data.failed} failed)` : ''}</span>`;
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  }
+}
+
+// Growth OS Phase 4 -- Widget Engine panel.
+async function loadWidgetStats() {
+  const el = document.getElementById('widgetStats');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/widgets/stats?token=${adminToken}`);
+    const data = await res.json();
+    const widgets = data.widgets || [];
+    if (!widgets.length) {
+      el.innerHTML = '<div class="empty">No embed views logged yet</div>';
+      return;
+    }
+    el.innerHTML = widgets.map(w => `
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span>${escapeHtml(w.widget_type)}</span>
+        <span><b>${w.today_views}</b> today &nbsp;·&nbsp; <b>${w.total_views}</b> all-time</span>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Connection error loading widget stats</div>';
+  }
+}
+
+// Growth OS Phase 5 -- API Usage / devrel panel (GET /admin/intelligence/usage).
+async function loadApiUsage() {
+  const overviewEl = document.getElementById('apiUsageOverview');
+  const keysEl = document.getElementById('apiUsageKeys');
+  overviewEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  keysEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/intelligence/usage?token=${adminToken}`);
+    const data = await res.json();
+    const ov = data.overview || {};
+    overviewEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px">
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_keys ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Total keys</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.active_keys ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Active keys</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.calls_today ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Weighted calls today</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.calls_all_time ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Weighted calls all-time</div></div>
+      </div>`;
+
+    const keys = data.keys || [];
+    if (!keys.length) {
+      keysEl.innerHTML = '<div class="empty">No API keys issued yet</div>';
+      return;
+    }
+    keysEl.innerHTML = `
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+        <thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px">Key</th><th style="padding:6px 8px">Email</th>
+          <th style="padding:6px 8px">Tier</th><th style="padding:6px 8px">Source</th>
+          <th style="padding:6px 8px">Today</th><th style="padding:6px 8px">All-time</th>
+          <th style="padding:6px 8px">Status</th>
+        </tr></thead>
+        <tbody>
+          ${keys.map(k => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px;font-family:monospace">${escapeHtml(k.key_preview || '')}</td>
+              <td style="padding:6px 8px">${escapeHtml(k.email || '—')}</td>
+              <td style="padding:6px 8px">${escapeHtml(k.tier || '—')}</td>
+              <td style="padding:6px 8px">${k.source === 'self_serve' ? 'Self-serve' : 'Consumer site signup'}</td>
+              <td style="padding:6px 8px"><b>${k.today_calls ?? 0}</b></td>
+              <td style="padding:6px 8px">${k.total_calls ?? 0}</td>
+              <td style="padding:6px 8px">${k.active ? '<span style="color:var(--green)">active</span>' : '<span style="color:var(--muted)">revoked</span>'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      </div>`;
+  } catch (e) {
+    overviewEl.innerHTML = '<div class="empty">Connection error loading API usage</div>';
+    keysEl.innerHTML = '';
+  }
+}
+
+// Growth OS Phase 6 -- Referral Engine dashboard + reward-amount toggles.
+const REFERRAL_CONFIG_LABELS = {
+  referrer_base_bonus: {label: 'Referrer base bonus', unit: 'points'},
+  new_user_welcome_bonus: {label: 'New user welcome bonus', unit: 'points'},
+  referrer_quick_action_bonus: {label: 'Referrer quick-action bonus (<=2 days old)', unit: 'points'},
+  referral_pro_grant_days: {label: 'Annual-Pro referral grant length', unit: 'days'},
+  referral_proplus_threshold: {label: 'Paid conversions needed for Pro+', unit: 'conversions'},
+};
+
+async function loadReferralStats() {
+  const overviewEl = document.getElementById('referralOverview');
+  const formEl = document.getElementById('referralConfigForm');
+  const topEl = document.getElementById('referralTopList');
+  overviewEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  formEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  topEl.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/referral/stats?token=${adminToken}`);
+    const data = await res.json();
+    const ov = data.overview || {};
+    overviewEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_codes_generated ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Codes generated</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_successful_referrals ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Successful referrals</div></div>
+        <div><div style="font-size:1.4rem;font-weight:700">${ov.total_paid_conversions ?? 0}</div><div style="font-size:0.72rem;color:var(--muted)">Paid (annual-Pro) conversions</div></div>
+      </div>`;
+
+    const cfg = data.config || {};
+    formEl.innerHTML = Object.entries(REFERRAL_CONFIG_LABELS).map(([key, meta]) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:0.82rem">${meta.label}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" id="refCfg_${key}" value="${cfg[key] ?? ''}" style="width:90px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-primary,transparent);color:inherit">
+          <span style="font-size:0.72rem;color:var(--muted)">${meta.unit}</span>
+          <button class="btn btn-sm btn-purple" onclick="saveReferralConfig('${key}')">Save</button>
+        </div>
+      </div>`).join('');
+
+    const top = data.top_referrers || [];
+    topEl.innerHTML = top.length ? `
+      <table style="width:100%;border-collapse:collapse;font-size:0.8rem">
+        <thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Code</th><th style="padding:6px 8px">Referred</th>
+        </tr></thead>
+        <tbody>
+          ${top.map(r => `
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px">${escapeHtml(r.email || '—')}</td>
+              <td style="padding:6px 8px;font-family:monospace">${escapeHtml(r.referral_code || '')}</td>
+              <td style="padding:6px 8px"><b>${r.referred_count ?? 0}</b></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : '<div class="empty">No referrals yet</div>';
+  } catch (e) {
+    overviewEl.innerHTML = '<div class="empty">Connection error loading referral stats</div>';
+    formEl.innerHTML = '';
+    topEl.innerHTML = '';
+  }
+}
+
+async function saveReferralConfig(key) {
+  const input = document.getElementById(`refCfg_${key}`);
+  const result = document.getElementById('referralConfigResult');
+  const value = parseInt(input.value, 10);
+  if (isNaN(value) || value < 0) {
+    result.innerHTML = '<span style="color:var(--red)">Enter a valid non-negative number</span>';
+    return;
+  }
+  result.innerHTML = '<span class="spinner"></span> Saving...';
+  try {
+    const res = await fetch(`${API}/admin/referral/config/${key}?token=${adminToken}&value=${value}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ ${REFERRAL_CONFIG_LABELS[key].label} updated to ${value}</span>`;
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  }
+}
+
+// Growth OS Phase 7 -- Video Engine status + on-demand generation trigger.
+async function loadVideoStatus() {
+  const el = document.getElementById('videoStatus');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/video/status?token=${adminToken}`);
+    const s = await res.json();
+    if (!res.ok) throw new Error(s.detail || res.status);
+    const lr = s.last_run;
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+        <div><div style="font-size:1.1rem;font-weight:700;color:${s.tts_configured ? 'var(--green)' : 'var(--red)'}">${s.tts_configured ? 'Configured' : 'Not configured'}</div><div style="font-size:0.72rem;color:var(--muted)">GOOGLE_TTS_API_KEY</div></div>
+        <div><div style="font-size:1.1rem;font-weight:700;color:${s.ffmpeg_present ? 'var(--green)' : 'var(--red)'}">${s.ffmpeg_present ? 'Present' : 'Missing'}</div><div style="font-size:0.72rem;color:var(--muted)">ffmpeg / ffprobe</div></div>
+        <div><div style="font-size:1.1rem;font-weight:700;color:${s.output_exists ? 'var(--green)' : 'var(--muted)'}">${s.output_exists ? 'Yes' : 'None yet'}</div><div style="font-size:0.72rem;color:var(--muted)">Last video on disk</div></div>
+      </div>
+      ${lr ? `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:4px">Last generation attempt</div>
+        <div style="font-size:0.85rem">
+          <strong style="color:${lr.status === 'ok' ? 'var(--green)' : 'var(--red)'}">${escapeHtml(lr.status || '')}</strong>
+          &middot; ${escapeHtml(lr.created_at || '')}
+          ${lr.duration_sec != null ? `&middot; ${lr.duration_sec}s` : ''}
+          ${lr.slides_count ? `&middot; ${lr.slides_count} slides` : ''}
+        </div>
+        ${lr.message ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px">${escapeHtml(lr.message)}</div>` : ''}
+      </div>` : '<div style="margin-top:14px;font-size:0.8rem;color:var(--muted)">No generation attempts yet.</div>'}
+      ${s.output_exists ? `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <video src="${API}/video/latest" controls preload="metadata" style="width:100%;max-width:320px;border-radius:8px;display:block;margin-bottom:8px"></video>
+        <a href="${API}/video/latest" target="_blank" class="btn btn-sm btn-purple" style="text-decoration:none;display:inline-block">⬇ Open / Download Video</a>
+      </div>` : ''}
+    `;
+  } catch (e) {
+    el.innerHTML = `<div class="empty">Connection error loading video status</div>`;
+  }
+}
+
+function _youtubeResultNote(data) {
+  // 2026-08-09: shared YouTube-upload result formatter for both video panels.
+  if (!data.youtube) return '';
+  if (data.youtube.available && data.youtube.url) {
+    return ` · uploaded to YouTube ✅ <a href="${data.youtube.url}" target="_blank">${escapeHtml(data.youtube.url)}</a>`;
+  }
+  return ` · YouTube upload failed: ${escapeHtml(data.youtube.message || 'unknown error')}`;
+}
+
+async function generateVideoNow() {
+  const btn = document.getElementById('videoGenerateBtn');
+  const result = document.getElementById('videoGenerateResult');
+  const lang = document.getElementById('videoLangSelect').value;
+  const aspect = document.getElementById('videoAspectSelect').value;
+  const theme = document.getElementById('videoThemeSelect').value;
+  const postTelegram = document.getElementById('videoPostTelegram').checked;
+  const uploadYoutube = document.getElementById('videoUploadYoutube').checked;
+  const tickers = document.getElementById('videoTickersInput').value.trim();
+  btn.disabled = true;
+  result.innerHTML = '<span class="spinner"></span> Generating (this can take up to ~1-2 minutes)...';
+  try {
+    const params = new URLSearchParams({
+      token: adminToken, lang, aspect_ratio: aspect, theme,
+      post_to_telegram: postTelegram ? 'true' : 'false',
+      upload_to_youtube: uploadYoutube ? 'true' : 'false',
+    });
+    if (tickers) params.set('tickers', tickers);
+    const res = await fetch(`${API}/admin/video/generate?${params.toString()}`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    if (data.available === false) {
+      result.innerHTML = `<span style="color:var(--red)">⚠️ ${escapeHtml(data.message || 'Video Engine unavailable')}</span>`;
+    } else {
+      const aiNote = data.used_ai_script ? ' · AI script' : ' · template script';
+      const tgNote = postTelegram ? (data.telegram_posted ? ' · posted to Telegram ✅' : ' · Telegram post failed/skipped') : '';
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides${aiNote}${tgNote}</span>${_youtubeResultNote(data)}`;
+    }
+    loadVideoStatus();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// 2026-10-02 (AJ: "快有效" growth-strategy discussion -- "起啦"): Content
+// Engine review queue. loadContentDrafts() always re-fetches `pending`
+// only -- approved/rejected drafts drop out of view once reviewed so
+// this list never grows unbounded; the admin.html session has no need
+// to re-see something already decided on.
+async function loadContentDrafts() {
+  const list = document.getElementById('contentDraftsList');
+  list.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/content-drafts?token=${adminToken}&status=pending`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    const drafts = data.drafts || [];
+    if (!drafts.length) {
+      list.innerHTML = '<div class="empty">No pending drafts. Click "Generate Now" to create some.</div>';
+      return;
+    }
+    list.innerHTML = drafts.map(d => `
+      <div class="panel" style="margin-bottom:12px;background:var(--bg-2,rgba(255,255,255,0.03))">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <strong>${escapeHtml(d.ticker)}</strong>
+          <span style="font-size:0.72rem;color:var(--muted)">${escapeHtml(d.created_at || '')}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">SHORT (X / tweet-length)</div>
+        <textarea readonly style="width:100%;min-height:60px;font-size:0.82rem;margin-bottom:8px" id="draft-short-${d.id}">${escapeHtml(d.short_text)}</textarea>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:4px">LONG (Reddit-style)</div>
+        <textarea readonly style="width:100%;min-height:140px;font-size:0.82rem;margin-bottom:8px" id="draft-long-${d.id}">${escapeHtml(d.long_text)}</textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="copyDraftText('draft-short-${d.id}')">📋 Copy Short</button>
+          <button class="btn btn-sm" onclick="copyDraftText('draft-long-${d.id}')">📋 Copy Long</button>
+          <button class="btn btn-sm btn-purple" onclick="reviewContentDraft(${d.id}, 'approve')">✅ Approve</button>
+          <button class="btn btn-sm" onclick="reviewContentDraft(${d.id}, 'reject')">✖ Reject</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    list.innerHTML = `<div class="empty" style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</div>`;
+  }
+}
+
+function copyDraftText(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.select();
+  navigator.clipboard.writeText(el.value).catch(() => {});
+}
+
+async function reviewContentDraft(id, action) {
+  try {
+    const res = await fetch(`${API}/admin/content-drafts/${id}/${action}?token=${adminToken}`, {method: 'POST'});
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || res.status);
+    }
+    loadContentDrafts();
+  } catch (e) {
+    alert(`Failed to ${action} draft: ${e.message || e}`);
+  }
+}
+
+async function generateContentDrafts() {
+  const btn = document.getElementById('contentGenerateBtn');
+  const result = document.getElementById('contentGenerateResult');
+  btn.disabled = true;
+  result.innerHTML = '<span class="spinner"></span> Generating...';
+  try {
+    const res = await fetch(`${API}/admin/content-drafts/generate?token=${adminToken}&count=5`, {method: 'POST'});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Generated ${data.generated} draft(s)</span>`;
+    loadContentDrafts();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function onTrendingAssetClassChange() {
+  const assetClass = document.getElementById('trendingAssetClass').value;
+  const isStocks = assetClass === 'Stocks';
+  document.getElementById('trendingCountryWrap').style.display = isStocks ? '' : 'none';
+  document.getElementById('trendingSectorWrap').style.display = isStocks ? '' : 'none';
+}
+
+async function lookupTrendingStocks() {
+  const btn = document.getElementById('trendingLookupBtn');
+  const result = document.getElementById('trendingLookupResult');
+  const assetClass = document.getElementById('trendingAssetClass').value;
+  const isStocks = assetClass === 'Stocks';
+  const country = document.getElementById('trendingCountry').value;
+  const sector = document.getElementById('trendingSector').value;
+  const days = document.getElementById('trendingDays').value;
+  btn.disabled = true;
+  result.innerHTML = 'Looking up...';
+  try {
+    const params = new URLSearchParams({days, asset_class: assetClass});
+    if (isStocks) {
+      params.set('country', country);
+      if (sector) params.set('sector', sector);
+    }
+    const res = await fetch(`${API}/trending-stocks?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    const stocks = data.stocks || [];
+    const scopeLabel = isStocks ? escapeHtml(country) : escapeHtml(assetClass);
+    if (!stocks.length) {
+      result.innerHTML = `<span style="color:var(--muted)">No matches${sector && isStocks ? ` for ${escapeHtml(sector)}` : ''} in the ${scopeLabel} basket.</span>`;
+      return;
+    }
+    const sourceNote = data.source === 'official_twse' ? ' (official TWSE ranking, sector/days filters not applied)'
+      : data.source === 'default_fallback' ? ` (no ${escapeHtml(country)} basket -- showing US)` : '';
+    const rows = stocks.map((s, i) =>
+      `<div style="padding:4px 0;border-bottom:1px solid var(--border)">${i + 1}. <strong>${escapeHtml(s.symbol)}</strong> ${escapeHtml(s.name)}${s.sector ? ` <span style="color:var(--muted)">· ${escapeHtml(s.sector)}</span>` : ''} -- volume (last ${escapeHtml(String(s.days || days))}d): ${s.volume ? s.volume.toLocaleString() : 'n/a'}</div>`
+    ).join('');
+    result.innerHTML = `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px">${scopeLabel}${sector && isStocks ? ` · ${escapeHtml(sector)}` : ''}${sourceNote}</div>${rows}`;
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function uploadVideoMedia() {
+  const btn = document.getElementById('videoMediaUploadBtn');
+  const result = document.getElementById('videoMediaUploadResult');
+  const fileInput = document.getElementById('videoMediaFileInput');
+  const frameSecondInput = document.getElementById('videoMediaFrameSecond');
+  const file = fileInput.files[0];
+  if (!file) {
+    result.innerHTML = '<span style="color:var(--red)">Pick a file first.</span>';
+    return;
+  }
+  btn.disabled = true;
+  result.innerHTML = '<span class="spinner"></span> Uploading...';
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    let url = `${API}/admin/video/upload-media?token=${adminToken}`;
+    if (frameSecondInput.value.trim()) {
+      url += `&frame_second=${encodeURIComponent(frameSecondInput.value.trim())}`;
+    }
+    const res = await fetch(url, {method: 'POST', body: form});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Uploaded: ${escapeHtml(data.label)} (${escapeHtml(data.kind)})</span>`;
+    fileInput.value = '';
+    frameSecondInput.value = '';
+    loadVideoMediaLibrary();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadVideoMediaLibrary() {
+  const grid = document.getElementById('videoMediaLibraryGrid');
+  if (!grid) return;
+  try {
+    const res = await fetch(`${API}/admin/video/media-library?token=${adminToken}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    const assets = data.assets || [];
+    if (!assets.length) {
+      grid.innerHTML = '<span style="font-size:0.75rem;color:var(--muted)">No uploads yet.</span>';
+      return;
+    }
+    grid.innerHTML = assets.map(a => `
+      <div style="position:relative;width:90px">
+        <label style="cursor:pointer;display:block">
+          <input type="checkbox" class="videoMediaAssetCheck" value="${a.id}" style="position:absolute;top:2px;left:2px;z-index:1">
+          <img src="${API}/admin/video/media/${a.id}/thumbnail?token=${adminToken}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" title="${escapeHtml(a.label || '')}">
+        </label>
+        <div style="font-size:0.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(a.label || '')}">${escapeHtml(a.kind === 'video_frame' ? '🎬 ' + (a.label || '') : '🖼 ' + (a.label || ''))}</div>
+        <button onclick="deleteVideoMediaAsset(${a.id})" title="Delete" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:4px;width:18px;height:18px;font-size:0.65rem;cursor:pointer;line-height:1">✕</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    grid.innerHTML = `<span style="font-size:0.75rem;color:var(--red)">Could not load media library: ${escapeHtml(String(e.message || e))}</span>`;
+  }
+}
+
+async function deleteVideoMediaAsset(id) {
+  try {
+    const res = await fetch(`${API}/admin/video/media/${id}?token=${adminToken}`, {method: 'DELETE'});
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || res.status);
+    }
+    loadVideoMediaLibrary();
+  } catch (e) {
+    alert('Delete failed: ' + (e.message || e));
+  }
+}
+
+async function generateCustomVideo() {
+  const btn = document.getElementById('videoChatGenerateBtn');
+  const result = document.getElementById('videoChatGenerateResult');
+  const prompt = document.getElementById('videoChatPrompt').value.trim();
+  const numSlides = parseInt(document.getElementById('videoChatSlides').value, 10);
+  const langOverride = document.getElementById('videoChatLangSelect').value;
+  const postTelegram = document.getElementById('videoChatPostTelegram').checked;
+  const uploadYoutube = document.getElementById('videoChatUploadYoutube').checked;
+  const dataPoints = [
+    ['videoChatDataSr', 'sr_indicator'],
+    ['videoChatDataFundamentals', 'fundamentals'],
+    ['videoChatDataVolumeMa', 'volume_ma'],
+    ['videoChatDataInstitutional', 'institutional'],
+  ].filter(([id]) => document.getElementById(id).checked).map(([, key]) => key);
+  const mediaAssetIds = Array.from(document.querySelectorAll('.videoMediaAssetCheck:checked')).map(el => parseInt(el.value, 10));
+  if (!prompt) {
+    result.innerHTML = '<span style="color:var(--red)">Type a request first.</span>';
+    return;
+  }
+  btn.disabled = true;
+  result.innerHTML = '<span class="spinner"></span> Writing script + generating (this can take up to ~1-2 minutes)...';
+  try {
+    const res = await fetch(`${API}/admin/video/generate-custom?token=${adminToken}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt, num_slides: numSlides, lang: langOverride, post_to_telegram: postTelegram, upload_to_youtube: uploadYoutube, data_points: dataPoints, media_asset_ids: mediaAssetIds}),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    if (data.available === false) {
+      result.innerHTML = `<span style="color:var(--red)">⚠️ ${escapeHtml(data.message || 'Video Engine unavailable')}</span>`;
+    } else {
+      const tgNote = postTelegram ? (data.telegram_posted ? ' · posted to Telegram ✅' : ' · Telegram post failed/skipped') : '';
+      const chartTickers = (data.chart_tickers && data.chart_tickers.length) ? data.chart_tickers : (data.chart_ticker ? [data.chart_ticker] : []);
+      const chartNote = chartTickers.length ? ` · chart${chartTickers.length > 1 ? 's' : ''}: ${escapeHtml(chartTickers.join(', '))}` : '';
+      const dataNote = (data.data_points_cited && data.data_points_cited.length) ? ` · narrated real data: ${escapeHtml(data.data_points_cited.join(', '))}` : (dataPoints.length ? ' · data points checked but no real numbers found for this topic' : '');
+      const mediaNote = data.media_assets_used ? ` · your media: ${data.media_assets_used} asset(s) used` : '';
+      result.innerHTML = `<span style="color:var(--green)">✅ Generated: ${data.duration_sec}s, ${data.slides_count} slides · ${escapeHtml(data.lang || '')} · ${escapeHtml(data.aspect_ratio || '')}${chartNote}${dataNote}${mediaNote}${tgNote}</span>${_youtubeResultNote(data)}`;
+    }
+    loadVideoStatus();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function generateSeoPage() {
+  const ticker = document.getElementById('seoTicker').value.trim();
+  const company_name = document.getElementById('seoName').value.trim();
+  const category = document.getElementById('seoCategory').value;
+  const related = document.getElementById('seoRelated').value.split(',').map(s => s.trim()).filter(Boolean);
+  const result = document.getElementById('seoGenResult');
+  if (!ticker || !company_name) {
+    result.innerHTML = '<span style="color:var(--red)">Ticker and name are required</span>';
+    return;
+  }
+  result.innerHTML = '<span class="spinner"></span> Generating...';
+  try {
+    const res = await fetch(`${API}/admin/seo/generate?token=${adminToken}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ticker, company_name, category, related})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    result.innerHTML = `<span style="color:var(--green)">✅ Created ${data.path} (added to sitemap.xml)</span>`;
+    loadSeoStats();
+    loadSeoSuggestions();
+  } catch (e) {
+    result.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+  }
+}
+
+function copyVariantField(key, btn) {
+  const ta = document.getElementById(`cvField-${key}`);
+  if (!ta) return;
+  const original = btn.textContent;
+  const finish = () => { btn.textContent = '✓ Copied'; setTimeout(() => { btn.textContent = original; }, 1500); };
+  const fallback = () => {
+    ta.removeAttribute('readonly');
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { /* best-effort only */ }
+    ta.setAttribute('readonly', 'readonly');
+    finish();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(finish).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+// task #326: Security Scan panel -- surfaces services/security_scan_service.py's
+// latest persisted result (from the in-process 6-hourly APScheduler job in
+// backend/main.py) plus a manual "Run Scan Now" trigger and a one-click
+// "Copy Report" so the full plain-text report can be pasted straight into
+// an AI assistant for remediation.
+let _lastSecurityScanText = '';
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadSecurityScan() {
+  document.getElementById('secScanSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('secScanMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/security-scan?token=${adminToken}`);
+    const data = await res.json();
+    renderSecurityScan(data);
+  } catch (e) {
+    document.getElementById('secScanSummary').innerHTML = '<div class="empty">Failed to load security scan data</div>';
+  }
+}
+
+function renderSecurityScan(data) {
+  if (!data || data.status === 'no_data' || !data.result) {
+    document.getElementById('secScanSummary').innerHTML = '<div class="empty">No scan has run yet — click "Run Scan Now" or wait for the next 6-hourly check.</div>';
+    document.getElementById('secScanHistory').innerHTML = '<div class="empty">No history yet</div>';
+    _lastSecurityScanText = '';
+    return;
+  }
+  const r = data.result;
+  _lastSecurityScanText = r.report_text || '';
+  document.getElementById('secScanMeta').textContent = new Date(r.timestamp).toLocaleString();
+  const overallOk = !r.any_flags;
+
+  const checksHtml = (r.checks || []).map(c => {
+    const unknown = c.ok === null;
+    const ok = c.ok === true;
+    const dotClass = unknown ? '' : (ok ? 'health-online' : 'health-offline');
+    const dotStyle = unknown ? 'style="background:var(--muted)"' : '';
+    const statusLabel = unknown ? 'Skipped' : (ok ? 'OK' : 'Flagged');
+    const statusColor = unknown ? 'var(--muted)' : (ok ? 'var(--green)' : 'var(--red)');
+    const findingsHtml = (c.findings || []).map(f => `[${f.level}] ${escapeHtml(f.message)}`).join('<br>');
+    return `<div class="health-item">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="health-dot ${dotClass}" ${dotStyle}></span>
+          <span>${escapeHtml(c.name)}</span>
+        </div>
+        <div style="font-size:0.75rem;font-weight:600;color:${statusColor}">${statusLabel}</div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);padding:0 0 10px 18px;line-height:1.6">${findingsHtml}</div>`;
+  }).join('');
+
+  document.getElementById('secScanSummary').innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="health-dot ${overallOk ? 'health-online' : 'health-offline'}"></span>
+        <span>Overall Status</span>
+      </div>
+      <div style="font-size:0.8rem;font-weight:600;color:${overallOk ? 'var(--green)' : 'var(--red)'}">${overallOk ? 'Clean' : 'Issues Found'}</div>
+    </div>
+    ${checksHtml}`;
+
+  document.getElementById('secScanHistory').innerHTML = (data.history || []).map(h => `
+    <div class="content-item">
+      <div style="font-size:0.78rem">${new Date(h.created_at).toLocaleString()}</div>
+      <span style="font-size:0.72rem;color:${h.any_flags ? 'var(--red)' : 'var(--green)'}">${h.any_flags ? '⚠️ Issues' : '✅ Clean'}</span>
+    </div>`).join('') || '<div class="empty">No history yet</div>';
+}
+
+// 2026-08-24 (AJ: "點知面家個STRIPE係咪完全可收款提款無問題"): live pull
+// against api/admin.py's GET /admin/stripe-account-status, which itself
+// calls stripe.Account.retrieve() -- the real answer, not just whether
+// env vars are set. Renders charges_enabled/payouts_enabled as green/red
+// pills plus a plain list of anything Stripe is still waiting on
+// (requirements.currently_due) so AJ knows exactly what to go fix on the
+// Dashboard if either is false.
+async function loadApiTrendingTickers() {
+  document.getElementById('apiTrendSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('apiTrendMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/api-trending-tickers?token=${adminToken}&days=7&limit=20`);
+    const data = await res.json();
+    renderApiTrendingTickers(data);
+  } catch (e) {
+    document.getElementById('apiTrendSummary').innerHTML = '<div class="empty">Failed to load API trending tickers</div>';
+  }
+}
+
+function renderApiTrendingTickers(data) {
+  const el = document.getElementById('apiTrendSummary');
+  const rows = (data && data.trending) || [];
+  document.getElementById('apiTrendMeta').textContent = `Last ${data && data.days || 7} days`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No API queries logged yet in this window.</div>`;
+    return;
+  }
+  const maxN = Math.max(...rows.map(r => r.count));
+  el.innerHTML = rows.map(r => `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px;flex:1">
+        <span style="font-weight:600;font-family:monospace">${escapeHtml(r.ticker)}</span>
+        <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;max-width:160px">
+          <div style="height:100%;width:${Math.max(4, Math.round(r.count / maxN * 100))}%;background:var(--accent, #00d4ff)"></div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;font-weight:600">${r.count}</div>
+    </div>
+  `).join('');
+}
+
+async function loadDataSources() {
+  document.getElementById('dataSourcesList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('dataSourcesMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/data-sources?token=${adminToken}`);
+    const data = await res.json();
+    renderDataSources(data);
+  } catch (e) {
+    document.getElementById('dataSourcesList').innerHTML = '<div class="empty">Failed to load data sources</div>';
+  }
+}
+
+function renderDataSources(data) {
+  const el = document.getElementById('dataSourcesList');
+  const rows = (data && data.sources) || [];
+  document.getElementById('dataSourcesMeta').textContent = `${rows.length} registered`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No collectors have registered yet. Sources appear here automatically once a collector module is imported.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(r => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600">${escapeHtml(r.label)}</span>
+          <span style="font-size:0.68rem;color:var(--muted);font-family:monospace">${escapeHtml(r.source_key)}</span>
+          <span style="font-size:0.68rem;color:var(--muted)">${escapeHtml(r.category)}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted)">
+          runs: ${r.run_count} · errors: ${r.error_count} · last success: ${r.last_success_at || '—'}
+          ${r.last_error ? ` · <span style="color:#ef4444">last error: ${escapeHtml(r.last_error).slice(0,80)}</span>` : ''}
+        </div>
+      </div>
+      <button class="btn btn-sm ${r.enabled ? 'btn-purple' : ''}" onclick="toggleDataSource('${r.source_key}', ${r.enabled ? 'false' : 'true'})">
+        ${r.enabled ? '✅ Enabled' : '⏸ Disabled'}
+      </button>
+    </div>
+  `).join('');
+}
+
+async function toggleDataSource(sourceKey, enabled) {
+  try {
+    await fetch(`${API}/admin/data-sources/${encodeURIComponent(sourceKey)}/toggle?token=${adminToken}&enabled=${enabled}`, { method: 'POST' });
+    loadDataSources();
+  } catch (e) {
+    alert('Failed to toggle data source');
+  }
+}
+
+async function loadCftcCot() {
+  document.getElementById('cftcCotList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('cftcCotMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/cftc-cot-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderCftcCot(data);
+  } catch (e) {
+    document.getElementById('cftcCotList').innerHTML = '<div class="empty">Failed to load CFTC COT data</div>';
+  }
+}
+
+function renderCftcCot(data) {
+  const el = document.getElementById('cftcCotList');
+  if (!data || !data.available) {
+    document.getElementById('cftcCotMeta').textContent = '';
+    el.innerHTML = `<div class="empty">${escapeHtml((data && data.message) || 'No CFTC data yet -- first fetch may not have run.')}</div>`;
+    return;
+  }
+  const contracts = data.contracts || {};
+  document.getElementById('cftcCotMeta').textContent = `As of ${new Date(data.as_of).toLocaleString()}`;
+  const rows = Object.entries(contracts).filter(([, v]) => v);
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No contracts have persisted data yet.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(([code, c]) => {
+    const net = c.net_noncomm;
+    const positive = net !== null && net !== undefined && net >= 0;
+    const netStr = (net === null || net === undefined) ? '—' : `${net > 0 ? '+' : ''}${net.toLocaleString()}`;
+    return `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600">${escapeHtml(c.label || code)}</span>
+          <span style="font-size:0.68rem;color:var(--muted)">report date: ${escapeHtml(c.report_date || '—')}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted)">Open interest: ${(c.open_interest || 0).toLocaleString()} · Commercial net: ${c.net_comm !== null && c.net_comm !== undefined ? c.net_comm.toLocaleString() : '—'}</div>
+      </div>
+      <div style="font-weight:700;color:${positive ? '#22c55e' : '#ef4444'}">${netStr}</div>
+    </div>
+  `; }).join('');
+}
+
+async function loadSec13fFilers() {
+  const sel = document.getElementById('sec13fFilerSelect');
+  sel.innerHTML = '<option value="">Loading filers…</option>';
+  try {
+    const res = await fetch(`${API}/admin/sec-13f-holdings?token=${adminToken}`);
+    const data = await res.json();
+    const filers = (data && data.watched_filers) || [];
+    if (!filers.length) {
+      sel.innerHTML = '<option value="">No watched filers registered</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">Select a filer…</option>' + filers.map(f => `<option value="${f.cik}">${escapeHtml(f.name)} (CIK ${f.cik})</option>`).join('');
+  } catch (e) {
+    sel.innerHTML = '<option value="">Failed to load filers</option>';
+  }
+}
+
+async function loadSec13fHoldings(cik) {
+  const el = document.getElementById('sec13fList');
+  document.getElementById('sec13fMeta').textContent = '';
+  if (!cik) {
+    el.innerHTML = '<div class="empty">Select a filer above</div>';
+    return;
+  }
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/sec-13f-holdings?token=${adminToken}&cik=${cik}`);
+    const data = await res.json();
+    const holdings = (data && data.holdings) || [];
+    if (!holdings.length) {
+      el.innerHTML = '<div class="empty">No holdings persisted yet for this filer -- try "Fetch Latest 13F Now" below.</div>';
+      return;
+    }
+    document.getElementById('sec13fMeta').textContent = `As of ${holdings[0].period_of_report} · ${holdings.length} positions`;
+    const maxV = Math.max(...holdings.map(h => h.value_usd || 0));
+    el.innerHTML = holdings.slice(0, 25).map(h => `
+      <div class="health-item">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <span style="font-weight:600">${escapeHtml(h.issuer_name || h.cusip)}</span>
+          <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;max-width:160px">
+            <div style="height:100%;width:${maxV ? Math.max(4, Math.round((h.value_usd || 0) / maxV * 100)) : 4}%;background:var(--accent, #00d4ff)"></div>
+          </div>
+        </div>
+        <div style="font-size:0.8rem;font-weight:600">$${((h.value_usd || 0) / 1e6).toFixed(1)}M</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load holdings</div>';
+  }
+}
+
+async function triggerSec13fRefresh() {
+  const el = document.getElementById('sec13fList');
+  el.innerHTML = '<div class="empty"><span class="spinner"></span> Fetching latest 13F filings from SEC EDGAR (may take a few seconds per filer)…</div>';
+  try {
+    const res = await fetch(`${API}/admin/sec-13f-refresh?token=${adminToken}`, { method: 'POST' });
+    const data = await res.json();
+    const results = (data && data.results) || {};
+    const lines = Object.entries(results).map(([name, n]) => `${escapeHtml(name)}: ${n} holdings`).join('<br>');
+    el.innerHTML = `<div class="empty">${lines || 'No results'}</div>`;
+    loadSec13fFilers();
+    loadDataSources(); // keep the top "Registered Sources" run/error counts in sync with this manual trigger
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Refresh failed</div>';
+  }
+}
+
+async function loadBinanceExchange() {
+  document.getElementById('binanceList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('binanceMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/binance-exchange-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderBinanceExchange(data);
+  } catch (e) {
+    document.getElementById('binanceList').innerHTML = '<div class="empty">Failed to load Binance exchange data</div>';
+  }
+}
+
+function renderBinanceExchange(data) {
+  const el = document.getElementById('binanceList');
+  const tickers = (data && data.tickers) || {};
+  const rows = Object.entries(tickers).filter(([, v]) => v);
+  document.getElementById('binanceMeta').textContent = `${rows.length}/${Object.keys(tickers).length} live`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No Binance data yet -- first fetch may not have run.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(([ticker, t]) => {
+    const pct = t.price_change_pct_24h;
+    const positive = pct !== null && pct !== undefined && pct >= 0;
+    const pctStr = (pct === null || pct === undefined) ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+    return `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600">${ticker}/USDT</span>
+          <span style="font-size:0.72rem;color:var(--muted)">$${(t.last_price || 0).toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted)">24h volume: ${(t.volume_24h || 0).toLocaleString(undefined, {maximumFractionDigits: 0})} ${ticker}</div>
+      </div>
+      <div style="font-weight:700;color:${positive ? '#22c55e' : '#ef4444'}">${pctStr}</div>
+    </div>
+  `; }).join('');
+}
+
+async function loadEiaEnergy() {
+  document.getElementById('eiaEnergyList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('eiaEnergyMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/eia-energy-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderEiaEnergy(data);
+  } catch (e) {
+    document.getElementById('eiaEnergyList').innerHTML = '<div class="empty">Failed to load EIA energy data</div>';
+  }
+}
+
+function renderEiaEnergy(data) {
+  const el = document.getElementById('eiaEnergyList');
+  if (!data || !data.available) {
+    document.getElementById('eiaEnergyMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'EIA data not available'}</div>`;
+    return;
+  }
+  const series = data.series || {};
+  const rows = Object.entries(series).filter(([, v]) => v);
+  document.getElementById('eiaEnergyMeta').textContent = `${rows.length}/${Object.keys(series).length} live`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No EIA data yet -- first fetch may not have run.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(([key, s]) => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${s.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">as of ${s.period}</div>
+      </div>
+      <div style="font-weight:700">${s.value.toLocaleString(undefined, {maximumFractionDigits: 3})} <span style="font-size:0.72rem;color:var(--muted)">${s.unit}</span></div>
+    </div>
+  `).join('');
+}
+
+async function loadTreasuryFiscal() {
+  document.getElementById('treasuryFiscalList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('treasuryFiscalMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/treasury-fiscal-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderTreasuryFiscal(data);
+  } catch (e) {
+    document.getElementById('treasuryFiscalList').innerHTML = '<div class="empty">Failed to load Treasury fiscal data</div>';
+  }
+}
+
+function renderTreasuryFiscal(data) {
+  const el = document.getElementById('treasuryFiscalList');
+  if (!data || !data.available) {
+    document.getElementById('treasuryFiscalMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'Treasury data not available'}</div>`;
+    return;
+  }
+  const series = data.series || {};
+  const rows = Object.entries(series).filter(([, v]) => v);
+  document.getElementById('treasuryFiscalMeta').textContent = `${rows.length}/${Object.keys(series).length} live`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No Treasury data yet -- first fetch may not have run.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(([key, s]) => {
+    const pct = s.period_change_pct;
+    const positive = pct !== null && pct !== undefined && pct >= 0;
+    const pctStr = (pct === null || pct === undefined) ? '' : ` <span style="color:${positive ? '#22c55e' : '#ef4444'}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</span>`;
+    return `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${s.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">as of ${s.record_date}</div>
+      </div>
+      <div style="font-weight:700">${s.value.toLocaleString(undefined, {maximumFractionDigits: 0})} <span style="font-size:0.72rem;color:var(--muted)">${s.unit}</span>${pctStr}</div>
+    </div>
+  `; }).join('');
+}
+
+async function loadCoinbaseExchange() {
+  document.getElementById('coinbaseList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('coinbaseMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/coinbase-exchange-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderCoinbaseExchange(data);
+  } catch (e) {
+    document.getElementById('coinbaseList').innerHTML = '<div class="empty">Failed to load Coinbase exchange data</div>';
+  }
+}
+
+function renderCoinbaseExchange(data) {
+  const el = document.getElementById('coinbaseList');
+  const tickers = (data && data.tickers) || {};
+  const rows = Object.entries(tickers).filter(([, v]) => v);
+  document.getElementById('coinbaseMeta').textContent = `${rows.length}/${Object.keys(tickers).length} live`;
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">No Coinbase data yet -- first fetch may not have run.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(([ticker, t]) => {
+    const pct = t.price_change_pct_24h;
+    const positive = pct !== null && pct !== undefined && pct >= 0;
+    const pctStr = (pct === null || pct === undefined) ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+    return `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600">${ticker}/USD</span>
+          <span style="font-size:0.72rem;color:var(--muted)">$${(t.last_price || 0).toLocaleString(undefined, {maximumFractionDigits: 4})}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted)">24h volume: ${(t.volume_24h || 0).toLocaleString(undefined, {maximumFractionDigits: 0})} ${ticker} (est.)</div>
+      </div>
+      <div style="font-weight:700;color:${positive ? '#22c55e' : '#ef4444'}">${pctStr}</div>
+    </div>
+  `; }).join('');
+}
+
+async function loadSecForm4() {
+  const ticker = (document.getElementById('form4TickerInput').value || '').trim().toUpperCase();
+  const el = document.getElementById('form4List');
+  document.getElementById('form4Meta').textContent = '';
+  if (!ticker) { el.innerHTML = '<div class="empty">Enter a ticker above</div>'; return; }
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/sec-form4-snapshot?ticker=${encodeURIComponent(ticker)}&token=${adminToken}`);
+    const data = await res.json();
+    renderSecForm4(data);
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load Form 4 data</div>';
+  }
+}
+
+function renderSecForm4(data) {
+  const el = document.getElementById('form4List');
+  if (!data || !data.available) {
+    document.getElementById('form4Meta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'No Form 4 data available'}</div>`;
+    return;
+  }
+  const txns = data.transactions || [];
+  const s = data.summary || {};
+  document.getElementById('form4Meta').textContent = `${s.buy_count || 0} buys · ${s.sell_count || 0} sells`;
+  if (!txns.length) {
+    el.innerHTML = '<div class="empty">No recent non-derivative transactions found for this ticker.</div>';
+    return;
+  }
+  el.innerHTML = txns.map(t => {
+    const acquired = t.acquired_disposed === 'A';
+    const color = acquired ? '#22c55e' : (t.acquired_disposed === 'D' ? '#ef4444' : 'var(--muted)');
+    const sharesStr = t.shares != null ? t.shares.toLocaleString() : '—';
+    const priceStr = t.price_per_share != null ? `@ $${t.price_per_share.toLocaleString(undefined, {maximumFractionDigits: 2})}` : '';
+    return `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${t.insider_name || 'Unknown insider'} ${t.officer_title ? `(${t.officer_title})` : ''}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${t.transaction_date || '-'} · ${t.transaction_label || t.transaction_code}</div>
+      </div>
+      <div style="font-weight:700;color:${color}">${sharesStr} ${priceStr}</div>
+    </div>
+  `; }).join('');
+}
+
+async function loadFinraShortInterest() {
+  const ticker = (document.getElementById('finraShortTickerInput').value || '').trim().toUpperCase();
+  const el = document.getElementById('finraShortList');
+  document.getElementById('finraShortMeta').textContent = '';
+  if (!ticker) { el.innerHTML = '<div class="empty">Enter a ticker above</div>'; return; }
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/finra-short-interest-snapshot?ticker=${encodeURIComponent(ticker)}&token=${adminToken}`);
+    const data = await res.json();
+    renderFinraShortInterest(data);
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load FINRA short interest data</div>';
+  }
+}
+
+function renderFinraShortInterest(data) {
+  const el = document.getElementById('finraShortList');
+  if (!data || !data.available) {
+    document.getElementById('finraShortMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'No short interest data available'}</div>`;
+    return;
+  }
+  document.getElementById('finraShortMeta').textContent = `as of ${data.settlement_date}`;
+  const pct = data.change_pct;
+  const positive = pct !== null && pct !== undefined && pct >= 0;
+  const pctStr = (pct === null || pct === undefined) ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`;
+  el.innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${data.issue_name || data.ticker}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">Days to cover: ${data.days_to_cover ?? '—'} · Avg daily volume: ${(data.avg_daily_volume || 0).toLocaleString()}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">${(data.current_short_shares || 0).toLocaleString()}</div>
+        <div style="font-size:0.72rem;color:${positive ? '#ef4444' : '#22c55e'}">${pctStr} vs prior period</div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadSecXbrl() {
+  const ticker = (document.getElementById('xbrlTickerInput').value || '').trim().toUpperCase();
+  const el = document.getElementById('xbrlList');
+  document.getElementById('xbrlMeta').textContent = '';
+  if (!ticker) { el.innerHTML = '<div class="empty">Enter a ticker above</div>'; return; }
+  el.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/sec-xbrl-debug?ticker=${encodeURIComponent(ticker)}&token=${adminToken}`);
+    const data = await res.json();
+    renderSecXbrl(data);
+  } catch (e) {
+    el.innerHTML = '<div class="empty">Failed to load SEC XBRL data</div>';
+  }
+}
+
+function renderSecXbrl(data) {
+  const el = document.getElementById('xbrlList');
+  if (!data || !data.available || !data.facts) {
+    document.getElementById('xbrlMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'No 10-K facts available for this ticker'}</div>`;
+    return;
+  }
+  document.getElementById('xbrlMeta').textContent = `CIK ${data.cik || '—'}`;
+  const facts = Object.values(data.facts);
+  el.innerHTML = facts.map(f => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${f.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">FY end ${f.end_date} · ${f.form}</div>
+      </div>
+      <div style="font-weight:700">${f.unit === 'USD' ? '$' + Number(f.value).toLocaleString(undefined, {maximumFractionDigits: 0}) : Number(f.value).toLocaleString(undefined, {maximumFractionDigits: 2}) + ' ' + f.unit}</div>
+    </div>
+  `).join('');
+}
+
+async function loadCboeVix() {
+  document.getElementById('vixList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('vixMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/cboe-vix-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderCboeVix(data);
+  } catch (e) {
+    document.getElementById('vixList').innerHTML = '<div class="empty">Failed to load CBOE VIX data</div>';
+  }
+}
+
+function renderCboeVix(data) {
+  const el = document.getElementById('vixList');
+  if (!data || !data.available) {
+    document.getElementById('vixMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'VIX term structure not available'}</div>`;
+    return;
+  }
+  document.getElementById('vixMeta').textContent = data.structure ? `${data.structure} (VIX3M − VIX: ${data.vix3m_minus_vix > 0 ? '+' : ''}${data.vix3m_minus_vix})` : '';
+  const rows = Object.values(data.term_structure || {}).filter(v => v);
+  el.innerHTML = rows.map(s => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${s.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${s.date}</div>
+      </div>
+      <div style="font-weight:700">${s.close}</div>
+    </div>
+  `).join('');
+}
+
+async function loadFdicBankHealth() {
+  document.getElementById('fdicList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('fdicMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/fdic-bank-health-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderFdicBankHealth(data);
+  } catch (e) {
+    document.getElementById('fdicList').innerHTML = '<div class="empty">Failed to load FDIC bank health data</div>';
+  }
+}
+
+function renderFdicBankHealth(data) {
+  const el = document.getElementById('fdicList');
+  if (!data || !data.available) {
+    document.getElementById('fdicMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'FDIC bank health data not available'}</div>`;
+    return;
+  }
+  const banks = Object.entries(data.banks || {}).filter(([, v]) => v);
+  document.getElementById('fdicMeta').textContent = `${banks.length}/${Object.keys(data.banks || {}).length} live`;
+  el.innerHTML = banks.map(([ticker, b]) => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${ticker} -- ${b.bank_name}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">As of ${b.report_date} · Assets $${(b.asset || 0).toLocaleString()}k</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:700">ROA ${b.roa ?? '—'}%</div>
+        <div style="font-size:0.72rem;color:var(--muted)">ROE ${b.roe ?? '—'}%</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadUsdaAgriculture() {
+  document.getElementById('usdaList').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('usdaMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/usda-agriculture-snapshot?token=${adminToken}`);
+    const data = await res.json();
+    renderUsdaAgriculture(data);
+  } catch (e) {
+    document.getElementById('usdaList').innerHTML = '<div class="empty">Failed to load USDA agriculture data</div>';
+  }
+}
+
+function renderUsdaAgriculture(data) {
+  const el = document.getElementById('usdaList');
+  if (!data || !data.available) {
+    document.getElementById('usdaMeta').textContent = 'unavailable';
+    el.innerHTML = `<div class="empty">${(data && data.message) || 'USDA data not available'}</div>`;
+    return;
+  }
+  const series = data.series || {};
+  const rows = Object.entries(series).filter(([, v]) => v);
+  document.getElementById('usdaMeta').textContent = `${rows.length}/${Object.keys(series).length} live`;
+  el.innerHTML = rows.map(([key, s]) => `
+    <div class="health-item">
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1">
+        <div style="font-weight:600">${s.label}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${s.period} · pairs with ${s.etf_ticker}</div>
+      </div>
+      <div style="font-weight:700">$${Number(s.value).toFixed(2)}/BU</div>
+    </div>
+  `).join('');
+}
+
+async function loadStripeAccountStatus() {
+  document.getElementById('stripeAcctSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('stripeAcctMeta').textContent = '';
+  try {
+    const res = await fetch(`${API}/admin/stripe-account-status?token=${adminToken}`);
+    const data = await res.json();
+    renderStripeAccountStatus(data);
+  } catch (e) {
+    document.getElementById('stripeAcctSummary').innerHTML = '<div class="empty">Failed to load Stripe account status</div>';
+  }
+}
+
+function renderStripeAccountStatus(data) {
+  const el = document.getElementById('stripeAcctSummary');
+  if (!data || !data.configured) {
+    el.innerHTML = `<div class="empty">Stripe not configured yet -- STRIPE_SECRET_KEY is not set on Railway.</div>`;
+    return;
+  }
+  if (data.error) {
+    el.innerHTML = `<div class="empty">STRIPE_SECRET_KEY is set (${escapeHtml(data.key_mode || 'unknown')} mode) but the live Stripe API call failed: ${escapeHtml(data.error)}</div>`;
+    return;
+  }
+  document.getElementById('stripeAcctMeta').textContent = `${(data.key_mode || 'unknown').toUpperCase()} MODE`;
+
+  const pill = (ok) => ok
+    ? `<span style="color:var(--green);font-weight:600">✅ Enabled</span>`
+    : `<span style="color:var(--red);font-weight:600">❌ Disabled</span>`;
+
+  const dueList = [...(data.currently_due || []), ...(data.past_due || [])];
+  const dueHtml = dueList.length
+    ? `<div style="font-size:0.76rem;color:var(--red);padding:8px 0 0 0;line-height:1.7">Stripe still needs: ${dueList.map(escapeHtml).join(', ')}</div>`
+    : `<div style="font-size:0.76rem;color:var(--green);padding:8px 0 0 0">No outstanding requirements.</div>`;
+
+  const keyModeWarning = data.key_mode === 'test'
+    ? `<div style="font-size:0.76rem;color:var(--red);padding:8px 0 0 0">⚠️ This is a TEST key -- checkout will work but no real money moves. Swap in the sk_live_... key on Railway when ready to go live.</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Charges Enabled</span></div>
+      <div style="font-size:0.8rem">${pill(data.charges_enabled)}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Payouts Enabled</span></div>
+      <div style="font-size:0.8rem">${pill(data.payouts_enabled)}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Details Submitted</span></div>
+      <div style="font-size:0.8rem">${pill(data.details_submitted)}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Country / Currency</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(data.country || '—')} / ${escapeHtml((data.default_currency || '—').toUpperCase())}</div>
+    </div>
+    ${dueHtml}
+    ${keyModeWarning}`;
+}
+
+async function loadPredictionLedger() {
+  document.getElementById('predLedgerSummary').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('predLedgerMeta').textContent = '';
+  document.getElementById('predLedgerRecent').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  try {
+    const res = await fetch(`${API}/admin/prediction-ledger?token=${adminToken}`);
+    const data = await res.json();
+    renderPredictionLedger(data);
+  } catch (e) {
+    document.getElementById('predLedgerSummary').innerHTML = '<div class="empty">Failed to load prediction ledger data</div>';
+    document.getElementById('predLedgerRecent').innerHTML = '';
+  }
+}
+
+function renderPredictionLedger(data) {
+  if (!data || data.status !== 'ok' || !data.stats) {
+    document.getElementById('predLedgerSummary').innerHTML = '<div class="empty">Failed to load prediction ledger data</div>';
+    document.getElementById('predLedgerRecent').innerHTML = '';
+    return;
+  }
+  const s = data.stats;
+  document.getElementById('predLedgerMeta').textContent = `Graded: ${s.graded_count} · Pending: ${s.pending_count}`;
+
+  const hitRate = s.hit_rate_pct === null || s.hit_rate_pct === undefined ? '—' : `${s.hit_rate_pct}%`;
+  const brier = s.avg_brier_score === null || s.avg_brier_score === undefined ? '—' : s.avg_brier_score;
+  const avgRet = s.avg_actual_return_pct === null || s.avg_actual_return_pct === undefined ? '—' : `${s.avg_actual_return_pct}%`;
+
+  document.getElementById('predLedgerSummary').innerHTML = `
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Hit Rate</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(String(hitRate))}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Avg Brier Score</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(String(brier))}</div>
+    </div>
+    <div class="health-item">
+      <div style="display:flex;align-items:center;gap:8px"><span>Avg Actual Return</span></div>
+      <div style="font-size:0.8rem;font-weight:600">${escapeHtml(String(avgRet))}</div>
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);padding:8px 0 0 0;line-height:1.6">${escapeHtml(s.note || '')}</div>`;
+
+  const rows = data.recent || [];
+  document.getElementById('predLedgerRecent').innerHTML = rows.map(r => {
+    const gradedLabel = r.graded ? (r.correct ? '✅ Correct' : '❌ Wrong') : '⏳ Pending';
+    const gradedColor = r.graded ? (r.correct ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
+    const retLabel = r.actual_return_pct === null || r.actual_return_pct === undefined ? '' : ` (${r.actual_return_pct}%)`;
+    return `<div class="content-item">
+      <div style="font-size:0.78rem">${escapeHtml(r.symbol)} · ${escapeHtml(r.predicted_at)} · ${r.horizon_days}d · ${escapeHtml(r.predicted_direction)} (${r.up_probability_pct}%)</div>
+      <span style="font-size:0.72rem;color:${gradedColor}">${gradedLabel}${escapeHtml(retLabel)}</span>
+    </div>`;
+  }).join('') || '<div class="empty">No predictions logged yet</div>';
+}
+
+async function scanFormulaComposer() {
+  const symbol = (document.getElementById('composerSymbolInput').value || '').trim().toUpperCase();
+  const status = document.getElementById('composerScanStatus');
+  if (!symbol) {
+    status.textContent = '請輸入代號';
+    return;
+  }
+  status.textContent = `⏳ Scanning ${symbol} (35 candidates, this can take a few seconds)...`;
+  try {
+    const res = await fetch(`${API}/formula-composer/${encodeURIComponent(symbol)}/scan`);
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      status.textContent = `❌ ${data.message || 'Scan failed'}`;
+      return;
+    }
+    status.textContent = `✅ ${symbol}: tested ${data.data.candidates_tested}, ${data.data.candidates_passed_filter} passed filter`;
+    await loadFormulaComposerLeaderboard(symbol);
+  } catch (e) {
+    status.textContent = '❌ Scan failed to run.';
+  }
+}
+
+async function loadFormulaComposerLeaderboard(symbol) {
+  document.getElementById('composerLeaderboard').innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  document.getElementById('composerMeta').textContent = '';
+  try {
+    const qs = symbol ? `?symbol=${encodeURIComponent(symbol)}&limit=35` : '?limit=20';
+    const res = await fetch(`${API}/formula-composer/leaderboard${qs}`);
+    const data = await res.json();
+    renderComposerLeaderboard(data, symbol);
+  } catch (e) {
+    document.getElementById('composerLeaderboard').innerHTML = '<div class="empty">Failed to load leaderboard</div>';
+  }
+}
+
+function renderComposerLeaderboard(data, symbol) {
+  if (!data || data.status !== 'ok' || !Array.isArray(data.data)) {
+    document.getElementById('composerLeaderboard').innerHTML = '<div class="empty">Failed to load leaderboard</div>';
+    return;
+  }
+  const rows = data.data;
+  document.getElementById('composerMeta').textContent = symbol ? `${symbol} -- ${rows.length} candidates` : `${rows.length} rows`;
+  if (!rows.length) {
+    document.getElementById('composerLeaderboard').innerHTML = '<div class="empty">No scans yet</div>';
+    return;
+  }
+  document.getElementById('composerLeaderboard').innerHTML = rows.map(r => {
+    const riskColor = r.overfitting_risk === 'high' ? 'var(--red)' : (r.overfitting_risk === 'low' ? 'var(--green)' : 'var(--muted)');
+    const oosRet = r.oos_avg_return_pct === null || r.oos_avg_return_pct === undefined ? '—' : `${r.oos_avg_return_pct}%`;
+    return `<div class="content-item">
+      <div style="font-size:0.78rem">${escapeHtml(r.symbol)} · ${escapeHtml(r.label)}</div>
+      <span style="font-size:0.72rem">OOS: ${oosRet} (${r.oos_trade_count ?? 0} trades) · <span style="color:${riskColor}">${escapeHtml(r.overfitting_risk || '—')}</span></span>
+    </div>`;
+  }).join('');
+}
+
+async function runSecurityScanNow() {
+  const btn = document.getElementById('secScanRunBtn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  try {
+    await fetch(`${API}/admin/security-scan/run?token=${adminToken}`, { method: 'POST' });
+    await loadSecurityScan();
+  } catch (e) {
+    alert('Scan failed to run.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+function copySecurityReport() {
+  if (!_lastSecurityScanText) { alert('No report to copy yet.'); return; }
+  const btn = document.getElementById('secScanCopyBtn');
+  const original = btn.textContent;
+  const finish = () => {
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = _lastSecurityScanText;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { /* best-effort only */ }
+    document.body.removeChild(ta);
+    finish();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(_lastSecurityScanText).then(finish).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+function logout() {
+  localStorage.removeItem('xfinlab_admin_token');
+  adminToken = null;
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('adminLayout').style.display = 'none';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+</script>
+</body>
+</html>

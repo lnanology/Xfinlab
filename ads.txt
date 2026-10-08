@@ -1,0 +1,10 @@
+# XFINLAB ads.txt placeholder (2026-08-09)
+#
+# This file is required by Google AdSense to verify that ad sales on
+# xfinlab.com are authorized. It currently has no entries because no
+# AdSense account exists yet -- an empty ads.txt is valid and simply means
+# "no authorized sellers configured yet", not an error.
+#
+# Once AJ applies and is approved at https://adsense.google.com, add the
+# line AdSense gives you here, in the format:
+#   google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

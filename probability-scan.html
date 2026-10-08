@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — Decision Engine™ 機率掃描</title>
+<meta name="description" content="AI機率掃描 — 計算股票/資產未來30日偏多/盤整/偏空機率。">
+<link rel="canonical" href="https://www.xfinlab.com/probability-scan.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="機率掃描 — XFINLAB">
+<meta property="og:description" content="AI機率掃描 — 計算股票/資產未來30日偏多/盤整/偏空機率。">
+<meta property="og:url" content="https://www.xfinlab.com/probability-scan.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/ai-loading.js"></script>
+<script src="js/prob-display.js"></script>
+<script src="js/share-tools.js"></script>
+<script src="js/mvp-api.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<style>
+nav{padding:0.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--navy2);position:sticky;top:0;z-index:10;}
+.scan-bar{display:flex;gap:0.8rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+.scan-input{flex:1;min-width:200px;background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.7rem 0.9rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.92rem;outline:none;}
+.scan-input:focus{border-color:var(--blue);}
+.scan-btn{background:var(--blue2);color:#fff;border:none;border-radius:6px;padding:0.7rem 1.6rem;font-size:0.88rem;font-weight:500;cursor:pointer;transition:background 0.2s;}
+.scan-btn:hover{background:var(--blue);}
+.scan-btn:disabled{background:var(--navy4);color:var(--text3);cursor:not-allowed;}
+.disclaimer-box{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:0.9rem 1.1rem;margin-bottom:1.5rem;font-size:0.8rem;color:var(--text2);line-height:1.6;}
+.prob-panel{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1.4rem;margin-bottom:1rem;display:none;}
+.prob-panel.show{display:block;}
+.prob-bar-row{display:flex;align-items:center;gap:1rem;margin-bottom:0.6rem;}
+.prob-bar-label{width:110px;font-size:0.82rem;color:var(--text2);flex-shrink:0;}
+.prob-bar-track{flex:1;height:22px;background:var(--navy3);border-radius:11px;overflow:hidden;position:relative;}
+.prob-bar-fill{height:100%;border-radius:11px;transition:width 0.4s ease;}
+.prob-bar-fill.bull{background:var(--accent-green);}
+.prob-bar-fill.bear{background:var(--accent-red);}
+.prob-bar-pct{width:60px;text-align:right;font-family:'DM Serif Display',serif;font-size:1rem;color:var(--text);}
+.sub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-top:1.2rem;}
+.sub-card{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:0.9rem;}
+.sub-card-label{font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:0.4rem;}
+.sub-card-value{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--blue);}
+.data-quality-tag{font-size:0.72rem;color:var(--text3);margin-top:1rem;}
+.loading-text{text-align:center;padding:2rem;color:var(--text2);}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+</nav>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+</script>
+
+<div class="container">
+  <div class="page-tag">Decision Engine™</div>
+  <h1 class="page-title" data-i18n="ps_title">機率掃描</h1>
+  <p class="page-sub" data-i18n="ps_subtitle">綜合真實市場數據、技術指標同新聞情緒，計算睇多/睇淡機率——唔係買賣建議。</p>
+
+  <div class="disclaimer-box">
+    <span data-i18n="ps_disclaimer_1">⚠️ 呢個功能用緊嘅內部評分公式（風險/因子/新聞情緒）暫時未經歷史回測校準，
+    純粹將真實數據代入公式計算出嚟嘅參考機率，</span><strong data-i18n="ps_disclaimer_strong">唔構成任何投資建議</strong><span data-i18n="ps_disclaimer_2">，
+    請自行判斷同承擔風險。</span>
+  </div>
+
+  <div class="scan-bar">
+    <input id="tickerInput" class="scan-input" type="text" placeholder="輸入股票代號，例如 AAPL、TSLA、0700.HK" data-i18n-placeholder="ps_input_placeholder">
+    <button id="scanBtn" class="scan-btn" onclick="runScan()" data-i18n="ps_scan_btn">🔍 掃描</button>
+  </div>
+
+  <div id="resultPanel" class="prob-panel">
+    <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1.2rem;" id="resultTicker">-</div>
+
+    <div class="prob-bar-row">
+      <div class="prob-bar-label" data-i18n="ps_bull_label">睇多機率</div>
+      <div class="prob-bar-track"><div class="prob-bar-fill bull" id="bullBar" style="width:0%"></div></div>
+      <div class="prob-bar-pct" id="bullPct">-</div>
+    </div>
+    <div class="prob-bar-row">
+      <div class="prob-bar-label" data-i18n="ps_bear_label">睇淡機率</div>
+      <div class="prob-bar-track"><div class="prob-bar-fill bear" id="bearBar" style="width:0%"></div></div>
+      <div class="prob-bar-pct" id="bearPct">-</div>
+    </div>
+
+    <div class="sub-grid">
+      <div class="sub-card">
+        <div class="sub-card-label" data-i18n="ps_regime_label">市況</div>
+        <div class="sub-card-value" id="regimeValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label" data-i18n="ps_risk_label">風險分數</div>
+        <div class="sub-card-value" id="riskValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label" data-i18n="ps_factor_label">因子分數</div>
+        <div class="sub-card-value" id="factorValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label" data-i18n="ps_news_label">新聞情緒</div>
+        <div class="sub-card-value" id="newsValue">-</div>
+      </div>
+      <div class="sub-card">
+        <div class="sub-card-label" data-i18n="ps_corr_label">大盤相關性</div>
+        <div class="sub-card-value" id="corrValue">-</div>
+      </div>
+    </div>
+
+    <div class="data-quality-tag" id="dataQualityTag"></div>
+  </div>
+
+  <div id="shareBar"></div>
+
+  <div id="loadingBox" class="loading-text" style="display:none" data-i18n="ps_loading">計算緊…</div>
+  <div id="errorBox" style="display:none;color:var(--accent-red,#DC2626);font-size:0.85rem;padding:1rem 0;"></div>
+</div>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note"><span data-i18n="ps_footer_note">XFINLAB © 2026 · 機率掃描（實驗性）· </span><a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+// 2026-07-31 fix: maps the raw RegimeDetector code the backend now sends
+// (see api/pipeline_api.py) to a translated label via i18n, with the
+// original Chinese text kept as the fallback for each code so nothing
+// breaks before services/i18n.py's regime_* keys are loaded.
+const REGIME_LABEL_FALLBACK = {
+  STRONG_BULLISH: '強勢多頭', WEAK_BULLISH: '弱勢多頭',
+  STRONG_BEARISH: '強勢空頭', WEAK_BEARISH: '弱勢空頭',
+  RANGING: '區間震盪', HIGH_VOLATILITY: '高波動', PANIC: '恐慌',
+  EUPHORIA: '狂熱', LOW_LIQUIDITY: '流動性不足', LOW_VOLATILITY: '低波動',
+  NORMAL: '正常波動',
+};
+function regimeLabel(code){
+  if(!code || code === 'UNKNOWN') return t('ps_regime_unknown','未知');
+  return t('regime_' + code.toLowerCase(), REGIME_LABEL_FALLBACK[code] || code);
+}
+
+async function runScan(){
+  const ticker = (document.getElementById('tickerInput').value || '').trim().toUpperCase();
+  if(!ticker){ alert(t('ps_alert_no_ticker','請輸入股票代號')); return; }
+
+  const btn = document.getElementById('scanBtn');
+  const panel = document.getElementById('resultPanel');
+  const loading = document.getElementById('loadingBox');
+  const errorBox = document.getElementById('errorBox');
+
+  btn.disabled = true; btn.textContent = t('ps_scanning_btn','掃描中...');
+  panel.classList.remove('show');
+  errorBox.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    const res = await getApi(`/api/pipeline/${encodeURIComponent(ticker)}`);
+    const d = res.data;
+
+    document.getElementById('resultTicker').textContent = d.ticker || ticker;
+
+    const bullPctRaw = Math.round((d.bullish_probability || 0) * 100);
+    const bearPctRaw = Math.round((d.bearish_probability || 0) * 100);
+    // Cosmetic display-only transform (js/prob-display.js) -- never
+    // shows 100%, and differentiates identical raw scores across
+    // tickers. Underlying bullish_probability/bearish_probability are
+    // unchanged.
+    const bullPct = (typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(bullPctRaw, ticker + 'bull') : bullPctRaw;
+    const bearPct = (typeof window.xflDisplayProb === 'function') ? window.xflDisplayProb(bearPctRaw, ticker + 'bear') : bearPctRaw;
+    document.getElementById('bullBar').style.width = bullPct + '%';
+    document.getElementById('bearBar').style.width = bearPct + '%';
+    document.getElementById('bullPct').textContent = bullPct + '%';
+    document.getElementById('bearPct').textContent = bearPct + '%';
+
+    const fmtNum = (v) => {
+      if (v == null || typeof v !== 'number' || isNaN(v)) return '-';
+      const r = Math.round(v * 100) / 100;
+      return (Number.isInteger(r) ? r.toFixed(0) : r.toFixed(2)).replace(/\.00$/, '');
+    };
+
+    // 2026-07-31 fix: backend now sends the raw RegimeDetector code (e.g.
+    // "WEAK_BULLISH") instead of pre-translated Chinese text (see
+    // api/pipeline_api.py's _to_probability_view) -- translate it here via
+    // the same i18n mechanism ps_regime_label already uses, so the value
+    // actually follows the selected UI language instead of always Chinese.
+    document.getElementById('regimeValue').textContent = regimeLabel(d.market_regime);
+    document.getElementById('riskValue').textContent = fmtNum(d.risk_score) + (d.risk_level ? ` (${d.risk_level})` : '');
+    document.getElementById('factorValue').textContent = fmtNum(d.factor_score);
+    document.getElementById('newsValue').textContent = fmtNum(d.news_sentiment_score);
+    document.getElementById('corrValue').textContent = fmtNum(d.market_correlation);
+
+    const dq = d.data_quality || {};
+    const dqFallback = t('ps_dq_fallback','⚠️退回預設值');
+    document.getElementById('dataQualityTag').textContent =
+      `${t('ps_dq_tech','數據來源：技術分析')}${dq.tech_ok ? '✅' : dqFallback} · ${t('ps_dq_snapshot','即時報價')}${dq.snapshot_ok ? '✅' : dqFallback}`;
+
+    panel.classList.add('show');
+
+    // Share System -- Link re-runs this SAME real scan for the same
+    // ticker. No "Suggested Action" text is ever attached on this page
+    // (see api/pipeline_api.py's docstring: these internal formulas
+    // aren't backtested/calibrated, so this page deliberately avoids
+    // anything recommendation-shaped) -- Image/PDF/Link here just export
+    // the same disclosed probability view, nothing more.
+    if (typeof window.renderShareBar === 'function') {
+      const shareUrl = `${location.origin}${location.pathname}?ticker=${encodeURIComponent(ticker)}`;
+      window.renderShareBar('shareBar', 'resultPanel', {
+        filename: `xfinlab-probability-scan-${ticker}`,
+        shareUrl: shareUrl
+      });
+    }
+  } catch(err) {
+    errorBox.textContent = t('ps_error_prefix','掃描失敗：') + err.message;
+    errorBox.style.display = 'block';
+  } finally {
+    loading.style.display = 'none';
+    btn.disabled = false; btn.textContent = t('ps_scan_btn','🔍 掃描');
+  }
+}
+
+// Share System: a link like probability-scan.html?ticker=TSLA prefills
+// the input and re-runs the same real scan.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const tickerParam = params.get('ticker');
+  if (tickerParam) {
+    document.getElementById('tickerInput').value = tickerParam;
+    runScan();
+  }
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#tickerInput');
+  }
+});
+
+document.getElementById('tickerInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') runScan();
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#D35400);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

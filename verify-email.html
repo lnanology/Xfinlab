@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>驗證電郵 — XFINLAB</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Light default (2026-07-18): white bg, black text, black border. */
+  :root {
+    --bg: #FFFFFF; --surface: #FFFFFF; --border: #000000;
+    --accent: #D35400; --accent-text: #FFFFFF; --green: #16A34A; --red: #DC2626;
+    --text: #000000; --muted: #666666;
+  }
+  [data-theme="dark"] {
+    --bg: #080c14; --surface: #0d1525; --border: #1e2d45;
+    --accent: #F97316; --accent-text: #000000; --green: #10b981; --red: #ef4444;
+    --text: #e2e8f0; --muted: #94a3b8;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+  nav { display: flex; align-items: center; padding: 16px 32px; border-bottom: 1px solid var(--border); }
+  .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+  .nav-brand span { color: var(--text); }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+  .box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px; width: 100%; max-width: 420px; text-align: center; }
+  .icon { font-size: 3rem; margin-bottom: 20px; }
+  .title { font-size: 1.4rem; font-weight: 700; margin-bottom: 12px; }
+  .desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 28px; }
+  .btn { background: var(--accent); color: var(--accent-text); padding: 12px 32px; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block; }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  footer { padding: 1.6rem; border-top: 1px solid var(--border); text-align: center; font-size: 0.85rem; color: var(--muted); }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+<script src="js/theme-toggle.js"></script>
+<script src="js/i18n.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav><a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<span>FIN</span>LAB</a></nav>
+<main>
+  <div class="box" id="content">
+    <div class="spinner"></div>
+    <div class="title" data-i18n="ve_verifying_title">驗證中...</div>
+    <div class="desc" data-i18n="ve_verifying_desc">請稍候，正在驗證你的電郵地址</div>
+  </div>
+</main>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>XFINLAB © 2026 · <span data-i18n="ve_page_name">驗證電郵</span> · <a href="privacy.html" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="text-decoration:none">Risk Warning</a> · <a href="ai-disclaimer.html" style="text-decoration:none">AI Disclaimer</a> · <a href="terms.html" style="text-decoration:none">Terms</a></footer>
+
+<script>
+const API = "https://api.xfinlab.com/api";
+const token = new URLSearchParams(window.location.search).get('token');
+function t(key, fallback) { return (typeof I18N !== 'undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+async function verify() {
+  if (!token) {
+    showResult('❌', t('ve_invalid_link_title', '無效連結'), t('ve_invalid_link_desc', '驗證連結無效，請重新申請。'), false);
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/auth/verify-email?token=${token}`);
+    const data = await res.json();
+    if (res.ok) {
+      showResult('✅', t('ve_success_title', '驗證成功！'), t('ve_success_desc', '你的電郵已成功驗證，現在可以使用全部功能。'), true);
+    } else {
+      showResult('❌', t('ve_fail_title', '驗證失敗'), data.detail || t('ve_fail_default_desc', '連結無效或已過期'), false);
+    }
+  } catch(e) {
+    showResult('❌', t('auth_error_connection_title', '連接錯誤'), t('auth_error_connection_desc', '請確保 API 正在運行'), false);
+  }
+}
+
+function showResult(icon, title, desc, success) {
+  document.getElementById('content').innerHTML = `
+    <div class="icon">${icon}</div>
+    <div class="title">${title}</div>
+    <div class="desc">${desc}</div>
+    <a href="${success ? 'dashboard.html' : 'login.html'}" class="btn">${success ? t('ve_btn_dashboard', '前往 Dashboard') : t('auth_back_to_login', '返回登入')}</a>
+  `;
+}
+
+verify();
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+</body>
+</html>

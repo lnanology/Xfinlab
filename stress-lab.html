@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — Risk Engine™ 壓力測試實驗室</title>
+<meta name="description" content="壓力測試實驗室 — 模擬市場崩盤、加息、地緣政治風險對你投資組合嘅影響。">
+<link rel="canonical" href="https://www.xfinlab.com/stress-lab.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="壓力測試實驗室 — XFINLAB">
+<meta property="og:description" content="壓力測試實驗室 — 模擬市場崩盤、加息、地緣政治風險對你投資組合嘅影響。">
+<meta property="og:url" content="https://www.xfinlab.com/stress-lab.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary)}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1160px;margin:0 auto;padding:28px 18px;flex:1}
+.form-row{display:flex;gap:0.8rem;align-items:center}
+.select, .input{background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);padding:0.6rem 0.8rem;border-radius:8px;outline:none}
+.input{width:160px}
+.primary-btn{background:var(--accent-blue);color:#fff;border:none;padding:0 14px;border-radius:8px;cursor:pointer;height:44px}
+.primary-btn:hover{background:#A83E00}
+.metric{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:1rem;text-align:center}
+.metric .label{color:var(--text-secondary);font-size:0.95rem;margin-bottom:0.6rem}
+.metric .value{font-family:'DM Serif Display',serif;font-size:1.6rem;color:var(--accent-blue)}
+.metric .sub{font-size:0.88rem;color:var(--text-muted);margin-top:0.4rem}
+
+/* PSYCHOLOGICAL TEST */
+.psych{display:flex;flex-direction:column;gap:0.6rem}
+.choice-row{display:flex;gap:0.6rem;flex-wrap:wrap}
+.choice{flex:1;padding:0.8rem;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;text-align:center}
+.choice.selected{border-color:var(--accent-blue);background:var(--bg-secondary);color:var(--text-primary)}
+.result-box{background:var(--bg-card);border:1px solid var(--border-color);padding:1rem;border-radius:8px;margin-top:0.8rem}
+
+/* EDUCATION */
+.edu{line-height:1.7}
+.edu h3{color:var(--accent-blue);margin-top:0.6rem}
+.edu p{color:var(--text-secondary);margin-bottom:0.6rem}
+
+.footer{padding:1.6rem;border-top:1px solid var(--border-color);background:var(--bg-card);text-align:center}
+
+@media(max-width:768px){.form-row{flex-direction:column;align-items:stretch}.input{width:100%}}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+
+</nav>
+
+<div class="container">
+  <div class="page-tag">Risk Engine™</div>
+  <h1 class="page-title" data-i18n="sl_title">黑天鵝壓力測試實驗室</h1>
+  <p class="page-sub" data-i18n="sl_subtitle">幫助投資人理解策略在歷史黑天鵝事件中的最大風險與心理壓力。數字為根據歷史事件跌幅估算，並非完整歷史價格回測。</p>
+
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem">
+      <div style="flex:1;min-width:240px">
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem" data-i18n="sl_strategy_label">策略選擇</label>
+        <select id="strategySelect" class="select">
+          <option value="60-40" data-i18n="sl_opt_6040">股債 60/40</option>
+          <option value="all-weather" data-i18n="sl_opt_allweather">全天候策略</option>
+          <option value="tech-momentum" data-i18n="sl_opt_techmomentum">科技動能策略</option>
+          <option value="high-dividend" data-i18n="sl_opt_highdividend">高股息策略</option>
+          <option value="defensive" data-i18n="sl_opt_defensive">防禦型策略</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem" data-i18n="sl_amount_label">投入金額 (USD)</label>
+        <input id="amountInput" class="input" type="number" value="100000" min="1000" step="1000">
+      </div>
+
+      <div style="align-self:flex-end">
+        <button class="primary-btn" onclick="runStressTest()" data-i18n="sl_run_btn">開始模擬</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultContent" class="grid">
+    <div class="panel">
+      <div class="result-title" data-i18n="sl_scenario_a">情境 A：2008 金融海嘯</div>
+      <div class="metric">
+        <div class="label" data-i18n="sl_max_drawdown">最大跌幅</div>
+        <div class="value" id="dd2008">-</div>
+        <div class="sub" id="sub2008">帳面剩餘：-</div>
+        <div class="sub" id="rec2008">回本時間：-</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="result-title" data-i18n="sl_scenario_b">情境 B：2020 疫情熔斷</div>
+      <div class="metric">
+        <div class="label" data-i18n="sl_max_drawdown">最大跌幅</div>
+        <div class="value" id="dd2020">-</div>
+        <div class="sub" id="sub2020">帳面剩餘：-</div>
+        <div class="sub" id="rec2020">回本時間：-</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="result-title" data-i18n="sl_scenario_c">情境 C：2022 升息熊市</div>
+      <div class="metric">
+        <div class="label" data-i18n="sl_max_drawdown">最大跌幅</div>
+        <div class="value" id="dd2022">-</div>
+        <div class="sub" id="sub2022">帳面剩餘：-</div>
+        <div class="sub" id="rec2022">回本時間：-</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="shareBar"></div>
+
+  <!-- 2026-07-19 Stage 3 roadmap addition ("歷史事件蒙地卡羅模擬"): a real
+       Monte Carlo bootstrap over the chosen symbol's OWN real historical
+       daily returns (services/monte_carlo_service.py) -- complementary
+       to (not a replacement for) the assumed-profile cards above, which
+       stay purely client-side/deterministic. This one calls the backend
+       because it needs real fetched OHLCV history. -->
+  <div class="panel">
+    <div class="result-title" data-i18n="sl_mc_title">🎲 Monte Carlo Simulation (Real Historical Data)</div>
+    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.8rem" data-i18n="sl_mc_subtitle">Enter a ticker to bootstrap-resample its own real historical daily returns and see a range of possible outcomes.</p>
+    <div class="form-row" style="flex-wrap:wrap;margin-bottom:0.8rem">
+      <div>
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem" data-i18n="sl_mc_symbol_label">Symbol</label>
+        <input id="mcSymbolInput" class="input" type="text" placeholder="e.g. AAPL" data-i18n-placeholder="sl_mc_placeholder" autocomplete="off">
+      </div>
+      <div>
+        <label style="display:block;color:var(--text2);margin-bottom:0.4rem" data-i18n="sl_mc_horizon_label">Horizon</label>
+        <select id="mcHorizonSelect" class="select">
+          <option value="63" data-i18n="sl_mc_horizon_3mo">3 months</option>
+          <option value="126" data-i18n="sl_mc_horizon_6mo">6 months</option>
+          <option value="252" selected data-i18n="sl_mc_horizon_1y">1 year</option>
+          <option value="504" data-i18n="sl_mc_horizon_2y">2 years</option>
+        </select>
+      </div>
+      <div style="align-self:flex-end">
+        <button class="primary-btn" onclick="runMonteCarlo()" data-i18n="sl_mc_run_btn">Run Simulation</button>
+      </div>
+    </div>
+    <div id="mcResult"></div>
+    <p style="color:var(--text-muted);font-size:0.72rem;margin-top:0.6rem;line-height:1.5" data-i18n="sl_mc_disclaimer">⚠️ i.i.d. resampling of real historical daily returns -- doesn't preserve volatility clustering/autocorrelation, doesn't correspond to any specific historical crisis. For research reference only, not investment advice.</p>
+  </div>
+
+  <div class="panel">
+    <div class="result-title" data-i18n="sl_psych_title">心理測驗區</div>
+    <div class="psych">
+      <div style="color:var(--text2);margin-bottom:0.6rem" data-i18n="sl_psych_question">如果明天帳面虧損 30%，你會：</div>
+      <div class="choice-row">
+        <div class="choice" data-choice="A" onclick="selectChoice(this)" data-i18n="sl_choice_a">A 繼續持有</div>
+        <div class="choice" data-choice="B" onclick="selectChoice(this)" data-i18n="sl_choice_b">B 減碼</div>
+        <div class="choice" data-choice="C" onclick="selectChoice(this)" data-i18n="sl_choice_c">C 全部賣出</div>
+      </div>
+      <div class="result-box" id="psychResult" data-i18n="sl_psych_no_answer">尚未作答</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="result-title" data-i18n="sl_edu_title">AI 教育解說</div>
+    <div class="edu">
+      <h3 data-i18n="sl_edu_h1">最大回撤 (Max Drawdown)</h3>
+      <p data-i18n="sl_edu_p1">最大回撤表示在一段期間內投資組合從峰值到谷底的最大資本損失，通常用百分比表示。</p>
+
+      <h3 data-i18n="sl_edu_h2">回本期</h3>
+      <p data-i18n="sl_edu_p2">回本期是指在假設固定年化報酬下，從當前帳面價值回到投入本金所需的大致年數（示範用估算）。</p>
+
+      <h3 data-i18n="sl_edu_h3">資產配置原理</h3>
+      <p data-i18n="sl_edu_p3">不同策略在黑天鴉事件中表現不同：股債配置能降低波動，動能策略往往在劇烈震盪中承受更大跌幅，但若抓到反彈可快速回本。</p>
+
+      <p style="color:var(--text3);margin-top:0.6rem" data-i18n="sl_edu_disclaimer">（跌幅同回本年數為根據歷史事件嘅估算假設值計算，並非完整歷史價格序列回測，僅供教育參考。）</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note"><span data-i18n="sl_footer_note">XFINLAB © 2026 · 黑天鵝壓力測試實驗室 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
+<script src="js/mvp-api.js"></script>
+<script>
+const strategyProfiles = {
+  '60-40':{
+    name:'股債 60/40',
+    annualReturn:0.06,
+    scenarioDrawdowns:{'2008':-0.35,'2020':-0.25,'2022':-0.22}
+  },
+  'all-weather':{name:'全天候策略',annualReturn:0.05,scenarioDrawdowns:{'2008':-0.22,'2020':-0.18,'2022':-0.12}},
+  'tech-momentum':{name:'科技動能策略',annualReturn:0.09,scenarioDrawdowns:{'2008':-0.55,'2020':-0.45,'2022':-0.38}},
+  'high-dividend':{name:'高股息策略',annualReturn:0.055,scenarioDrawdowns:{'2008':-0.30,'2020':-0.20,'2022':-0.18}},
+  'defensive':{name:'防禦型策略',annualReturn:0.04,scenarioDrawdowns:{'2008':-0.18,'2020':-0.12,'2022':-0.10}}
+};
+
+function formatCurrency(n){return '$'+n.toLocaleString();}
+
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+// 2026-07-25 fix (task #408): sub2008/rec2008/sub2020/rec2020/sub2022/
+// rec2022 were only ever set (via t()) inside runStressTest(), which only
+// fires on the "開始模擬" button click -- before that, they showed their
+// raw hardcoded Chinese placeholder text ("帳面剩餘：-" / "回本時間：-")
+// no matter what UI language was selected, while the sibling scenario
+// titles (data-i18n="sl_scenario_a" etc) already translated correctly on
+// page load. Setting the same placeholder text through t() immediately
+// closes that gap without waiting for a simulation run.
+function initScenarioPlaceholders(){
+  ['2008','2020','2022'].forEach(function(key){
+    var sub = document.getElementById('sub'+key);
+    var rec = document.getElementById('rec'+key);
+    if (sub) sub.textContent = t('sl_remaining_label','帳面剩餘：') + '-';
+    if (rec) rec.textContent = t('sl_recovery_label','回本時間：') + '-';
+  });
+}
+// js/i18n.js fetches the active language asynchronously and only
+// populates I18N.translations (then fires "i18nApplied") once that
+// resolves -- calling this immediately here would race the fetch and
+// always read the empty {} default, silently keeping the Chinese
+// fallback regardless of the real selected language. Also run once
+// synchronously in case i18n.js isn't present/loaded (still gives the
+// pre-existing Chinese placeholder, i.e. no regression).
+initScenarioPlaceholders();
+document.addEventListener('i18nApplied', initScenarioPlaceholders);
+
+// 2026-07-11 fix: 呢個function之前call緊 /api/stress-lab，但backend
+// 個endpoint返嘅shape係 {analysis, conclusion, scenario}（一段AI文字），
+// 完全冇呢度期望嘅 scenarios/psych 結構 -- 即係話呢個function
+// 100%必然拋錯，「分析失敗」個alert會每次都彈，唔理你揀咩策略/金額。
+// 而家發現上面已經有一份完整、真實嘅 strategyProfiles 數據（每個策略
+// 喺2008/2020/2022嘅估算最大回撤 + 假設年化回報率），淨係從未被
+// runStressTest() 用過。而家改做直接用返呢份現成數據，喺前端
+// client-side計算，唔使call backend，即刻show結果、亦都唔會再壞。
+// 2026-07-18 fix: no Enter-key handling existed on the amount field --
+// had to click "開始模擬" every time.
+document.getElementById('amountInput').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') runStressTest();
+});
+
+function runStressTest(){
+  const stratKey=document.getElementById('strategySelect').value;
+  const amount=parseFloat(document.getElementById('amountInput').value)||100000;
+
+  const profile = strategyProfiles[stratKey] || strategyProfiles['60-40'];
+
+  ['2008','2020','2022'].forEach(key=>{
+    const drawdown = profile.scenarioDrawdowns[key]; // 負數，例如 -0.35
+    const remaining = amount * (1 + drawdown);
+    // 回本年數：帳面跌到 remaining 之後，用返個策略嘅假設年化回報率
+    // 需要幾多年先返到原本投入本金 -- ln(1/(1+drawdown)) / ln(1+annualReturn)
+    const recoveryYears = Math.log(1 / (1 + drawdown)) / Math.log(1 + profile.annualReturn);
+
+    document.getElementById('dd'+key).textContent = (drawdown * 100).toFixed(0) + '%';
+    document.getElementById('sub'+key).textContent = t('sl_remaining_label','帳面剩餘：') + formatCurrency(Math.round(remaining));
+    document.getElementById('rec'+key).textContent = t('sl_recovery_label','回本時間：') + recoveryYears.toFixed(1) + t('sl_years_suffix',' 年');
+  });
+
+  if (typeof trackEvent === 'function') trackEvent('search', {endpoint: 'stress-lab', strategy: stratKey});
+
+  // Share System -- Link re-runs this SAME deterministic calculation
+  // (same strategy + amount), so it always reproduces the identical
+  // result rather than sharing a static screenshot.
+  if (typeof window.renderShareBar === 'function') {
+    const shareUrl = `${location.origin}${location.pathname}?strategy=${encodeURIComponent(stratKey)}&amount=${encodeURIComponent(amount)}`;
+    window.renderShareBar('shareBar', 'resultContent', {
+      filename: `xfinlab-stress-test-${stratKey}`,
+      shareUrl: shareUrl
+    });
+  }
+}
+
+// Share System: a link like stress-lab.html?strategy=tech-momentum&amount=50000
+// prefills the form and re-runs the same real (client-side) calculation.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const strategyParam = params.get('strategy');
+  if (strategyParam && strategyProfiles[strategyParam]) {
+    document.getElementById('strategySelect').value = strategyParam;
+    const amountParam = params.get('amount');
+    if (amountParam) document.getElementById('amountInput').value = amountParam;
+    runStressTest();
+  }
+});
+
+// ---- Monte Carlo section (services/monte_carlo_service.py) ----
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('#mcSymbolInput');
+  }
+  document.getElementById('mcSymbolInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') runMonteCarlo();
+  });
+});
+
+function formatMcCurrency(n){
+  return '$' + Math.round(n).toLocaleString();
+}
+
+async function runMonteCarlo(){
+  const symbol = document.getElementById('mcSymbolInput').value.trim().toUpperCase();
+  const horizonDays = parseInt(document.getElementById('mcHorizonSelect').value, 10);
+  const amount = parseFloat(document.getElementById('amountInput').value) || 100000;
+
+  if (!symbol) { alert(t('sl_mc_alert_no_symbol', 'Please enter a ticker symbol')); return; }
+
+  const resultEl = document.getElementById('mcResult');
+  resultEl.innerHTML = `<div style="color:var(--text-muted);padding:0.6rem 0">${t('sl_mc_loading', 'Running simulation on real historical data…')}</div>`;
+
+  try {
+    const _mcLang = (typeof I18N !== 'undefined' && I18N.currentLang) || '';
+    const response = await postApi('/api/stress-lab', { symbol, amount, horizon_days: horizonDays, lang: _mcLang });
+    const data = response.data;
+    if (!data || data.available === false) {
+      resultEl.innerHTML = `<div style="color:var(--text-muted);padding:0.6rem 0">${(data && data.message) || t('sl_mc_fetch_fail', 'Simulation failed, please try again later')}</div>`;
+      return;
+    }
+
+    const resultTitleTmpl = t('sl_mc_result_title', 'Simulated Outcome ({n} runs)');
+    resultEl.innerHTML = `
+      <div class="result-title" style="margin-top:0.4rem">${resultTitleTmpl.replace('{n}', data.n_simulations.toLocaleString())}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.8rem;margin:0.6rem 0">
+        <div class="metric"><div class="label">${t('sl_mc_p5_label','Worst 5%')}</div><div class="value">${formatMcCurrency(data.ending_value_p5)}</div></div>
+        <div class="metric"><div class="label">${t('sl_mc_p50_label','Median')}</div><div class="value">${formatMcCurrency(data.ending_value_p50)}</div></div>
+        <div class="metric"><div class="label">${t('sl_mc_p95_label','Best 5%')}</div><div class="value">${formatMcCurrency(data.ending_value_p95)}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.8rem">
+        <div class="metric"><div class="label">${t('sl_mc_median_drawdown_label','Median Max Drawdown')}</div><div class="value">${data.max_drawdown_p50_pct}%</div></div>
+        <div class="metric"><div class="label">${t('sl_mc_worst_drawdown_label','Worst-Case (P5) Drawdown')}</div><div class="value">${data.max_drawdown_p5_pct}%</div></div>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.75rem;margin-top:0.6rem">${data.note || ''}</p>
+    `;
+  } catch (error) {
+    console.error(error);
+    resultEl.innerHTML = `<div style="color:var(--text-muted);padding:0.6rem 0">${t('sl_mc_fetch_fail', 'Simulation failed, please try again later')}</div>`;
+  }
+}
+
+// Map IDs dd2008 etc used in DOM
+['2008','2020','2022'].forEach(k=>{if(!document.getElementById('dd'+k)){
+  // noop
+}});
+
+// Psychological test
+let selectedChoice=null;
+function selectChoice(el){
+  document.querySelectorAll('.choice').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedChoice=el.getAttribute('data-choice');
+  showPsychResult();
+}
+
+function showPsychResult(){
+  const box=document.getElementById('psychResult');
+  if(!selectedChoice){box.textContent=t('sl_psych_no_answer','尚未作答');return}
+  let score,desc;
+  if(selectedChoice==='A'){score=80;desc=t('sl_psych_desc_a','高風險承受度 — 你傾向長期持有並耐受短期波動。')}
+  else if(selectedChoice==='B'){score=50;desc=t('sl_psych_desc_b','中等風險承受度 — 你傾向在壓力下減碼以保留部分部位。')}
+  else {score=20;desc=t('sl_psych_desc_c','低風險承受度 — 你傾向在遭遇重大損失時完全退出市場。')}
+  box.innerHTML=`${t('sl_psych_score_label','風險承受能力：')}<strong>${score}/100</strong><br><span style="color:var(--text2)">${desc}</span>`;
+}
+
+// initial mock fill
+document.getElementById('dd2008').textContent='-';
+
+</script>
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:#e2e8f0">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:#64748b;margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:#080c14;border:1px solid #1e2d45;color:#e2e8f0;padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:#F97316;color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/search-reminder.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — Investment Intelligence</title>
+<meta name="description" content="XFINLAB個人投資儀表板 — 自選股、投資組合、AI分析記錄一站式管理。">
+<link rel="canonical" href="https://www.xfinlab.com/dashboard.html">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:title" content="投資儀表板 — XFINLAB">
+<meta property="og:description" content="XFINLAB個人投資儀表板 — 自選股、投資組合、AI分析記錄一站式管理。">
+<meta property="og:url" content="https://www.xfinlab.com/dashboard.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="js/theme-toggle.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Light default (2026-07-18): white bg, black text, black border --
+     this page previously had no [data-theme] override at all (a
+     pre-existing gap), so applied directly here to match the rest of
+     the site's new light-first default rather than leaving it dark. */
+  :root {
+    --bg: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface2: #F8FAFC;
+    --border: #000000;
+    --accent: #D35400;
+    --accent2: #7c3aed;
+    --green: #16A34A;
+    --red: #DC2626;
+    --amber: #F59E0B;
+    --text: #000000;
+    --muted: #666666;
+    --label: #333333;
+    --nav-bg: rgba(255,255,255,0.95);
+    /* 2026-09-13 (AJ: "個＋，CHAT，月亮 ICON 跟返其他一樣"): this page
+       never links css/style.css (see the "never used css/style.css"
+       comments right below), so it never had --bg-card/--border-color/
+       --text-primary -- the exact variable names js/theme-toggle.js,
+       js/mobile-widget-dock.js's "+" trigger, and js/quick-ask-bubble.js's
+       chat button all read. Without them those 3 buttons silently fell
+       back to their hardcoded DARK fallback colors regardless of this
+       page's actual light/dark state. Aliasing to this page's own
+       equivalents fixes all 3 at once, on both themes, with zero JS
+       changes.  */
+    --bg-card: var(--surface);
+    --border-color: var(--border);
+    --text-primary: var(--text);
+    --accent-orange: var(--accent);
+  }
+
+  /* 2026-07-19: dashboard.html always had its own self-contained
+     :root (never used css/style.css), so it never had a [data-theme=
+     dark] override either -- js/theme-toggle.js could toggle the
+     attribute but nothing on this page would visually react. Values
+     mirror css/style.css's existing brand dark palette so the toggle
+     behaves consistently with every other page site-wide. */
+  [data-theme="dark"] {
+    --bg: #080c14;
+    --surface: #0d1525;
+    --surface2: #111d30;
+    --border: #1e2d45;
+    --accent: #F97316;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+    --nav-bg: rgba(8,12,20,0.95);
+    --bg-card: var(--surface);
+    --border-color: var(--border);
+    --text-primary: var(--text);
+    --accent-orange: var(--accent);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    /* 2026-07-18 fix: this was still the old dark-theme navy
+       (rgba(8,12,20,0.95)) left over from before the site-wide light-
+       theme-default flip (task #161-165) never touched this page's nav.
+       Everything else in :root moved to light (--text:#000, --surface:
+       #fff), so the "FIN" span (color:var(--text) = black) rendered
+       black-on-near-black -- invisible. Now uses --nav-bg, which flips
+       correctly with the [data-theme=dark] override added 2026-07-19. */
+    background: var(--nav-bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    /* 2026-08-02 fix ("右上3個導航放整齊D...之間距離不要貼緊", "手機
+       按ACCOUNT SHARE導航不動"): dashboard.html has always been fully
+       self-contained (its own <style> block, never links css/style.css --
+       see this file's other "never used css/style.css" comments), so it
+       never picked up css/style.css's #xflTopRightGroup flex/gap rule
+       (line ~258 there). js/nav.js (AI Chat + search icon) and
+       js/theme-toggle.js both inject their buttons into that shared
+       #xflTopRightGroup div assuming that rule exists -- on THIS page the
+       div was a bare, totally unstyled block element, so its 3 injected
+       buttons rendered back-to-back with zero gap between them (the
+       "貼緊" complaint) as a 4th unconstrained flex child of <nav>, wide
+       enough on narrow screens to visually collide with/cover this page's
+       own #accountBtn button next to it -- explaining why tapping
+       Account/Share appeared to do nothing on mobile (the tap was landing
+       on the invisible overlapping group instead). flex-wrap here lets
+       the row wrap onto a 2nd line instead of overflowing/overlapping
+       when everything can't fit on one row. */
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  /* Mirrors css/style.css's own #xflTopRightGroup rule so js/nav.js's
+     and js/theme-toggle.js's injected AI Chat / Search / Theme buttons
+     get the same grouped-with-a-gap layout here as on every other page
+     (this page just never had the chance to inherit it, see comment
+     above). */
+  #xflTopRightGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .nav-brand {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+
+  .nav-brand span { color: var(--text); }
+
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--green);
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* MAIN */
+  main { max-width: 1280px; margin: 0 auto; padding: 32px 24px; }
+
+  /* SEARCH BAR */
+  .search-section {
+    margin-bottom: 32px;
+  }
+
+  .search-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .ticker-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 8px;
+    width: 160px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: border-color 0.2s;
+  }
+
+  .ticker-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--label);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* SCORE HERO */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .score-card .label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .score-card .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .score-card .sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .c-accent { color: var(--accent); }
+  .c-green { color: var(--green); }
+  .c-red { color: var(--red); }
+  .c-amber { color: var(--amber); }
+  .c-purple { color: #a78bfa; }
+
+  /* RATING BADGE */
+  .rating-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-top: 8px;
+  }
+
+  .rating-buy { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .rating-hold { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+  .rating-sell { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* CONTENT GRID */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .panel-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* RESEARCH SECTIONS */
+  .research-item {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .research-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .research-item-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .research-item-text {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--label);
+  }
+
+  /* SCORES TABLE */
+  .scores-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-row-label {
+    font-size: 0.8rem;
+    color: var(--label);
+    width: 120px;
+    flex-shrink: 0;
+  }
+
+  .score-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .score-row-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    width: 36px;
+    text-align: right;
+  }
+
+  /* RISK INDICATORS */
+  .risk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .risk-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .risk-item .risk-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .risk-item .risk-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  /* BOTTOM PANELS */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* SCREENER TABLE */
+  .screener-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .screener-table th {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .screener-table td {
+    padding: 10px 0;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    color: var(--label);
+  }
+
+  .screener-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .screener-table td:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* PORTFOLIO DONUT (CSS only) */
+  .alloc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .alloc-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alloc-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .alloc-ticker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    width: 50px;
+  }
+
+  .alloc-bar-wrap {
+    flex: 1;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .alloc-bar { height: 100%; border-radius: 99px; }
+
+  .alloc-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    width: 42px;
+    text-align: right;
+  }
+
+  /* ANOMALY */
+  .anomaly-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .anomaly-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .anomaly-icon { font-size: 1rem; flex-shrink: 0; }
+
+  .anomaly-type {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+    margin-bottom: 2px;
+  }
+
+  .anomaly-detail {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .severity-HIGH { color: var(--red); }
+  .severity-MEDIUM { color: var(--amber); }
+  .severity-NONE { color: var(--green); }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 20px 0;
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty {
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  /* AI SUMMARY */
+  .ai-summary {
+    background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(124,58,237,0.06));
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--label);
+  }
+
+  .ai-summary strong {
+    color: var(--accent);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr 1fr; }
+    .content-grid { grid-template-columns: 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/quota.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<script src="js/push-subscribe.js"></script>
+<script src="js/push-prompt.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="/index.html" class="nav-brand" style="text-decoration:none;color:var(--accent)"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<span style="color:var(--text)">FIN</span>LAB</a>
+  <div class="nav-status">
+    <div class="dot"></div>
+    <span data-i18n="dash_nav_status">Intelligence Core v2.0</span>
+  </div>
+  <div id="userMenu" style="display:flex;align-items:center;gap:12px">
+    <!-- 2026-07-26 fix: removed the hardcoded chat link that used to live here
+         (added 2026-07-25, task #417). Task #426 later added a shared
+         "💬 AI對話" button into the site-wide #xflTopRightGroup floating
+         cluster (js/nav.js's cb()), which already appears further right on
+         this same page -- so this middle copy was a pure duplicate ("點解
+         中間有AICHAT" complaint). cb()'s only guard was `pg==="index.html"`,
+         it doesn't know about page-specific hardcoded links, so removing
+         this one is the fix (not adding a 2nd guard to cb()). -->
+    <div id="userInfo" style="font-size:0.8rem;color:var(--muted)"></div>
+    <div id="loginBtn" style="display:none">
+      <a href="login.html" data-i18n="nav_login" style="background:var(--accent);color:#000;padding:8px 16px;border-radius:8px;font-size:0.82rem;font-weight:600;text-decoration:none">Sign In</a>
+    </div>
+    <div id="accountBtn" style="position:relative">
+      <button onclick="toggleDropdown()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:6px">
+        <span id="userName" data-i18n="dash_account_default">Account</span> ▾
+      </button>
+      <!-- 2026-08-01 fix ("LINE登入完之後 走位" -- dropdown blew out sideways
+           and overlapped the page after logging in with LINE): LINE accounts
+           without the email OIDC scope get a long synthetic placeholder
+           address (backend/auth/social_login.py: `line_<sub>@line.xfinlab.
+           internal`, sub is a long hex string with no spaces/hyphens to break
+           on). #dropdownEmail below had no word-break, so that one unbreakable
+           token forced this box past its min-width:160px and out past the
+           viewport edge -- normal short Google/password emails never hit
+           this. max-width+box-sizing caps the box itself as a second layer
+           of defense (js/nav.js's shared .xfl-flyout already added
+           word-break:break-all for the same synthetic-email reason; this is
+           dashboard.html's own separate, older hand-built dropdown, which
+           missed that fix). -->
+      <div id="dropdown" style="display:none;position:absolute;right:0;top:40px;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:160px;max-width:min(280px,calc(100vw - 32px));box-sizing:border-box;z-index:100;overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="font-size:0.75rem;color:var(--muted)" data-i18n="dash_signed_in_as">Signed in as</div>
+          <div id="dropdownEmail" style="font-size:0.82rem;color:var(--text);margin-top:2px;word-break:break-all;overflow-wrap:anywhere"></div>
+          <div id="dropdownPlan" style="font-size:0.7rem;color:var(--amber);margin-top:2px;text-transform:uppercase;letter-spacing:0.08em"></div>
+          <div id="dropdownPoints" style="font-size:0.72rem;color:var(--muted);margin-top:6px;display:none"></div>
+        </div>
+        <a href="index.html" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🏠 <span data-i18n="dash_menu_home">Home</span></a>
+        <a href="pricing.html" style="display:block;padding:10px 16px;color:var(--amber);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">⭐ <span data-i18n="dash_view_plans">View Plans</span></a>
+        <a href="#" onclick="copyReferral()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">🔗 <span data-i18n="dash_menu_referral">Copy Referral Link</span></a>
+        <a href="#" onclick="showShareMenu()" style="display:block;padding:10px 16px;color:var(--label);font-size:0.82rem;text-decoration:none;border-bottom:1px solid var(--border)">📤 <span data-i18n="dash_menu_share">Share XFINLAB</span></a>
+        <a href="#" onclick="logout()" style="display:block;padding:10px 16px;color:var(--red);font-size:0.82rem;text-decoration:none">↩ <span data-i18n="dash_menu_signout">Sign Out</span></a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+<!-- Share Modal -->
+<div id="shareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:90%;max-width:480px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-weight:600;font-size:1rem">Share XFINLAB</div>
+      <button onclick="closeShareMenu()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem">✕</button>
+    </div>
+
+    <div id="shareText" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:0.82rem;color:var(--label);margin-bottom:20px;line-height:1.6"></div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+      <button onclick="shareTo('whatsapp')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">💬</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">WhatsApp</div>
+      </button>
+      <button onclick="shareTo('telegram')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">✈️</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Telegram</div>
+      </button>
+      <button onclick="shareTo('twitter')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">𝕏</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">X</div>
+      </button>
+      <button onclick="shareTo('facebook')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">📘</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Facebook</div>
+      </button>
+      <button onclick="shareTo('linkedin')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">💼</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">LinkedIn</div>
+      </button>
+      <button onclick="shareTo('reddit')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🤖</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Reddit</div>
+      </button>
+      <button onclick="shareTo('line')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🟢</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">LINE</div>
+      </button>
+      <button onclick="shareTo('wechat')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">💚</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">WeChat</div>
+      </button>
+      <button onclick="shareTo('instagram')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">📸</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Instagram</div>
+      </button>
+      <button onclick="shareTo('tiktok')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🎵</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">TikTok</div>
+      </button>
+      <button onclick="shareTo('threads')" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">🧵</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">Threads</div>
+      </button>
+      <button onclick="copyShareText()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;cursor:pointer;text-align:center">
+        <div style="font-size:1.4rem">📋</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:4px" data-i18n="dash_share_copy">Copy</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding Modal (2026-08-25, AJ: "新用戶第一次登入 → 強制走一次
+     『輸入 AAPL → 睇到 report』嘅 30 秒流程") -- shown once, right after a
+     brand-new registration (see login.html's handleRegister() setting the
+     xfinlab_needs_onboarding flag), never again after it's completed or
+     skipped. Reuses the EXISTING #ticker input + runFullAnalysis() below
+     rather than a separate flow/page -- this modal's "See My Report"
+     button just fills that real input and calls that real function, so
+     there's no second, parallel analysis path to keep in sync. -->
+<div id="onboardingModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1100;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:90%;max-width:440px;text-align:center">
+    <div style="font-size:2rem;margin-bottom:8px">👋</div>
+    <div style="font-weight:700;font-size:1.15rem;margin-bottom:8px" data-i18n="dash_onboard_title">Welcome to XFINLAB</div>
+    <p style="color:var(--muted);font-size:0.86rem;line-height:1.6;margin-bottom:20px" data-i18n="dash_onboard_subtitle">Paste a ticker and see a real, transparent AI research report in about 30 seconds -- this is the core of what XFINLAB does.</p>
+    <input id="onboardTicker" value="AAPL" maxlength="6" style="width:100%;box-sizing:border-box;text-align:center;text-transform:uppercase;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;font-size:1rem;font-weight:600;margin-bottom:14px">
+    <button class="btn-primary" style="width:100%;padding:12px" onclick="completeOnboarding()" data-i18n="dash_onboard_cta">See My AI Report →</button>
+    <a href="#" onclick="skipOnboarding();return false" style="display:block;margin-top:14px;font-size:0.76rem;color:var(--muted)" data-i18n="dash_onboard_skip">Skip for now</a>
+  </div>
+</div>
+
+<main>
+
+  <!-- SEARCH -->
+  <div class="search-section">
+    <div class="search-label" data-i18n="dash_search_label">Stock Analysis</div>
+    <div class="search-row">
+      <input class="ticker-input" id="ticker" value="AAPL" maxlength="6" placeholder="TICKER" data-i18n-placeholder="dash_ticker_placeholder">
+      <button class="btn-primary" id="analyzeBtn" onclick="runFullAnalysis()" data-i18n="dash_btn_analyze">Analyze</button>
+      <button class="btn-secondary" onclick="loadScreener()" data-i18n="dash_btn_screener">Screener</button>
+      <button class="btn-secondary" onclick="loadPortfolio()" data-i18n="dash_btn_portfolio">Portfolio</button>
+      <button class="btn-secondary" onclick="loadAnomaly()" data-i18n="dash_btn_anomaly">Anomaly</button>
+    </div>
+  </div>
+
+  <!-- SCORE HERO -->
+  <div class="hero-grid" id="heroGrid">
+    <div class="score-card">
+      <div class="label" data-i18n="dash_label_final_score">Final Score</div>
+      <div class="value c-accent" id="finalScore">—</div>
+      <div class="sub" data-i18n="dash_out_of_100">out of 100</div>
+    </div>
+    <div class="score-card">
+      <div class="label" data-i18n="dash_label_price">Price</div>
+      <div class="value c-green" id="price">—</div>
+      <div class="sub" id="tickerLabel" data-i18n="dash_ticker_label_default">Enter ticker to analyze</div>
+    </div>
+    <div class="score-card">
+      <div class="label" data-i18n="dash_label_risk_level">Risk Level</div>
+      <div class="value" id="riskLevel">—</div>
+      <div class="sub" id="riskScore">—</div>
+    </div>
+    <div class="score-card">
+      <div class="label" data-i18n="dash_label_ai_rating">AI Rating</div>
+      <div class="value" id="rating">—</div>
+      <div id="ratingBadge"></div>
+    </div>
+  </div>
+
+  <!-- ANALYSIS + RESEARCH -->
+  <div class="content-grid">
+
+    <!-- Score Breakdown -->
+    <div class="panel">
+      <div class="panel-title" data-i18n="dash_panel_score_breakdown">Score Breakdown</div>
+      <div class="scores-list" id="scoresList">
+        <div class="empty" data-i18n="dash_empty_run_analysis">Run an analysis to see scores</div>
+      </div>
+    </div>
+
+    <!-- AI Research -->
+    <div class="panel">
+      <div class="panel-title" data-i18n="dash_panel_ai_research">AI Research Report</div>
+      <div id="researchContent">
+        <div class="empty" data-i18n="dash_empty_ai_research">AI research will appear here</div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Watchlist -->
+  <div class="panel" style="margin-bottom:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div class="panel-title" data-i18n="dash_watchlist_title">我的自選股</div>
+      <button onclick="downloadWatchlistCsv()" id="watchlistDownloadBtn" data-i18n="dash_watchlist_download_btn" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">⬇ 下載 CSV</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;margin-top:10px">
+      <input id="watchlistTicker" placeholder="輸入代號加入" data-i18n-placeholder="dash_watchlist_placeholder" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:0.82rem;text-transform:uppercase">
+      <button onclick="addToWatchlist()" data-i18n="dash_watchlist_add_btn" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">加入</button>
+    </div>
+    <div id="watchlistContent"><div class="empty" data-i18n="dash_watchlist_static_login">登入後查看你的自選股</div></div>
+  </div>
+
+  <!-- API Key (task #724, AJ "全做" batch, 2026-08-09): logged-in users can
+       see + regenerate their Intelligence API key without emailing support
+       or going through the admin panel. Never displays a raw key on load
+       (see api_key_service.get_my_key_status -- keys aren't retained after
+       issuance); "Generate/Regenerate" reveals the raw value once, exactly
+       like a GitHub PAT, then it's masked again on next visit. -->
+  <div class="panel" style="margin-bottom:24px" id="apiKeyPanel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div class="panel-title" data-i18n="dash_apikey_title">Intelligence API 金鑰</div>
+      <a href="intelligence-api.html" style="font-size:0.76rem;color:var(--accent)" data-i18n="dash_apikey_docs_link">API 文件 →</a>
+    </div>
+    <div id="apiKeyContent" style="margin-top:10px">
+      <div class="empty" data-i18n="dash_apikey_loading">載入中...</div>
+    </div>
+  </div>
+
+  <!-- Decision Journal (Tier 2 layered-UX addition, 2026-07-18) -->
+  <div class="panel" style="margin-bottom:24px">
+    <div class="panel-title">📓 Decision Journal</div>
+    <div id="journalContent"><div class="empty" data-i18n="dash_journal_static_login">登入後查看你嘅Decision Journal</div></div>
+  </div>
+
+  <!-- BOTTOM PANELS -->
+  <div class="bottom-grid">
+
+    <!-- Screener -->
+    <div class="panel">
+      <div class="panel-title" data-i18n="dash_btn_screener">Screener</div>
+      <div id="screenerContent">
+        <div class="empty" data-i18n="dash_screener_empty">Click Screener to load</div>
+      </div>
+    </div>
+
+    <!-- Portfolio -->
+    <div class="panel">
+      <div class="panel-title" data-i18n="dash_panel_portfolio">Portfolio Allocation</div>
+      <div id="portfolioContent">
+        <div class="empty" data-i18n="dash_portfolio_empty">Click Portfolio to load</div>
+      </div>
+    </div>
+
+    <!-- Anomaly -->
+    <div class="panel">
+      <div class="panel-title" data-i18n="dash_panel_anomaly">Anomaly Radar</div>
+      <div id="anomalyContent">
+        <div class="empty" data-i18n="dash_anomaly_empty">Click Anomaly to scan</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script src="js/sparkline.js"></script>
+<script>
+const API = "https://api.xfinlab.com/api";
+const ALLOC_COLORS = ["#F97316","#7c3aed","#10b981","#f59e0b","#ef4444"];
+
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+function loading(html = '') {
+  return html || '<div class="loading"><div class="spinner"></div>Loading...</div>';
+}
+
+function getRatingClass(rating) {
+  if (!rating) return '';
+  const r = rating.toUpperCase();
+  // 2026-07-30: backend now emits "Very Bullish"/"Bullish"/"Neutral"/
+  // "Bearish"/"Very Bearish" instead of "Strong Buy"/"Buy"/"Sell"/"Strong
+  // Sell" (compliance rewrite) -- BUY/SELL substring checks kept for any
+  // still-cached/legacy values, BULLISH/BEARISH switched from exact-match
+  // to substring so "Very Bullish"/"Very Bearish" still classify correctly.
+  if (r.includes('BUY') || r.includes('BULLISH')) return 'rating-buy';
+  if (r.includes('SELL') || r.includes('BEARISH')) return 'rating-sell';
+  return 'rating-hold';
+}
+
+function getScoreColor(score) {
+  if (score >= 70) return '#10b981';
+  if (score >= 45) return '#f59e0b';
+  return '#ef4444';
+}
+
+function getRiskColor(level) {
+  if (!level) return '#94a3b8';
+  const l = level.toUpperCase();
+  if (l === 'LOW') return '#10b981';
+  if (l === 'HIGH') return '#ef4444';
+  return '#f59e0b';
+}
+
+async function runFullAnalysis() {
+  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+  trackEvent('search', {ticker});
+  if (!ticker) return;
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = t('dash_analyzing', 'Analyzing...');
+
+  // Reset hero
+  ['finalScore','price','riskLevel','rating'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+  document.getElementById('ratingBadge').innerHTML = '';
+  document.getElementById('tickerLabel').textContent = ticker;
+  document.getElementById('scoresList').innerHTML = loading();
+  document.getElementById('researchContent').innerHTML = loading();
+
+  try {
+    // 2026-07-11 fix: 呢兩個call之前從未帶token，令backend嘅
+    // check_and_increment()永遠收到token=None，即係「免費10次/日」
+    // quota系統雖然code齊全但實際上從未真正生效過。而家用返
+    // xfinlab_token（同頁面其他fetch call一致嘅key）。
+    const _quotaToken = localStorage.getItem('xfinlab_token') || '';
+    const _tokenQS = _quotaToken ? `?token=${encodeURIComponent(_quotaToken)}` : '';
+
+    // Run analysis + research in parallel
+    const [analysisRes, researchRes] = await Promise.all([
+      fetch(`${API}/full-analysis/${ticker}${_tokenQS}`),
+      fetch(`${API}/research/${ticker}${_tokenQS}`)
+    ]);
+
+    if (analysisRes.status === 429) {
+      const quotaErr = await analysisRes.json();
+      const msg = quotaErr?.detail?.message || t('dash_quota_exceeded', 'Your free daily analysis quota is used up, please upgrade to Pro to continue');
+      document.getElementById('scoresList').innerHTML = `<div class="empty">${msg} · <a href="pricing.html" style="color:#F97316">${t('dash_view_plans','View Plans')}</a></div>`;
+      document.getElementById('researchContent').innerHTML = '';
+      return;
+    }
+
+    const analysis = await analysisRes.json();
+    const research = await researchRes.json();
+
+    // Hero scores
+    document.getElementById('finalScore').textContent = analysis.final_score?.toFixed(1) ?? '—';
+    document.getElementById('price').textContent = analysis.price ? `$${analysis.price.toFixed(2)}` : '—';
+
+    const riskEl = document.getElementById('riskLevel');
+    const riskLevel = analysis.risk?.risk_level ?? '—';
+    riskEl.textContent = riskLevel;
+    riskEl.style.color = getRiskColor(riskLevel);
+    document.getElementById('riskScore').textContent = `RiskDNA™: ${analysis.risk_score?.toFixed(1) ?? '—'}`;
+
+    const ratingEl = document.getElementById('rating');
+    const rating = analysis.rating ?? research.ai_recommendation ?? '—';
+    ratingEl.textContent = rating;
+    document.getElementById('ratingBadge').innerHTML = `<span class="rating-badge ${getRatingClass(rating)}">${rating}</span>`;
+
+    // Score breakdown
+    const scores = [
+      { label: t('dash_score_market','Market Score'), value: analysis.market_score },
+      { label: t('dash_score_news','News Score'), value: analysis.news_score },
+      { label: t('dash_score_strategy','Strategy Score'), value: analysis.strategy_score },
+      { label: t('dash_score_risk_inverse','Risk (inverse)'), value: 100 - (analysis.risk_score ?? 0) },
+      { label: t('dash_label_final_score','Final Score'), value: analysis.final_score },
+    ];
+
+    document.getElementById('scoresList').innerHTML = scores.map(s => {
+      const v = s.value?.toFixed(1) ?? 0;
+      const color = getScoreColor(s.value);
+      return `
+        <div class="score-row">
+          <div class="score-row-label">${s.label}</div>
+          <div class="score-bar-wrap">
+            <div class="score-bar" style="width:${Math.min(s.value,100)}%;background:${color}"></div>
+          </div>
+          <div class="score-row-value" style="color:${color}">${v}</div>
+        </div>`;
+    }).join('');
+
+    // AI Research
+    if (research.error) {
+      document.getElementById('researchContent').innerHTML = `<div class="empty">${t('dash_research_unavailable','Research unavailable: {error}').replace('{error}', research.error)}</div>`;
+    } else {
+      const sections = [
+        { key: 'company_overview', label: t('dash_sec_company_overview','Company Overview') },
+        { key: 'financial_analysis', label: t('dash_sec_financial_analysis','Financial Analysis') },
+        { key: 'competitive_advantage', label: t('dash_sec_competitive_advantage','Competitive Advantage') },
+        { key: 'risk_factors', label: t('dash_sec_risk_factors','Risk Factors') },
+        { key: 'valuation', label: t('dash_sec_valuation','Valuation') },
+      ];
+
+      const researchHTML = sections.map(s => {
+        const val = research[s.key];
+        if (!val) return '';
+        const text = typeof val === 'object' ? Object.entries(val).map(([k,v]) => `${k}: ${v}`).join(' · ') : val;
+        return `
+          <div class="research-item">
+            <div class="research-item-label">${s.label}</div>
+            <div class="research-item-text">${text}</div>
+          </div>`;
+      }).join('');
+
+      const summary = research.summary || '';
+      const confidence = research.confidence ? Math.round(research.confidence * (research.confidence <= 1 ? 100 : 1)) : 0;
+      const targetPrice = research.target_price ? `$${research.target_price.toFixed(2)}` : '—';
+
+      document.getElementById('researchContent').innerHTML = researchHTML + `
+        <div class="ai-summary">
+          <strong>${t('dash_ai_verdict','AI Verdict — {confidence}% confidence · Target {target}').replace('{confidence}', confidence).replace('{target}', targetPrice)}</strong>
+          ${summary}
+        </div>`;
+    }
+
+  } catch(e) {
+    document.getElementById('scoresList').innerHTML = `<div class="empty">Error: ${e.message}</div>`;
+    document.getElementById('researchContent').innerHTML = `<div class="empty">Connection error</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = t('dash_btn_analyze', 'Analyze');
+}
+
+async function loadScreener() {
+  // 2026-07-18 fix: this panel sits far below the fold (below Watchlist +
+  // Decision Journal), so clicking the button fetched real data but the
+  // user's viewport never moved -- looked like the button did nothing.
+  document.getElementById('screenerContent').closest('.panel').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById('screenerContent').innerHTML = loading();
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/screener${token ? '?token=' + token : ''}`);
+    const data = await res.json();
+    const rows = (data.results || []).map(s => `
+      <tr>
+        <td>${s.ticker}</td>
+        <td>${s.market_score}</td>
+        <td>${s.news_score}</td>
+        <td>${s.final_score}</td>
+      </tr>`).join('');
+    document.getElementById('screenerContent').innerHTML = `
+      <table class="screener-table">
+        <thead><tr><th>${t('dash_th_ticker','Ticker')}</th><th>${t('dash_th_market','Market')}</th><th>${t('dash_th_news','News')}</th><th>${t('dash_th_score','Score')}</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="4" style="color:var(--muted)">${t('dash_no_results','No results')}</td></tr>`}</tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('screenerContent').innerHTML = `<div class="empty">${t('dash_err_screener','Error loading screener')}</div>`;
+  }
+}
+
+async function loadPortfolio() {
+  document.getElementById('portfolioContent').closest('.panel').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById('portfolioContent').innerHTML = loading();
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/portfolio${token ? '?token=' + token : ''}`);
+    const data = await res.json();
+    const rows = (data.portfolio || []).map((p, i) => `
+      <div class="alloc-row">
+        <div class="alloc-dot" style="background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
+        <div class="alloc-ticker">${p.ticker}</div>
+        <div class="alloc-bar-wrap">
+          <div class="alloc-bar" style="width:${p.allocation}%;background:${ALLOC_COLORS[i % ALLOC_COLORS.length]}"></div>
+        </div>
+        <div class="alloc-pct">${p.allocation}%</div>
+      </div>`).join('');
+    document.getElementById('portfolioContent').innerHTML = `<div class="alloc-list">${rows}</div>`;
+  } catch(e) {
+    document.getElementById('portfolioContent').innerHTML = `<div class="empty">${t('dash_err_portfolio','Error loading portfolio')}</div>`;
+  }
+}
+
+async function loadAnomaly() {
+  document.getElementById('anomalyContent').closest('.panel').scrollIntoView({behavior:'smooth', block:'center'});
+  document.getElementById('anomalyContent').innerHTML = loading();
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    const res = await fetch(`${API}/anomaly${token ? '?token=' + token : ''}`);
+    const data = await res.json();
+    const severity = data.severity || 'NONE';
+    // Response shape is now per-ticker (data.items), since the scan
+    // covers the user's watchlist instead of one fixed hardcoded stock.
+    const items = (data.items || []).flatMap(tickerItem =>
+      (tickerItem.anomalies || []).map(a => `
+      <div class="anomaly-item">
+        <div class="anomaly-icon">⚡</div>
+        <div>
+          <div class="anomaly-type">${tickerItem.ticker} · ${a.type.replace(/_/g,' ')}</div>
+          <div class="anomaly-detail">${a.detail}</div>
+        </div>
+      </div>`)
+    ).join('');
+
+    document.getElementById('anomalyContent').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">${t('dash_severity_label','Severity')}</span>
+        <span class="rating-badge severity-${severity}">${severity}</span>
+      </div>
+      <div class="anomaly-list">${items || `<div class="empty">${t('dash_no_anomalies','No anomalies detected')}</div>`}</div>`;
+  } catch(e) {
+    document.getElementById('anomalyContent').innerHTML = `<div class="empty">${t('dash_err_anomaly_scan','Error scanning')}</div>`;
+  }
+}
+
+// Auto-uppercase ticker input
+document.getElementById('ticker').addEventListener('input', function() {
+  this.value = this.value.toUpperCase();
+});
+
+// Enter key triggers analysis
+document.getElementById('ticker').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') runFullAnalysis();
+});
+
+
+
+// Analytics tracking
+const SESSION_ID = Math.random().toString(36).substring(2);
+
+async function trackEvent(event_type, event_data = null) {
+  // 2026-07-20: respect the cookie-consent banner's "Essential Only"
+  // choice (js/cookie-consent.js) -- skip the analytics POST entirely if
+  // the visitor declined, instead of the decline being purely cosmetic.
+  if (typeof window.XFLConsent === 'object' && !window.XFLConsent.hasAnalyticsConsent()) return;
+  try {
+    const token = localStorage.getItem('xfinlab_token');
+    await fetch(`${API}/analytics/track`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        event_type,
+        event_data,
+        token,
+        session_id: SESSION_ID,
+        page: 'dashboard'
+      })
+    });
+  } catch(e) {}
+}
+
+// Track page view
+trackEvent('page_view', {page: 'dashboard'});
+
+// Share functions
+let currentShareData = {};
+
+async function showShareMenu() {
+  const token = localStorage.getItem('xfinlab_token');
+  const ticker = document.getElementById('ticker')?.value || 'XFINLAB';
+  const score = document.getElementById('finalScore')?.textContent || '—';
+  const rating = document.getElementById('rating')?.textContent || '—';
+
+  let refLink = 'https://xfinlab.com';
+  if (token) {
+    try {
+      const res = await fetch(`${API}/referral/code?token=${token}`);
+      const data = await res.json();
+      refLink = data.referral_link || refLink;
+    } catch(e) {}
+  }
+
+  const shareText = t('dash_share_text_template', '📊 {ticker} Analysis by XFINLAB AI\n\nScore: {score}/100\nRating: {rating}\n\nGet free AI stock analysis:\n{reflink}')
+    .replace('{ticker}', ticker).replace('{score}', score).replace('{rating}', rating).replace('{reflink}', refLink);
+  document.getElementById('shareText').textContent = shareText;
+  currentShareData = { text: shareText, url: refLink, ticker };
+  document.getElementById('shareModal').style.display = 'flex';
+  document.getElementById('dropdown').style.display = 'none';
+}
+
+function closeShareMenu() {
+  document.getElementById('shareModal').style.display = 'none';
+}
+
+function shareTo(platform) {
+  const text = encodeURIComponent(currentShareData.text);
+  const url = encodeURIComponent(currentShareData.url);
+  const urls = {
+    whatsapp:  `https://wa.me/?text=${text}`,
+    telegram:  `https://t.me/share/url?url=${url}&text=${text}`,
+    twitter:   `https://twitter.com/intent/tweet?text=${text}`,
+    facebook:  `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+    linkedin:  `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+    reddit:    `https://reddit.com/submit?url=${url}&title=${encodeURIComponent(currentShareData.ticker + ' Analysis - XFINLAB AI')}`,
+    line:      `https://social-plugins.line.me/lineit/share?url=${url}`,
+    wechat:    null,
+    instagram: null,
+    tiktok:    null,
+    threads:   `https://www.threads.net/intent/post?text=${text}`,
+  };
+
+  if (platform === 'wechat') {
+    copyShareText();
+    alert(t('dash_alert_wechat', 'WeChat: Link copied! Paste it in WeChat 💚'));
+    return;
+  }
+  if (platform === 'instagram') {
+    copyShareText();
+    alert(t('dash_alert_instagram', 'Instagram: Link copied! Paste it in your bio or story 📸'));
+    return;
+  }
+  if (platform === 'tiktok') {
+    copyShareText();
+    alert(t('dash_alert_tiktok', 'TikTok: Link copied! Add it to your bio 🎵'));
+    return;
+  }
+
+  if (urls[platform]) window.open(urls[platform], '_blank');
+}
+
+function copyShareText() {
+  navigator.clipboard.writeText(currentShareData.text);
+  alert(t('dash_alert_copied', 'Copied to clipboard! 📋'));
+}
+
+// User menu
+function loadUserInfo() {
+  const user = JSON.parse(localStorage.getItem('xfinlab_user') || '{}');
+  if (user.name) {
+    document.getElementById('userName').textContent = user.name.split(' ')[0];
+    document.getElementById('dropdownEmail').textContent = user.email || '';
+    document.getElementById('dropdownPlan').textContent = (user.plan || 'free').toUpperCase() + ' ' + t('dash_plan_suffix', 'PLAN');
+    document.getElementById('accountBtn').style.display = 'block';
+    document.getElementById('loginBtn').style.display = 'none';
+    loadPointsStatus();
+  } else {
+    document.getElementById('accountBtn').style.display = 'none';
+    document.getElementById('loginBtn').style.display = 'block';
+  }
+}
+
+function toggleDropdown() {
+  const d = document.getElementById('dropdown');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+}
+
+// Points system (services/points_service.py): every basic-feature use
+// by a logged-in FREE-plan user earns 1 point; 500 points within a
+// rolling 7-day cycle earns a temporary 7-day Basic upgrade. Shown
+// here in the account dropdown (only meaningful for free-plan users --
+// paying users simply won't have accumulated any).
+async function loadPointsStatus() {
+  const token = localStorage.getItem('xfinlab_token');
+  const el = document.getElementById('dropdownPoints');
+  if (!token || !el) return;
+  try {
+    const res = await fetch(`https://api.xfinlab.com/api/points/status?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (data.temp_plan) {
+      const until = (data.temp_expires_at || '').split(' ')[0];
+      el.textContent = `⭐ ${t('dash_points_boosted', 'Basic upgrade active until')} ${until}`;
+      el.style.display = 'block';
+    } else if (data.points != null) {
+      el.textContent = `🏅 ${data.points}/${data.target} ${t('dash_points_label', 'points (reach 500 to earn 7-day Basic upgrade)')}`;
+      el.style.display = 'block';
+    }
+  } catch (e) {}
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#userMenu')) {
+    const d = document.getElementById('dropdown');
+    if (d) d.style.display = 'none';
+  }
+});
+
+function logout() {
+  localStorage.removeItem('xfinlab_token');
+  localStorage.removeItem('xfinlab_user');
+  window.location.href = 'login.html';
+}
+
+async function copyReferral() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) { alert(t('dash_alert_login_first', 'Please login first')); return; }
+  try {
+    const res = await fetch(`${API}/referral/code?token=${token}`);
+    const data = await res.json();
+    navigator.clipboard.writeText(data.referral_link);
+    alert(t('dash_alert_referral_copied', 'Referral link copied: {link}').replace('{link}', data.referral_link));
+  } catch(e) {
+    alert(t('dash_err_referral', 'Error getting referral link'));
+  }
+}
+
+loadUserInfo();
+
+// 主分析輸入格 + 自選股輸入格，兩個都要有代號autocomplete建議（覆蓋
+// 股票/期貨/加密貨幣/指數/債券，同埋港股/台股/A股/日股/歐美其他市場）。
+if (typeof autoAttachTickerAutocomplete === 'function') {
+  autoAttachTickerAutocomplete('#ticker');
+  autoAttachTickerAutocomplete('#watchlistTicker');
+}
+
+// 記低最新一次load到嘅watchlist，等downloadWatchlistCsv()唔使再fetch多次。
+let _lastWatchlistItems = [];
+
+function downloadWatchlistCsv() {
+  if (!_lastWatchlistItems.length) {
+    alert(t('dash_watchlist_download_empty', 'No watchlist items to download'));
+    return;
+  }
+  const header = 'Ticker,Price,Trend,Added At\n';
+  const rows = _lastWatchlistItems.map(item => {
+    const price = item.price != null ? item.price : '';
+    const addedAt = item.added_at || '';
+    return `${item.ticker},${price},${item.trend || ''},${addedAt}`;
+  }).join('\n');
+  const csv = header + rows;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `xfinlab-watchlist-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function loadWatchlist() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) {
+    document.getElementById('watchlistContent').innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','Log in')}</a>${t('dash_watchlist_login_suffix',' to see your watchlist')}</div>`;
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/watchlist?token=${token}`);
+    const data = await res.json();
+    const items = data.watchlist || [];
+    _lastWatchlistItems = items;
+    if (items.length === 0) {
+      document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_empty','No watchlist stocks yet, enter a ticker to add one')}</div>`;
+      return;
+    }
+    document.getElementById('watchlistContent').innerHTML = items.map(item => {
+      const color = item.trend === 'bullish' ? 'var(--green)' : item.trend === 'bearish' ? 'var(--red)' : 'var(--muted)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:monospace;font-weight:600">${item.ticker}</span>
+          <span style="color:${color};font-size:0.78rem">${item.trend}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span id="dashSpark-${CSS.escape(item.ticker)}" style="width:52px;display:inline-block"></span>
+          <span style="font-family:monospace;color:var(--accent)">$${item.price?.toFixed(2) || 'N/A'}</span>
+          <button onclick="removeFromWatchlist('${item.ticker}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+    // 2026-08-10 (task #747-754, "所有卡片有資產的都加細K線小圖"): watchlist
+    // items come from api/watchlist.py's `.info`-only MarketDataService
+    // snapshot -- no OHLC history in that response -- so this fetches the
+    // generic GET /api/sparkline/{ticker} lookup once per row after the
+    // list is already on screen, same pattern used on company-compare.html.
+    if (typeof XflSparkline !== 'undefined') {
+      items.forEach(item => {
+        fetch(`${API}/sparkline/${encodeURIComponent(item.ticker)}`).then(r => r.json()).then(d => {
+          const el = document.getElementById(`dashSpark-${CSS.escape(item.ticker)}`);
+          if (!el) return;
+          const dir = item.trend === 'bullish' ? 'bull' : (item.trend === 'bearish' ? 'bear' : 'neutral');
+          el.innerHTML = XflSparkline.render(d.sparkline, dir, {width:52, height:20, className:'xfl-spark-sm'});
+        }).catch(() => {});
+      });
+    }
+  } catch(e) {
+    document.getElementById('watchlistContent').innerHTML = `<div class="empty">${t('dash_watchlist_load_error','Failed to load')}</div>`;
+  }
+}
+
+async function addToWatchlist() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) { window.location.href = 'login.html'; return; }
+  const ticker = document.getElementById('watchlistTicker').value.trim().toUpperCase();
+  if (!ticker) return;
+  try {
+    await fetch(`${API}/watchlist/add/${ticker}?token=${token}`, { method: 'POST' });
+    document.getElementById('watchlistTicker').value = '';
+    loadWatchlist();
+  } catch(e) {}
+}
+
+async function removeFromWatchlist(ticker) {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) return;
+  try {
+    await fetch(`${API}/watchlist/remove/${ticker}?token=${token}`, { method: 'DELETE' });
+    loadWatchlist();
+  } catch(e) {}
+}
+
+loadWatchlist();
+
+// ---- Onboarding modal (2026-08-25) ----
+// Checked once at page load, before anything else the user might click.
+// Only ever true right after login.html's handleRegister() sets it (see
+// that file's comment) -- a normal login never sets this flag, so
+// returning users never see this again.
+function maybeShowOnboarding() {
+  if (localStorage.getItem('xfinlab_needs_onboarding') === '1') {
+    document.getElementById('onboardingModal').style.display = 'flex';
+  }
+}
+function completeOnboarding() {
+  const raw = (document.getElementById('onboardTicker').value || 'AAPL').trim().toUpperCase();
+  localStorage.removeItem('xfinlab_needs_onboarding');
+  document.getElementById('onboardingModal').style.display = 'none';
+  document.getElementById('ticker').value = raw || 'AAPL';
+  document.getElementById('heroGrid').scrollIntoView({behavior: 'smooth', block: 'start'});
+  runFullAnalysis();
+}
+function skipOnboarding() {
+  localStorage.removeItem('xfinlab_needs_onboarding');
+  document.getElementById('onboardingModal').style.display = 'none';
+}
+maybeShowOnboarding();
+
+// ---- API Key panel (task #724, AJ "全做" batch, 2026-08-09) ----
+// Same fetch/render pattern as loadWatchlist() above. GET never returns a
+// raw key -- masked preview only (backend: api_key_service.get_my_key_status,
+// docstring explains why: raw keys aren't retained after issuance, same
+// posture as GitHub/Stripe). Regenerate reveals the fresh raw value once,
+// client-side only, then a page reload masks it again.
+function apiKeyCopy(btn) {
+  const el = document.getElementById('apiKeyRawValue');
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = t('dash_apikey_copied', 'Copied');
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+async function loadApiKeyStatus() {
+  const token = localStorage.getItem('xfinlab_token');
+  const box = document.getElementById('apiKeyContent');
+  if (!token) {
+    box.innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','Log in')}</a>${t('dash_apikey_login_suffix',' to view your API key')}</div>`;
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/intelligence/v1/my-key?token=${token}`);
+    const json = await res.json();
+    const data = json.data || {};
+    if (!data.has_key) {
+      box.innerHTML = `<div class="empty" style="margin-bottom:10px">${t('dash_apikey_none','You don\'t have an API key yet')}</div>
+        <button onclick="regenerateApiKey()" id="apiKeyGenBtn" style="background:var(--accent);color:#000;border:none;padding:8px 16px;border-radius:6px;font-weight:600;font-size:0.82rem;cursor:pointer">${t('dash_apikey_generate_btn','Generate API Key')}</button>`;
+      return;
+    }
+    box.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <span style="font-family:monospace;background:var(--surface2);padding:6px 12px;border-radius:6px;font-size:0.86rem">${data.key_preview}</span>
+        <span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase">${data.tier}</span>
+      </div>
+      <div style="font-size:0.74rem;color:var(--muted);margin-bottom:12px">${t('dash_apikey_created_label','Created')} ${(data.created_at||'').slice(0,10)}${data.last_used_at ? ' · ' + t('dash_apikey_last_used_label','Last used') + ' ' + data.last_used_at.slice(0,10) : ''}</div>
+      ${data.quota_bonus > 0 ? `<div style="font-size:0.74rem;color:var(--accent);margin-bottom:12px">🎁 +${data.quota_bonus} ${t('dash_apikey_referral_bonus_label','referral bonus quota')}</div>` : ''}
+      <button onclick="regenerateApiKey()" id="apiKeyGenBtn" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">${t('dash_apikey_regenerate_btn','Regenerate Key')}</button>`;
+  } catch(e) {
+    box.innerHTML = `<div class="empty">${t('dash_watchlist_load_error','Failed to load')}</div>`;
+  }
+}
+async function regenerateApiKey() {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) { window.location.href = 'login.html'; return; }
+  if (!confirm(t('dash_apikey_regenerate_confirm', 'Regenerating will immediately invalidate your old key. Continue?'))) return;
+  const btn = document.getElementById('apiKeyGenBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  try {
+    const res = await fetch(`${API}/intelligence/v1/my-key/regenerate?token=${token}`, { method: 'POST' });
+    const json = await res.json();
+    const data = json.data || {};
+    if (!data.key) { throw new Error('no key in response'); }
+    document.getElementById('apiKeyContent').innerHTML = `
+      <div style="font-size:0.76rem;color:var(--accent);margin-bottom:6px">${t('dash_apikey_show_once_warn','Copy this now — you won\'t be able to see the full key again after leaving this screen')}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <code id="apiKeyRawValue" style="font-family:monospace;background:var(--surface2);padding:8px 12px;border-radius:6px;font-size:0.82rem;word-break:break-all">${data.key}</code>
+        <button onclick="apiKeyCopy(this)" style="background:var(--accent);color:#000;border:none;padding:6px 12px;border-radius:6px;font-weight:600;font-size:0.78rem;cursor:pointer">${t('dash_apikey_copy_btn','Copy')}</button>
+      </div>
+      <button onclick="loadApiKeyStatus()" style="background:none;border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:0.78rem;cursor:pointer">${t('dash_apikey_done_btn','Done')}</button>`;
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = t('dash_apikey_regenerate_btn','Regenerate Key'); }
+    alert(t('dash_apikey_regenerate_error','Failed to generate, please try again later'));
+  }
+}
+loadApiKeyStatus();
+
+// ---- Decision Journal (Tier 2 layered-UX addition, 2026-07-18) ----
+// Same fetch/render pattern as loadWatchlist() above -- lists what a user
+// saved from ai-analysis.html's "📓 加入Decision Journal" quick action.
+async function loadDecisionJournal() {
+  const token = localStorage.getItem('xfinlab_token');
+  const journalEl = document.getElementById('journalContent');
+  if (!token) {
+    journalEl.innerHTML = `<div class="empty"><a href="login.html" style="color:var(--accent)">${t('dash_watchlist_login_link','Log in')}</a>${t('dash_journal_login_suffix',' to see your Decision Journal')}</div>`;
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/decision-journal?token=${token}`);
+    const data = await res.json();
+    const entries = data.entries || [];
+    if (entries.length === 0) {
+      journalEl.innerHTML = `<div class="empty">${t('dash_journal_empty','No entries yet -- click "Add to Decision Journal" on the AI Market Analysis page to save one.')}</div>`;
+      return;
+    }
+    journalEl.innerHTML = entries.map(e => {
+      // 2026-07-30: hero.rating is now BULLISH/BEARISH/NEUTRAL (was BUY/SELL/HOLD,
+      // compliance rewrite) -- .includes() so journal entries saved under the
+      // old vocabulary before this change still color correctly too.
+      const _r = (e.rating || '').toUpperCase();
+      const color = _r.includes('BULLISH') || _r === 'BUY' ? 'var(--green)' : _r.includes('BEARISH') || _r === 'SELL' ? 'var(--red)' : 'var(--muted)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:monospace;font-weight:600">${e.symbol}</span>
+          <span style="color:${color};font-size:0.78rem">${e.rating || '-'}</span>
+          <span style="font-size:0.72rem;color:var(--muted)">${e.created_at || ''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <!-- 2026-07-30 (Paddle compliance, deep rewrite): was "Entry X / Stop Y",
+               framing this journal snapshot as an open trade plan. Relabeled to
+               plain reference numbers (same real values, no buy/sell framing). -->
+          <span style="font-family:monospace;font-size:0.8rem;color:var(--muted)">${t('dash_journal_ref_price','Ref')} ${e.entry_price != null ? e.entry_price : '-'} ・ ${t('dash_journal_key_level','Key level')} ${e.stop_loss != null ? e.stop_loss : '-'}</span>
+          <button onclick="removeJournalEntry(${e.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    journalEl.innerHTML = `<div class="empty">${t('dash_watchlist_load_error','Failed to load')}</div>`;
+  }
+}
+
+async function removeJournalEntry(entryId) {
+  const token = localStorage.getItem('xfinlab_token');
+  if (!token) return;
+  try {
+    await fetch(`${API}/decision-journal/${entryId}?token=${token}`, { method: 'DELETE' });
+    loadDecisionJournal();
+  } catch(e) {}
+}
+
+loadDecisionJournal();
+
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text)">📡 <span data-i18n="dash_tg_title">XFINLAB Daily Market Updates</span></div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px" data-i18n="dash_tg_subtitle">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border);color:var(--text);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border);color:var(--text);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="dash_tg_btn">TG Updates</span>
+  </button>
+</div>
+
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text)">💬 <span data-i18n="dash_fb_title">Feedback</span></div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px" data-i18n="dash_fb_subtitle">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug" data-i18n="dash_fb_opt_bug">🐛 Bug Report</option>
+      <option value="feature" data-i18n="dash_fb_opt_feature">💡 Feature Request</option>
+      <option value="general" data-i18n="dash_fb_opt_general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." data-i18n-placeholder="dash_fb_placeholder_message" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" data-i18n-placeholder="dash_fb_placeholder_email" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" data-i18n="dash_fb_send_btn" style="width:100%;background:var(--accent);color:#000;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 <span data-i18n="dash_fb_title">Feedback</span>
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = t('dash_fb_err_empty', 'Please enter a message'); status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ ' + t('dash_fb_err_send', 'Error sending feedback');
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="nav_dashboard">Dashboard</span> · <a href="privacy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="nav_privacy">Privacy Policy</a> · <a href="terms.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a> · <a href="risk-warning.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--accent-blue,#D35400);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a></div>
+</footer>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/search-reminder.js"></script>
+
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

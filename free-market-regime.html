@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Market Regime API - VIX Term Structure - XFINLAB</title>
+<link rel="canonical" href="https://www.xfinlab.com/free-market-regime.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="Free market regime API. Live CBOE VIX term structure (VIX9D/VIX/VIX3M/VIX6M) and contango/backwardation read -- real data, no signup required. Full API for developers at intelligence-api.html.">
+<meta name="keywords" content="market regime API, VIX term structure, free financial API, VIX API, contango backwardation, risk on risk off API, XFINLAB">
+<meta property="og:title" content="Free Market Regime API - XFINLAB">
+<meta property="og:description" content="Live CBOE VIX term structure and market regime read -- real data, free, no signup.">
+<meta property="og:url" content="https://www.xfinlab.com/free-market-regime.html">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Market Regime API (VIX Term Structure)","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://www.xfinlab.com/free-market-regime.html"}
+</script>
+<style>
+body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0;padding:0}
+nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
+.brand{color:#F97316;font-weight:700;font-size:1.1rem;text-decoration:none}
+.nav-link{color:#94a3b8;text-decoration:none;font-size:0.85rem;margin-left:16px}
+main{max-width:720px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.9rem;color:#fff;margin-bottom:8px}
+.subtitle{color:#64748b;margin-bottom:32px}
+.calc{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:24px}
+.btn{background:#F97316;color:#000;border:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:0.95rem;cursor:pointer}
+.btn:disabled{opacity:0.6;cursor:default}
+.result{background:#131c2e;border:1px solid #F97316;border-radius:10px;padding:20px;margin-top:16px;display:none}
+.result .value{font-size:1.7rem;font-weight:700;color:#F97316;text-transform:capitalize}
+.result .desc{color:#94a3b8;font-size:0.85rem;margin-top:6px}
+.termrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2d45;font-size:0.88rem}
+.termrow:last-child{border-bottom:none}
+.termrow .label{color:#94a3b8}
+.termrow .val{color:#e2e8f0;font-weight:600}
+.err{color:#f87171;font-size:0.85rem;margin-top:10px;display:none}
+.section{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:24px;margin-bottom:20px}
+h2{color:#94a3b8;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px}
+p{color:#cbd5e1;line-height:1.8}
+.cta{background:#F97316;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;margin-top:8px}
+.attribution{color:#475569;font-size:0.72rem;margin-top:10px}
+footer{text-align:center;padding:32px;color:#64748b;font-size:0.8rem;border-top:1px solid #1e2d45;margin-top:40px}
+footer a{color:#64748b;margin:0 6px;text-decoration:none}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+<nav>
+  <a href="/" class="brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">XFINLAB</a>
+  <span><a href="tools.html" class="nav-link">Free Tools</a><a href="intelligence-api.html" class="nav-link">Full API</a></span>
+</nav>
+<main>
+<h1>Market Regime API — VIX Term Structure</h1>
+<p class="subtitle">Live CBOE VIX9D / VIX / VIX3M / VIX6M term structure, and whether the market is in contango (calm) or backwardation (stress) -- real data, free, no signup.</p>
+
+<div class="calc">
+  <button class="btn" id="runBtn" onclick="checkRegime()">Check Current Market Regime</button>
+  <div id="regimeResult" class="result">
+    <div class="value" id="regimeValue">—</div>
+    <div class="desc" id="regimeDesc"></div>
+    <div id="termRows" style="margin-top:14px"></div>
+    <div class="attribution" id="attribution"></div>
+  </div>
+  <div class="err" id="errBox"></div>
+</div>
+
+<div class="section">
+<h2>What Is Market Regime / VIX Term Structure?</h2>
+<p>The VIX term structure compares implied volatility across different time horizons (9-day, 30-day, 3-month, 6-month). When longer-dated volatility trades above near-term volatility, the curve is in <strong>contango</strong> -- the market's normal, calm state. When near-term volatility spikes above longer-dated volatility, the curve flips into <strong>backwardation</strong> -- historically a signal of acute market stress, since it means traders are paying up for protection right now more than they expect to need it later.</p>
+</div>
+
+<div class="section">
+<h2>Want This In Your Own App?</h2>
+<p>This page calls the same live CBOE data pipeline as the full XFINLAB Intelligence API's <code>/v1/vix-term-structure</code> endpoint. A free API key gets you this plus 18 other endpoints -- SEC fundamentals, insider trading, institutional ownership, sentiment, technical/market-structure analysis, an MCP server for AI agents, and more.</p>
+<a href="intelligence-api.html" class="cta">Get Free API Key →</a>
+</div>
+
+<div class="section">
+<h2>Risk Disclaimer</h2>
+<p>This tool surfaces real market data for informational and educational purposes only. It does not constitute financial advice. Always conduct your own research and consult a qualified financial advisor before making investment decisions.</p>
+</div>
+</main>
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  © 2026 XFINLAB — AI Investment Intelligence Platform<br><br>
+  <a href="tools.html">Free Tools</a>
+  <a href="intelligence-api.html">Developer API</a>
+  <a href="pricing.html">Pricing</a>
+  <a href="terms.html">Terms</a>
+  <a href="privacy.html">Privacy</a>
+</footer>
+<script>
+(function(){
+  var btn = document.getElementById('runBtn');
+  var resultBox = document.getElementById('regimeResult');
+  var valueEl = document.getElementById('regimeValue');
+  var descEl = document.getElementById('regimeDesc');
+  var rowsEl = document.getElementById('termRows');
+  var attrEl = document.getElementById('attribution');
+  var errEl = document.getElementById('errBox');
+
+  window.checkRegime = function(){
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    errEl.style.display = 'none';
+    resultBox.style.display = 'none';
+
+    fetch('/api/free-tools-demo/vix-term-structure')
+      .then(function(r){ return r.json(); })
+      .then(function(json){
+        btn.disabled = false;
+        btn.textContent = 'Check Current Market Regime';
+        if (!json.success) {
+          errEl.textContent = json.error || 'Temporarily unavailable -- please try again shortly.';
+          errEl.style.display = 'block';
+          return;
+        }
+        var d = json.data;
+        var structure = d.structure || 'unknown';
+        valueEl.textContent = structure;
+        descEl.textContent = structure === 'backwardation'
+          ? 'Near-term volatility is trading above longer-dated volatility -- historically a stress signal.'
+          : structure === 'contango'
+          ? 'The curve is upward-sloping -- the normal, calm state for markets.'
+          : 'Term structure is roughly flat right now.';
+
+        var rowsHtml = '';
+        var ts = d.term_structure || {};
+        Object.keys(ts).forEach(function(k){
+          var s = ts[k];
+          if (!s) return;
+          rowsHtml += '<div class="termrow"><span class="label">' + (s.label || k) + '</span><span class="val">' + s.close + '</span></div>';
+        });
+        rowsEl.innerHTML = rowsHtml;
+        attrEl.textContent = (d.attribution || '') + (d.as_of ? (' · As of ' + d.as_of) : '');
+        resultBox.style.display = 'block';
+      })
+      .catch(function(){
+        btn.disabled = false;
+        btn.textContent = 'Check Current Market Regime';
+        errEl.textContent = 'Network error -- please try again.';
+        errEl.style.display = 'block';
+      });
+  };
+})();
+</script>
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+</body>
+</html>

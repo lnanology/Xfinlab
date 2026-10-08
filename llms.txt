@@ -1,0 +1,71 @@
+# XFINLAB Intelligence API
+
+> Financial intelligence API for developers and AI agents — real market events, FinBERT sentiment, technical/market-structure analysis, SEC/CFTC/FDIC/USDA/CBOE official data, and Monte Carlo stress testing. Every field is traceable to a real computation or an official government/exchange source; nothing is fabricated or interpolated — a field that doesn't apply to a ticker returns null with an explanation, never a guess.
+
+Free tier API keys are issued instantly, no waiting, no credit card. XFINLAB also ships a consumer research product (xfinlab.com) built on the same backend.
+
+## Getting started
+
+- [Get a free API key](https://www.xfinlab.com/intelligence-api.html): instant issuance, no credit card
+- [Full API documentation](https://www.xfinlab.com/intelligence-api.html): endpoint reference, quota weights, live try-it console
+- [OpenAPI spec](https://api.xfinlab.com/api/intelligence/openapi.json)
+- [Postman collection](https://api.xfinlab.com/api/intelligence/postman.json)
+- [Live API status](https://api.xfinlab.com/api/intelligence/status)
+- [Changelog](https://api.xfinlab.com/api/intelligence/changelog)
+
+## SDKs
+
+- [Python SDK](https://github.com/lnanology/Xfinlab/tree/main/sdk/python): `pip install "git+https://github.com/lnanology/Xfinlab.git#subdirectory=sdk/python"`
+- [JavaScript/Node SDK](https://github.com/lnanology/Xfinlab/tree/main/sdk/js): `npm install "github:lnanology/Xfinlab#path:sdk/js"`
+
+## MCP server (for Claude and other AI agents)
+
+- Endpoint: `https://api.xfinlab.com/api/mcp` — Streamable HTTP, stateless JSON-RPC 2.0, no session handshake beyond standard MCP `initialize`
+- Auth: same `X-API-Key` header as the REST API, same free tier, no separate quota
+- Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`
+- [MCP docs and connection config](https://www.xfinlab.com/intelligence-api.html#mcp)
+
+## Core REST endpoints (v1, base `https://api.xfinlab.com`, `X-API-Key` header)
+
+All paths below are relative to the base URL above and include the `/api`
+prefix, matching the OpenAPI spec's `servers`/`paths` exactly (e.g. the full
+URL for the first line is `https://api.xfinlab.com/api/intelligence/v1/events`)
+-- a bare `/intelligence/v1/...` path without this prefix will 404.
+
+- GET /api/intelligence/v1/events — market/company headlines, optional ticker filter
+- GET /api/intelligence/v1/sentiment — FinBERT sentiment across a ticker's recent headlines
+- GET /api/intelligence/v1/debate — multi-agent Bull/Bear/Risk-Manager AI debate (Pro/Enterprise)
+- GET /api/intelligence/v1/intel/latest, /api/intelligence/v1/intel/{ticker} — AI-clustered intelligence feed
+- GET /api/intelligence/v1/technical/{ticker} — confluence direction/confidence, trend, MACD, market structure
+- POST /api/intelligence/v1/stress-test — Monte Carlo simulation, real historical-return bootstrap
+- GET /api/intelligence/v1/forecast/{ticker} — probabilistic price forecast
+- GET /api/intelligence/v1/regime-signal/{ticker} — current market regime + best-performing composed signal
+- GET /api/intelligence/v1/insider/{ticker} — SEC Form 4 insider trading
+- GET /api/intelligence/v1/short-interest/{ticker} — FINRA equity short interest
+- GET /api/intelligence/v1/fundamentals/{ticker} — SEC XBRL 10-K company facts
+- GET /api/intelligence/v1/fundamentals/{ticker}/as-of?as_of_date=YYYY-MM-DD — point-in-time-correct fundamentals (no look-ahead)
+- GET /api/intelligence/v1/evidence-scorecard/{ticker}?asset_class=Stocks — up to 11 independent support/oppose/neutral evidence dimensions, disagreement flagged explicitly (asset_class one of Stocks/Futures/Crypto/Forex/Commodities/Indices); response includes `what_changed`, a day-over-day audit-trail diff against the prior snapshot (which specific dimensions flipped signal, and by how much the aggregate moved)
+- GET /api/intelligence/v1/impact/{ticker} — hand-curated supplier/customer/competitor relationships (starting set, AI/semiconductor supply chain), same-sector peers, market-wide capital flow context, and CFTC futures positioning if applicable — "if something happens to this company, who else does it touch"
+- GET /api/intelligence/v1/vix-term-structure — CBOE VIX9D/VIX/VIX3M/VIX6M term structure
+- GET /api/intelligence/v1/bank-health/{ticker} — FDIC bank health (major US banks)
+- GET /api/intelligence/v1/agriculture/{ticker} — USDA agriculture price series
+- GET /api/intelligence/v1/energy/{ticker} — EIA energy data
+- GET /api/intelligence/v1/exchange/{ticker} — Binance/Coinbase crypto market data
+- GET /api/intelligence/v1/world/market-map, /api/intelligence/v1/world/regions — cross-region macro + news + sentiment snapshot
+- POST /api/intelligence/v1/webhooks/subscribe, GET/DELETE /api/intelligence/v1/webhooks — push notifications instead of polling (Pro-tier)
+
+## Pricing
+
+- Free tier: issued instantly at signup, no card required
+- Pro tier: self-serve Stripe checkout from [intelligence-api.html](https://www.xfinlab.com/intelligence-api.html)
+- [Live pricing/addon status](https://api.xfinlab.com/api/stripe/status)
+
+## Consumer product
+
+- [XFINLAB research platform](https://www.xfinlab.com): the same backend packaged as a consumer investment-research product — AI market analysis, chart analysis, stress testing, portfolio tools
+
+## Policies
+
+- [Terms of Service](https://www.xfinlab.com/terms.html)
+- [API Terms](https://www.xfinlab.com/api-terms.html)
+- [Data license matrix](https://github.com/lnanology/Xfinlab/blob/main/DATA-LICENSE-MATRIX.md)

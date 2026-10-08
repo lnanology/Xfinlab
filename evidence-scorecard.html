@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XFINLAB — 多維度反證計分卡</title>
+<meta name="description" content="11個獨立真實數據維度，跨股票/期貨/加密貨幣/外匯/商品/指數，明確標示唔同維度出現嘅矛盾訊號。">
+<link rel="canonical" href="https://www.xfinlab.com/evidence-scorecard.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="多維度反證計分卡 — XFINLAB">
+<meta property="og:description" content="11個獨立真實數據維度，明確標示矛盾訊號，唔淨係confirmation bias。">
+<meta property="og:url" content="https://www.xfinlab.com/evidence-scorecard.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260929">
+<script src="js/theme-toggle.js"></script>
+<script src="js/ai-loading.js"></script>
+<style>
+.es-search-row{display:flex;gap:0.6rem;flex-wrap:wrap;align-items:flex-end}
+.es-field{display:flex;flex-direction:column;gap:0.25rem}
+.es-field select,.es-field input{padding:0.5rem 0.6rem;border-radius:6px;border:1px solid var(--border2);background:var(--navy3);color:var(--text);font-family:inherit;font-size:0.85rem}
+.es-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.7rem;margin-top:1rem}
+.es-stat{background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:0.9rem;text-align:center}
+.es-stat-num{font-size:1.6rem;font-weight:700;color:var(--text)}
+.es-stat-num.support{color:var(--green,#16A34A)}
+.es-stat-num.oppose{color:var(--accent-red,#DC2626)}
+.es-stat-label{font-size:0.72rem;color:var(--text3);margin-top:0.2rem}
+.es-confluence-bar{height:10px;border-radius:99px;background:var(--navy3);overflow:hidden;margin-top:0.5rem;display:flex}
+.es-confluence-bar-fill{background:linear-gradient(90deg,var(--green,#16A34A),var(--accent-blue));height:100%}
+.es-disagreement-banner{margin-top:1rem;padding:0.8rem 1rem;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid var(--accent-red,#DC2626);color:var(--accent-red,#DC2626);font-size:0.88rem;display:none}
+.es-dim-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.7rem;margin-top:1rem}
+.es-dim-card{background:var(--navy2);border:1.5px solid var(--border2);border-radius:10px;padding:0.85rem 1rem;position:relative}
+.es-dim-card.support{border-color:var(--green,#16A34A)}
+.es-dim-card.oppose{border-color:var(--accent-red,#DC2626)}
+.es-dim-card.neutral{border-color:var(--border2)}
+.es-dim-badge{display:inline-block;font-size:0.68rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:99px;margin-bottom:0.4rem}
+.es-dim-badge.support{background:rgba(22,163,74,0.15);color:var(--green,#16A34A)}
+.es-dim-badge.oppose{background:rgba(220,38,38,0.15);color:var(--accent-red,#DC2626)}
+.es-dim-badge.neutral{background:var(--navy3);color:var(--text3)}
+.es-dim-label{font-weight:600;color:var(--text);margin-bottom:0.25rem;line-height:1.3}
+.es-dim-detail{font-size:0.78rem;color:var(--text3);line-height:1.4}
+.es-lock-panel{margin-top:1rem;padding:1.4rem 1.2rem;border-radius:10px;background:var(--navy2);border:1px dashed var(--border2);text-align:center}
+.es-lock-panel .lock-icon{font-size:1.6rem}
+.es-lock-panel p{color:var(--text3);font-size:0.85rem;margin:0.5rem 0 0.9rem}
+.es-empty-hint{color:var(--text3);font-size:0.85rem;text-align:center;padding:2rem 0}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-tag">Evidence Scorecard</div>
+  <h1 class="page-title" data-i18n="es_title">多維度反證計分卡</h1>
+  <p class="page-sub" data-i18n="es_subtitle">11個獨立真實數據維度（技術面、基本面、機構持倉、內部人交易、VIX、CFTC持倉、資金流向、航運指標、新聞情緒、ML方向機率），明確標示邊啲維度互相矛盾——唔係淨係計一個分數呃自己。</p>
+
+  <div class="panel" id="searchPanel">
+    <div class="es-search-row">
+      <div class="es-field" style="flex:1;min-width:180px">
+        <label for="esTickerInput" class="input-label" data-i18n="es_ticker_label">代號</label>
+        <input id="esTickerInput" type="text" placeholder="例如 AAPL、2330.TW、BTC-USD" data-i18n-placeholder="es_ticker_placeholder">
+      </div>
+      <div class="es-field">
+        <label for="esAssetClass" class="input-label" data-i18n="es_asset_class_label">資產類別</label>
+        <select id="esAssetClass">
+          <option value="Stocks" selected>Stocks</option>
+          <option value="Futures">Futures</option>
+          <option value="Crypto">Crypto</option>
+          <option value="Forex">Forex</option>
+          <option value="Commodities">Commodities</option>
+          <option value="Indices">Indices</option>
+        </select>
+      </div>
+      <button class="primary-btn" id="esRunBtn" onclick="runEvidenceScorecard()" data-i18n="es_analyze_btn">🔍 分析</button>
+    </div>
+    <div class="upload-hint" style="margin-top:0.5rem" data-i18n="es_coverage_hint">Stocks通常有8-11個維度可用；其他資產類別通常有5-7個（少咗嘅係因為SEC 13F/內部人交易呢類數據本身只係stock先有，誠實反映，唔係漏做）。</div>
+  </div>
+
+  <div id="esErrorBanner" style="display:none;margin-top:0.6rem;padding:0.7rem 0.9rem;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid var(--accent-red,#DC2626);color:var(--accent-red,#DC2626);font-size:0.85rem"></div>
+
+  <div id="esResultPanel" style="display:none">
+    <div class="panel" style="margin-top:1rem">
+      <h3 style="margin-top:0" id="esResultTitle" data-i18n="es_result_title_default">分析結果</h3>
+
+      <div class="es-summary-grid">
+        <div class="es-stat"><div class="es-stat-num" id="esAvailableCount">-</div><div class="es-stat-label" data-i18n="es_stat_available">可用維度 / 總數</div></div>
+        <div class="es-stat"><div class="es-stat-num support" id="esSupportCount">-</div><div class="es-stat-label" data-i18n="es_stat_support">支持</div></div>
+        <div class="es-stat"><div class="es-stat-num oppose" id="esOpposeCount">-</div><div class="es-stat-label" data-i18n="es_stat_oppose">反對</div></div>
+        <div class="es-stat"><div class="es-stat-num" id="esNeutralCount">-</div><div class="es-stat-label" data-i18n="es_stat_neutral">中性</div></div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text3)">
+          <span data-i18n="es_confluence_label">Confluence（支持 vs 反對）</span><span id="esConfluencePct">-</span>
+        </div>
+        <div class="es-confluence-bar"><div class="es-confluence-bar-fill" id="esConfluenceFill" style="width:0%"></div></div>
+      </div>
+
+      <div class="es-disagreement-banner" id="esDisagreementBanner" data-i18n="es_disagreement_banner">⚠️ 呢隻資產出現獨立維度矛盾訊號——唔同真實數據來源得出唔同結論，值得留意，唔應該只信一面之詞。</div>
+
+      <div id="esDimGrid" class="es-dim-grid"></div>
+
+      <div class="es-lock-panel" id="esLockPanel" style="display:none">
+        <div class="lock-icon">🔒</div>
+        <p data-i18n="es_lock_text">逐個維度嘅詳細訊號（邊個source支持、邊個反對）係Pro功能。免費計劃睇到上面嘅總數同confluence，升級睇齊全部11個維度嘅詳情。</p>
+        <a href="pricing.html" class="primary-btn" style="text-decoration:none;display:inline-block" data-i18n="es_lock_btn">升級睇齊全部維度</a>
+      </div>
+
+      <p class="upload-hint" style="margin-top:1rem" id="esNote"></p>
+    </div>
+  </div>
+
+  <div class="es-empty-hint" id="esEmptyHint" data-i18n="es_empty_hint">打入代號，睇下唔同真實數據來源對呢隻資產嘅睇法係咪一致。</div>
+
+</div>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note">XFINLAB © 2026 · <span data-i18n="es_title">多維度反證計分卡</span> · <a href="privacy.html" style="color:var(--blue);text-decoration:none" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--blue);text-decoration:none" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script>
+const API = 'https://api.xfinlab.com/api';
+
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+function esSignalLabel(signal){
+  const map = {support: t('es_stat_support', '支持'), oppose: t('es_stat_oppose', '反對'), neutral: t('es_stat_neutral', '中性')};
+  return map[signal] || signal;
+}
+
+async function runEvidenceScorecard(){
+  const tickerInput = document.getElementById('esTickerInput');
+  const symbol = (tickerInput.value || '').trim().toUpperCase();
+  const assetClass = document.getElementById('esAssetClass').value;
+  const errBanner = document.getElementById('esErrorBanner');
+  errBanner.style.display = 'none';
+
+  if (!symbol) {
+    errBanner.textContent = t('es_err_enter_ticker', '請輸入代號');
+    errBanner.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('esRunBtn');
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = t('es_analyzing', '分析中...');
+  if (typeof window.startAiLoading === 'function') window.startAiLoading();
+  document.getElementById('esEmptyHint').style.display = 'none';
+
+  try {
+    const token = localStorage.getItem('xfinlab_token') || '';
+    const res = await fetch(`${API}/evidence-scorecard`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({symbol, asset_class: assetClass, token}),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error((json && json.detail) || res.status);
+    const data = json.data;
+    if (!data || !data.symbol) {
+      errBanner.textContent = t('es_err_not_found', '搵唔到呢個代號嘅數據，試下第二個代號。');
+      errBanner.style.display = 'block';
+      document.getElementById('esResultPanel').style.display = 'none';
+      return;
+    }
+    renderEvidenceScorecard(data);
+  } catch (e) {
+    errBanner.textContent = t('es_err_failed_prefix', '分析失敗：') + (e.message || e);
+    errBanner.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+    if (typeof window.stopAiLoading === 'function') window.stopAiLoading();
+  }
+}
+
+function renderEvidenceScorecard(data){
+  document.getElementById('esResultPanel').style.display = 'block';
+  document.getElementById('esResultTitle').textContent = `${data.symbol} — ${data.asset_class}`;
+  document.getElementById('esAvailableCount').textContent = `${data.dimensions_available}/${data.dimensions_checked}`;
+  document.getElementById('esSupportCount').textContent = data.support_count;
+  document.getElementById('esOpposeCount').textContent = data.oppose_count;
+  document.getElementById('esNeutralCount').textContent = data.neutral_count;
+
+  const pct = data.confluence_pct;
+  document.getElementById('esConfluencePct').textContent = pct === null || pct === undefined ? t('es_confluence_na', '不適用（冇明確方向訊號）') : `${pct}%`;
+  document.getElementById('esConfluenceFill').style.width = (pct === null || pct === undefined ? 0 : pct) + '%';
+
+  document.getElementById('esDisagreementBanner').style.display = data.has_disagreement ? 'block' : 'none';
+  document.getElementById('esNote').textContent = data.note || '';
+
+  const grid = document.getElementById('esDimGrid');
+  const lockPanel = document.getElementById('esLockPanel');
+
+  if (data.dimensions_locked) {
+    grid.innerHTML = '';
+    lockPanel.style.display = 'block';
+    return;
+  }
+  lockPanel.style.display = 'none';
+
+  const dims = data.dimensions || [];
+  if (!dims.length) {
+    grid.innerHTML = `<div class="es-empty-hint">${escapeHtmlEs(t('es_no_dimensions', '呢個代號暫時冇任何維度有可用數據。'))}</div>`;
+    return;
+  }
+  grid.innerHTML = dims.map(d => `
+    <div class="es-dim-card ${d.signal}">
+      <span class="es-dim-badge ${d.signal}">${escapeHtmlEs(esSignalLabel(d.signal))}</span>
+      <div class="es-dim-label">${escapeHtmlEs(d.label)}</div>
+      <div class="es-dim-detail">${escapeHtmlEs(d.detail || '')}</div>
+    </div>
+  `).join('');
+}
+
+function escapeHtmlEs(s){
+  const div = document.createElement('div');
+  div.textContent = s == null ? '' : String(s);
+  return div.innerHTML;
+}
+
+document.getElementById('esTickerInput').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') runEvidenceScorecard();
+});
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body></html>

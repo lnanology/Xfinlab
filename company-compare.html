@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XFINLAB — Compare Engine™ 多公司對標分析</title>
+<meta name="description" content="多公司對標分析 — AI比較多間公司嘅基本面、技術面同新聞面表現。">
+<link rel="canonical" href="https://www.xfinlab.com/company-compare.html">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="公司比較 — XFINLAB">
+<meta property="og:description" content="多公司對標分析 — AI比較多間公司嘅基本面、技術面同新聞面表現。">
+<meta property="og:url" content="https://www.xfinlab.com/company-compare.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260802">
+<script src="js/theme-toggle.js"></script>
+
+<style>
+body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;color:var(--text-primary);background:var(--bg-primary);}
+nav{position:sticky;top:0;z-index:100;padding:10px 18px;border-bottom:1px solid var(--border-color);background:var(--bg-primary)}
+.container{max-width:1160px;margin:0 auto;padding:28px 18px;flex:1}
+
+.input-section{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:16px}
+.input-label{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-secondary);display:block;margin-bottom:0.75rem;font-weight:600}
+.companies-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.8rem;margin-bottom:1rem}
+.input-group{display:flex;flex-direction:column}
+.input-group label{font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem}
+.company-count{font-size:0.72rem;color:var(--text-muted);margin-bottom:1rem}
+.btn-group{display:flex;gap:0.6rem;flex-wrap:wrap}
+.compare-btn{background:var(--accent-blue);color:#fff;border:none;border-radius:8px;padding:0 18px;height:44px;font-size:0.95rem;font-weight:600;cursor:pointer}
+.compare-btn:hover{background:#A83E00}
+.compare-btn:disabled{background:#F3F4F6;color:var(--text-muted);cursor:not-allowed}
+.clear-btn{background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0 12px;height:44px;font-size:0.95rem;cursor:pointer}
+.clear-btn:hover{border-color:var(--accent-blue);color:var(--accent-blue)}
+
+.loading-state{text-align:center;padding:2rem 1.5rem;color:var(--text-secondary)}
+.dot-ani span{animation:blink 1.4s infinite;display:inline-block}
+.dot-ani span:nth-child(2){animation-delay:0.2s}
+.dot-ani span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0;}40%{opacity:1;}}
+/* COMPARISON TABLE */
+.table-section{display:none;}
+.table-section.show{display:block;}
+.result-title{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:1rem;font-weight:500;}
+.table-wrapper{overflow-x:auto;margin-bottom:2rem;}
+.compare-table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.compare-table th{background:var(--navy3);color:var(--blue);padding:0.8rem;text-align:left;border:1px solid var(--border);font-weight:500;white-space:nowrap;}
+.compare-table td{padding:0.7rem 0.8rem;border:1px solid var(--border);color:var(--text2);}
+.compare-table tr:hover td{background:rgba(56,139,253,0.06);}
+.metric-name{color:var(--text);font-weight:500;white-space:nowrap;}
+.value-cell{text-align:right;color:var(--text);}
+.best-value{color:var(--green);font-weight:600;}
+.worst-value{color:var(--red);}
+.neutral-value{color:var(--text2);}
+
+/* AI ANALYSIS SECTION */
+.analysis-section{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:2rem;display:none;}
+.analysis-section.show{display:block;}
+.analysis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-top:1.5rem;}
+.analysis-card{background:var(--navy3);border:1px solid var(--border2);border-radius:6px;padding:1.2rem;}
+.analysis-card-title{font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.6rem;font-weight:500;}
+.analysis-card-value{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--blue);margin-bottom:0.3rem;}
+.analysis-card-desc{font-size:0.78rem;color:var(--text2);line-height:1.6;}
+.analysis-content{font-size:0.85rem;color:var(--text2);line-height:1.8;margin-top:1rem;}
+.analysis-content h3{color:var(--blue);font-size:0.88rem;font-weight:500;margin:0.8rem 0 0.3rem;}
+.analysis-content strong{color:var(--gold);}
+
+/* SCORE SECTION */
+.score-section{background:var(--navy2);border:1px solid var(--border);border-radius:6px;padding:1.5rem;margin-bottom:2rem;display:none;}
+.score-section.show{display:block;}
+.score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem;margin-top:1.5rem;}
+.score-bar{width:100%;height:8px;background:var(--navy4);border-radius:4px;overflow:hidden;margin-bottom:0.8rem;}
+.score-fill{height:100%;background:linear-gradient(90deg,var(--blue2),var(--gold));transition:width 0.6s ease;}
+.score-number{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--blue);margin-bottom:0.4rem;}
+.score-description{font-size:0.75rem;color:var(--text3);}
+
+/* DISCLAIMER */
+.disclaimer{font-size:0.75rem;color:var(--text3);border-top:1px solid var(--border);padding-top:1rem;margin-top:1.5rem;line-height:1.6;}
+
+/* FOOTER */
+footer{padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--navy2);text-align:center;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:0.7rem 1rem;}
+  .container{padding:1.5rem 1rem;}
+  .input-section{padding:1.5rem;}
+  .companies-grid{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+  .table-wrapper{font-size:0.75rem;}
+  .compare-table th,.compare-table td{padding:0.5rem 0.4rem;}
+  .analysis-grid,.score-grid{grid-template-columns:1fr;}
+  .btn-group{flex-direction:column;}
+  .compare-btn,.clear-btn{width:100%;}
+}
+
+@media(max-width:600px){
+  .nav-cta{padding:0.3rem 0.8rem;font-size:0.7rem;}
+  .companies-grid{grid-template-columns:repeat(2,1fr);}
+  .table-wrapper{font-size:0.7rem;}
+  .compare-table th,.compare-table td{padding:0.4rem 0.3rem;}
+}
+
+/* 2026-07-19 fix: AI comparison text (analysisContent) sometimes comes
+   back from the backend as a markdown pros/cons table -- formatAnalysis()
+   used to just \n -> <br> the whole thing, so a table rendered as one
+   unbroken line of raw "| AAPL | ...優勢... | ...劣勢... |" pipe text.
+   Same .cc-card pattern already shipped on chat.html: each row becomes a
+   scannable two-column card (✓ pros / ✗ things to watch) instead of a
+   literal pipe table. */
+.cc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;overflow:hidden}
+.cc-card-title{background:var(--bg-secondary);color:var(--accent-blue);font-weight:600;font-size:0.9rem;padding:0.5rem 0.8rem}
+.cc-card-grid{display:flex;flex-wrap:wrap}
+.cc-col{flex:1 1 160px;padding:0.6rem 0.8rem}
+.cc-col-pro{border-right:1px solid var(--border-color)}
+.cc-col-label{font-size:0.72rem;font-weight:600;letter-spacing:0.04em;margin-bottom:0.35rem}
+.cc-col-pro .cc-col-label{color:var(--accent-green)}
+.cc-col-con .cc-col-label{color:var(--accent-red)}
+.cc-list{list-style:none;padding:0;margin:0}
+.cc-list li{font-size:0.85rem;line-height:1.5;padding:0.15rem 0 0.15rem 1.1rem;position:relative;color:var(--text-secondary)}
+.cc-pro::before{content:'✓';position:absolute;left:0;color:var(--accent-green);font-weight:700}
+.cc-con::before{content:'✗';position:absolute;left:0;color:var(--accent-red);font-weight:700}
+@media(max-width:520px){.cc-col-pro{border-right:none;border-bottom:1px solid var(--border-color)}}
+.analysis-content table{width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:0.85rem}
+.analysis-content table th,.analysis-content table td{border:1px solid var(--border-color);padding:0.5rem 0.6rem;text-align:left}
+.analysis-content table th{background:var(--bg-secondary);color:var(--blue)}
+/* 2026-07-20 fix (task #283): non-pros/cons multi-column tables (e.g.
+   代號/公司名稱/核心理由/風險提示 stock-pick lists) -- see ccRenderRowCard(). */
+.analysis-content .rc-card{border:1px solid var(--border-color);border-radius:10px;margin:0.6rem 0;padding:0.7rem 0.9rem}
+.analysis-content .rc-card-title{color:var(--accent-blue);font-weight:700;font-size:1rem;margin-bottom:0.4rem}
+.analysis-content .rc-field{font-size:0.85rem;line-height:1.6;color:var(--text-secondary);margin-top:0.3rem}
+.analysis-content .rc-field-label{font-weight:600;color:var(--text-primary);margin-right:0.3rem}
+</style>
+<script src="js/nav.js"></script>
+<script src="js/autocomplete.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/share-widget.js"></script>
+<script src="js/points-badge.js"></script>
+<script src="js/free-signals-badge.js"></script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2316823074282488" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-brand"><img src="/img/logo-mark.png" alt="XFINLAB" style="height:1.3em;width:auto;vertical-align:middle;margin-right:6px">X<em>FIN</em>LAB</a>
+  <button class="nav-toggle" aria-label="開啟選單" data-i18n-aria-label="nav_toggle_aria" onclick="toggleNav()">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="nav-link" data-i18n="nav_home">首頁</a>
+    <a href="ai-analysis.html" class="nav-link" data-i18n="nav_analysis">AI市場分析</a>
+    <a href="chat.html" class="nav-link" data-i18n="nav_chat">AI對話</a>
+    <a href="screener.html" class="nav-link" data-i18n="nav_screener">篩選器</a>
+    <a href="chart-analysis.html" class="nav-link" data-i18n="nav_chart">K線分析</a>
+    <a href="company-compare.html" class="nav-link" data-i18n="nav_compare">AB公司比較</a>
+    <a href="evidence-scorecard.html" class="nav-link" data-i18n="nav_evidence">反證計分卡</a>
+    <a href="stress-lab.html" class="nav-link" data-i18n="nav_stress">壓力測試室</a>
+    <a href="anomaly.html" class="nav-link" data-i18n="nav_anomaly">異常偵測</a>
+    <a href="portfolio.html" class="nav-link" data-i18n="nav_portfolio">組合配置</a>
+    <a href="news-denoise.html" class="nav-link" data-i18n="nav_news_denoise">新聞降噪</a>
+    <a href="probability-scan.html" class="nav-link" data-i18n="nav_probability">機率掃描</a>
+    <a href="pairs-scan.html" class="nav-link" data-i18n="nav_pairs">配對套利</a>
+    <a href="intelligence-api.html" class="nav-link" data-i18n="nav_api">API</a>
+    <a href="tutorials.html" class="nav-link">Help</a>
+  </div>
+
+</nav>
+
+<div class="container">
+  <div class="page-tag">Compare Engine™</div>
+  <h1 class="page-title" data-i18n="cc_title">多公司對標分析</h1>
+  <p class="page-sub" data-i18n="cc_subtitle">同時比較最多5家公司嘅即時市場數據，並由AI提供優劣勢、風險及投資角度嘅文字對比</p>
+
+  <!-- INPUT SECTION -->
+  <div class="input-section">
+    <label class="input-label" data-i18n="cc_input_label">📈 公司代號輸入</label>
+    <div class="companies-grid" id="companiesGrid">
+      <div class="input-group">
+        <label><span data-i18n="cc_company_word">公司</span> 1</label>
+        <input type="text" class="input-field company-input" placeholder="例：AAPL" maxlength="10" data-i18n-placeholder="cc_placeholder_aapl">
+      </div>
+      <div class="input-group">
+        <label><span data-i18n="cc_company_word">公司</span> 2</label>
+        <input type="text" class="input-field company-input" placeholder="例：MSFT" maxlength="10" data-i18n-placeholder="cc_placeholder_msft">
+      </div>
+      <div class="input-group">
+        <label><span data-i18n="cc_company_word">公司</span> 3</label>
+        <input type="text" class="input-field company-input" placeholder="例：700.HK" maxlength="10" data-i18n-placeholder="cc_placeholder_hk">
+      </div>
+      <div class="input-group">
+        <label><span data-i18n="cc_company_word">公司</span> 4</label>
+        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10" data-i18n-placeholder="cc_placeholder_optional">
+      </div>
+      <div class="input-group">
+        <label><span data-i18n="cc_company_word">公司</span> 5</label>
+        <input type="text" class="input-field company-input" placeholder="選填" maxlength="10" data-i18n-placeholder="cc_placeholder_optional">
+      </div>
+    </div>
+    <div class="company-count" id="companyCount">已輸入：0 家</div>
+    <div class="btn-group">
+      <button class="compare-btn" id="analyzeBtn" onclick="doCompare()" data-i18n="cc_run_btn">⚖️ 開始對標分析</button>
+      <button class="clear-btn" onclick="clearInputs()" data-i18n="cc_clear_btn">清除</button>
+    </div>
+  </div>
+
+  <div id="resultContent">
+    <!-- COMPARISON TABLE -->
+    <div class="table-section" id="tableSection">
+      <div class="result-title" data-i18n="cc_table_title">📊 即時市場數據對比表</div>
+      <div class="table-wrapper">
+        <table class="compare-table" id="comparisonTable">
+          <thead>
+            <tr>
+              <th data-i18n="cc_th_market_metric">市場指標</th>
+              <th colspan="5" data-i18n="cc_th_company_compare">公司比較</th>
+            </tr>
+            <tr id="headerRow">
+              <th style="background:var(--navy4);" data-i18n="cc_th_metric">指標</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+      </div>
+      <div class="disclaimer" data-i18n="cc_fundamentals_note">📄 年度收入／純利數字嚟自公司最近一份SEC 10-K年報申報（美股適用），並非即時數據；非美股SEC申報公司會顯示N/A，絕不虛構數字。</div>
+    </div>
+
+    <!-- AI ANALYSIS SECTION -->
+    <div class="analysis-section" id="analysisSection">
+      <div class="result-title" data-i18n="cc_analysis_title">🤖 AI 對標分析結果</div>
+      <div class="analysis-content" id="analysisContent"></div>
+      <div class="disclaimer" data-i18n="cc_disclaimer">⚠️ 以上分析由AI根據即時市場數據生成，屬於文字對比與觀點整理，僅供參考，不構成投資建議。投資涉及風險，請自行判斷。</div>
+    </div>
+  </div>
+
+  <div id="shareBar"></div>
+</div>
+
+<div class="ad-slot" data-slot="ticker-page-mid" style="margin:20px 0;min-height:0"></div>
+<footer>
+  <div class="footer-note"><span data-i18n="cc_footer_note">XFINLAB © 2026 · 智能金融分析平台 · </span><a href="privacy.html" style="color:var(--blue);text-decoration:none;" data-i18n="nav_privacy">私隱政策</a> · <a href="risk-warning.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_risk_warning">Risk Warning</a> · <a href="ai-disclaimer.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_ai_disclaimer">AI Disclaimer</a> · <a href="terms.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_terms">Terms</a> · <a href="methodology.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_methodology">Methodology</a> · <a href="model-limitations.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_model_limitations">Model Limitations</a> · <a href="affiliate-disclosure.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_affiliate_disclosure">Affiliate Disclosure</a> · <a href="cookie-policy.html" style="color:var(--blue);text-decoration:none;" data-i18n="footer_cookie_policy">Cookie Policy</a></div>
+</footer>
+
+<script src="js/ai-loading.js"></script>
+<script src="js/share-tools.js"></script>
+<script src="js/mvp-api.js"></script>
+<script src="js/sparkline.js"></script>
+<script>
+function t(key, fallback){ return (typeof I18N!=='undefined' && I18N.translations && I18N.translations[key]) || fallback; }
+
+function updateCompanyCount(){
+  const inputs=document.querySelectorAll('.company-input');
+  let count=0;
+  inputs.forEach(i=>{if(i.value.trim())count++;});
+  document.getElementById('companyCount').textContent=`${t('cc_company_count_prefix','已輸入：')}${count}${t('cc_company_count_suffix',' 家')}`;
+}
+
+document.querySelectorAll('.company-input').forEach(input=>{
+  input.addEventListener('input',updateCompanyCount);
+  // 2026-07-18 fix: no Enter-key handling existed on any of these 5
+  // fields -- pressing Enter did nothing, had to click "開始對標分析".
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter') doCompare(); });
+});
+window.addEventListener('DOMContentLoaded', updateCompanyCount);
+// 2026-07-31 fix ("已輸入：0 家" staying in Chinese on non-Chinese UI):
+// updateCompanyCount() only re-ran on user input/clear, so if I18N.translations
+// hadn't finished loading yet at DOMContentLoaded (a real race -- i18n.js
+// applies asynchronously), the label was stuck showing t()'s Chinese
+// fallback text until the user typed something. Re-run once i18n is ready.
+document.addEventListener('i18nApplied', updateCompanyCount);
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof autoAttachTickerAutocomplete === 'function') {
+    autoAttachTickerAutocomplete('.company-input');
+  }
+});
+
+function clearInputs(){
+  document.querySelectorAll('.company-input').forEach(i=>i.value='');
+  document.getElementById('tableSection').classList.remove('show');
+  document.getElementById('analysisSection').classList.remove('show');
+  updateCompanyCount();
+}
+
+async function doCompare(){
+  const inputs=document.querySelectorAll('.company-input');
+  const companies=[];
+  inputs.forEach(i=>{
+    const v=i.value.trim().toUpperCase();
+    if(v)companies.push(v);
+  });
+
+  if(companies.length<2){
+    alert(t('cc_alert_min2','請至少輸入2家公司'));
+    return;
+  }
+
+  if(companies.length>5){
+    alert(t('cc_alert_max5','最多只能輸入5家公司'));
+    return;
+  }
+
+  document.getElementById('analyzeBtn').disabled=true;
+  document.getElementById('tableSection').classList.add('show');
+  document.getElementById('analysisSection').classList.add('show');
+
+  // Show loading state
+  document.getElementById('tableBody').innerHTML=`<tr><td colspan="99" style="text-align:center;padding:2rem;"><div class="loading-state"><div class="dot-ani">${t('cc_loading_market','讀取市場數據中')}<span>.</span><span>.</span><span>.</span></div></div></td></tr>`;
+  document.getElementById('analysisContent').innerHTML=`<div class="loading-state"><div class="dot-ani">${t('cc_loading_analysis','生成對標分析')}<span>.</span><span>.</span><span>.</span></div></div>`;
+
+  try {
+    const response = await postApi('/api/company-compare', { symbols: companies, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined });
+    displayResults(response.data);
+  } catch (error) {
+    console.error(error);
+    document.getElementById('tableBody').innerHTML=`<tr><td colspan="99" style="text-align:center;padding:2rem;color:var(--text3)">${t('cc_analysis_fail','⚠️ 分析失敗，請稍後重試')}</td></tr>`;
+    document.getElementById('analysisContent').innerHTML=`<p>${t('cc_analysis_fail','⚠️ 分析失敗，請稍後重試')}。</p>`;
+  }
+
+  document.getElementById('analyzeBtn').disabled=false;
+}
+
+function displayResults(data){
+  const marketData = data.market_data || {};
+  const symbols = Object.keys(marketData);
+
+  let headerHtml=`<tr id="headerRow"><th style="background:var(--navy4);">${t('cc_th_metric','指標')}</th>`;
+  symbols.forEach(s=>{ headerHtml+=`<th>${s}</th>`; });
+  headerHtml+='</tr>';
+  document.getElementById('headerRow').innerHTML=headerHtml;
+
+  const fmtPrice = v => (v || v===0) ? `$${Number(v).toLocaleString()}` : 'N/A';
+  const fmtCap = v => {
+    if(!v) return 'N/A';
+    if(v>=1e12) return `$${(v/1e12).toFixed(2)}T`;
+    if(v>=1e9) return `$${(v/1e9).toFixed(2)}B`;
+    if(v>=1e6) return `$${(v/1e6).toFixed(1)}M`;
+    return `$${v}`;
+  };
+  // 2026-07-20 addition (task #289, Morningstar-style revenue/net income):
+  // {value, fiscal_year, period_end} from services/fundamentals_service.py
+  // (SEC EDGAR 10-K data) -- honestly 'N/A' for non-US/non-SEC-filers,
+  // never a fabricated number. Handles negative net income (net loss)
+  // properly, unlike fmtCap above which was written assuming a positive
+  // market cap.
+  const fmtFund = f => {
+    if(!f || f.value==null) return 'N/A';
+    const v = f.value, abs = Math.abs(v), sign = v<0 ? '-' : '';
+    let s;
+    if(abs>=1e12) s = `${(abs/1e12).toFixed(2)}T`;
+    else if(abs>=1e9) s = `${(abs/1e9).toFixed(2)}B`;
+    else if(abs>=1e6) s = `${(abs/1e6).toFixed(1)}M`;
+    else s = abs.toLocaleString();
+    return `${sign}$${s}${f.fiscal_year ? ' (FY'+f.fiscal_year+')' : ''}`;
+  };
+  const rows=[
+    {label:t('cc_row_price','現價'), fn:c=>fmtPrice(c.price)},
+    {label:t('cc_row_marketcap','市值'), fn:c=>fmtCap(c.market_cap)},
+    {label:t('cc_row_revenue','年度收入 (Revenue)'), fn:c=>fmtFund(c.revenue)},
+    {label:t('cc_row_net_income','年度純利 (Net Income)'), fn:c=>fmtFund(c.net_income)},
+    {label:t('cc_row_volume_ratio','成交量比 (今日/平均)'), fn:c=>c.volume_ratio!=null?c.volume_ratio:'N/A'},
+    {label:t('cc_row_trend','趨勢 (相對50日均線)'), fn:c=>c.trend==='bullish'?t('cc_trend_bullish','📈 偏多'):c.trend==='bearish'?t('cc_trend_bearish','📉 偏空'):'N/A'},
+    {label:t('cc_row_52w_high','接近52週高位'), fn:c=>c.breakout?t('cc_yes','✅ 是'):'—'},
+    {label:t('cc_row_analyst_rating','分析師評級傾向'), fn:c=>c.sentiment==='bullish'?t('cc_sentiment_bullish','看好'):c.sentiment==='bearish'?t('cc_sentiment_bearish','看淡'):'N/A'},
+  ];
+
+  let tableHtml='';
+  rows.forEach(row=>{
+    tableHtml+=`<tr><td class="metric-name">${row.label}</td>`;
+    symbols.forEach(s=>{
+      const company = marketData[s] || {};
+      const cellVal = company.error ? t('cc_fetch_fail','取數失敗') : row.fn(company);
+      tableHtml+=`<td class="value-cell neutral-value">${cellVal}</td>`;
+    });
+    tableHtml+='</tr>';
+  });
+  // 2026-08-10 (task #747-751, "所有卡片有資產的都加細K線小圖"): a 走勢 row
+  // with a small sparkline per company. api/company_compare.py's response
+  // has no OHLC history (its market_data comes from the `.info`-only
+  // MarketDataService, same as the rest of this table) -- rather than
+  // reshape that endpoint, this fetches the generic GET /api/sparkline/
+  // {ticker} lookup once per symbol after the table is already on screen,
+  // same pattern as autocomplete.js's live-search calls.
+  if (symbols.length && typeof XflSparkline !== 'undefined') {
+    tableHtml += `<tr><td class="metric-name">${t('cc_row_trend_chart','走勢')}</td>` +
+      symbols.map(s => `<td class="value-cell neutral-value" id="ccSpark-${CSS.escape(s)}"></td>`).join('') +
+      '</tr>';
+  }
+  document.getElementById('tableBody').innerHTML=tableHtml || `<tr><td colspan="99" style="text-align:center;padding:2rem;">${t('cc_no_market_data','暫時未能取得市場數據')}</td></tr>`;
+
+  if (symbols.length && typeof XflSparkline !== 'undefined') {
+    symbols.forEach(s => {
+      fetch(`${API_BASE}/api/sparkline/${encodeURIComponent(s)}`).then(r => r.json()).then(d => {
+        const cell = document.getElementById(`ccSpark-${CSS.escape(s)}`);
+        if (!cell) return;
+        const company = marketData[s] || {};
+        const dir = XflSparkline.dirClass(company.trend === 'bullish' ? 1 : (company.trend === 'bearish' ? -1 : 0));
+        cell.innerHTML = XflSparkline.render(d.sparkline, dir, {width: 90, height: 26, className: 'xfl-spark-sm'}) || '—';
+      }).catch(() => {});
+    });
+  }
+
+  const analysisText = data.analysis || data.conclusion || '';
+  document.getElementById('analysisContent').innerHTML = analysisText ? formatAnalysis(analysisText) : `<p>${t('cc_no_analysis_content','暫時未能取得分析內容，請稍後重試。')}</p>`;
+
+  if (symbols.length && typeof window.renderShareBar === 'function') {
+    const shareUrl = `${location.origin}${location.pathname}?companies=${encodeURIComponent(symbols.join(','))}`;
+    window.renderShareBar('shareBar', 'resultContent', {
+      filename: `xfinlab-compare-${symbols.join('-')}`,
+      shareUrl: shareUrl
+    });
+  }
+}
+
+// Share System: a link like company-compare.html?companies=AAPL,MSFT
+// prefills the input boxes and re-runs the same real comparison.
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const companiesParam = params.get('companies');
+  if (companiesParam) {
+    const list = companiesParam.split(',').map(s => s.trim()).filter(Boolean).slice(0, 5);
+    const inputs = document.querySelectorAll('.company-input');
+    list.forEach((v, i) => { if (inputs[i]) inputs[i].value = v; });
+    updateCompanyCount();
+    doCompare();
+  }
+});
+
+// 2026-07-19 fix: see the .cc-card CSS comment above -- this used to run
+// the whole AI response (including any markdown pros/cons table) through
+// one escape + \n->br pass, so a table rendered as one unbroken line of
+// raw pipe characters. Now splits the message into table vs. text blocks
+// first (same approach as chat.html's formatMsg()), so tables get parsed
+// into scannable cards instead of dumped as literal "| … | … |" text.
+function ccIsTableRow(line) {
+  const t = line.trim();
+  return t.startsWith('|') && t.endsWith('|') && t.length > 1;
+}
+function ccIsTableSeparator(line) {
+  const t = line.trim();
+  return t.includes('-') && /^\|?[\s:|-]+\|?$/.test(t);
+}
+function ccSplitTableRow(line) {
+  let t = line.trim();
+  if (t.startsWith('|')) t = t.slice(1);
+  if (t.endsWith('|')) t = t.slice(0, -1);
+  return t.split('|').map(c => c.trim());
+}
+function ccEscape(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function ccInlineFormat(s) {
+  return ccEscape(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+function ccSplitCellPoints(cell) {
+  return cell
+    .split(/<br\s*\/?>|\n/gi)
+    .map(s => ccInlineFormat(s.trim().replace(/^[•·\-*]\s*/, '')))
+    .filter(Boolean);
+}
+function ccRenderCompareCard(name, prosCell, consCell) {
+  const pros = ccSplitCellPoints(prosCell).map(p => `<li class="cc-pro">${p}</li>`).join('');
+  const cons = ccSplitCellPoints(consCell).map(c => `<li class="cc-con">${c}</li>`).join('');
+  return `<div class="cc-card">
+    <div class="cc-card-title">${ccInlineFormat(name)}</div>
+    <div class="cc-card-grid">
+      <div class="cc-col cc-col-pro"><div class="cc-col-label">${t('cc_pros_label','優勢')}</div><ul class="cc-list">${pros}</ul></div>
+      <div class="cc-col cc-col-con"><div class="cc-col-label">${t('cc_cons_label','留意')}</div><ul class="cc-list">${cons}</ul></div>
+    </div>
+  </div>`;
+}
+function ccRenderRowCard(header, row) {
+  // 2026-07-20 fix (task #283): a table shaped like 代號/公司名稱/核心理由/
+  // 風險提示 has no 優勢(pros) column, so it never hit the pros/cons card
+  // branch above and fell through to a squished <table>. Show the primary
+  // column (ticker/symbol-looking header, else the first column) as a
+  // heading, with every other column stacked below as its own labeled line.
+  let primaryIdx = header.findIndex(h => /代號|代码|ticker|symbol/i.test(h));
+  if (primaryIdx === -1) primaryIdx = 0;
+  const fields = row.map((cell, i) => i === primaryIdx ? null :
+    `<div class="rc-field"><span class="rc-field-label">${ccInlineFormat(header[i])}：</span>${ccInlineFormat(cell)}</div>`
+  ).filter(Boolean).join('');
+  return `<div class="rc-card"><div class="rc-card-title">${ccInlineFormat(row[primaryIdx])}</div>${fields}</div>`;
+}
+function ccRenderTableBlock(tableLines) {
+  const header = ccSplitTableRow(tableLines[0]);
+  const rows = tableLines.slice(2).map(ccSplitTableRow).filter(r => r.length === header.length);
+
+  const prosIdx = header.findIndex(h => /優勢|优势|pros|advantage/i.test(h));
+  const consIdx = header.findIndex(h => /劣勢|劣势|cons|disadvantage|風險|风险|risk/i.test(h));
+
+  if (prosIdx > -1 && consIdx > -1 && header.length <= 4) {
+    return rows.map(r => ccRenderCompareCard(r[0], r[prosIdx], r[consIdx])).join('');
+  }
+
+  // Any other multi-column table -- stacked cards read better than a
+  // squished table on narrow screens. A simple 2-column table (nothing
+  // to squish) still renders as a real <table>.
+  if (header.length > 2) {
+    return rows.map(r => ccRenderRowCard(header, r)).join('');
+  }
+
+  const theadHtml = `<tr>${header.map(h => `<th>${ccInlineFormat(h)}</th>`).join('')}</tr>`;
+  const tbodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${ccInlineFormat(c)}</td>`).join('')}</tr>`).join('');
+  return `<table>${theadHtml ? `<thead>${theadHtml}</thead>` : ''}<tbody>${tbodyHtml}</tbody></table>`;
+}
+function ccRenderTextBlock(text) {
+  return ccInlineFormat(text)
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\n/g, '<br>');
+}
+function formatAnalysis(text){
+  const lines = text.split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (ccIsTableRow(lines[i]) && ccIsTableSeparator(lines[i + 1] || '')) {
+      const tableLines = [lines[i], lines[i + 1]];
+      i += 2;
+      while (i < lines.length && ccIsTableRow(lines[i])) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'table', lines: tableLines });
+    } else {
+      const textLines = [];
+      while (i < lines.length && !(ccIsTableRow(lines[i]) && ccIsTableSeparator(lines[i + 1] || ''))) {
+        textLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'text', lines: textLines });
+    }
+  }
+  return blocks
+    .map(b => b.type === 'table' ? ccRenderTableBlock(b.lines) : ccRenderTextBlock(b.lines.join('\n')))
+    .join('');
+}
+</script>
+
+<script>
+function toggleNav(){
+  const navLinks = document.getElementById('navLinks');
+  if(navLinks) navLinks.classList.toggle('open');
+}
+window.addEventListener('DOMContentLoaded', ()=> {
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if(href === currentFile || (href === 'index.html' && currentFile === '')) {
+      link.classList.add('current');
+    }
+  });
+  document.addEventListener('click', e => {
+    const navLinks = document.getElementById('navLinks');
+    const toggle = document.querySelector('.nav-toggle');
+    if(navLinks && navLinks.classList.contains('open') && !navLinks.contains(e.target) && e.target !== toggle){
+      navLinks.classList.remove('open');
+    }
+  });
+});
+</script>
+
+<!-- Telegram Subscribe Widget -->
+<div id="tgWidget" style="position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+  <div id="tgPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">📡 XFINLAB Daily Market Updates</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:14px">Free daily market data updates on Telegram</div>
+    <a href="https://t.me/xfinlab_daily" target="_blank" style="display:block;background:#229ED9;color:#ffffff;text-align:center;padding:9px;border-radius:8px;font-weight:700;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇺🇸 English Channel</a>
+    <a href="https://t.me/xfinlab_zh" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none;margin-bottom:8px">🇹🇼 繁體中文頻道</a>
+    <a href="https://t.me/xfinlab_es" target="_blank" style="display:block;background:transparent;border:1px solid var(--border-color);color:var(--text-primary);text-align:center;padding:8px;border-radius:8px;font-weight:600;font-size:0.85rem;text-decoration:none">🇪🇸 Canal Español</a>
+  </div>
+  <button onclick="document.getElementById('tgPanel').style.display=document.getElementById('tgPanel').style.display==='none'?'block':'none'" style="background:#229ED9;color:#ffffff;border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 16px rgba(34,158,217,0.3)">
+    ✈️ <span data-i18n="free_signals">TG Updates</span>
+  </button>
+</div>
+
+<!-- Feedback Widget -->
+<div id="fbWidget" style="position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+  <div id="fbPanel" style="display:none;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
+    <div style="font-weight:700;margin-bottom:4px;color:var(--text-primary)">💬 Feedback</div>
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:12px">Bug report, feature request or suggestions</div>
+    <select id="fbType" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem">
+      <option value="bug">🐛 Bug Report</option>
+      <option value="feature">💡 Feature Request</option>
+      <option value="general">💬 General Feedback</option>
+    </select>
+    <textarea id="fbMessage" placeholder="Tell us what you think..." style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:0.82rem;height:80px;resize:none"></textarea>
+    <input id="fbEmail" type="email" placeholder="Email (optional)" style="width:100%;background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:6px;margin-bottom:10px;font-family:inherit;font-size:0.82rem">
+    <button onclick="submitFeedback()" style="width:100%;background:var(--accent-blue,#D35400);color:#fff;border:none;padding:9px;border-radius:6px;font-weight:700;font-size:0.85rem;cursor:pointer">Send Feedback</button>
+    <div id="fbStatus" style="font-size:0.78rem;margin-top:8px;text-align:center"></div>
+  </div>
+  <button onclick="document.getElementById('fbPanel').style.display=document.getElementById('fbPanel').style.display==='none'?'block':'none'" style="background:#7c3aed;color:#fff;border:none;border-radius:99px;padding:10px 18px;font-weight:700;font-size:0.82rem;cursor:pointer;box-shadow:0 4px 16px rgba(124,58,237,0.3)">
+    💬 Feedback
+  </button>
+</div>
+<script>
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const message = document.getElementById('fbMessage').value.trim();
+  const email = document.getElementById('fbEmail').value.trim();
+  const status = document.getElementById('fbStatus');
+  const token = localStorage.getItem('xfinlab_token');
+
+  if (!message) { status.textContent = 'Please enter a message'; status.style.color = '#ef4444'; return; }
+
+  try {
+    const res = await fetch('https://api.xfinlab.com/api/feedback', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type, message, email: email || null, token, lang: (typeof I18N !== 'undefined' && I18N.currentLang) || undefined })
+    });
+    const data = await res.json();
+    status.textContent = '✅ ' + data.message;
+    status.style.color = '#10b981';
+    document.getElementById('fbMessage').value = '';
+    document.getElementById('fbEmail').value = '';
+    setTimeout(() => { document.getElementById('fbPanel').style.display = 'none'; }, 2000);
+  } catch(e) {
+    status.textContent = '❌ Error sending feedback';
+    status.style.color = '#ef4444';
+  }
+}
+</script>
+
+<script src="js/cookie-consent.js"></script>
+<script src="js/anti-scrape.js"></script>
+<script src="js/ads.js"></script>
+<script src="js/support-widget.js"></script>
+<script src="js/mobile-widget-dock.js"></script>
+<script src="js/quick-ask-bubble.js"></script>
+</body>
+</html>

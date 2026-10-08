@@ -1,0 +1,758 @@
+/* Design system tokens: professional financial platform
+   Theme model (flipped 2026-07-18 per explicit request: LIGHT is now
+   the site's default -- white background, black text, black borders --
+   with DARK as the opt-in via [data-theme="dark"] on <html>, toggled by
+   js/theme-toggle.js. (Previously dark was default and light was the
+   opt-in override; inverted here, values otherwise unchanged except
+   --border-color which is now pure black per explicit request instead
+   of the previous light-gray #E5E7EB.) */
+:root {
+  /* Backgrounds */
+  --bg-primary: #FFFFFF; /* page background */
+  --bg-card: #FFFFFF;    /* card background */
+  --bg-secondary: #F8FAFC; /* subtle surfaces */
+
+  /* Typography (strict palette) */
+  --text-primary: #000000; /* main text */
+  --text-secondary: #333333; /* secondary text */
+  --text-muted: #666666; /* auxiliary text */
+
+  /* Borders / UI */
+  --border-color: #000000; /* black border, per explicit request */
+
+  /* Accents -- 2026-08-09: site-wide rebrand, blue -> darker orange
+     (AJ picked orange from 3 homepage mockup options, then asked for it
+     applied site-wide + slightly darker). Variable NAME kept as
+     --accent-blue/--blue/--blue2 rather than renamed: hundreds of
+     existing references across every page use these names, and a
+     find-replace rename of the name itself (not just the value) buys
+     nothing functionally while risking a missed reference somewhere.
+     Read this as "the site's primary accent variable", not literally
+     blue. */
+  --accent-blue: #D35400;
+  --accent-blue-strong: #A83E00;
+  --accent-orange: #F59E0B;
+  --accent-red: #DC2626;
+  --accent-green: #16A34A;
+
+  /* compatibility aliases (used across pages) */
+  --blue: var(--accent-blue);
+  --blue2: var(--accent-blue-strong);
+  --gold: var(--accent-orange);
+
+  --soft-shadow: 0 6px 18px rgba(16,24,40,0.06);
+  --navy: var(--bg-primary);
+  --navy2: var(--bg-card);
+  --navy3: var(--bg-secondary);
+  --navy4: var(--bg-secondary);
+  --text: var(--text-primary);
+  --text2: var(--text-secondary);
+  --text3: var(--text-muted);
+  --border: var(--border-color);
+  --border2: rgba(211,84,0,0.06);
+  --green: var(--accent-green);
+  --red: var(--accent-red);
+}
+
+/* Dark theme override -- opt-in via data-theme="dark" on <html>,
+   toggled by js/theme-toggle.js. These are the site's original brand
+   dark values, preserved here rather than deleted. */
+[data-theme="dark"] {
+  --bg-primary: #080c14;
+  --bg-card: #0d1525;
+  --bg-secondary: #111d30;
+
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --border-color: #1e2d45;
+
+  --accent-blue: #F97316;
+  --accent-blue-strong: #DB6A0F;
+  --accent-orange: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-green: #10b981;
+
+  --soft-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  --border2: rgba(249,115,22,0.12);
+}
+
+/* Base resets */
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg-primary);color:var(--text-primary);font-family:'Inter',sans-serif;font-weight:400;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* Primary / action buttons */
+button,
+.btn-primary,
+.primary-btn,
+.nav-cta,
+.screen-btn,
+.analyze-btn,
+.compare-btn,
+.ai-btn {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  height: 44px;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.06s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+button:hover,
+.btn-primary:hover,
+.primary-btn:hover,
+.nav-cta:hover,
+.search-btn:hover,
+.screen-btn:hover,
+.analyze-btn:hover,
+.compare-btn:hover,
+.ai-btn:hover {
+  background: var(--accent-blue-strong);
+  transform: translateY(-1px);
+}
+
+button:disabled,
+.btn-primary:disabled,
+.nav-cta:disabled,
+.search-btn:disabled,
+.screen-btn:disabled,
+.analyze-btn:disabled,
+.compare-btn:disabled,
+.ai-btn:disabled {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+nav {
+  /* 2026-07-27 fix ("有些頁按不動 沒滑出功能"): the mobile dropdown menu
+     below (.nav-links, position:absolute; top:100%) was written assuming
+     <nav> is its positioning anchor -- but <nav> itself, and every one of
+     its ancestors (html/body/.container/etc.), never actually declared
+     `position` as anything other than the static default. A
+     position:absolute element with no positioned ancestor anchors to the
+     page's initial containing block instead, not the nav bar -- so on
+     any page tall enough, tapping the hamburger toggled the class just
+     fine, but the panel rendered a full viewport-height below the nav,
+     off-screen, looking exactly like "the button doesn't do anything".
+     This one line was the missing anchor for the entire site; chat.html
+     never hit this because it independently overrides .nav-links to
+     position:static locally (see its own inline <style>, 2026-07-22 fix)
+     -- unaffected by this change either way. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  /* 2026-07-20 fix: js/nav.js used to force flex-wrap:nowrap on this at
+     desktop widths and make .nav-links horizontally scrollable instead
+     -- with 9-12 links on most function pages, that hid most of the nav
+     behind an easy-to-miss scrollbar rather than actually showing them.
+     Allow the row to wrap onto a 2nd line instead ("TOPBAR自動調節可分
+     2行"); .nav-links.xfl-nav-wrapped below handles centering that 2nd
+     line with a gap so it doesn't crowd the logo above it. */
+  flex-wrap: wrap;
+  row-gap: 0.6rem;
+}
+
+.nav-brand,
+.logo {
+  font-family: 'DM Serif Display', serif;
+  /* 2026-08-09 (AJ ref-image follow-up: "上面左邊XFINLAB同右邊的字要大D及
+     平排"): bumped up from 1.05rem so the wordmark doesn't read
+     small/cramped next to the enlarged .nav-link text below --
+     `nav{align-items:center}` already keeps both vertically centered on
+     one row, this was purely a size mismatch. */
+  font-size: 1.3rem;
+  color: var(--blue);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-brand em,
+.logo em {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.nav-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.nav-toggle:focus {
+  outline: none;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  max-height: none;
+  /* 2026-07-19 fix: on narrower desktop widths the 9-10 nav links didn't
+     fit one row, and with no white-space rule the flex items shrank
+     below their text width, breaking each label mid-word onto 2 lines
+     ("字大過框"/"字分2層比例"). Let the whole row wrap onto extra
+     lines as needed instead of splitting individual words. */
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+
+/* 2026-08-09 (AJ ref-image follow-up: "其他頁 TOPBAR功能全部移動 置中"):
+   on desktop widths, always give .nav-links its own full-width row below
+   the logo, centered -- previously this only happened via the
+   .xfl-nav-wrapped class below, and only once js/nav.js's resize-time
+   measurement detected the link row had already wrapped onto its own
+   line (i.e. only on narrower desktop widths where 9-13 links didn't fit
+   next to the logo). On wide screens it used to sit squeezed against the
+   logo instead, left-aligned by whatever width the right-hand group
+   (chat/account) left over. Unconditional now -- centered every time,
+   any desktop width. Mobile (<=768px) is untouched: .nav-links becomes a
+   hidden hamburger dropdown there (see the 768px media query further
+   down), where centering doesn't apply. */
+@media (min-width: 769px) {
+  .nav-links {
+    flex: 1 1 100%;
+    justify-content: center;
+    order: 3;
+    margin-top: 0.6rem;
+  }
+}
+
+/* 2026-07-20: applied by js/nav.js when it measures .nav-links has
+   actually wrapped onto its own line (no longer sharing the first row
+   with the logo) -- makes that wrapped row span the full width and
+   center its links, with a clear top gap, instead of a ragged
+   left-aligned partial row sitting right under XFINLAB. */
+.nav-links.xfl-nav-wrapped {
+  flex: 1 1 100%;
+  justify-content: center;
+  margin-top: 0.6rem;
+  order: 3;
+}
+
+/* 2026-07-25 fix (task #417 follow-up, "右邊導航排 放大鏡 LIGHT ACCOUNT
+   放右上角" landing inconsistently across pages): the search icon
+   (js/nav.js), theme toggle (js/theme-toggle.js), AI Chat (js/nav.js)
+   and Account widget (js/nav.js) used to each be injected as a plain,
+   SEPARATE sibling of .nav-links directly inside <nav>. Two attempts at
+   fixing their row placement via `order` (distinct 1/2/3/4 values, then
+   a shared order:1) both missed the actual bug: with 4+ separate flex
+   items sharing <nav>'s `justify-content: space-between`, the row
+   distributes equal gaps across ALL of them, spreading search / chat /
+   theme / account out across the full row width instead of grouping
+   them tightly on the right ("TOPBAR 右邊放 AI CHAT，放大鏡，換底色，
+   ACCOUNT" means grouped together, not evenly spread).
+
+   2026-07-25 real fix: js/nav.js and js/theme-toggle.js now insert all
+   four buttons into one shared wrapper, #xflTopRightGroup (created by
+   whichever script runs first), instead of as direct children of
+   <nav>. That wrapper is itself a single flex item of <nav>, so
+   space-between only ever sees {logo, .nav-links, this one wrapper} --
+   and the wrapper's own internal flex + small gap keeps the four
+   buttons visually grouped together, in a fixed left-to-right order
+   (Chat -> Search -> Theme -> Account) maintained by insertion position,
+   not by `order`. No `order` override is needed here any more: the
+   wrapper's default order (0) already sorts before
+   .nav-links.xfl-nav-wrapped's order:3, so it reliably stays on the
+   logo's row with no collision risk. */
+#xflTopRightGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  /* 2026-07-25 fix ("放大鏡 LIGHT ACCOUNT放右邊"): on pages with a long
+     .nav-links row (e.g. chat.html's 12 links), .nav-links alone can fill
+     the whole first line, leaving no room for this wrapper on that same
+     line -- <nav>'s flex-wrap then drops it alone onto its own 2nd line.
+     A lone flex item on a `justify-content: space-between` line resolves
+     to flex-start (left edge), which is exactly the "左邊" bug reported
+     here. margin-left:auto claims all remaining free space on ITS side
+     regardless of how many other items share that line, so this wrapper
+     always hugs the right edge whether it's sharing the logo's row or
+     wrapped onto its own -- no visual change on pages where it already
+     fit on the first row. */
+  margin-left: auto;
+}
+.nav-links.open {
+  /* 2026-07-19 fix: was a fixed 320px cap left over from when the nav
+     only had 5-6 links -- most pages now carry 9-10 links (~52px each
+     once stacked on mobile, see .nav-link padding below), so the cap
+     clipped the bottom few items off-screen with no way to reach them
+     ("滑出TOPBAR功能頁沒看到全部"). Use a generous viewport-relative cap
+     with a scrollbar as a safety net instead of guessing a fixed px. */
+  max-height: min(80vh, 640px);
+  overflow-y: auto;
+}
+
+.nav-link {
+  color: var(--text2);
+  text-decoration: none;
+  /* 2026-08-09 (AJ ref-image follow-up): enlarged alongside .nav-brand
+     above, same reasoning -- was reading noticeably smaller than the
+     logo it sits level with. */
+  font-size: 1rem;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-link:hover,
+.nav-link.current {
+  color: var(--blue);
+}
+
+.nav-right,
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.container {
+  /* 2026-08-18 (AJ: "左右再拉闊 跟TOPBAR HOME-API 闊度一樣，所有功能頁跟"):
+     was 1000px, narrower than the 1160px max-width every homepage/
+     localized-index <nav> already uses (see index.html's #idxNav and the
+     18 localized index.html <nav> tags). Bumped to 1160px so every
+     feature page built on this shared .container (dashboard, ai-analysis,
+     chart-analysis, settings, pricing, intelligence-api, etc.) lines up
+     with that same width standard site-wide, instead of each page having
+     its own slightly-different content width. */
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  flex: 1;
+}
+
+.page-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 0.5rem;
+}
+
+.page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.1;
+}
+
+.page-sub {
+  color: var(--text2);
+  margin-bottom: 1.5rem;
+}
+
+.panel,
+.card,
+.score-card,
+.analysis-card,
+.news-card,
+.result-card,
+.price-card,
+.denoised-content,
+.blindspot-content,
+.ai-summary {
+  background: var(--navy2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.2rem;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  padding: 0.9rem 2.2rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 300;
+  text-decoration: none;
+  border: 1px solid var(--border2);
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: min-content;
+  background: var(--blue2);
+  color: #fff;
+  padding: 0.72rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: background 0.2s;
+}
+
+.card-btn:hover {
+  background: var(--blue);
+}
+
+.feature-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  background: rgba(56,139,253,0.07);
+}
+
+.feature-card h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+  color: var(--text);
+}
+
+.feature-card p {
+  color: var(--text2);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.price-card:hover {
+  border-color: var(--border2);
+}
+
+.price-card.featured {
+  border-color: var(--blue2);
+}
+
+.featured-label {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--blue2);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 1rem;
+  border-radius: 0 0 4px 4px;
+}
+
+.price-tier {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 0.8rem;
+}
+
+.price-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.8rem;
+  color: var(--text);
+  line-height: 1;
+}
+
+.price-num span {
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  color: var(--text2);
+}
+
+.price-desc {
+  font-size: 0.78rem;
+  color: var(--text3);
+  margin: 0.4rem 0 1.5rem;
+}
+
+.price-list {
+  list-style: none;
+  margin-bottom: 1.8rem;
+}
+
+.price-list li {
+  font-size: 0.83rem;
+  color: var(--text2);
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.price-list li:last-child {
+  border-bottom: none;
+}
+
+.check {
+  color: var(--blue);
+  font-size: 0.8rem;
+}
+
+.soon {
+  background: rgba(245,158,11,0.1);
+  color: var(--gold);
+  font-size: 0.62rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+  margin-left: auto;
+}
+
+.footer-logo {
+  font-family: 'DM Serif Display', serif;
+  color: var(--blue);
+  font-size: 1rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-link {
+  font-size: 0.75rem;
+  color: var(--text3);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: var(--blue);
+}
+
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  line-height: 1.2;
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+.section-sub {
+  font-size: 0.95rem;
+  color: var(--text2);
+  max-width: 500px;
+  line-height: 1.9;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.input-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.input-field,
+.filter-select,
+.search-field,
+.select,
+.input {
+  background: var(--navy4);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 160px;
+}
+
+.input-field::placeholder,
+.search-field::placeholder {
+  color: var(--text3);
+}
+
+.input-field:focus,
+.search-field:focus,
+.filter-select:focus,
+.select:focus,
+.input:focus {
+  border-color: var(--blue);
+}
+
+.footer,
+footer {
+  padding: 1.6rem;
+  border-top: 1px solid var(--border);
+  background: var(--navy2);
+  text-align: center;
+}
+
+.footer-note {
+  color: var(--text3);
+  font-size: 0.85rem;
+}
+
+.score-label {
+  font-size: 0.85rem;
+  color: var(--text2);
+  margin-bottom: 0.6rem;
+}
+
+.score-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  color: var(--blue);
+}
+
+.score-sub {
+  font-size: 0.82rem;
+  color: var(--text3);
+  margin-top: 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: block;
+  }
+
+  .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    /* 2026-07-19 fix: this was hardcoded to a dark navy regardless of
+       the site's light/dark theme (leftover from when dark was the
+       only theme) -- .nav-link's text color correctly follows
+       var(--text2), so in light mode that meant dark-gray text on a
+       near-black background, and in dark mode light-gray text that
+       read as too faint/washed out against it ("黑底白字太淺色"). Use
+       the actual theme surface color instead so contrast always
+       matches whatever theme is active. */
+    background: var(--bg-card);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+    flex-direction: column;
+    /* 2026-08-02 fix ("手機 TOPBAR 滑出選功能時，顯示要左6個右邊6個"): the
+       base (desktop) .nav-links rule above sets flex-wrap:wrap so a wide
+       row of 9-13 links can spill onto extra ROWS instead of squeezing/
+       breaking mid-word. This mobile override switches to a vertical
+       column but never reset flex-wrap back to nowrap -- so with
+       flex-direction:column + flex-wrap:wrap, once the stacked links'
+       total height passed .nav-links.open's max-height cap, flexbox
+       started a second COLUMN to its right instead of just scrolling
+       within the single column that overflow-y:auto below was meant to
+       provide, splitting ~13 links into two side-by-side halves. nowrap
+       forces one true column; overflow-y:auto (unchanged) handles any
+       remaining overflow with a scrollbar instead of a second column. */
+    flex-wrap: nowrap;
+    gap: 0;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease;
+    backdrop-filter: blur(20px);
+    /* 2026-08-06 fix ("TOPBAR滑出滑不到最後3個功能 要滑到過屏幕一半"): js/
+       mobile-widget-dock.js (task #609) docks TG/feedback/points/share/
+       free-signals/language-switcher widgets into one fixed-bottom bar,
+       #xflMobileDock, at z-index:1000 (1001 for its flyout panels) on
+       every mobile page. This dropdown's old z-index:200 sat well BELOW
+       that, so the dock bar visually and interactively covered the
+       bottom ~90-100px of the open nav panel -- exactly the last 2-3
+       links in a typical 9-13 link list -- both hiding them and eating
+       their taps. Raised above the dock (and its flyouts) so the full
+       link list is always reachable regardless of which floating
+       widgets happen to be present on a given page. */
+    z-index: 1500;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+
+  .input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .container {
+    padding: 1.5rem 1rem;
+  }
+
+  /* 2026-07-21 fix: the floating widget stack (TG signals / subscribe
+     badge / language switcher / share widget on the right, feedback
+     widget on the left) is position:fixed with no reserved space, so
+     on short mobile viewports it visually covers real page content
+     (result cards, form dropdowns, news sections) near the bottom of
+     the screen. Reserve enough bottom padding on the main scrollable
+     containers to clear the tallest widget in the stack. */
+  .container, body > main, .page-content, .content-wrap {
+    padding-bottom: 240px;
+  }
+}
+
+/* Reusable Score Card Component */
+.score-card-component{max-width:520px;background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:1rem;display:block;color:var(--text);}
+.score-card-component .ssc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;gap:1rem}
+.score-card-component .ssc-title{font-size:0.95rem;color:var(--text2)}
+.score-card-component .ssc-overall{font-family:'DM Serif Display',serif;font-size:1.6rem;padding:0.35rem 0.6rem;border-radius:6px;color:#fff}
+.score-card-component .ssc-overall.score-good{background:linear-gradient(90deg,var(--green),var(--blue2));}
+.score-card-component .ssc-overall.score-mid{background:linear-gradient(90deg,var(--blue2),var(--gold));}
+.score-card-component .ssc-overall.score-bad{background:linear-gradient(90deg,var(--red),var(--gold));}
+.score-card-component .ssc-grid{display:grid;grid-template-columns:1fr 72px;gap:0.6rem;}
+.score-card-component .ssc-row{display:flex;align-items:center;gap:0.6rem}
+.score-card-component .ssc-label{width:82px;font-size:0.82rem;color:var(--text3)}
+.score-card-component .ssc-bar{flex:1;background:var(--navy3);height:12px;border-radius:999px;overflow:hidden;border:1px solid var(--border2)}
+.score-card-component .ssc-fill{height:100%;width:0%;transition:width 0.6s ease}
+.score-card-component .ssc-fill.score-good{background:linear-gradient(90deg,var(--green),var(--blue2));}
+.score-card-component .ssc-fill.score-mid{background:linear-gradient(90deg,var(--blue2),var(--gold));}
+.score-card-component .ssc-fill.score-bad{background:linear-gradient(90deg,var(--red),var(--gold));}
+.score-card-component .ssc-val{width:48px;text-align:right;font-weight:600;color:var(--text)}
+
+@media (max-width:520px){
+  .score-card-component{max-width:100%;padding:0.9rem}
+  .score-card-component .ssc-grid{grid-template-columns:1fr 56px}
+  .score-card-component .ssc-label{width:74px;font-size:0.78rem}
+  .score-card-component .ssc-overall{font-size:1.2rem}
+}
