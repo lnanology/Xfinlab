@@ -78,7 +78,7 @@
         "#" + DOCK_ID + " #langSwitcher{position:relative!important;top:auto!important;left:auto!important;" +
         "right:auto!important;bottom:auto!important;display:inline-flex!important;align-items:center;" +
         "flex-shrink:0;order:1}" +
-      "#" + DOCK_ID + " #freeSignalsBadge{order:1;flex-shrink:0}" +
+      "#" + DOCK_ID + " #freeSignalsBadge{position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;order:1;flex-shrink:0}" +
       // Shared round-icon look for all 5 collapsible triggers. Text is
       // zeroed out and replaced with a fixed emoji glyph per widget so
       // this never depends on whatever dynamic label the source script
