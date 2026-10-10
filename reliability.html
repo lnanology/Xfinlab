@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="/img/logo-mark.png">
+<link rel="shortcut icon" href="/img/favicon.ico">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tool Reliability Cards - XFINLAB API &amp; MCP</title>
+<link rel="canonical" href="https://www.xfinlab.com/reliability.html">
+<meta name="robots" content="index, follow">
+<meta name="description" content="What each XFINLAB API/MCP tool does, its data sources, method version, when it reports insufficient evidence, and its known limits. Every response carries a machine-readable evidence block.">
+<style>
+body{font-family:'Inter',sans-serif;background:#080c14;color:#e2e8f0;margin:0}
+nav{background:#0d1525;padding:16px 32px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between}
+.brand{color:#F97316;font-weight:700;font-size:1.1rem;text-decoration:none}
+.nav-link{color:#94a3b8;text-decoration:none;font-size:.85rem;margin-left:16px}
+main{max-width:860px;margin:0 auto;padding:40px 24px}
+h1{font-size:1.9rem;color:#fff;margin-bottom:8px}
+.subtitle,p,li{color:#cbd5e1;line-height:1.8}
+.subtitle{color:#94a3b8;margin-bottom:28px}
+.card{background:#0d1525;border:1px solid #1e2d45;border-radius:12px;padding:22px;margin-bottom:18px}
+h2{color:#fff;font-size:1.05rem;margin:0 0 4px}
+code,pre{background:#080c14;border:1px solid #1e2d45;border-radius:6px;color:#e2e8f0;font-size:.8rem}
+code{padding:1px 6px}
+pre{padding:14px;overflow:auto}
+.k{color:#F97316;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-top:12px}
+ul{margin:4px 0 0 18px;padding:0}
+a{color:#F97316}
+footer{text-align:center;padding:32px;color:#64748b;font-size:.8rem;border-top:1px solid #1e2d45;margin-top:40px}
+</style>
+</head>
+<body>
+<nav><a class="brand" href="/">XFINLAB</a><div><a class="nav-link" href="trust.html">Live data status</a><a class="nav-link" href="intelligence-api.html">API</a></div></nav>
+<main>
+<h1>Tool Reliability Cards</h1>
+<p class="subtitle">Every API/MCP response includes an <code>evidence</code> block: where the data came from, when it was retrieved, which method version produced it, and whether the evidence was sufficient. Thin or empty results are reported as <code>insufficient_evidence</code> instead of being presented as an answer. Nothing here is investment advice.</p>
+
+<div class="card">
+<h2>How to read the evidence block</h2>
+<pre>{
+  "evidence": {
+    "schema": "xfinlab.evidence/1",
+    "tool": "get_sentiment",
+    "retrieved_at": "2026-10-10T03:12:09+00:00",
+    "data_as_of": null,
+    "data_as_of_note": "Underlying data timestamp not reported by this tool.",
+    "sources": ["Public RSS headlines", "FinBERT headline classifier"],
+    "method_version": "sentiment-finbert-headlines/1",
+    "data_status": "ok | partial | insufficient_evidence",
+    "insufficient_evidence_reason": null,
+    "items_used": 8,
+    "limitations": ["..."],
+    "not_investment_advice": true
+  }
+}</pre>
+<p><code>retrieved_at</code> is when our server produced the response. <code>data_as_of</code> is the time of the underlying data and is <code>null</code>, with an explanation, whenever we cannot state it reliably. We never fill unknown values in.</p>
+</div>
+
+<div class="card"><h2>get_market_events</h2>
+<div class="k">What it does</div><p>Recent headlines, optionally filtered by ticker.</p>
+<div class="k">Sources</div><p>Public RSS news feeds; publisher named per item.</p>
+<div class="k">Status rules</div><p><code>ok</code> with 1+ items; <code>insufficient_evidence</code> with none.</p>
+<div class="k">Known limits</div><ul><li>Headlines only; claims are not independently verified.</li><li>Coverage and timing depend on each publisher.</li></ul></div>
+
+<div class="card"><h2>get_sentiment</h2>
+<div class="k">What it does</div><p>Classifies recent headlines for a ticker and averages the score.</p>
+<div class="k">Sources</div><p>Public RSS headlines; FinBERT classifier.</p>
+<div class="k">Status rules</div><p><code>ok</code> with 3+ articles; <code>partial</code> with 1-2; <code>insufficient_evidence</code> with none.</p>
+<div class="k">Known limits</div><ul><li>Headline-level sentiment is not a price forecast.</li><li>Small samples give unstable averages.</li></ul></div>
+
+<div class="card"><h2>get_technical_analysis</h2>
+<div class="k">What it does</div><p>Trend, momentum and confluence direction for one ticker.</p>
+<div class="k">Sources</div><p>Public market price data.</p>
+<div class="k">Status rules</div><p>Returns an error rather than a guess when no price data is available.</p>
+<div class="k">Known limits</div><ul><li>Indicators are backward-looking.</li><li>The confidence figure is not a calibrated probability. Calibration results will be published under <code>benchmarks/</code> before any such claim is made.</li></ul></div>
+
+<div class="card"><h2>get_intelligence_feed</h2>
+<div class="k">What it does</div><p>Clusters related headlines into event groups.</p>
+<div class="k">Sources</div><p>Public RSS headlines.</p>
+<div class="k">Status rules</div><p><code>ok</code> with 1+ clusters; <code>insufficient_evidence</code> with none.</p>
+<div class="k">Known limits</div><ul><li>Clusters are algorithmic groupings, not confirmed events.</li><li>Impact notes are inference, not established causation.</li></ul></div>
+
+<div class="card"><h2>get_global_market_map</h2>
+<div class="k">What it does</div><p>Regional market snapshot with optional sentiment.</p>
+<div class="k">Sources</div><p>Public market data and RSS headlines.</p>
+<div class="k">Known limits</div><ul><li>Regional summaries are approximate and can lag exchange hours.</li></ul></div>
+
+<div class="card"><h2>Testing and accuracy claims</h2>
+<p>We do not publish accuracy figures that we have not measured. The reproducible test plan and results are tracked in the public repository under <a href="https://github.com/lnanology/Xfinlab/tree/main/benchmarks">benchmarks/</a>. Live data-source status is at <a href="trust.html">trust.html</a>.</p>
+</div>
+</main>
+<footer>&copy; XFINLAB &middot; <a href="privacy.html">Privacy</a> &middot; <a href="ai-disclaimer.html">AI Disclaimer</a></footer>
+</body>
+</html>

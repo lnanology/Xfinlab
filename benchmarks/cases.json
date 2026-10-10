@@ -1,0 +1,11 @@
+{
+  "cases": [
+    {"id": "events-general", "tool": "get_market_events", "arguments": {"limit": 5}, "expect_status": ["ok", "partial"]},
+    {"id": "events-nonsense-ticker", "tool": "get_market_events", "arguments": {"ticker": "ZZZZNOTAREALTICKER9", "limit": 5}, "expect_status": ["insufficient_evidence", "ok", "partial"], "note": "must not fabricate; any status is acceptable but evidence must exist"},
+    {"id": "sentiment-aapl", "tool": "get_sentiment", "arguments": {"ticker": "AAPL", "limit": 5}, "expect_status": ["ok", "partial", "insufficient_evidence"]},
+    {"id": "sentiment-nonsense", "tool": "get_sentiment", "arguments": {"ticker": "ZZZZNOTAREALTICKER9"}, "expect_status": ["insufficient_evidence", "partial", "ok"]},
+    {"id": "technical-aapl", "tool": "get_technical_analysis", "arguments": {"ticker": "AAPL"}, "expect_status": ["ok"]},
+    {"id": "feed-general", "tool": "get_intelligence_feed", "arguments": {"limit": 3}, "expect_status": ["ok", "insufficient_evidence"]},
+    {"id": "map-default", "tool": "get_global_market_map", "arguments": {}, "expect_status": ["ok"]}
+  ]
+}
