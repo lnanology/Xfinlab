@@ -1,9 +1,15 @@
 """Integrity benchmarks for the XFINLAB MCP endpoint.
 pip install requests ; XFINLAB_API_KEY=xfl_... python run_benchmarks.py"""
-import json, os, sys, time, datetime, pathlib, requests
+import getpass, json, os, sys, time, datetime, pathlib, requests
 
 URL = os.environ.get("XFINLAB_MCP_URL", "https://api.xfinlab.com/api/mcp")
-KEY = os.environ["XFINLAB_API_KEY"]
+KEY = os.environ.get("XFINLAB_API_KEY") or getpass.getpass("Paste your XFINLAB API key (hidden): ").strip()
+if not KEY:
+    sys.exit("No API key given.")
+if KEY.startswith("xf1_"):  # digit one -> letter L (easy to mistype)
+    KEY = "xfl_" + KEY[4:]
+    print("note: corrected prefix xf1_ -> xfl_")
+print(f"key check: prefix={KEY[:4]!r} length={len(KEY)} (a valid key is 47 characters starting with xfl_)")
 HERE = pathlib.Path(__file__).parent
 REQUIRED = {"schema", "tool", "retrieved_at", "data_as_of", "sources", "method_version",
             "data_status", "limitations", "not_investment_advice"}
@@ -20,15 +26,26 @@ def main():
     cases = json.load(open(HERE / "cases.json"))["cases"]
     out, failed = [], 0
     for c in cases:
-        res, ms = call(c["tool"], c["arguments"])
+        try:
+            res, ms = call(c["tool"], c["arguments"])
+        except requests.RequestException as e:
+            failed += 1
+            out.append({"id": c["id"], "tool": c["tool"], "ok": False, "status": None,
+                        "latency_ms": None, "detail": f"request failed: {type(e).__name__}"})
+            print("FAIL", c["id"], f"request failed: {type(e).__name__}")
+            continue
         result = res.get("result", {})
         problems = []
         if result.get("isError"):
             status = "tool_error"
             text = result["content"][0]["text"] if result.get("content") else ""
-            # An explicit error is acceptable behaviour for bad input; record it.
-            ok = True
             detail = text[:160]
+            low = text.lower()
+            # Auth/quota/config errors mean the case was NOT actually tested.
+            not_tested = any(k in low for k in ("missing credentials", "invalid", "quota", "unauthor", "temporarily unavailable", "internal error"))
+            ok = not not_tested
+            if not_tested:
+                detail = "NOT TESTED (auth/quota/server error): " + detail
         else:
             payload = json.loads(result["content"][0]["text"])
             e = payload.get("evidence")
@@ -50,7 +67,7 @@ def main():
                     "latency_ms": ms, "detail": detail})
         print(("PASS " if ok else "FAIL ") + c["id"], status, f"{ms}ms", detail)
 
-    stamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     (HERE / "results").mkdir(exist_ok=True)
     (HERE / "results" / f"{stamp}.json").write_text(json.dumps({"run_at": stamp, "results": out}, indent=2))
     print(f"{len(out) - failed}/{len(out)} passed")

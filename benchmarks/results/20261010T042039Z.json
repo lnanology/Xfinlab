@@ -1,0 +1,61 @@
+{
+  "run_at": "20261010T042039Z",
+  "results": [
+    {
+      "id": "events-general",
+      "tool": "get_market_events",
+      "ok": false,
+      "status": "tool_error",
+      "latency_ms": 476,
+      "detail": "NOT TESTED (auth/quota/server error): Invalid or expired API key."
+    },
+    {
+      "id": "events-nonsense-ticker",
+      "tool": "get_market_events",
+      "ok": false,
+      "status": "tool_error",
+      "latency_ms": 429,
+      "detail": "NOT TESTED (auth/quota/server error): Invalid or expired API key."
+    },
+    {
+      "id": "sentiment-aapl",
+      "tool": "get_sentiment",
+      "ok": false,
+      "status": "tool_error",
+      "latency_ms": 404,
+      "detail": "NOT TESTED (auth/quota/server error): Invalid or expired API key."
+    },
+    {
+      "id": "sentiment-nonsense",
+      "tool": "get_sentiment",
+      "ok": false,
+      "status": "tool_error",
+      "latency_ms": 414,
+      "detail": "NOT TESTED (auth/quota/server error): Invalid or expired API key."
+    },
+    {
+      "id": "technical-aapl",
+      "tool": "get_technical_analysis",
+      "ok": false,
+      "status": "tool_error",
+      "latency_ms": 447,
+      "detail": "NOT TESTED (auth/quota/server error): Invalid or expired API key."
+    },
+    {
+      "id": "feed-general",
+      "tool": "get_intelligence_feed",
+      "ok": false,
+      "status": "tool_error",
+      "latency_ms": 407,
+      "detail": "NOT TESTED (auth/quota/server error): Invalid or expired API key."
+    },
+    {
+      "id": "map-default",
+      "tool": "get_global_market_map",
+      "ok": false,
+      "status": "tool_error",
+      "latency_ms": 431,
+      "detail": "NOT TESTED (auth/quota/server error): Invalid or expired API key."
+    }
+  ]
+}
