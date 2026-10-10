@@ -864,7 +864,7 @@
       </div>
 
       <div class="panel" style="margin-top:20px">
-        <div class="panel-title">Series: scripts + voiceover (for CapCut)</div>
+        <div class="panel-title">Series: scripts + voiceover (any video type, for CapCut)</div>
         <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
           One topic in, N episodes out: each episode gets a ~1 minute narration script (.txt) and an MP3 voiceover,
           downloaded as one zip. No video is rendered; edit visuals in CapCut. Uses the same free AI + Google TTS
@@ -892,6 +892,33 @@
             </select>
           </div>
         </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Video type</label>
+            <select id="seriesStyle" class="btn btn-sm" style="cursor:pointer">
+              <option value="explainer" selected>Educational explainer</option>
+              <option value="news">News recap</option>
+              <option value="story">Storytelling / history</option>
+              <option value="promo">Product / service intro</option>
+              <option value="qa">Q&amp;A</option>
+              <option value="hook">Short social video</option>
+              <option value="custom">Custom (use notes below)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Length per episode</label>
+            <select id="seriesMinutes" class="btn btn-sm" style="cursor:pointer">
+              <option value="0.5">30 sec</option><option value="1" selected>1 min</option><option value="2">2 min</option><option value="3">3 min</option>
+            </select>
+          </div>
+        </div>
+        <textarea id="seriesNotes" rows="2" placeholder="Optional style notes (required for Custom), e.g. 'speak like a friendly coach, end every episode with a question'"
+          style="width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit;font-size:0.8rem;margin-bottom:10px"></textarea>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:0.78rem">
+          <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="seriesFinance" checked> Finance-safe mode (no invented prices/%, no predictions)</label>
+          <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="seriesDisclaimer" checked> Add "not investment advice" line to last episode</label>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px">Non-finance topics: untick both. The AI is still told not to invent specific numbers, dates or quotes, but check every fact before publishing.</div>
         <button class="btn btn-sm btn-purple" onclick="startSeries()" id="seriesStartBtn">▶ Generate Series</button>
         <div id="seriesResult" style="margin-top:10px;font-size:0.8rem"></div>
       </div>
@@ -2437,7 +2464,12 @@ async function startSeries() {
   try {
     const res = await fetch(`${API}/admin/series/start?token=${adminToken}`, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({topic, parts: parseInt(document.getElementById('seriesParts').value, 10), lang: document.getElementById('seriesLang').value}),
+      body: JSON.stringify({
+        topic, parts: parseInt(document.getElementById('seriesParts').value, 10), lang: document.getElementById('seriesLang').value,
+        style: document.getElementById('seriesStyle').value, minutes: parseFloat(document.getElementById('seriesMinutes').value),
+        notes: document.getElementById('seriesNotes').value.trim(),
+        finance_mode: document.getElementById('seriesFinance').checked, disclaimer: document.getElementById('seriesDisclaimer').checked,
+      }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.status);
