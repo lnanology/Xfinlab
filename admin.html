@@ -862,6 +862,39 @@
         <button class="btn btn-sm btn-purple" onclick="generateCustomVideo()" id="videoChatGenerateBtn">▶ Generate from Chat</button>
         <div id="videoChatGenerateResult" style="margin-top:10px;font-size:0.8rem"></div>
       </div>
+
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-title">Series: scripts + voiceover (for CapCut)</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">
+          One topic in, N episodes out: each episode gets a ~1 minute narration script (.txt) and an MP3 voiceover,
+          downloaded as one zip. No video is rendered; edit visuals in CapCut. Uses the same free AI + Google TTS
+          as the Video Engine. Narration never invents specific prices or percentages. Takes a few minutes; keep this page open.
+        </div>
+        <textarea id="seriesTopic" rows="2" placeholder="e.g. Historical patterns before past Bitcoin halvings"
+          style="width:100%;box-sizing:border-box;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:inherit;font-size:0.85rem;margin-bottom:10px"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Episodes</label>
+            <select id="seriesParts" class="btn btn-sm" style="cursor:pointer">
+              <option value="3">3</option><option value="5">5</option><option value="10" selected>10</option><option value="12">12</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:0.7rem;color:var(--muted);margin-bottom:3px">Language</label>
+            <select id="seriesLang" class="btn btn-sm" style="cursor:pointer">
+              <option value="zh-HK" selected>粵語 zh-HK</option>
+              <option value="zh-CN">普通话 zh-CN</option>
+              <option value="zh-TW">國語 zh-TW</option>
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-purple" onclick="startSeries()" id="seriesStartBtn">▶ Generate Series</button>
+        <div id="seriesResult" style="margin-top:10px;font-size:0.8rem"></div>
+      </div>
     </div>
 
     <!-- 2026-10-02 (AJ: "快有效" growth-strategy discussion -- "起啦"):
@@ -2390,6 +2423,58 @@ async function generateCustomVideo() {
   } finally {
     btn.disabled = false;
   }
+}
+
+
+let _seriesTimer = null;
+async function startSeries() {
+  const btn = document.getElementById('seriesStartBtn');
+  const out = document.getElementById('seriesResult');
+  const topic = document.getElementById('seriesTopic').value.trim();
+  if (!topic) { out.innerHTML = '<span style="color:var(--red)">Type a topic first.</span>'; return; }
+  btn.disabled = true;
+  out.innerHTML = '<span class="spinner"></span> Starting...';
+  try {
+    const res = await fetch(`${API}/admin/series/start?token=${adminToken}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({topic, parts: parseInt(document.getElementById('seriesParts').value, 10), lang: document.getElementById('seriesLang').value}),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.status);
+    pollSeries(data.job_id);
+  } catch (e) {
+    out.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+    btn.disabled = false;
+  }
+}
+function pollSeries(jobId) {
+  const btn = document.getElementById('seriesStartBtn');
+  const out = document.getElementById('seriesResult');
+  clearInterval(_seriesTimer);
+  _seriesTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${API}/admin/series/status/${jobId}?token=${adminToken}`);
+      const st = await res.json();
+      if (!res.ok) throw new Error(st.detail || res.status);
+      const done = (st.results || []).length;
+      const lines = (st.results || []).map(r => `${r.audio ? '✅' : '⚠️'} ${r.part}. ${escapeHtml(r.title)}${r.error ? ' — ' + escapeHtml(r.error) : ''}`).join('<br>');
+      if (st.state === 'running') {
+        out.innerHTML = `<span class="spinner"></span> ${escapeHtml(st.stage || '')} (${done}/${st.parts} done)<br>${lines}`;
+      } else {
+        clearInterval(_seriesTimer);
+        btn.disabled = false;
+        if (st.state === 'done') {
+          out.innerHTML = `<span style="color:var(--green)">✅ ${escapeHtml(st.message)}</span><br>${lines}<br><a href="${API}/admin/series/download/${jobId}?token=${adminToken}" style="color:var(--accent)">⬇ Download zip</a>`;
+        } else {
+          out.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(st.message || 'Failed')}</span>`;
+        }
+      }
+    } catch (e) {
+      clearInterval(_seriesTimer);
+      btn.disabled = false;
+      out.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(String(e.message || e))}</span>`;
+    }
+  }, 4000);
 }
 
 async function generateSeoPage() {

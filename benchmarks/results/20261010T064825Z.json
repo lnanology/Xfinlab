@@ -1,0 +1,61 @@
+{
+  "run_at": "20261010T064825Z",
+  "results": [
+    {
+      "id": "events-general",
+      "tool": "get_market_events",
+      "ok": true,
+      "status": "ok",
+      "latency_ms": 11311,
+      "detail": ""
+    },
+    {
+      "id": "events-nonsense-ticker",
+      "tool": "get_market_events",
+      "ok": false,
+      "status": null,
+      "latency_ms": null,
+      "detail": "request failed: ReadTimeout"
+    },
+    {
+      "id": "sentiment-aapl",
+      "tool": "get_sentiment",
+      "ok": false,
+      "status": null,
+      "latency_ms": null,
+      "detail": "request failed: ReadTimeout"
+    },
+    {
+      "id": "sentiment-nonsense",
+      "tool": "get_sentiment",
+      "ok": false,
+      "status": null,
+      "latency_ms": null,
+      "detail": "request failed: ConnectionError"
+    },
+    {
+      "id": "technical-aapl",
+      "tool": "get_technical_analysis",
+      "ok": false,
+      "status": null,
+      "latency_ms": null,
+      "detail": "request failed: ConnectionError"
+    },
+    {
+      "id": "feed-general",
+      "tool": "get_intelligence_feed",
+      "ok": false,
+      "status": null,
+      "latency_ms": null,
+      "detail": "request failed: ConnectionError"
+    },
+    {
+      "id": "map-default",
+      "tool": "get_global_market_map",
+      "ok": false,
+      "status": null,
+      "latency_ms": null,
+      "detail": "request failed: ConnectionError"
+    }
+  ]
+}
