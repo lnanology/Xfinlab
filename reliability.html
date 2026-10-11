@@ -60,13 +60,13 @@ footer{text-align:center;padding:32px;color:#64748b;font-size:.8rem;border-top:1
 <div class="k">What it does</div><p>Recent headlines, optionally filtered by ticker.</p>
 <div class="k">Sources</div><p>Public RSS news feeds; publisher named per item.</p>
 <div class="k">Status rules</div><p><code>ok</code> with 1+ items; <code>insufficient_evidence</code> with none.</p>
-<div class="k">Known limits</div><ul><li>Headlines only; claims are not independently verified.</li><li>Coverage and timing depend on each publisher.</li></ul></div>
+<div class="k">Known limits</div><ul><li>Headlines only; claims are not independently verified.</li><li>Coverage and timing depend on each publisher.</li><li>Per-company coverage is limited. A ticker with no matching headlines returns <code>insufficient_evidence</code>.</li></ul></div>
 
 <div class="card"><h2>get_sentiment</h2>
 <div class="k">What it does</div><p>Classifies recent headlines for a ticker and averages the score.</p>
 <div class="k">Sources</div><p>Public RSS headlines; FinBERT classifier.</p>
 <div class="k">Status rules</div><p><code>ok</code> with 3+ articles; <code>partial</code> with 1-2; <code>insufficient_evidence</code> with none.</p>
-<div class="k">Known limits</div><ul><li>Headline-level sentiment is not a price forecast.</li><li>Small samples give unstable averages.</li></ul></div>
+<div class="k">Known limits</div><ul><li>Headline-level sentiment is not a price forecast.</li><li>Small samples give unstable averages.</li><li>Per-company coverage is limited, so many tickers return <code>insufficient_evidence</code> instead of a score.</li></ul></div>
 
 <div class="card"><h2>get_technical_analysis</h2>
 <div class="k">What it does</div><p>Trend, momentum and confluence direction for one ticker.</p>
