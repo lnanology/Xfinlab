@@ -9,6 +9,8 @@ if not KEY:
 if KEY.startswith("xf1_"):  # digit one -> letter L (easy to mistype)
     KEY = "xfl_" + KEY[4:]
     print("note: corrected prefix xf1_ -> xfl_")
+if len(KEY) != 47:
+    sys.exit(f"Key length is {len(KEY)}, expected 47. Paste the key ONCE (check it was not pasted twice).")
 print(f"key check: prefix={KEY[:4]!r} length={len(KEY)} (a valid key is 47 characters starting with xfl_)")
 HERE = pathlib.Path(__file__).parent
 REQUIRED = {"schema", "tool", "retrieved_at", "data_as_of", "sources", "method_version",
@@ -24,6 +26,11 @@ def call(tool, args):
 
 def main():
     cases = json.load(open(HERE / "cases.json"))["cases"]
+    only = os.environ.get("ONLY")
+    if only:
+        cases = [c for c in cases if c["id"] == only]
+        if not cases:
+            sys.exit(f"No case with id {only!r}")
     out, failed = [], 0
     for c in cases:
         try:
@@ -35,6 +42,13 @@ def main():
             print("FAIL", c["id"], f"request failed: {type(e).__name__}")
             continue
         result = res.get("result", {})
+        if "content" not in result:
+            failed += 1
+            err = (res.get("error") or {}).get("message") or str(res)[:120]
+            out.append({"id": c["id"], "tool": c["tool"], "ok": False, "status": None,
+                        "latency_ms": ms, "detail": f"no tool result: {err}"})
+            print("FAIL", c["id"], f"{ms}ms", f"no tool result: {err}")
+            continue
         problems = []
         if result.get("isError"):
             status = "tool_error"
