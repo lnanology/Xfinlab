@@ -1,6 +1,6 @@
 # XFINLAB examples
 
-Copy-paste starting points. Get a free API key at https://www.xfinlab.com/intelligence-api.html (free tier: 300 weighted calls/day; first 7 days get a higher AI debate/intel cap). Check `X-RateLimit-Remaining` on any response to see what's left.
+Copy-paste starting points. Get a free API key at https://www.xfinlab.com/intelligence-api.html (free tier: 100 weighted calls/day; first 7 days get a higher AI debate/intel cap). Check `X-RateLimit-Remaining` on any response to see what's left.
 
 | File | What it shows |
 |---|---|

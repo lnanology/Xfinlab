@@ -1,0 +1,61 @@
+{
+  "run_at": "20261011T105122Z",
+  "results": [
+    {
+      "id": "events-general",
+      "tool": "get_market_events",
+      "ok": true,
+      "status": "ok",
+      "latency_ms": 8819,
+      "detail": ""
+    },
+    {
+      "id": "events-nonsense-ticker",
+      "tool": "get_market_events",
+      "ok": true,
+      "status": "insufficient_evidence",
+      "latency_ms": 498,
+      "detail": ""
+    },
+    {
+      "id": "sentiment-aapl",
+      "tool": "get_sentiment",
+      "ok": true,
+      "status": "insufficient_evidence",
+      "latency_ms": 606,
+      "detail": ""
+    },
+    {
+      "id": "sentiment-nonsense",
+      "tool": "get_sentiment",
+      "ok": true,
+      "status": "insufficient_evidence",
+      "latency_ms": 464,
+      "detail": ""
+    },
+    {
+      "id": "technical-aapl",
+      "tool": "get_technical_analysis",
+      "ok": true,
+      "status": "ok",
+      "latency_ms": 681,
+      "detail": ""
+    },
+    {
+      "id": "feed-general",
+      "tool": "get_intelligence_feed",
+      "ok": true,
+      "status": "ok",
+      "latency_ms": 3469,
+      "detail": ""
+    },
+    {
+      "id": "map-default",
+      "tool": "get_global_market_map",
+      "ok": true,
+      "status": "ok",
+      "latency_ms": 4968,
+      "detail": ""
+    }
+  ]
+}
