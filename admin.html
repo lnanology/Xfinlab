@@ -1997,6 +1997,22 @@ async function loadWidgetStats() {
   }
 }
 
+// Set a per-key daily call limit (POST /admin/intelligence/key-limit).
+async function setKeyLimit(preview) {
+  const v = prompt(`每日上限 (calls/day) for ${preview}\n輸入數字，例如 50；輸入 0 取消限額`, '50');
+  if (v === null) return;
+  const n = parseInt(v, 10);
+  if (isNaN(n) || n < 0) { alert('請輸入有效數字'); return; }
+  try {
+    const url = `${API}/admin/intelligence/key-limit?token=${encodeURIComponent(adminToken)}&key_preview=${encodeURIComponent(preview)}&daily_limit=${n}`;
+    const res = await fetch(url, { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
+    alert(res.ok ? (data.limit ? `已設定：每日 ${data.limit} 次` : '已取消限額') : `失敗 (${res.status}): ${data.detail || ''}`);
+  } catch (e) {
+    alert('連線錯誤');
+  }
+}
+
 // Growth OS Phase 5 -- API Usage / devrel panel (GET /admin/intelligence/usage).
 async function loadApiUsage() {
   const overviewEl = document.getElementById('apiUsageOverview');
@@ -2027,7 +2043,7 @@ async function loadApiUsage() {
           <th style="padding:6px 8px">Key</th><th style="padding:6px 8px">Email</th>
           <th style="padding:6px 8px">Tier</th><th style="padding:6px 8px">Source</th>
           <th style="padding:6px 8px">Today</th><th style="padding:6px 8px">All-time</th>
-          <th style="padding:6px 8px">Status</th>
+          <th style="padding:6px 8px">Status</th><th style="padding:6px 8px">限額</th>
         </tr></thead>
         <tbody>
           ${keys.map(k => `
@@ -2039,6 +2055,7 @@ async function loadApiUsage() {
               <td style="padding:6px 8px"><b>${k.today_calls ?? 0}</b></td>
               <td style="padding:6px 8px">${k.total_calls ?? 0}</td>
               <td style="padding:6px 8px">${k.active ? '<span style="color:var(--green)">active</span>' : '<span style="color:var(--muted)">revoked</span>'}</td>
+              <td style="padding:6px 8px"><button type="button" data-preview="${escapeHtml(k.key_preview || '')}" onclick="setKeyLimit(this.dataset.preview)" style="cursor:pointer">設定</button></td>
             </tr>`).join('')}
         </tbody>
       </table>
