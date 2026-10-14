@@ -232,6 +232,13 @@ class XfinlabClient:
         assets/liabilities, operating cash flow from SEC XBRL."""
         return self._get(f"/intelligence/v1/fundamentals/{ticker}")
 
+    def fundamentals_as_of(self, ticker: str, as_of_date: str) -> dict:
+        """Point-in-time fundamentals: the annual 10-K figures that were
+        already public on `as_of_date` (YYYY-MM-DD), each with the period it
+        covers and the SEC filing date. Later restatements never leak into an
+        earlier date. See XFINLAB_POINT_IN_TIME.md. Weighted 3x in quota."""
+        return self._get(f"/intelligence/v1/fundamentals/{ticker}/as-of", params={"as_of_date": as_of_date})
+
     def vix_term_structure(self) -> dict:
         """CBOE VIX9D/VIX/VIX3M/VIX6M term structure and contango/
         backwardation regime read. Not ticker-specific."""

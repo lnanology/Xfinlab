@@ -22,7 +22,7 @@ Free tier API keys are issued instantly, no waiting, no credit card. XFINLAB als
 
 - Endpoint: `https://api.xfinlab.com/api/mcp` — Streamable HTTP, stateless JSON-RPC 2.0, no session handshake beyond standard MCP `initialize`
 - Auth: same `X-API-Key` header as the REST API, same free tier, no separate quota
-- Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`
+- Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`, `get_fundamentals_as_of` (point-in-time fundamentals: what was knowable on a past date)
 - [MCP docs and connection config](https://www.xfinlab.com/intelligence-api.html#mcp)
 
 ## Core REST endpoints (v1, base `https://api.xfinlab.com`, `X-API-Key` header)
@@ -36,6 +36,7 @@ URL for the first line is `https://api.xfinlab.com/api/intelligence/v1/events`)
 - GET /api/intelligence/v1/sentiment — FinBERT sentiment across a ticker's recent headlines
 - GET /api/intelligence/v1/debate — multi-agent Bull/Bear/Risk-Manager AI debate (Pro/Enterprise)
 - GET /api/intelligence/v1/intel/latest, /api/intelligence/v1/intel/{ticker} — AI-clustered intelligence feed
+- GET /api/intelligence/v1/fundamentals/{ticker}/as-of?as_of_date=YYYY-MM-DD — point-in-time fundamentals (only data public on that date; avoids look-ahead bias)
 - GET /api/intelligence/v1/technical/{ticker} — confluence direction/confidence, trend, MACD, market structure
 - POST /api/intelligence/v1/stress-test — Monte Carlo simulation, real historical-return bootstrap
 - GET /api/intelligence/v1/forecast/{ticker} — probabilistic price forecast

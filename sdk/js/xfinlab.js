@@ -207,6 +207,10 @@
     return this._get('/intelligence/v1/fundamentals/' + encodeURIComponent(ticker));
   };
 
+  XfinlabClient.prototype.fundamentalsAsOf = function (ticker, asOfDate) {
+    return this._get('/intelligence/v1/fundamentals/' + encodeURIComponent(ticker) + '/as-of', { as_of_date: asOfDate });
+  };
+
   XfinlabClient.prototype.vixTermStructure = function () {
     return this._get('/intelligence/v1/vix-term-structure');
   };

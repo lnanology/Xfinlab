@@ -30,7 +30,7 @@ Real-time market events, FinBERT sentiment, technical/market-structure analysis,
 
 ## Short description (2-3 sentences)
 
-XFINLAB Intelligence exposes five MCP tools over market events, sentiment, technical analysis, AI-clustered news intelligence, and a global cross-region market map. Every number is traceable to a real computation — the AI Intelligence Feed tool never returns a directional trading signal or probability estimate. Free tier API keys are issued instantly and automatically at intelligence-api.html.
+XFINLAB Intelligence exposes six MCP tools over market events, sentiment, technical analysis, AI-clustered news intelligence, a global cross-region market map, and point-in-time company fundamentals. Every number is traceable to a real computation — the AI Intelligence Feed tool never returns a directional trading signal or probability estimate. Free tier API keys are issued instantly and automatically at intelligence-api.html.
 
 ## Tools
 
@@ -39,6 +39,7 @@ XFINLAB Intelligence exposes five MCP tools over market events, sentiment, techn
 3. **`get_technical_analysis`** — confluence direction/confidence, trend, MACD, volume, chart patterns, and market structure (BOS/CHOCH, liquidity sweeps, order flow, volume profile, institutional footprint) from real OHLC data.
 4. **`get_intelligence_feed`** — same-event headlines clustered, enriched with entities/sentiment/technical signals, and an AI-written narrative summary.
 5. **`get_global_market_map`** — cross-region macro + news + sentiment snapshot across 10 regions (US, Europe, Japan, Korea, China, HK, Taiwan, SE Asia, Middle East, LatAm).
+6. **`get_fundamentals_as_of`** — point-in-time company fundamentals: the annual SEC 10-K figures that were actually public on a given date (`symbol`, `as_of`), each with its period and SEC filing date, plus source, quality, unavailable fields and limitations. Avoids look-ahead bias in backtests. US SEC filers, annual data only. *(Prepared text; not yet submitted anywhere.)*
 
 ## Connection config (Claude Desktop / any remote-HTTP-capable MCP client)
 

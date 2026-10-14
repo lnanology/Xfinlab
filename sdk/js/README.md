@@ -74,6 +74,7 @@ try {
 | `energy(ticker)` | `GET /v1/energy/{ticker}` | Weighted 2x in quota |
 | `exchange(ticker)` | `GET /v1/exchange/{ticker}` | Weighted 2x in quota |
 | `fundamentals(ticker)` | `GET /v1/fundamentals/{ticker}` | Weighted 3x in quota |
+| `fundamentalsAsOf(ticker, asOfDate)` | `GET /v1/fundamentals/{ticker}/as-of` | Weighted 3x in quota. Point-in-time |
 | `vixTermStructure()` | `GET /v1/vix-term-structure` | Weighted 1x in quota |
 | `bankHealth(ticker)` | `GET /v1/bank-health/{ticker}` | Weighted 2x in quota |
 | `agriculture(ticker)` | `GET /v1/agriculture/{ticker}` | Weighted 2x in quota |
