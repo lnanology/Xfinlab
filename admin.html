@@ -1431,7 +1431,7 @@ async function tryReuseMainSiteSession() {
     let mainUser = {};
     try { mainUser = JSON.parse(localStorage.getItem('xfinlab_user') || '{}'); } catch (e) {}
     if (!mainToken || mainUser.email !== 'abcoaj888@gmail.com') return;
-    const res = await fetch(`${API}/admin/stats?token=${mainToken}`);
+    const res = await fetch(`${API}/admin/stats`, {headers: {'Authorization': `Bearer ${mainToken}`}});
     if (!res.ok) return;
     adminToken = mainToken;
     localStorage.setItem('xfinlab_admin_token', adminToken);
@@ -1452,7 +1452,7 @@ async function handleLogin() {
     const data = await res.json();
     if (!res.ok) { document.getElementById('loginError').textContent = data.detail || 'Login failed'; return; }
 
-    const adminRes = await fetch(`${API}/admin/stats?token=${data.token}`);
+    const adminRes = await fetch(`${API}/admin/stats`, {headers: {'Authorization': `Bearer ${data.token}`}});
     if (!adminRes.ok) { document.getElementById('loginError').textContent = 'No admin access'; return; }
 
     adminToken = data.token;
@@ -2399,12 +2399,20 @@ async function loadVideoMediaLibrary() {
       <div style="position:relative;width:90px">
         <label style="cursor:pointer;display:block">
           <input type="checkbox" class="videoMediaAssetCheck" value="${a.id}" style="position:absolute;top:2px;left:2px;z-index:1">
-          <img src="${API}/admin/video/media/${a.id}/thumbnail?token=${adminToken}" style="width:90px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" title="${escapeHtml(a.label || '')}">
+          <img data-thumb="/admin/video/media/${a.id}/thumbnail" alt="" style="width:90px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" title="${escapeHtml(a.label || '')}">
         </label>
         <div style="font-size:0.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(a.label || '')}">${escapeHtml(a.kind === 'video_frame' ? '🎬 ' + (a.label || '') : '🖼 ' + (a.label || ''))}</div>
         <button onclick="deleteVideoMediaAsset(${a.id})" title="Delete" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:4px;width:18px;height:18px;font-size:0.65rem;cursor:pointer;line-height:1">✕</button>
       </div>
     `).join('');
+    // Thumbnails need the admin credential, which must not travel in a URL (<img src> cannot send
+    // headers), so fetch each one with the Authorization header and show it as a blob URL.
+    grid.querySelectorAll('img[data-thumb]').forEach(async img => {
+      try {
+        const r = await fetch(`${API}${img.dataset.thumb}`, {headers: {'Authorization': `Bearer ${adminToken}`}});
+        if (r.ok) img.src = URL.createObjectURL(await r.blob());
+      } catch (e) { /* leave the thumbnail empty */ }
+    });
   } catch (e) {
     grid.innerHTML = `<span style="font-size:0.75rem;color:var(--red)">Could not load media library: ${escapeHtml(String(e.message || e))}</span>`;
   }
@@ -2497,6 +2505,21 @@ async function startSeries() {
     btn.disabled = false;
   }
 }
+// Download with the Authorization header (a plain link would have to put the admin token in the URL).
+async function downloadSeriesZip(jobId) {
+  try {
+    const r = await fetch(`${API}/admin/series/download/${encodeURIComponent(jobId)}`, {headers: {'Authorization': `Bearer ${adminToken}`}});
+    if (!r.ok) throw new Error(r.status);
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `series_${jobId}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (e) {
+    alert('Download failed: ' + (e.message || e));
+  }
+}
+
 function pollSeries(jobId) {
   const btn = document.getElementById('seriesStartBtn');
   const out = document.getElementById('seriesResult');
@@ -2514,7 +2537,7 @@ function pollSeries(jobId) {
         clearInterval(_seriesTimer);
         btn.disabled = false;
         if (st.state === 'done') {
-          out.innerHTML = `<span style="color:var(--green)">✅ ${escapeHtml(st.message)}</span><br>${lines}<br><a href="${API}/admin/series/download/${jobId}?token=${adminToken}" style="color:var(--accent)">⬇ Download zip</a>`;
+          out.innerHTML = `<span style="color:var(--green)">✅ ${escapeHtml(st.message)}</span><br>${lines}<br><a href="#" onclick="downloadSeriesZip('${jobId}');return false;" style="color:var(--accent)">⬇ Download zip</a>`;
         } else {
           out.innerHTML = `<span style="color:var(--red)">❌ ${escapeHtml(st.message || 'Failed')}</span>`;
         }
