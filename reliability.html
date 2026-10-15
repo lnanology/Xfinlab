@@ -85,6 +85,12 @@ footer{text-align:center;padding:32px;color:#64748b;font-size:.8rem;border-top:1
 <div class="k">Sources</div><p>Public market data and RSS headlines.</p>
 <div class="k">Known limits</div><ul><li>Regional summaries are approximate and can lag exchange hours.</li></ul></div>
 
+<div class="card"><h2>get_fundamentals_as_of</h2>
+<div class="k">What it does</div><p>Returns the annual SEC 10-K figures that were public for a US-listed company on a given past date, so research and backtests do not use information from the future.</p>
+<div class="k">Sources</div><p>SEC EDGAR XBRL Company Facts (public domain).</p>
+<div class="k">Status rules</div><p>Each answer has a <code>research_id</code> and an evidence block. Fields with nothing public by the date are listed in <code>unavailable_fields</code> and quality is marked incomplete, never filled with zero. Errors: <code>INVALID_SYMBOL</code>, <code>INVALID_DATE</code> (not a real date, or before 2009-01-01), <code>NO_POINT_IN_TIME_DATA</code>.</p>
+<div class="k">Known limits</div><ul><li>US SEC filers only; annual (10-K) figures only, six concepts, 2009 onward.</li><li>A value counts as available 2 business days after its filing date (weekends skipped, no market-holiday calendar).</li><li>A ticker that has not been loaded returns <code>NO_POINT_IN_TIME_DATA</code> until it is requested once via the fundamentals endpoint.</li><li>Some companies do not report every line (for example AMZN has no total liabilities in our data).</li><li>Research and educational data, not investment advice.</li></ul></div>
+
 <div class="card"><h2>Testing and accuracy claims</h2>
 <p>We do not publish accuracy figures that we have not measured. The reproducible test plan and results are tracked in the public repository under <a href="https://github.com/lnanology/Xfinlab/tree/main/benchmarks">benchmarks/</a>. Live data-source status is at <a href="trust.html">trust.html</a>.</p>
 </div>
