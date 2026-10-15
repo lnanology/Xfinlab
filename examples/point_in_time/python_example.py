@@ -38,6 +38,10 @@ def main():
               f"period_end={f['data_time']}  filed={f['publication_time']}  available_at={f['available_at']}")
     print("unavailable:", data.get("unavailable_fields"))
     print(json.dumps(data.get("quality"), indent=2))
+    # Provenance: keep these with your research result to reproduce it later.
+    ev = data.get("evidence") or {}
+    print("research_id:", data.get("research_id"), "| source:", (data.get("source") or {}).get("source"),
+          "| newest filing used:", ev.get("data_as_of"), "| status:", ev.get("data_status"))
 
 
 if __name__ == "__main__":
