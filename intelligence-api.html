@@ -637,6 +637,30 @@ details.schema-details[open] summary::after{content:" ▴"}
           <p class="schema-note" data-i18n="ia_schema_note_fundamentals">A missing concept key means that company has never reported that specific XBRL tag on a 10-K — never a fabricated zero or null placeholder mixed in with real figures.</p>
         </details>
       </div>
+      <!-- Point-in-time / as-of (documented 2026-10-15; text kept in English like the changelog) -->
+      <div class="ep-card" id="as-of">
+        <div class="ep-head">
+          <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M8 15l3-4 3 2 4-6"/></svg></div>
+        </div>
+        <span class="ep-tag">GET /v1/fundamentals/{ticker}/as-of?as_of_date=YYYY-MM-DD</span>
+        <div class="ep-name">Point-in-Time Fundamentals (as-of)</div>
+        <div class="ep-desc">What could actually have been known about a US-listed company on a given date. Returns the annual SEC 10-K figures that had already been filed, and passed a 2-business-day availability buffer, by <code>as_of_date</code>. Later restatements never leak into an earlier date, which avoids look-ahead bias in backtests and in AI agents answering questions about the past. Also available as the MCP tool <code>get_fundamentals_as_of</code>.</div>
+        <details class="schema-details">
+          <summary data-i18n="ia_schema_toggle">Response fields</summary>
+          <div class="schema-fields">
+            <div class="schema-field"><code>data.facts</code> <span class="schema-type">object</span> — revenue, net_income, eps_diluted, total_assets, total_liabilities, operating_cash_flow; each present only if public by the date</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>value</code> <span class="schema-type">number</span>, <code>unit</code>, <code>form</code></div>
+            <div class="schema-field">&nbsp;&nbsp;<code>data_time</code> <span class="schema-type">date</span> — the period the number describes (fiscal year end)</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>publication_time</code> <span class="schema-type">date</span> — SEC filing date, when it became public</div>
+            <div class="schema-field">&nbsp;&nbsp;<code>available_at</code> <span class="schema-type">date</span> — filing date + 2 business days (weekends skipped, no market-holiday calendar)</div>
+            <div class="schema-field"><code>data.unavailable_fields</code> <span class="schema-type">array</span> — concepts with no filing public by the date (never filled with zero)</div>
+            <div class="schema-field"><code>data.quality</code>, <code>data.limitations</code>, <code>data.source</code> <span class="schema-type">object</span></div>
+            <div class="schema-field"><code>data.research_id</code> <span class="schema-type">string</span> — <code>XF-YYYY-NNNNNN</code>, one per call</div>
+            <div class="schema-field"><code>data.evidence</code> <span class="schema-type">object</span> — method version, data_as_of, sources, limitations</div>
+          </div>
+          <p class="schema-note">Errors: <code>INVALID_SYMBOL</code>, <code>INVALID_DATE</code> (not a real date, or before 2009-01-01), <code>NO_POINT_IN_TIME_DATA</code>. Coverage: US SEC filers, annual 10-K figures only (no quarterly), six concepts, 2009 onward. A ticker is available once it has been requested via <code>GET /v1/fundamentals/{ticker}</code>; if the as-of call returns <code>NO_POINT_IN_TIME_DATA</code>, call that endpoint once for the ticker and retry. Research and educational data, not investment advice.</p>
+        </details>
+      </div>
       <div class="ep-card">
         <div class="ep-head">
           <div class="ep-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
@@ -1100,6 +1124,10 @@ await client.sentiment('AAPL');</span></div>
       <div class="ep-card">
         <span class="ep-tag">get_global_market_map</span>
         <div class="ep-desc" data-i18n="ia_mcp5_desc">Cross-region macro + news + sentiment snapshot across 10 regions (US, Europe, Japan, Korea, China, HK, Taiwan, SE Asia, Middle East, LatAm).</div>
+      </div>
+      <div class="ep-card">
+        <span class="ep-tag">get_fundamentals_as_of</span>
+        <div class="ep-desc">Point-in-time company fundamentals: the annual SEC 10-K figures that were public (filed + 2 business days) on a given date, each with the period it describes and its filing date. Returns a research_id and an evidence block. US SEC filers, annual only. <a href="#as-of">REST equivalent</a>.</div>
       </div>
     </div>
     <p style="max-width:640px;margin:16px auto 0;font-size:0.83rem;color:var(--text-muted);text-align:center" data-i18n="ia_mcp_note2">Auth and quota are identical to the REST API above — same X-API-Key, same free tier, same weighted daily limit. No separate free ride through MCP.</p>

@@ -52,7 +52,7 @@ Already live in production — no setup needed, just point an MCP-compatible cli
 }
 ```
 
-Hosted service (the server implementation is proprietary and runs at `api.xfinlab.com`). Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`. Same auth and free tier as the REST API. Docs: [intelligence-api.html#mcp](https://www.xfinlab.com/intelligence-api.html#mcp).
+Hosted service (the server implementation is proprietary and runs at `api.xfinlab.com`). Tools (6): `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`, `get_fundamentals_as_of` (point-in-time SEC fundamentals). Same auth and free tier as the REST API. Docs: [intelligence-api.html#mcp](https://www.xfinlab.com/intelligence-api.html#mcp).
 
 ## Production usage
 

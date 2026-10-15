@@ -25,5 +25,5 @@ Endpoint: `https://api.xfinlab.com/api/mcp` (Streamable HTTP). Header: `X-API-Ke
 claude mcp add --transport http xfinlab https://api.xfinlab.com/api/mcp --header "X-API-Key: xfl_..."
 ```
 
-Tools: `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`.
+Tools (6): `get_market_events`, `get_sentiment`, `get_technical_analysis`, `get_intelligence_feed`, `get_global_market_map`, `get_fundamentals_as_of`.
 Try asking: "What is the technical outlook for NVDA and how is sentiment?"
